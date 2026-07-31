@@ -1,0 +1,13 @@
+# Maven
+target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+
+# Spring Boot
+application.properties
+
+# Environment files
+.env
