@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import InputField from "../components/InputField";
+import Button from "../components/Button";
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
@@ -56,19 +58,13 @@ function Login() {
 
           <form className="space-y-5" onSubmit={handleLogin}>
 
-            <div>
-              <label className="block mb-2 font-medium">
-                Email
-              </label>
-
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
+            <InputField
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
             <div>
               <label className="block mb-2 font-medium">
@@ -107,12 +103,7 @@ function Login() {
 
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition duration-300"
-            >
-              Login
-            </button>
+            <Button text="Login" type="submit" />
 
           </form>
 
