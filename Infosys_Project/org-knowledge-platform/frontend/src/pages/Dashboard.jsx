@@ -2,19 +2,41 @@ import React from 'react';
 import { Users, FileText, Activity, TrendingUp, Plus } from 'lucide-react';
 
 const Dashboard = () => {
-  const stats = [
+  const [stats, setStats] = React.useState([
     { title: 'Total Articles', value: '1,248', icon: <FileText size={24} />, trend: '+12% this month' },
     { title: 'Active Users', value: '342', icon: <Users size={24} />, trend: '+5% this month' },
     { title: 'Contributions', value: '89', icon: <Activity size={24} />, trend: 'Past 7 days' },
     { title: 'Views', value: '45.2k', icon: <TrendingUp size={24} />, trend: '+18% this month' },
-  ];
+  ]);
 
-  const recentArticles = [
-    { id: 1, title: 'Company Holiday Schedule 2026', author: 'HR Dept', date: 'Oct 12, 2026', status: 'Published' },
-    { id: 2, title: 'Q3 Engineering OKRs', author: 'Jane Smith', date: 'Oct 10, 2026', status: 'Draft' },
-    { id: 3, title: 'Frontend Styling Guide', author: 'Frontend Team', date: 'Oct 09, 2026', status: 'Published' },
-    { id: 4, title: 'Onboarding Process Overview', author: 'John Doe', date: 'Oct 05, 2026', status: 'Published' },
-  ];
+  const [recentArticles, setRecentArticles] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch('http://localhost:8080/api/dashboard')
+      .then(res => res.json())
+      .then(data => {
+        // Map the backend data to our state
+        const updatedStats = [...stats];
+        // Merge data logic here if needed, but for MVP let's replace
+        if(data.stats) setStats(data.stats.map(s => {
+          let icon = <FileText size={24} />;
+          if(s.title === "Active Users") icon = <Users size={24} />;
+          if(s.title === "Contributions") icon = <Activity size={24} />;
+          if(s.title === "Views") icon = <TrendingUp size={24} />;
+          return {...s, icon};
+        }));
+        
+        if(data.recentArticles) setRecentArticles(data.recentArticles);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching dashboard data: ", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="dashboard-container">Loading...</div>;
 
   return (
     <div className="dashboard-container">
