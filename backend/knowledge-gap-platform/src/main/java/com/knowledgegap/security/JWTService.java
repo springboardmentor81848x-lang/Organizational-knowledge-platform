@@ -15,11 +15,12 @@ public class JWTService {
     private static final String SECRET_KEY =
             "mySecretKeyForKnowledgeGapPlatformAuthentication123456";
 
-    // Generate JWT Token
-    public String generateToken(String email) {
+    // Generate JWT Token with Role
+    public String generateToken(String email, String role) {
 
         return Jwts.builder()
                 .setSubject(email)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
@@ -29,6 +30,11 @@ public class JWTService {
     // Extract email from token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // Extract role from token
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     // Extract expiration date

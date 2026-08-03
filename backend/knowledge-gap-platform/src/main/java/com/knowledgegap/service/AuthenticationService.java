@@ -26,16 +26,21 @@ public class AuthenticationService {
 
     public AuthResponse login(LoginRequest request) {
 
-    Employee employee = employeeRepository
-            .findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        Employee employee = employeeRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-    if (!passwordEncoder.matches(request.getPassword(), employee.getPassword())) {
-        throw new RuntimeException("Invalid password");
+        if (!passwordEncoder.matches(request.getPassword(), employee.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        String role = employee.getRole().getRoleName();
+
+        String token = jwtService.generateToken(
+                employee.getEmail(),
+                role
+        );
+
+        return new AuthResponse(token);
     }
-
-    String token = jwtService.generateToken(employee.getEmail());
-
-    return new AuthResponse(token);
-}
 }
