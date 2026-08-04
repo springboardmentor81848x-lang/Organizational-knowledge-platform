@@ -40,7 +40,9 @@ public class AuthenticationService {
                 employee.getEmail(),
                 role
         );
-
-        return new AuthResponse(token);
+    return new AuthResponse(
+        token,
+        employee.getRole().getRoleName()
+);
     }
 }
