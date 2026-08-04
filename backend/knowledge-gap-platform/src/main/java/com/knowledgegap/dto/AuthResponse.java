@@ -1,4 +1,5 @@
 package com.knowledgegap.dto;
+
 public class AuthResponse {
 
     private String token;
@@ -25,4 +26,3 @@ public class AuthResponse {
         this.role = role;
     }
 }
-
