@@ -26,6 +26,11 @@ function Login() {
         {
           email,
           password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -76,10 +81,10 @@ function Login() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
-        <div className="bg-blue-700 text-white flex flex-col justify-center items-center p-10">
+        <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
           <h1 className="text-4xl font-bold text-center">Organizational Knowledge</h1>
           <h2 className="text-3xl font-semibold mt-2 text-center">Intelligence Platform</h2>
-          <p className="mt-6 text-center text-blue-100">
+          <p className="mt-6 text-center text-slate-200">
             Empowering organizations through knowledge sharing,
             skill management and intelligent insights.
           </p>
@@ -121,7 +126,7 @@ function Login() {
               <label className="flex items-center gap-2">
                 <input type="checkbox" /> Remember Me
               </label>
-              <a href="#" className="text-blue-600 hover:underline">Forgot Password?</a>
+              <a href="#" className="text-indigo-600 hover:underline">Forgot Password?</a>
             </div>
 
             <Button text="Login" type="submit" />
@@ -129,7 +134,7 @@ function Login() {
 
           <p className="text-center mt-6">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
+            <Link to="/signup" className="text-indigo-700 font-semibold hover:underline">
               Sign Up
             </Link>
           </p>

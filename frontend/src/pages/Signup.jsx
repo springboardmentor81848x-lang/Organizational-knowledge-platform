@@ -43,6 +43,16 @@ function Signup() {
     }
 
     try {
+      console.log("Signup payload", {
+        employeeId: formData.employeeId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        designation: formData.designation,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+
       const response = await axios.post(
         "http://localhost:8080/api/auth/signup",
         {
@@ -53,11 +63,16 @@ function Signup() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
       alert("Signup Successful!");
-      console.log(response.data);
+      console.log("Signup response", response.data);
 
       setFormData({
         employeeId: "",
@@ -72,23 +87,27 @@ function Signup() {
 
       navigate("/login");
     } catch (error) {
-      console.error(error);
+      console.error("Signup error:", error);
 
-      if (error.response) {
-        alert(error.response.data || "Signup Failed");
-      } else {
-        alert("Unable to connect to the server.");
-      }
+      const responseData = error.response?.data;
+      const errorMessage =
+        responseData?.message ||
+        responseData?.error ||
+        (typeof responseData === "string" ? responseData : null) ||
+        error.message ||
+        "Signup failed";
+
+      alert(errorMessage);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
-        <div className="bg-blue-700 text-white flex flex-col justify-center items-center p-10">
+        <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
           <h1 className="text-4xl font-bold text-center">Organizational Knowledge</h1>
           <h2 className="text-3xl font-semibold mt-2 text-center">Intelligence Platform</h2>
-          <p className="mt-6 text-center text-blue-100">
+          <p className="mt-6 text-center text-slate-200">
             Empowering organizations through knowledge sharing,
             skill management and intelligent insights.
           </p>
@@ -194,7 +213,7 @@ function Signup() {
                 onChange={(e) =>
                   setFormData({ ...formData, role: e.target.value })
                 }
-                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               >
                 <option value="EMPLOYEE">EMPLOYEE</option>
                 <option value="HR">HR</option>
@@ -206,7 +225,7 @@ function Signup() {
           </form>
           <p className="text-center mt-6">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
+            <Link to="/login" className="text-indigo-700 font-semibold hover:underline">
               Login
             </Link>
           </p>

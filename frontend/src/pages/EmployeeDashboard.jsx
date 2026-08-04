@@ -58,7 +58,7 @@ function EmployeeDashboard() {
 
                 <BookOpen
                   size={45}
-                  className="text-blue-600"
+                  className="text-indigo-600"
                 />
 
               </div>
@@ -180,7 +180,7 @@ function EmployeeDashboard() {
                   <div className="w-full bg-gray-200 rounded-full h-3">
 
                     <div
-                      className="bg-blue-600 h-3 rounded-full"
+                      className="bg-indigo-600 h-3 rounded-full"
                       style={{
                         width: `${skill.value}%`,
                       }}

@@ -41,7 +41,7 @@ function ManagerDashboard() {
                   <h2 className="text-3xl font-bold mt-2">18</h2>
                 </div>
 
-                <Users size={45} className="text-blue-600" />
+                <Users size={45} className="text-indigo-600" />
               </div>
             </div>
 
@@ -145,7 +145,7 @@ function ManagerDashboard() {
                 <tr className="border-b">
                   <td className="py-3">Knowledge Platform</td>
                   <td>In Progress</td>
-                  <td className="text-blue-600">70%</td>
+                  <td className="text-indigo-600">70%</td>
                 </tr>
 
                 <tr className="border-b">

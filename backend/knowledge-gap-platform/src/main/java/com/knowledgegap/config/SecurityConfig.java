@@ -38,7 +38,10 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
+                        // Public auth endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
@@ -47,13 +50,13 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // HR only
-                        .requestMatchers("/hr/**").hasAuthority("HR")
+                        .requestMatchers("/api/hr/**").hasRole("HR")
 
                         // Manager only
-                        .requestMatchers("/manager/**").hasAuthority("MANAGER")
+                        .requestMatchers("/api/manager/**").hasRole("MANAGER")
 
                         // Employee only
-                        .requestMatchers("/employees/**").hasAuthority("Employee")
+                        .requestMatchers("/api/employee/**").hasRole("EMPLOYEE")
 
                         // Any other request requires authentication
                         .anyRequest().authenticated()

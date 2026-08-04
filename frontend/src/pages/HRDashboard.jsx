@@ -41,7 +41,7 @@ function HRDashboard() {
                   <h2 className="text-3xl font-bold mt-3">128</h2>
                 </div>
 
-                <Users size={45} className="text-blue-600" />
+                <Users size={45} className="text-indigo-600" />
               </div>
             </div>
 
@@ -160,7 +160,7 @@ function HRDashboard() {
                 <div className="bg-gray-200 rounded-full h-3">
 
                   <div
-                    className="bg-blue-600 h-3 rounded-full"
+                    className="bg-indigo-600 h-3 rounded-full"
                     style={{ width: `${item.percent}%` }}
                   ></div>
 
