@@ -1,36 +1,87 @@
+import axios from "axios";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 function Signup() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "Employee",
-  });
+  employeeId: "",
+  firstName: "",
+  lastName: "",
+  designation: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "EMPLOYEE",
+});
 
-  const handleSignup = (e) => {
-    e.preventDefault();
+  const handleSignup = async (e) => {
+  e.preventDefault();
 
-    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      alert("Please fill in all fields.");
-      return;
-    }
+  console.log("1. Button clicked");
+  console.log(formData);
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+  if (
+    !formData.employeeId ||
+    !formData.firstName ||
+    !formData.lastName ||
+    !formData.designation ||
+    !formData.email ||
+    !formData.password ||
+    !formData.confirmPassword
+  ) {
+    console.log("2. Validation failed");
+    alert("Please fill in all fields.");
+    return;
+  }
 
-    console.log(formData);
-  };
+  if (formData.password !== formData.confirmPassword) {
+    console.log("3. Password mismatch");
+    alert("Passwords do not match");
+    return;
+  }
+
+  console.log("4. Calling axios...");
+
+  try {
+    const response = await axios.post(
+      "http://localhost:8080/api/auth/signup",
+      {
+        employeeId: formData.employeeId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        designation: formData.designation,
+        role: formData.role,
+      }
+    );
+
+    console.log("5. Success", response.data);
+    alert("Signup successful! Please login.");
+    navigate("/login");
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data ||
+      error.message ||
+      "Signup failed";
+
+    console.log("Status:", error.response?.status);
+    console.log("Response:", error.response?.data);
+    console.log("Headers:", error.response?.headers);
+    console.error(error);
+
+    alert(errorMessage);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10">
@@ -50,11 +101,41 @@ function Signup() {
 
           <form className="space-y-5" onSubmit={handleSignup}>
             <InputField
-              label="Full Name"
+              label="Employee ID"
               type="text"
-              placeholder="Enter your full name"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              placeholder="Enter Employee ID"
+              value={formData.employeeId}
+              onChange={(e) =>
+              setFormData({ ...formData, employeeId: e.target.value })
+            }
+          />
+            <InputField
+              label="First Name"
+              type="text"
+              placeholder="Enter First Name"
+              value={formData.firstName}
+              onChange={(e) =>
+              setFormData({ ...formData, firstName: e.target.value })
+            }
+          />
+          <InputField
+            label="Last Name"
+            type="text"
+            placeholder="Enter Last Name"
+            value={formData.lastName}
+            onChange={(e) =>
+            setFormData({ ...formData, lastName: e.target.value })
+            }
+            />
+
+          <InputField
+            label="Designation"
+            type="text"
+            placeholder="Enter Designation"
+            value={formData.designation}
+            onChange={(e) =>
+            setFormData({ ...formData, designation: e.target.value })
+            }
             />
 
             <InputField
@@ -119,7 +200,7 @@ function Signup() {
                 }
                 className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600"
               >
-                <option>Employee</option>
+                <option>EMPLOYEE</option>
                 <option>HR</option>
                 <option>Manager</option>
               </select>

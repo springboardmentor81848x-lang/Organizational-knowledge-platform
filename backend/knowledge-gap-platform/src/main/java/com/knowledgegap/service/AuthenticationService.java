@@ -60,8 +60,14 @@ public class AuthenticationService {
             throw new RuntimeException("Email already exists");
         }
 
-        Role role = roleRepository.findByRoleName(request.getRole())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+        String normalizedRoleName = normalizeRoleName(request.getRole());
+        Role role = roleRepository.findByRoleName(normalizedRoleName)
+                .orElseGet(() -> {
+                    Role newRole = new Role();
+                    newRole.setRoleName(normalizedRoleName);
+                    newRole.setDescription("Auto-created role for signup");
+                    return roleRepository.save(newRole);
+                });
 
         Employee employee = new Employee();
 
@@ -85,5 +91,12 @@ public class AuthenticationService {
                 token,
                 role.getRoleName()
         );
+    }
+
+    private String normalizeRoleName(String roleName) {
+        if (roleName == null || roleName.isBlank()) {
+            return "EMPLOYEE";
+        }
+        return roleName.trim().toUpperCase();
     }
 }

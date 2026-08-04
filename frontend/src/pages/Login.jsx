@@ -1,15 +1,17 @@
-import { Link } from "react-router-dom";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 
 function Login() {
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
       e.preventDefault();
 
       if (!email || !password) {
@@ -17,12 +19,36 @@ function Login() {
         return;
       }
 
-      console.log({
-        email,
-        password,
-      });
+      try {
+      const response = await axios.post(
+    "http://localhost:8080/api/auth/login",
+    {
+      email,
+      password,
+    }
+  );
 
-      // Later we'll call the backend API here
+  localStorage.setItem("token", response.data.token);
+  localStorage.setItem("role", response.data.role);
+
+  const role = response.data.role?.toUpperCase();
+
+  if (role === "HR") {
+    navigate("/hr");
+  } else if (role === "MANAGER") {
+    navigate("/manager");
+  } else if (role === "ADMIN") {
+    navigate("/admin");
+  } else {
+    navigate("/employee");
+  }
+
+} catch (error) {
+  console.error(error);
+  alert("Login failed");
+}
+
+      
     };
 
   return (
