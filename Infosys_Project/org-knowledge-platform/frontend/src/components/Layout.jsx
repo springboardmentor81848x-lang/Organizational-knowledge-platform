@@ -7,7 +7,10 @@ const Layout = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Articles', path: '/articles', icon: <Book size={20} /> },
+    { name: 'Skill Inventory', path: '/skills', icon: <Book size={20} /> },
+    { name: 'Gap Analytics', path: '/analytics', icon: <Search size={20} /> },
+    { name: 'Trainings', path: '/trainings', icon: <LayoutDashboard size={20} /> },
+    { name: 'Mentorship', path: '/mentorship', icon: <Settings size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
   ];
 

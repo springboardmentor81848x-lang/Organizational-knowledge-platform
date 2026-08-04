@@ -2,7 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import Articles from './pages/Articles';
+import Skills from './pages/Skills';
+import Analytics from './pages/Analytics';
+import Trainings from './pages/Trainings';
+import Mentorship from './pages/Mentorship';
 
 function App() {
   return (
@@ -10,8 +13,11 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="articles" element={<Articles />} />
-          {/* Add more routes here as needed */}
+          <Route path="skills" element={<Skills />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="trainings" element={<Trainings />} />
+          <Route path="mentorship" element={<Mentorship />} />
+          {/* Fallback for undefined routes */}
           <Route path="*" element={
             <div className="dashboard-container">
               <h2>404 - Page Not Found</h2>
