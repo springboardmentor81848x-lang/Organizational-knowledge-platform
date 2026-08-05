@@ -73,6 +73,15 @@ function Signup() {
 
       alert("Signup Successful!");
       console.log("Signup response", response.data);
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+      if (response.data.role) {
+        localStorage.setItem("role", response.data.role);
+      }
+      localStorage.setItem("firstName", formData.firstName);
+      localStorage.setItem("lastName", formData.lastName);
+      localStorage.setItem("employeeId", formData.employeeId);
 
       setFormData({
         employeeId: "",
@@ -85,7 +94,7 @@ function Signup() {
         role: "EMPLOYEE",
       });
 
-      navigate("/login");
+      navigate("/employee");
     } catch (error) {
       console.error("Signup error:", error);
 

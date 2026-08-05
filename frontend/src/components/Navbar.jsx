@@ -11,25 +11,10 @@ function Navbar({ title }) {
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-
-          <UserCircle
-            className="text-indigo-600"
-            size={35}
-          />
-
-          <div>
-            <p className="font-semibold text-gray-800">
-              Employee
-            </p>
-
-            <p className="text-sm text-gray-500">
-              Welcome Back
-            </p>
-          </div>
-
-        </div>
-
+        <UserCircle
+          className="text-indigo-600"
+          size={35}
+        />
       </div>
 
     </div>

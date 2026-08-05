@@ -43,7 +43,33 @@ function Sidebar({ role }) {
           className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800"
         >
           <BookOpen size={20} />
-          Skills
+          Skill Inventory
+        </NavLink>
+
+        {role.toUpperCase() === "HR" && (
+          <NavLink
+            to="/competency-framework"
+            className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800"
+          >
+            <ClipboardList size={20} />
+            Competency Framework
+          </NavLink>
+        )}
+
+        <NavLink
+          to="/employee-assessment"
+          className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800"
+        >
+          <ClipboardList size={20} />
+          Skill Assessment
+        </NavLink>
+
+        <NavLink
+          to="/knowledge-gap"
+          className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800"
+        >
+          <ClipboardList size={20} />
+          Knowledge Gap Analysis
         </NavLink>
 
         <NavLink

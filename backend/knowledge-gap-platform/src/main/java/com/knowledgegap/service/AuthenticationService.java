@@ -49,7 +49,10 @@ public class AuthenticationService {
 
         return new AuthResponse(
                 token,
-                role
+                role,
+                employee.getFirstName(),
+                employee.getLastName(),
+                employee.getEmployeeId()
         );
     }
 
@@ -89,7 +92,10 @@ public class AuthenticationService {
 
         return new AuthResponse(
                 token,
-                role.getRoleName()
+                role.getRoleName(),
+                employee.getFirstName(),
+                employee.getLastName(),
+                employee.getEmployeeId()
         );
     }
 

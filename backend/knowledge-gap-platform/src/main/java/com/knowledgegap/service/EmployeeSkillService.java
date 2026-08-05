@@ -1,5 +1,6 @@
 package com.knowledgegap.service;
 
+import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.repository.EmployeeSkillRepository;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,10 @@ public class EmployeeSkillService {
 
     public Optional<EmployeeSkill> getEmployeeSkillById(Long id) {
         return employeeSkillRepository.findById(id);
+    }
+
+    public List<EmployeeSkill> getSkillsByEmployee(Employee employee) {
+        return employeeSkillRepository.findByEmployee(employee);
     }
 
     public void deleteEmployeeSkill(Long id) {

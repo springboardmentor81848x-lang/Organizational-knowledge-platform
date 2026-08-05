@@ -36,6 +36,26 @@ public class EmployeeService {
         return employeeRepository.findById(id);
     }
 
+    public Optional<Employee> getEmployeeByEmployeeId(String employeeId) {
+        return employeeRepository.findByEmployeeId(employeeId);
+    }
+
+    public Optional<Employee> getEmployeeByIdentifier(String employeeIdentifier) {
+        if (employeeIdentifier == null) {
+            return Optional.empty();
+        }
+        Optional<Employee> employee = Optional.empty();
+        try {
+            Long id = Long.parseLong(employeeIdentifier);
+            employee = employeeRepository.findById(id);
+        } catch (NumberFormatException ignored) {
+            // ignore, fall through to business employeeId lookup
+        }
+        return employee.isPresent()
+                ? employee
+                : employeeRepository.findByEmployeeId(employeeIdentifier);
+    }
+
     public void deleteEmployee(Long id) {
         employeeRepository.deleteById(id);
     }

@@ -1,6 +1,7 @@
 package com.knowledgegap.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class KnowledgeGap {
@@ -22,6 +23,8 @@ public class KnowledgeGap {
     private Integer requiredLevel;
 
     private Integer gap;
+
+    private LocalDateTime generatedDate;
 
     public KnowledgeGap() {
     }
@@ -68,5 +71,13 @@ public class KnowledgeGap {
 
     public void setGap(Integer gap) {
         this.gap = gap;
+    }
+
+    public LocalDateTime getGeneratedDate() {
+        return generatedDate;
+    }
+
+    public void setGeneratedDate(LocalDateTime generatedDate) {
+        this.generatedDate = generatedDate;
     }
 }

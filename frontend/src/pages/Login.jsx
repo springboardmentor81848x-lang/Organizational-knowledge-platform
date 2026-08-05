@@ -50,6 +50,15 @@ function Login() {
       if (role) {
         localStorage.setItem("role", role);
       }
+      if (response.data.firstName) {
+        localStorage.setItem("firstName", response.data.firstName);
+      }
+      if (response.data.lastName) {
+        localStorage.setItem("lastName", response.data.lastName);
+      }
+      if (response.data.employeeId) {
+        localStorage.setItem("employeeId", response.data.employeeId);
+      }
 
       switch (role?.toUpperCase()) {
         case "EMPLOYEE":

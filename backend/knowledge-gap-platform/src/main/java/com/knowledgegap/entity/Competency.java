@@ -19,6 +19,8 @@ public class Competency {
 
     private Integer requiredLevel;
 
+    private String description;
+
     public Competency() {
     }
 
@@ -48,5 +50,13 @@ public class Competency {
 
     public void setRequiredLevel(Integer requiredLevel) {
         this.requiredLevel = requiredLevel;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
