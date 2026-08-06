@@ -62,7 +62,42 @@ public class SecurityConfig {
 
             			    .requestMatchers("/api/profile/**")
             			    .authenticated()
+            			    
+            			    .requestMatchers("/api/skills/**")
+            			    .authenticated()
+            			    
+            			    .requestMatchers("/api/education/**")
+            			    .authenticated()
+            			    
+            			    .requestMatchers("/api/experience/**")
+            			    .authenticated()
+            			    
+            			    .requestMatchers("/api/certification/**")
+            			    .authenticated()
 
+            			    .requestMatchers(
+            			            org.springframework.http.HttpMethod.GET,
+            			            "/api/master/skills/**")
+            			    .hasAnyRole(
+            			            "ADMIN",
+            			            "HR",
+            			            "MANAGER",
+            			            "EMPLOYEE")
+
+            			    .requestMatchers(
+            			            org.springframework.http.HttpMethod.POST,
+            			            "/api/master/skills/**")
+            			    .hasRole("ADMIN")
+
+            			    .requestMatchers(
+            			            org.springframework.http.HttpMethod.PUT,
+            			            "/api/master/skills/**")
+            			    .hasRole("ADMIN")
+
+            			    .requestMatchers(
+            			            org.springframework.http.HttpMethod.DELETE,
+            			            "/api/master/skills/**")
+            			    .hasRole("ADMIN")
             			    .anyRequest()
             			    .authenticated()
             			)

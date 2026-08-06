@@ -4,17 +4,20 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-import com.okip.entity.master.Employee;
-import com.okip.enums.AccountStatus;
 import com.okip.entity.master.Department;
+import com.okip.entity.master.Employee;
 import com.okip.entity.master.Role;
+import com.okip.entity.master.Skill;
+import com.okip.enums.AccountStatus;
 import com.okip.enums.RoleType;
+import com.okip.enums.SkillCategory;
 import com.okip.repository.DepartmentRepository;
 import com.okip.repository.EmployeeRepository;
 import com.okip.repository.RoleRepository;
+import com.okip.repository.SkillRepository;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -22,14 +25,16 @@ public class DataInitializer implements CommandLineRunner {
 	private final RoleRepository roleRepository;
 	private final DepartmentRepository departmentRepository;
 	private final EmployeeRepository employeeRepository;
+	private final SkillRepository skillRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	public DataInitializer(RoleRepository roleRepository, DepartmentRepository departmentRepository,
-			EmployeeRepository employeeRepository, PasswordEncoder passwordEncoder) {
+			EmployeeRepository employeeRepository, SkillRepository skillRepository, PasswordEncoder passwordEncoder) {
 
 		this.roleRepository = roleRepository;
 		this.departmentRepository = departmentRepository;
 		this.employeeRepository = employeeRepository;
+		this.skillRepository = skillRepository;
 		this.passwordEncoder = passwordEncoder;
 	}
 
@@ -38,8 +43,8 @@ public class DataInitializer implements CommandLineRunner {
 
 		initializeRoles();
 		initializeDepartments();
+		initializeSkills();
 		initializeDefaultUsers();
-
 	}
 
 	private void initializeRoles() {
@@ -74,10 +79,48 @@ public class DataInitializer implements CommandLineRunner {
 		}
 	}
 
+	private void initializeSkills() {
+
+		createSkill("Java", SkillCategory.PROGRAMMING_LANGUAGE);
+		createSkill("Spring Boot", SkillCategory.FRAMEWORK);
+		createSkill("Spring Security", SkillCategory.FRAMEWORK);
+		createSkill("REST API", SkillCategory.FRAMEWORK);
+		createSkill("Microservices", SkillCategory.FRAMEWORK);
+
+		createSkill("MySQL", SkillCategory.DATABASE);
+		createSkill("PostgreSQL", SkillCategory.DATABASE);
+
+		createSkill("Git", SkillCategory.TOOL);
+		createSkill("Maven", SkillCategory.TOOL);
+
+		createSkill("Docker", SkillCategory.DEVOPS);
+		createSkill("Kubernetes", SkillCategory.DEVOPS);
+
+		createSkill("AWS", SkillCategory.CLOUD);
+	}
+
+	private void createSkill(String skillName, SkillCategory skillCategory) {
+
+		if (skillRepository.findBySkillNameIgnoreCase(skillName).isPresent()) {
+
+			return;
+		}
+
+		Skill skill = new Skill();
+
+		skill.setSkillName(skillName);
+		skill.setSkillCategory(skillCategory);
+		skill.setDescription(skillName + " Skill");
+
+		skillRepository.save(skill);
+	}
+
 	private void initializeDefaultUsers() {
 
 		createUser("ADMIN001", "System", "Admin", "admin@okip.com", "Password@123", RoleType.ROLE_ADMIN, "IT");
+
 		createUser("HR001", "Default", "HR", "hr@okip.com", "Password@123", RoleType.ROLE_HR, "HR");
+
 		createUser("MGR001", "Default", "Manager", "manager@okip.com", "Password@123", RoleType.ROLE_MANAGER, "IT");
 	}
 
@@ -107,5 +150,4 @@ public class DataInitializer implements CommandLineRunner {
 
 		employeeRepository.save(employee);
 	}
-
 }
