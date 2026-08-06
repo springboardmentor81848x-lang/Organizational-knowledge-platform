@@ -35,9 +35,11 @@ function Login() {
       );
 
       console.log("Login Success:", response.data);
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+    }
 
-      localStorage.setItem("token", response.data.token);
-
+      localStorage.setItem("designation", response.data.designation);
       let role = response.data.role;
       if (!role && response.data.token) {
         try {

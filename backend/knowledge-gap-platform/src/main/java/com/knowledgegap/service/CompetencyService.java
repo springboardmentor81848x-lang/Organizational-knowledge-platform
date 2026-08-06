@@ -1,10 +1,8 @@
 package com.knowledgegap.service;
 
 import com.knowledgegap.entity.Competency;
-import com.knowledgegap.entity.Role;
 import com.knowledgegap.exception.CompetencyNotFoundException;
 import com.knowledgegap.repository.CompetencyRepository;
-import com.knowledgegap.repository.RoleRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,11 +12,9 @@ import java.util.Optional;
 public class CompetencyService {
 
     private final CompetencyRepository competencyRepository;
-    private final RoleRepository roleRepository;
 
-    public CompetencyService(CompetencyRepository competencyRepository, RoleRepository roleRepository) {
+    public CompetencyService(CompetencyRepository competencyRepository) {
         this.competencyRepository = competencyRepository;
-        this.roleRepository = roleRepository;
     }
 
     public Competency saveCompetency(Competency competency) {
@@ -29,18 +25,21 @@ public class CompetencyService {
         return competencyRepository.findAll();
     }
 
-    public List<Competency> getCompetenciesByRole(Role role) {
-        return competencyRepository.findByRole(role);
-    }
-
     public Optional<Competency> getCompetencyById(Long id) {
         return competencyRepository.findById(id);
     }
 
     public List<Competency> getCompetenciesByDesignation(String designation) {
-        Role role = roleRepository.findByRoleName(designation)
-                .orElseThrow(() -> new CompetencyNotFoundException("Designation not found: " + designation));
-        return competencyRepository.findByRole(role);
+        List<Competency> competencies =
+                competencyRepository.findByDesignation(designation);
+
+        if (competencies.isEmpty()) {
+            throw new CompetencyNotFoundException(
+                    "No competencies found for designation: " + designation
+            );
+        }
+
+        return competencies;
     }
 
     public void deleteCompetency(Long id) {

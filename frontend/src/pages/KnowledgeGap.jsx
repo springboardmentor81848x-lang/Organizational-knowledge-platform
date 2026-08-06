@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { detectGaps } from "../services/platformService";
+import {
+  detectGaps,
+  getCompetenciesByDesignation,
+  getEmployeeSkills,
+} from "../services/platformService";
 
 function KnowledgeGap() {
   const [gaps, setGaps] = useState([]);
@@ -10,6 +14,8 @@ function KnowledgeGap() {
   const [successMessage, setSuccessMessage] = useState("");
   const employeeId = localStorage.getItem("employeeId");
   const token = localStorage.getItem("token");
+  const designation =
+  localStorage.getItem("designation") || "Not Assigned";
   const userRole = (localStorage.getItem("role") || "EMPLOYEE").toUpperCase();
   const userName = [
     localStorage.getItem("firstName"),
@@ -18,13 +24,7 @@ function KnowledgeGap() {
     .filter(Boolean)
     .join(" ");
 
-  const sampleRole = userRole === "HR"
-    ? "HR Manager"
-    : userRole === "MANAGER"
-    ? "Team Lead"
-    : userRole === "ADMIN"
-    ? "Administrator"
-    : "Java Developer";
+  
 
   const roleDescriptions = {
     EMPLOYEE:
@@ -40,19 +40,9 @@ function KnowledgeGap() {
   const gapDescription = roleDescriptions[userRole] ||
     "Knowledge gap analysis compares current skills to required competencies and highlights missing skills or low proficiency levels.";
 
-  const requiredSkills = [
-    { skill: "Java", requiredLevel: 90 },
-    { skill: "Spring Boot", requiredLevel: 80 },
-    { skill: "SQL", requiredLevel: 75 },
-    { skill: "Docker", requiredLevel: 60 },
-  ];
+  const [requiredSkills, setRequiredSkills] = useState([]);
 
-  const currentSkills = [
-    { skill: "Java", currentLevel: 80 },
-    { skill: "Spring Boot", currentLevel: 55 },
-    { skill: "SQL", currentLevel: 70 },
-  ];
-
+  const [currentSkills, setCurrentSkills] = useState([]);
   const runGapAnalysis = async () => {
     setError("");
     setLoading(true);
@@ -76,6 +66,27 @@ function KnowledgeGap() {
     }
   };
 
+  useEffect(() => {
+  loadData();
+}, []);
+
+const loadData = async () => {
+  try {
+
+    const competencyResponse =
+      await getCompetenciesByDesignation(designation);
+
+    setRequiredSkills(competencyResponse.data);
+
+    const skillResponse =
+      await getEmployeeSkills(employeeId);
+
+    setCurrentSkills(skillResponse.data);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
   return (
     <div className="flex bg-gray-100 min-h-screen">
       <Sidebar role={(localStorage.getItem("role") || "EMPLOYEE")} />
@@ -91,8 +102,9 @@ function KnowledgeGap() {
             </p>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="border rounded-xl p-4">
-                <h3 className="font-semibold mb-3">Role</h3>
-                <p>{sampleRole}</p>
+                <h3 className="font-semibold mb-3">Designation</h3>
+                <p>{designation}</p>
+                
               </div>
               <div className="border rounded-xl p-4">
                 <h3 className="font-semibold mb-3">Employee</h3>
@@ -121,10 +133,10 @@ function KnowledgeGap() {
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Required Competencies</h3>
               <div className="space-y-4">
-                {requiredSkills.map((item) => (
-                  <div key={item.skill} className="border rounded-lg p-4">
+                {requiredSkills.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{item.skill}</span>
+                      <span className="font-medium">{item.skill.skillName}</span>
                       <span className="text-sm text-gray-500">Target: {item.requiredLevel}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
@@ -138,10 +150,10 @@ function KnowledgeGap() {
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Current Skill Inventory</h3>
               <div className="space-y-4">
-                {currentSkills.map((item) => (
-                  <div key={item.skill} className="border rounded-lg p-4">
+                {currentSkills.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{item.skill}</span>
+                      <span className="font-medium">{item.skill.skillName}</span>
                       <span className="text-sm text-gray-500">Current: {item.currentLevel}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">

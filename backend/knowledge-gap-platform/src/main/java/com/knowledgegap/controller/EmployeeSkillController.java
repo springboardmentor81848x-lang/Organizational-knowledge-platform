@@ -42,4 +42,8 @@ public class EmployeeSkillController {
         employeeSkillService.deleteEmployeeSkill(id);
         return "Employee Skill deleted successfully!";
     }
+    @GetMapping("/employee/{employeeId}")
+public List<EmployeeSkill> getEmployeeSkillsByEmployee(@PathVariable Long employeeId) {
+    return employeeSkillService.getEmployeeSkillsByEmployee(employeeId);
+}
 }

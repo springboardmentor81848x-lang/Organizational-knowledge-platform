@@ -9,9 +9,8 @@ public class Competency {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    // Job designation (Software Engineer, Java Developer, etc.)
+    private String designation;
 
     @ManyToOne
     @JoinColumn(name = "skill_id")
@@ -28,12 +27,16 @@ public class Competency {
         return id;
     }
 
-    public Role getRole() {
-        return role;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
     }
 
     public Skill getSkill() {

@@ -7,6 +7,7 @@ import com.knowledgegap.entity.KnowledgeGap;
 import com.knowledgegap.entity.Role;
 import com.knowledgegap.repository.KnowledgeGapRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class KnowledgeGapService {
 
     private final KnowledgeGapRepository knowledgeGapRepository;
@@ -35,6 +37,7 @@ public class KnowledgeGapService {
     }
 
     // Get all KnowledgeGaps
+    
     public List<KnowledgeGap> getAllKnowledgeGaps() {
         return knowledgeGapRepository.findAll();
     }
@@ -47,47 +50,65 @@ public class KnowledgeGapService {
     public List<KnowledgeGap> getKnowledgeGapsByEmployee(Employee employee) {
         return knowledgeGapRepository.findByEmployee(employee);
     }
-
+    @Transactional
     public List<KnowledgeGap> detectAndSaveGaps(Employee employee) {
-        if (employee == null || employee.getRole() == null) {
-            return List.of();
-        }
 
-        List<EmployeeSkill> currentSkills = employeeSkillService.getSkillsByEmployee(employee);
-        List<Competency> requiredCompetencies = competencyService.getCompetenciesByRole(employee.getRole());
-
-        Map<Long, EmployeeSkill> skillMap = new HashMap<>();
-        for (EmployeeSkill current : currentSkills) {
-            if (current.getSkill() != null && current.getSkill().getId() != null) {
-                skillMap.put(current.getSkill().getId(), current);
-            }
-        }
-
-        knowledgeGapRepository.deleteByEmployee(employee);
-
-        List<KnowledgeGap> gapResults = new ArrayList<>();
-        for (Competency competency : requiredCompetencies) {
-            if (competency.getSkill() == null) {
-                continue;
-            }
-            int requiredLevel = competency.getRequiredLevel() != null ? competency.getRequiredLevel() : 0;
-            EmployeeSkill currentSkill = skillMap.get(competency.getSkill().getId());
-            int currentLevel = currentSkill != null && currentSkill.getCurrentLevel() != null ? currentSkill.getCurrentLevel() : 0;
-            int gap = Math.max(0, requiredLevel - currentLevel);
-
-            if (gap > 0) {
-                KnowledgeGap knowledgeGap = new KnowledgeGap();
-                knowledgeGap.setEmployee(employee);
-                knowledgeGap.setSkill(competency.getSkill());
-                knowledgeGap.setCurrentLevel(currentLevel);
-                knowledgeGap.setRequiredLevel(requiredLevel);
-                knowledgeGap.setGap(gap);
-                gapResults.add(knowledgeGapRepository.save(knowledgeGap));
-            }
-        }
-
-        return gapResults;
+    if (employee == null || employee.getDesignation() == null || employee.getDesignation().isBlank()) {
+        return List.of();
     }
+
+    List<EmployeeSkill> currentSkills =
+            employeeSkillService.getSkillsByEmployee(employee);
+
+    List<Competency> requiredCompetencies =
+            competencyService.getCompetenciesByDesignation(employee.getDesignation());
+
+    // Create a map of employee skills for quick lookup
+    Map<Long, EmployeeSkill> skillMap = new HashMap<>();
+
+    for (EmployeeSkill current : currentSkills) {
+        if (current.getSkill() != null && current.getSkill().getId() != null) {
+            skillMap.put(current.getSkill().getId(), current);
+        }
+    }
+
+    knowledgeGapRepository.deleteByEmployee(employee);
+
+    List<KnowledgeGap> gapResults = new ArrayList<>();
+
+    for (Competency competency : requiredCompetencies) {
+
+        if (competency.getSkill() == null) {
+            continue;
+        }
+
+        int requiredLevel = competency.getRequiredLevel() != null
+                ? competency.getRequiredLevel()
+                : 0;
+
+        EmployeeSkill currentSkill =
+                skillMap.get(competency.getSkill().getId());
+
+        int currentLevel = currentSkill != null && currentSkill.getCurrentLevel() != null
+                ? currentSkill.getCurrentLevel()
+                : 0;
+
+        int gap = Math.max(0, requiredLevel - currentLevel);
+
+        if (gap > 0) {
+            KnowledgeGap knowledgeGap = new KnowledgeGap();
+            knowledgeGap.setEmployee(employee);
+            knowledgeGap.setSkill(competency.getSkill());
+            knowledgeGap.setCurrentLevel(currentLevel);
+            knowledgeGap.setRequiredLevel(requiredLevel);
+            knowledgeGap.setGap(gap);
+
+            gapResults.add(knowledgeGapRepository.save(knowledgeGap));
+        }
+    }
+
+    return gapResults;
+}
 
     // Delete KnowledgeGap by ID
     public void deleteKnowledgeGap(Long id) {

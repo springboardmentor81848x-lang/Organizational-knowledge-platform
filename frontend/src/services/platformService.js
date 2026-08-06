@@ -15,6 +15,11 @@ export const getCompetencies = async () => {
   return await api.get("/competencies");
 };
 
+// Get competencies by designation
+export const getCompetenciesByDesignation = async (designation) => {
+  return await api.get(`/competencies/designation/${designation}`);
+};
+
 // Get employee skills
 export const getEmployeeSkills = async () => {
   return await api.get("/employee-skills");

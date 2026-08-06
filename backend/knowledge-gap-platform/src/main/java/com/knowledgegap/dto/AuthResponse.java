@@ -7,13 +7,17 @@ public class AuthResponse {
     private String firstName;
     private String lastName;
     private String employeeId;
+    private String designation;   // NEW
 
-    public AuthResponse(String token, String role, String firstName, String lastName, String employeeId) {
+    public AuthResponse(String token, String role, String firstName,
+                        String lastName, String employeeId,
+                        String designation) {
         this.token = token;
         this.role = role;
         this.firstName = firstName;
         this.lastName = lastName;
         this.employeeId = employeeId;
+        this.designation = designation;
     }
 
     public String getToken() {
@@ -54,5 +58,13 @@ public class AuthResponse {
 
     public void setEmployeeId(String employeeId) {
         this.employeeId = employeeId;
+    }
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
     }
 }

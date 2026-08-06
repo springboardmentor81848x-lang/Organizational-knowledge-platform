@@ -44,14 +44,20 @@ public class CompetencyController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
-    public ResponseEntity<Competency> updateCompetency(@PathVariable Long id, @RequestBody Competency competency) {
+    public ResponseEntity<Competency> updateCompetency(@PathVariable Long id,
+                                                       @RequestBody Competency competency) {
+
         return competencyService.getCompetencyById(id)
                 .map(existingCompetency -> {
-                    existingCompetency.setRole(competency.getRole());
+
+                    existingCompetency.setDesignation(competency.getDesignation());
                     existingCompetency.setSkill(competency.getSkill());
                     existingCompetency.setRequiredLevel(competency.getRequiredLevel());
                     existingCompetency.setDescription(competency.getDescription());
-                    return ResponseEntity.ok(competencyService.saveCompetency(existingCompetency));
+
+                    return ResponseEntity.ok(
+                            competencyService.saveCompetency(existingCompetency)
+                    );
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

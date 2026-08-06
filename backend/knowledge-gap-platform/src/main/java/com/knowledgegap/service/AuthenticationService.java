@@ -52,7 +52,8 @@ public class AuthenticationService {
                 role,
                 employee.getFirstName(),
                 employee.getLastName(),
-                employee.getEmployeeId()
+                employee.getEmployeeId(),
+                employee.getDesignation()
         );
     }
 
@@ -64,6 +65,7 @@ public class AuthenticationService {
         }
 
         String normalizedRoleName = normalizeRoleName(request.getRole());
+
         Role role = roleRepository.findByRoleName(normalizedRoleName)
                 .orElseGet(() -> {
                     Role newRole = new Role();
@@ -80,7 +82,6 @@ public class AuthenticationService {
         employee.setEmail(request.getEmail());
         employee.setPassword(passwordEncoder.encode(request.getPassword()));
         employee.setDesignation(request.getDesignation());
-
         employee.setRole(role);
 
         employeeRepository.save(employee);
@@ -95,7 +96,8 @@ public class AuthenticationService {
                 role.getRoleName(),
                 employee.getFirstName(),
                 employee.getLastName(),
-                employee.getEmployeeId()
+                employee.getEmployeeId(),
+                employee.getDesignation()
         );
     }
 

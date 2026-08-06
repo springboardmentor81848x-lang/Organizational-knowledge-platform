@@ -18,7 +18,8 @@ public class KnowledgeGapController {
     private final KnowledgeGapService knowledgeGapService;
     private final EmployeeService employeeService;
 
-    public KnowledgeGapController(KnowledgeGapService knowledgeGapService, EmployeeService employeeService) {
+    public KnowledgeGapController(KnowledgeGapService knowledgeGapService,
+                                  EmployeeService employeeService) {
         this.knowledgeGapService = knowledgeGapService;
         this.employeeService = employeeService;
     }
@@ -29,12 +30,43 @@ public class KnowledgeGapController {
     }
 
     @PostMapping("/detect/{employeeIdentifier}")
-    public ResponseEntity<List<KnowledgeGap>> detectAndSaveKnowledgeGaps(@PathVariable String employeeIdentifier) {
-        Optional<Employee> employee = employeeService.getEmployeeByIdentifier(employeeIdentifier);
-        if (employee.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<List<KnowledgeGap>> detectAndSaveKnowledgeGaps(
+            @PathVariable String employeeIdentifier) {
+
+        try {
+
+            System.out.println("==================================");
+            System.out.println("Gap Detection API Called");
+            System.out.println("Employee Identifier: " + employeeIdentifier);
+
+            Optional<Employee> employee =
+                    employeeService.getEmployeeByIdentifier(employeeIdentifier);
+
+            if (employee.isEmpty()) {
+                System.out.println("Employee not found!");
+                return ResponseEntity.notFound().build();
+            }
+
+            System.out.println("Employee Found: " + employee.get().getEmployeeId());
+            System.out.println("Designation: " + employee.get().getDesignation());
+
+            List<KnowledgeGap> gaps =
+                    knowledgeGapService.detectAndSaveGaps(employee.get());
+
+            System.out.println("Gap Detection Completed");
+            System.out.println("Number of Gaps: " + gaps.size());
+            System.out.println("==================================");
+
+            return ResponseEntity.ok(gaps);
+
+        } catch (Exception e) {
+
+            System.out.println("========== ERROR ==========");
+            e.printStackTrace();
+            System.out.println("===========================");
+
+            return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok(knowledgeGapService.detectAndSaveGaps(employee.get()));
     }
 
     @GetMapping
@@ -48,9 +80,15 @@ public class KnowledgeGapController {
     }
 
     @GetMapping("/employee/{employeeIdentifier}")
-    public ResponseEntity<List<KnowledgeGap>> getKnowledgeGapsByEmployee(@PathVariable String employeeIdentifier) {
-        Optional<Employee> employee = employeeService.getEmployeeByIdentifier(employeeIdentifier);
-        return employee.map(value -> ResponseEntity.ok(knowledgeGapService.getKnowledgeGapsByEmployee(value)))
+    public ResponseEntity<List<KnowledgeGap>> getKnowledgeGapsByEmployee(
+            @PathVariable String employeeIdentifier) {
+
+        Optional<Employee> employee =
+                employeeService.getEmployeeByIdentifier(employeeIdentifier);
+
+        return employee
+                .map(value -> ResponseEntity.ok(
+                        knowledgeGapService.getKnowledgeGapsByEmployee(value)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

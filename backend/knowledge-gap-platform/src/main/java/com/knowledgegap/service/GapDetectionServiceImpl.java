@@ -43,15 +43,20 @@ public class GapDetectionServiceImpl implements GapDetectionService {
         Employee employee = employeeService.getEmployeeById(employeeId)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee not found for id: " + employeeId));
 
-        Role role = employee.getRole();
-        if (role == null) {
-            throw new CompetencyNotFoundException("Employee role is not defined for employee id: " + employeeId);
-        }
+        String designation = employee.getDesignation();
 
-        List<Competency> competencies = competencyService.getCompetenciesByRole(role);
-        if (competencies.isEmpty()) {
-            throw new CompetencyNotFoundException("No competency data found for role: " + role.getRoleName());
-        }
+if (designation == null || designation.isBlank()) {
+    throw new CompetencyNotFoundException(
+            "Employee designation is not defined for employee id: " + employeeId);
+}
+
+List<Competency> competencies =
+        competencyService.getCompetenciesByDesignation(designation);
+
+if (competencies.isEmpty()) {
+    throw new CompetencyNotFoundException(
+            "No competency data found for designation: " + designation);
+}
 
         List<EmployeeSkill> employeeSkills = employeeSkillService.getSkillsByEmployee(employee);
 
