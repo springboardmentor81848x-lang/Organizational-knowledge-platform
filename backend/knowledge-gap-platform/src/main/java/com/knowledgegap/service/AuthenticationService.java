@@ -31,26 +31,48 @@ public class AuthenticationService {
     }
 
     // LOGIN
-    public AuthResponse login(LoginRequest request) {
+    // LOGIN
+public AuthResponse login(LoginRequest request) {
 
-        Employee employee = employeeRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+    System.out.println("========== LOGIN REQUEST ==========");
+    System.out.println("Email Entered: " + request.getEmail());
+    System.out.println("Password Entered: " + request.getPassword());
 
-        if (!passwordEncoder.matches(request.getPassword(), employee.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
+    Employee employee = employeeRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> {
+                System.out.println("Employee not found!");
+                return new RuntimeException("Employee not found");
+            });
 
-        String role = employee.getRole().getRoleName();
+    System.out.println("Employee Found: " + employee.getFirstName());
+    System.out.println("Stored Password: " + employee.getPassword());
 
-        String token = jwtService.generateToken(
-                employee.getEmail(),
-                role
-        );
+    boolean passwordMatches = passwordEncoder.matches(
+            request.getPassword(),
+            employee.getPassword()
+    );
 
-        return new AuthResponse(token);
+    System.out.println("Password Match: " + passwordMatches);
+
+    if (!passwordMatches) {
+        throw new RuntimeException("Invalid password");
     }
 
+    String role = employee.getRole().getRoleName();
+
+    System.out.println("Role: " + role);
+
+    String token = jwtService.generateToken(
+            employee.getEmail(),
+            role
+    );
+
+    System.out.println("Login Successful!");
+    System.out.println("==============================");
+
+    return new AuthResponse(token);
+}
     // SIGNUP
     public AuthResponse signup(SignupRequest request) {
 
