@@ -71,8 +71,16 @@ public AuthResponse login(LoginRequest request) {
     System.out.println("Login Successful!");
     System.out.println("==============================");
 
-    return new AuthResponse(token);
-}
+        return new AuthResponse(
+                token,
+                role,
+                employee.getFirstName(),
+                employee.getLastName(),
+                employee.getEmployeeId(),
+                employee.getDesignation()
+        );
+    }
+
     // SIGNUP
     public AuthResponse signup(SignupRequest request) {
 
@@ -80,8 +88,15 @@ public AuthResponse login(LoginRequest request) {
             throw new RuntimeException("Email already exists");
         }
 
-        Role role = roleRepository.findByRoleName(request.getRole())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+        String normalizedRoleName = normalizeRoleName(request.getRole());
+
+        Role role = roleRepository.findByRoleName(normalizedRoleName)
+                .orElseGet(() -> {
+                    Role newRole = new Role();
+                    newRole.setRoleName(normalizedRoleName);
+                    newRole.setDescription("Auto-created role for signup");
+                    return roleRepository.save(newRole);
+                });
 
         Employee employee = new Employee();
 
@@ -91,8 +106,6 @@ public AuthResponse login(LoginRequest request) {
         employee.setEmail(request.getEmail());
         employee.setPassword(passwordEncoder.encode(request.getPassword()));
         employee.setDesignation(request.getDesignation());
-
-        // Department is left null
         employee.setRole(role);
 
         employeeRepository.save(employee);
@@ -102,6 +115,20 @@ public AuthResponse login(LoginRequest request) {
                 role.getRoleName()
         );
 
-        return new AuthResponse(token);
+        return new AuthResponse(
+                token,
+                role.getRoleName(),
+                employee.getFirstName(),
+                employee.getLastName(),
+                employee.getEmployeeId(),
+                employee.getDesignation()
+        );
+    }
+
+    private String normalizeRoleName(String roleName) {
+        if (roleName == null || roleName.isBlank()) {
+            return "EMPLOYEE";
+        }
+        return roleName.trim().toUpperCase();
     }
 }

@@ -3,7 +3,7 @@ function Button({ text, type = "button", onClick, className = "" }) {
     <button
       type={type}
       onClick={onClick}
-      className={`w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition ${className}`}
+      className={`w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition ${className}`}
     >
       {text}
     </button>

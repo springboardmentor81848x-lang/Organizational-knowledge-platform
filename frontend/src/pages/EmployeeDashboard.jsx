@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 
 function EmployeeDashboard() {
+  const firstName = localStorage.getItem("firstName") || "";
+  const lastName = localStorage.getItem("lastName") || "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+
   return (
     <div className="flex bg-gray-100 min-h-screen">
 
@@ -19,20 +23,11 @@ function EmployeeDashboard() {
         <Navbar title="Employee Dashboard" />
 
         <div className="p-8">
-
-          {/* Welcome */}
-
-          <div className="mb-8">
-
-            <h1 className="text-3xl font-bold text-gray-800">
-              Welcome Back 👋
-            </h1>
-
-            <p className="text-gray-500 mt-2">
-              Here's an overview of your learning progress.
-            </p>
-
-          </div>
+          {fullName && (
+            <div className="mb-6">
+              <p className="text-lg text-gray-600">Welcome {fullName}</p>
+            </div>
+          )}
 
           {/* Stats */}
 
@@ -58,7 +53,7 @@ function EmployeeDashboard() {
 
                 <BookOpen
                   size={45}
-                  className="text-blue-600"
+                  className="text-indigo-600"
                 />
 
               </div>
@@ -180,7 +175,7 @@ function EmployeeDashboard() {
                   <div className="w-full bg-gray-200 rounded-full h-3">
 
                     <div
-                      className="bg-blue-600 h-3 rounded-full"
+                      className="bg-indigo-600 h-3 rounded-full"
                       style={{
                         width: `${skill.value}%`,
                       }}

@@ -1,4 +1,4 @@
-import { Bell, UserCircle } from "lucide-react";
+import { UserCircle } from "lucide-react";
 
 function Navbar({ title }) {
   return (
@@ -11,31 +11,10 @@ function Navbar({ title }) {
       </div>
 
       <div className="flex items-center gap-6">
-
-        <Bell
-          className="cursor-pointer text-gray-600"
-          size={22}
+        <UserCircle
+          className="text-indigo-600"
+          size={35}
         />
-
-        <div className="flex items-center gap-2">
-
-          <UserCircle
-            className="text-blue-700"
-            size={35}
-          />
-
-          <div>
-            <p className="font-semibold">
-              Employee
-            </p>
-
-            <p className="text-sm text-gray-500">
-              Welcome Back
-            </p>
-          </div>
-
-        </div>
-
       </div>
 
     </div>

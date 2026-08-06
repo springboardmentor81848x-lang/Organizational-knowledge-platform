@@ -1,6 +1,7 @@
 package com.knowledgegap.service;
 
 import com.knowledgegap.entity.Competency;
+import com.knowledgegap.exception.CompetencyNotFoundException;
 import com.knowledgegap.repository.CompetencyRepository;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,19 @@ public class CompetencyService {
 
     public Optional<Competency> getCompetencyById(Long id) {
         return competencyRepository.findById(id);
+    }
+
+    public List<Competency> getCompetenciesByDesignation(String designation) {
+        List<Competency> competencies =
+                competencyRepository.findByDesignation(designation);
+
+        if (competencies.isEmpty()) {
+            throw new CompetencyNotFoundException(
+                    "No competencies found for designation: " + designation
+            );
+        }
+
+        return competencies;
     }
 
     public void deleteCompetency(Long id) {

@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/skills")
+@RequestMapping("/api/skills")
+@CrossOrigin(origins = "*")
 public class SkillController {
 
     private final SkillService skillService;

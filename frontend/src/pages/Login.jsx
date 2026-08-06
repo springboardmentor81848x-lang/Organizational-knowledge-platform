@@ -1,6 +1,6 @@
+﻿import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 
 import InputField from "../components/InputField";
@@ -8,9 +8,7 @@ import Button from "../components/Button";
 
 function Login() {
   const navigate = useNavigate();
-
   const [showPassword, setShowPassword] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -28,49 +26,63 @@ function Login() {
         {
           email,
           password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
       console.log("Login Success:", response.data);
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+    }
 
-      // Save JWT Token
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("designation", response.data.designation);
+      let role = response.data.role;
+      if (!role && response.data.token) {
+        try {
+          role = JSON.parse(atob(response.data.token.split(".")[1])).role;
+        } catch (tokenError) {
+          console.warn("Unable to parse role from token", tokenError);
+        }
+      }
 
-      // Decode JWT payload
-      const payload = JSON.parse(
-        atob(response.data.token.split(".")[1])
-      );
+      if (role) {
+        localStorage.setItem("role", role);
+      }
+      if (response.data.firstName) {
+        localStorage.setItem("firstName", response.data.firstName);
+      }
+      if (response.data.lastName) {
+        localStorage.setItem("lastName", response.data.lastName);
+      }
+      if (response.data.employeeId) {
+        localStorage.setItem("employeeId", response.data.employeeId);
+      }
 
-      const role = payload.role;
-
-      localStorage.setItem("role", role);
-
-      switch (role) {
+      switch (role?.toUpperCase()) {
         case "EMPLOYEE":
           navigate("/employee");
           break;
-
         case "HR":
           navigate("/hr");
           break;
-
         case "MANAGER":
           navigate("/manager");
           break;
-
         case "ADMIN":
           navigate("/admin");
           break;
-
         default:
           alert("Unknown role");
       }
-
     } catch (error) {
       console.error(error);
 
       if (error.response) {
-        alert(error.response.data.message || "Invalid email or password");
+        alert(error.response.data?.message || "Invalid email or password");
       } else {
         alert("Cannot connect to server");
       }
@@ -79,45 +91,20 @@ function Login() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
-
-        {/* Left Section */}
-
-        <div className="bg-blue-700 text-white flex flex-col justify-center items-center p-10">
-
-          <h1 className="text-4xl font-bold text-center">
-            Organizational Knowledge
-          </h1>
-
-          <h2 className="text-3xl font-semibold mt-2 text-center">
-            Intelligence Platform
-          </h2>
-
-          <p className="mt-6 text-center text-blue-100">
+        <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
+          <h1 className="text-4xl font-bold text-center">Organizational Knowledge</h1>
+          <h2 className="text-3xl font-semibold mt-2 text-center">Intelligence Platform</h2>
+          <p className="mt-6 text-center text-slate-200">
             Empowering organizations through knowledge sharing,
             skill management and intelligent insights.
           </p>
-
         </div>
-
-        {/* Right Section */}
-
         <div className="p-10">
+          <h2 className="text-3xl font-bold mb-2">Welcome Back</h2>
+          <p className="text-gray-500 mb-8">Login to continue</p>
 
-          <h2 className="text-3xl font-bold mb-2">
-            Welcome Back
-          </h2>
-
-          <p className="text-gray-500 mb-8">
-            Login to continue
-          </p>
-
-          <form
-            className="space-y-5"
-            onSubmit={handleLogin}
-          >
-
+          <form className="space-y-5" onSubmit={handleLogin}>
             <InputField
               label="Email"
               type="email"
@@ -127,13 +114,8 @@ function Login() {
             />
 
             <div>
-
-              <label className="block mb-2 font-medium">
-                Password
-              </label>
-
+              <label className="block mb-2 font-medium">Password</label>
               <div className="flex border rounded-lg overflow-hidden">
-
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
@@ -141,60 +123,34 @@ function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="flex-1 px-4 py-3 outline-none"
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="px-4 bg-gray-100"
                 >
-                  {showPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
-
               </div>
-
             </div>
 
             <div className="flex justify-between items-center text-sm">
-
               <label className="flex items-center gap-2">
-                <input type="checkbox" />
-                Remember Me
+                <input type="checkbox" /> Remember Me
               </label>
-
-              <a
-                href="#"
-                className="text-blue-600 hover:underline"
-              >
-                Forgot Password?
-              </a>
-
+              <a href="#" className="text-indigo-600 hover:underline">Forgot Password?</a>
             </div>
 
-            <Button
-              text="Login"
-              type="submit"
-            />
-
+            <Button text="Login" type="submit" />
           </form>
 
           <p className="text-center mt-6">
             Don't have an account?{" "}
-            <Link
-              to="/signup"
-              className="text-blue-700 font-semibold hover:underline"
-            >
+            <Link to="/signup" className="text-indigo-700 font-semibold hover:underline">
               Sign Up
             </Link>
           </p>
-
         </div>
-
       </div>
-
     </div>
   );
 }

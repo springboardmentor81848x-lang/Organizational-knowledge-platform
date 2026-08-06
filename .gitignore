@@ -1,5 +1,21 @@
+# Maven
+target/
+*.class
+
+# Backend build
+backend/**/target/
+
+# Node.js
 node_modules/
-.vscode/
 frontend/node_modules/
 frontend/dist/
-backend/**/target/
+
+# IDE
+.vscode/
+.idea/
+
+# Spring Boot
+application.properties
+
+# Environment files
+.env
