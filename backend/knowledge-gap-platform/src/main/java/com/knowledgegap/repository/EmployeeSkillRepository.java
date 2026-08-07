@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Long> {
     List<EmployeeSkill> findByEmployee(Employee employee);
+    List<EmployeeSkill> findByEmployeeEmployeeId(String employeeId);
 
 }
