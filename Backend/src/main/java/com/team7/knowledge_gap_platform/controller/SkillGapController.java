@@ -18,7 +18,6 @@ import com.team7.knowledge_gap_platform.service.SkillGapService;
 public class SkillGapController {
 
     private final SkillGapService skillGapService;
-
     public SkillGapController(SkillGapService skillGapService) {
         this.skillGapService = skillGapService;
     }
