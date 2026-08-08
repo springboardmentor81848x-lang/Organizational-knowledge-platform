@@ -67,14 +67,29 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // Public APIs
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/login"
                         ).permitAll()
 
-                        .requestMatchers("/knowledge-gaps/**")
-                        .hasAnyRole("MANAGER", "HR", "ADMIN")
+                        // Manager / HR / Admin APIs
+                        .requestMatchers(
+                                "/knowledge-gaps/**",
+                                "/skill-gaps/**",
+                                "/heatmap/**",
+                                "/course-recommendations/**",
+                                "/ai-recommendations/**",
+                                "/learning-paths/**",
+                                "/external-courses/**"
+                        )
+                        .hasAnyRole(
+                                "MANAGER",
+                                "HR",
+                                "ADMIN"
+                        )
 
+                        // Other APIs require login
                         .anyRequest().authenticated()
                 )
 
