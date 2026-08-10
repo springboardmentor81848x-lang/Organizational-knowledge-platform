@@ -17,4 +17,6 @@ public interface EmployeeSkillRepository
     Optional<EmployeeSkill> findByEmployeeAndSkill(
             Employee employee,
             Skill skill);
+    
+    
 }
