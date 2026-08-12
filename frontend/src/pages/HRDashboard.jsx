@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -7,12 +7,18 @@ import {
   UserCheck,
   AlertCircle,
   TrendingUp,
+  Search,
+  RefreshCw,
+  Brain,
+  Target,
+  AlertTriangle,
+  CheckCircle,
+  BarChart3,
 } from "lucide-react";
 
 import api from "../services/api";
 
 function HRDashboard() {
-
   const [dashboard, setDashboard] = useState({
     totalEmployees: 0,
     employeesWithGaps: 0,
@@ -39,7 +45,8 @@ function HRDashboard() {
   });
 
   const [loading, setLoading] = useState(true);
-
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   // =========================================================
   // Load HR Dashboard Data
@@ -49,436 +56,471 @@ function HRDashboard() {
     loadDashboard();
   }, []);
 
-
   const loadDashboard = async () => {
-
     try {
+      setLoading(true);
 
-      const response =
-        await api.get("/hr/dashboard/summary");
+      const response = await api.get("/hr/dashboard/summary");
 
-      console.log(
-        "HR Dashboard Data:",
-        response.data
-      );
+      console.log("HR Dashboard Data:", response.data);
 
       setDashboard(response.data);
-
     } catch (error) {
-
-      console.error(
-        "Error loading HR dashboard:",
-        error
-      );
-
+      console.error("Error loading HR dashboard:", error);
     } finally {
-
       setLoading(false);
-
     }
   };
 
+  // =========================================================
+  // Filter Employees
+  // =========================================================
+
+  const filteredEmployees = useMemo(() => {
+    return dashboard.employees.filter((employee) => {
+      const employeeName =
+        employee.employee?.toLowerCase() || "";
+
+      const designation =
+        employee.designation?.toLowerCase() || "";
+
+      const searchText = search.toLowerCase();
+
+      const matchesSearch =
+        employeeName.includes(searchText) ||
+        designation.includes(searchText);
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        employee.gapStatus === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [dashboard.employees, search, statusFilter]);
 
   // =========================================================
-  // Loading
+  // Loading Screen
   // =========================================================
 
   if (loading) {
-
     return (
-      <div className="flex bg-gray-100 min-h-screen">
-
+      <div className="flex min-h-screen bg-slate-50">
         <Sidebar role="HR" />
 
         <div className="flex-1">
-
           <Navbar title="HR Dashboard" />
 
-          <div className="p-8">
+          <div className="flex items-center justify-center min-h-[80vh]">
+            <div className="text-center">
+              <RefreshCw
+                size={32}
+                className="animate-spin mx-auto mb-4 text-indigo-600"
+              />
 
-            <p className="text-gray-500">
-              Loading HR dashboard...
-            </p>
-
+              <p className="text-gray-500">
+                Loading HR dashboard...
+              </p>
+            </div>
           </div>
-
         </div>
-
       </div>
     );
   }
 
-
   // =========================================================
-  // Dashboard
+  // Main Dashboard
   // =========================================================
 
   return (
-
-    <div className="flex bg-gray-100 min-h-screen">
-
+    <div className="flex min-h-screen bg-slate-50">
       <Sidebar role="HR" />
 
-      <div className="flex-1">
-
+      <div className="flex-1 min-w-0">
         <Navbar title="HR Dashboard" />
 
-        <div className="p-8">
-
+        <main className="p-5 md:p-8">
 
           {/* =================================================
-              Header
+              HEADER
           ================================================= */}
 
-          <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
 
-            <h1 className="text-3xl font-bold text-gray-800">
-              HR Dashboard
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800">
+                HR Dashboard
+              </h1>
 
-            <p className="text-gray-500 mt-2">
-              Organization Skill & Knowledge Gap Overview
-            </p>
+              <p className="text-slate-500 mt-2">
+                Monitor employee performance, skills and
+                organizational knowledge gaps.
+              </p>
+            </div>
+
+            <button
+              onClick={loadDashboard}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            >
+              <RefreshCw size={18} />
+              Refresh Data
+            </button>
 
           </div>
 
-
           {/* =================================================
-              Summary Cards
+              SUMMARY CARDS
           ================================================= */}
 
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
 
+            <SummaryCard
+              title="Total Employees"
+              value={dashboard.totalEmployees}
+              description="Employees in organization"
+              icon={<Users size={24} />}
+              iconClass="bg-indigo-100 text-indigo-600"
+            />
 
-            {/* Total Employees */}
+            <SummaryCard
+              title="Employees With Gaps"
+              value={dashboard.employeesWithGaps}
+              description="Employees requiring attention"
+              icon={<UserCheck size={24} />}
+              iconClass="bg-orange-100 text-orange-600"
+            />
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <SummaryCard
+              title="Average Knowledge Gap"
+              value={dashboard.averageGap}
+              description="Average organization gap"
+              icon={<TrendingUp size={24} />}
+              iconClass="bg-blue-100 text-blue-600"
+            />
 
-              <div className="flex justify-between items-center">
-
-                <div>
-
-                  <p className="text-gray-500 text-sm">
-                    Total Employees
-                  </p>
-
-                  <h2 className="text-3xl font-bold mt-3">
-                    {dashboard.totalEmployees}
-                  </h2>
-
-                </div>
-
-                <Users
-                  size={42}
-                  className="text-indigo-600"
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* Employees With Gaps */}
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-
-                  <p className="text-gray-500 text-sm">
-                    Employees With Gaps
-                  </p>
-
-                  <h2 className="text-3xl font-bold mt-3">
-                    {dashboard.employeesWithGaps}
-                  </h2>
-
-                </div>
-
-                <UserCheck
-                  size={42}
-                  className="text-orange-500"
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* Average Gap */}
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-
-                  <p className="text-gray-500 text-sm">
-                    Avg Knowledge Gap
-                  </p>
-
-                  <h2 className="text-3xl font-bold mt-3">
-                    {dashboard.averageGap}
-                  </h2>
-
-                </div>
-
-                <TrendingUp
-                  size={42}
-                  className="text-blue-600"
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* Critical Employees */}
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-
-            <div className="flex justify-between items-center">
-
-              <div>
-
-                <p className="text-gray-500 text-sm">
-                  Critical Employees
-                </p>
-
-                <h2 className="text-3xl font-bold mt-3">
-                  {dashboard.performance.critical}
-                </h2>
-
-              </div>
-
-              <AlertCircle
-                size={42}
-                className="text-red-500"
-              />
-
-            </div>
+            <SummaryCard
+              title="Critical Employees"
+              value={dashboard.performance.critical}
+              description="Immediate attention required"
+              icon={<AlertCircle size={24} />}
+              iconClass="bg-red-100 text-red-600"
+            />
 
           </div>
-          </div>
+
           {/* =================================================
-              Employee Performance + Gap Distribution
+              HR INSIGHTS
           ================================================= */}
 
-          <div className="grid lg:grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
 
+            <InsightCard
+              icon={<Brain size={22} />}
+              title="Knowledge Gaps"
+              value={dashboard.totalKnowledgeGaps}
+              description="Total identified knowledge gaps"
+            />
+
+            <InsightCard
+              icon={<Target size={22} />}
+              title="Employees Requiring Training"
+              value={dashboard.employeesWithGaps}
+              description="Employees with identified gaps"
+            />
+
+            <InsightCard
+              icon={<BarChart3 size={22} />}
+              title="Skills Requiring Attention"
+              value={dashboard.topSkillGaps.length}
+              description="Skills appearing in gap analysis"
+            />
+
+          </div>
+
+          {/* =================================================
+              PERFORMANCE + GAP DISTRIBUTION
+          ================================================= */}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
 
             {/* Employee Performance */}
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
 
-              <h2 className="text-xl font-bold mb-6">
-                Employee Performance
-              </h2>
+              <div className="flex items-center gap-3 mb-7">
 
+                <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg">
+                  <BarChart3 size={21} />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Employee Performance
+                  </h2>
+
+                  <p className="text-sm text-slate-500">
+                    Organization performance distribution
+                  </p>
+                </div>
+
+              </div>
 
               <PerformanceBar
                 label="Excellent"
-                value={
-                  dashboard.performance.excellent
-                }
-                total={
-                  dashboard.totalEmployees
-                }
+                value={dashboard.performance.excellent}
+                total={dashboard.totalEmployees}
+                color="bg-green-500"
               />
-
 
               <PerformanceBar
                 label="Good"
-                value={
-                  dashboard.performance.good
-                }
-                total={
-                  dashboard.totalEmployees
-                }
+                value={dashboard.performance.good}
+                total={dashboard.totalEmployees}
+                color="bg-blue-500"
               />
-
 
               <PerformanceBar
                 label="Needs Attention"
-                value={
-                  dashboard.performance.needsAttention
-                }
-                total={
-                  dashboard.totalEmployees
-                }
+                value={dashboard.performance.needsAttention}
+                total={dashboard.totalEmployees}
+                color="bg-orange-500"
               />
-
 
               <PerformanceBar
                 label="Critical"
-                value={
-                  dashboard.performance.critical
-                }
-                total={
-                  dashboard.totalEmployees
-                }
+                value={dashboard.performance.critical}
+                total={dashboard.totalEmployees}
+                color="bg-red-500"
               />
 
             </div>
-
 
             {/* Knowledge Gap Distribution */}
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
 
-              <h2 className="text-xl font-bold mb-6">
-                Knowledge Gap Distribution
-              </h2>
+              <div className="flex items-center gap-3 mb-7">
 
+                <div className="p-2.5 bg-orange-100 text-orange-600 rounded-lg">
+                  <AlertTriangle size={21} />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Knowledge Gap Distribution
+                  </h2>
+
+                  <p className="text-sm text-slate-500">
+                    Severity of identified knowledge gaps
+                  </p>
+                </div>
+
+              </div>
 
               <GapBar
                 label="Low"
-                value={
-                  dashboard.gapDistribution.low
-                }
-                total={
-                  dashboard.totalKnowledgeGaps
-                }
+                value={dashboard.gapDistribution.low}
+                total={dashboard.totalKnowledgeGaps}
+                color="bg-green-500"
               />
-
 
               <GapBar
                 label="Medium"
-                value={
-                  dashboard.gapDistribution.medium
-                }
-                total={
-                  dashboard.totalKnowledgeGaps
-                }
+                value={dashboard.gapDistribution.medium}
+                total={dashboard.totalKnowledgeGaps}
+                color="bg-yellow-500"
               />
-
 
               <GapBar
                 label="High"
-                value={
-                  dashboard.gapDistribution.high
-                }
-                total={
-                  dashboard.totalKnowledgeGaps
-                }
+                value={dashboard.gapDistribution.high}
+                total={dashboard.totalKnowledgeGaps}
+                color="bg-orange-500"
               />
-
 
               <GapBar
                 label="Critical"
-                value={
-                  dashboard.gapDistribution.critical
-                }
-                total={
-                  dashboard.totalKnowledgeGaps
-                }
+                value={dashboard.gapDistribution.critical}
+                total={dashboard.totalKnowledgeGaps}
+                color="bg-red-500"
               />
 
             </div>
 
           </div>
 
-
           {/* =================================================
-              Top Skills With Knowledge Gaps
+              TOP SKILL GAPS
           ================================================= */}
 
-          <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mt-8 p-6">
 
-            <h2 className="text-xl font-bold mb-6">
-              Top Skills With Knowledge Gaps
-            </h2>
+            <div className="flex items-center gap-3 mb-6">
 
+              <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg">
+                <Brain size={21} />
+              </div>
 
-            <div className="overflow-x-auto">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Top Skills With Knowledge Gaps
+                </h2>
 
-              <table className="w-full">
-
-                <thead>
-
-                  <tr className="border-b">
-
-                    <th className="text-left py-3">
-                      Skill
-                    </th>
-
-                    <th className="text-left py-3">
-                      Employees Affected
-                    </th>
-
-                    <th className="text-left py-3">
-                      Average Gap
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  {dashboard.topSkillGaps.length > 0 ? (
-
-                    dashboard.topSkillGaps.map(
-                      (item, index) => (
-
-                        <tr
-                          key={index}
-                          className="border-b"
-                        >
-
-                          <td className="py-4 font-medium">
-                            {item.skill}
-                          </td>
-
-                          <td className="py-4">
-                            {item.employeesAffected}
-                          </td>
-
-                          <td className="py-4 font-semibold">
-                            {item.averageGap}
-                          </td>
-
-                        </tr>
-
-                      )
-                    )
-
-                  ) : (
-
-                    <tr>
-
-                      <td
-                        colSpan="3"
-                        className="text-center py-6 text-gray-500"
-                      >
-                        No knowledge gaps found.
-                      </td>
-
-                    </tr>
-
-                  )}
-
-                </tbody>
-
-              </table>
+                <p className="text-sm text-slate-500">
+                  Skills that require organizational training
+                </p>
+              </div>
 
             </div>
 
+            {dashboard.topSkillGaps.length > 0 ? (
+
+              <div className="overflow-x-auto">
+
+                <table className="w-full">
+
+                  <thead>
+                    <tr className="border-b border-slate-200">
+
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
+                        Skill
+                      </th>
+
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
+                        Employees Affected
+                      </th>
+
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
+                        Average Gap
+                      </th>
+
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {dashboard.topSkillGaps.map(
+                      (item, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-slate-100 hover:bg-slate-50 transition"
+                        >
+
+                          <td className="py-4 px-3">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
+                                {index + 1}
+                              </div>
+
+                              <span className="font-medium text-slate-800">
+                                {item.skill}
+                              </span>
+
+                            </div>
+
+                          </td>
+
+                          <td className="py-4 px-3 text-slate-600">
+                            {item.employeesAffected}
+                          </td>
+
+                          <td className="py-4 px-3">
+
+                            <span className="font-semibold text-orange-600">
+                              {item.averageGap}
+                            </span>
+
+                          </td>
+
+                        </tr>
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            ) : (
+
+              <div className="text-center py-10 text-slate-500">
+                No knowledge gaps found.
+              </div>
+
+            )}
+
           </div>
 
-
           {/* =================================================
-              Employee Skill Overview
+              EMPLOYEE SKILL OVERVIEW
           ================================================= */}
 
-          <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mt-8 p-6">
 
-            <h2 className="text-xl font-bold mb-6">
-              Employee Skill Overview
-            </h2>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
 
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Employee Skill Overview
+                </h2>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  Review employee skill levels and gap status
+                </p>
+              </div>
+
+              {/* Search */}
+
+              <div className="relative w-full lg:w-72">
+
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Search employee..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+
+              </div>
+
+            </div>
+
+            {/* =================================================
+                STATUS FILTERS
+            ================================================= */}
+
+            <div className="flex flex-wrap gap-2 mb-6">
+
+              {["All", "Low", "Medium", "High", "Critical"].map(
+                (status) => (
+
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={
+                      statusFilter === status
+                        ? "px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white"
+                        : "px-4 py-2 rounded-lg text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }
+                  >
+                    {status}
+                  </button>
+
+                )
+              )}
+
+            </div>
+
+            {/* =================================================
+                EMPLOYEE TABLE
+            ================================================= */}
 
             <div className="overflow-x-auto">
 
@@ -486,21 +528,21 @@ function HRDashboard() {
 
                 <thead>
 
-                  <tr className="border-b">
+                  <tr className="border-b border-slate-200">
 
-                    <th className="text-left py-3">
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
                       Employee
                     </th>
 
-                    <th className="text-left py-3">
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
                       Designation
                     </th>
 
-                    <th className="text-left py-3">
-                      Avg Skill
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
+                      Average Skill
                     </th>
 
-                    <th className="text-left py-3">
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-slate-500">
                       Gap Status
                     </th>
 
@@ -508,12 +550,11 @@ function HRDashboard() {
 
                 </thead>
 
-
                 <tbody>
 
-                  {dashboard.employees.length > 0 ? (
+                  {filteredEmployees.length > 0 ? (
 
-                    dashboard.employees.map(
+                    filteredEmployees.map(
                       (employee, index) => (
 
                         <tr
@@ -521,38 +562,51 @@ function HRDashboard() {
                             employee.employeeId ||
                             index
                           }
-                          className="border-b hover:bg-gray-50"
+                          className="border-b border-slate-100 hover:bg-slate-50 transition"
                         >
-
 
                           {/* Employee */}
 
-                          <td className="py-4 font-medium">
-                            {employee.employee}
-                          </td>
+                          <td className="py-4 px-3">
 
+                            <div className="flex items-center gap-3">
+
+                              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
+                                {employee.employee
+                                  ?.charAt(0)
+                                  ?.toUpperCase() || "E"}
+                              </div>
+
+                              <span className="font-medium text-slate-800">
+                                {employee.employee}
+                              </span>
+
+                            </div>
+
+                          </td>
 
                           {/* Designation */}
 
-                          <td className="py-4">
+                          <td className="py-4 px-3 text-slate-600">
                             {employee.designation ||
                               "Not Assigned"}
                           </td>
 
-
                           {/* Average Skill */}
 
-                          <td className="py-4">
+                          <td className="py-4 px-3">
 
                             <div className="flex items-center gap-3">
 
-                              <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
+                              <div className="w-28 bg-slate-200 rounded-full h-2.5 overflow-hidden">
 
                                 <div
-                                  className="bg-indigo-600 h-2 rounded-full"
+                                  className="bg-indigo-600 h-2.5 rounded-full transition-all"
                                   style={{
                                     width: `${Math.min(
-                                      employee.averageSkill,
+                                      Number(
+                                        employee.averageSkill
+                                      ) || 0,
                                       100
                                     )}%`,
                                   }}
@@ -560,20 +614,17 @@ function HRDashboard() {
 
                               </div>
 
-                              <span className="text-sm font-medium">
-                                {
-                                  employee.averageSkill
-                                }%
+                              <span className="text-sm font-medium text-slate-700">
+                                {employee.averageSkill || 0}%
                               </span>
 
                             </div>
 
                           </td>
 
-
                           {/* Gap Status */}
 
-                          <td className="py-4">
+                          <td className="py-4 px-3">
 
                             <GapStatus
                               status={
@@ -594,9 +645,9 @@ function HRDashboard() {
 
                       <td
                         colSpan="4"
-                        className="text-center py-6 text-gray-500"
+                        className="text-center py-10 text-slate-500"
                       >
-                        No employee data available.
+                        No employees found.
                       </td>
 
                     </tr>
@@ -611,57 +662,143 @@ function HRDashboard() {
 
           </div>
 
+          {/* =================================================
+              FOOTER
+          ================================================= */}
 
+          <div className="mt-6 text-sm text-slate-400 text-center">
+            Showing {filteredEmployees.length} of{" "}
+            {dashboard.employees.length} employees
+          </div>
+
+        </main>
+      </div>
+    </div>
+  );
+}
+
+
+// =============================================================
+// SUMMARY CARD
+// =============================================================
+
+function SummaryCard({
+  title,
+  value,
+  description,
+  icon,
+  iconClass,
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 hover:shadow-md transition">
+
+      <div className="flex items-start justify-between">
+
+        <div>
+
+          <p className="text-sm font-medium text-slate-500">
+            {title}
+          </p>
+
+          <h2 className="text-3xl font-bold text-slate-800 mt-3">
+            {value}
+          </h2>
+
+          <p className="text-xs text-slate-400 mt-2">
+            {description}
+          </p>
+
+        </div>
+
+        <div
+          className={`p-3 rounded-xl ${iconClass}`}
+        >
+          {icon}
         </div>
 
       </div>
 
     </div>
-
   );
 }
 
 
-/* =========================================================
-   Performance Bar
-========================================================= */
+// =============================================================
+// INSIGHT CARD
+// =============================================================
+
+function InsightCard({
+  icon,
+  title,
+  value,
+  description,
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+
+      <div className="flex items-center gap-3">
+
+        <div className="p-2.5 bg-slate-100 text-slate-600 rounded-lg">
+          {icon}
+        </div>
+
+        <div>
+
+          <p className="text-sm text-slate-500">
+            {title}
+          </p>
+
+          <h3 className="text-2xl font-bold text-slate-800">
+            {value}
+          </h3>
+
+        </div>
+
+      </div>
+
+      <p className="text-xs text-slate-400 mt-3">
+        {description}
+      </p>
+
+    </div>
+  );
+}
+
+
+// =============================================================
+// PERFORMANCE BAR
+// =============================================================
 
 function PerformanceBar({
   label,
   value,
   total,
+  color,
 }) {
-
   const percentage =
     total > 0
-      ? Math.min(
-          (value / total) * 100,
-          100
-        )
+      ? Math.min((value / total) * 100, 100)
       : 0;
 
-
   return (
-
-    <div className="mb-5">
+    <div className="mb-6">
 
       <div className="flex justify-between mb-2">
 
-        <span className="font-medium">
+        <span className="font-medium text-slate-700">
           {label}
         </span>
 
-        <span className="text-gray-500">
-          {value}
+        <span className="text-sm text-slate-500">
+          {value} ({percentage.toFixed(0)}%)
         </span>
 
       </div>
 
-
-      <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+      <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
 
         <div
-          className="bg-indigo-600 h-3 rounded-full"
+          className={`${color} h-3 rounded-full transition-all`}
           style={{
             width: `${percentage}%`,
           }}
@@ -670,63 +807,44 @@ function PerformanceBar({
       </div>
 
     </div>
-
   );
 }
 
 
-/* =========================================================
-   Knowledge Gap Bar
-========================================================= */
+// =============================================================
+// KNOWLEDGE GAP BAR
+// =============================================================
 
 function GapBar({
   label,
   value,
   total,
+  color,
 }) {
-
-  /*
-   * IMPORTANT:
-   * Use totalKnowledgeGaps as denominator.
-   *
-   * Example:
-   * Low = 2
-   * Medium = 4
-   * Total = 6
-   *
-   * Medium = 4 / 6 = 66.7%
-   */
-
   const percentage =
     total > 0
-      ? Math.min(
-          (value / total) * 100,
-          100
-        )
+      ? Math.min((value / total) * 100, 100)
       : 0;
 
-
   return (
-
-    <div className="mb-5">
+    <div className="mb-6">
 
       <div className="flex justify-between mb-2">
 
-        <span className="font-medium">
+        <span className="font-medium text-slate-700">
           {label}
         </span>
 
-        <span className="text-gray-500">
-          {value}
+        <span className="text-sm text-slate-500">
+          {value} ({percentage.toFixed(0)}%)
         </span>
 
       </div>
 
-
-      <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+      <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
 
         <div
-          className="bg-orange-500 h-3 rounded-full"
+          className={`${color} h-3 rounded-full transition-all`}
           style={{
             width: `${percentage}%`,
           }}
@@ -735,52 +853,40 @@ function GapBar({
       </div>
 
     </div>
-
   );
 }
 
 
-/* =========================================================
-   Gap Status
-========================================================= */
+// =============================================================
+// GAP STATUS
+// =============================================================
 
 function GapStatus({ status }) {
-
   let className =
-    "px-3 py-1 rounded-full text-sm font-medium";
+    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold";
 
+  let icon = null;
 
   if (status === "Low") {
-
-    className +=
-      " bg-green-100 text-green-700";
-
+    className += " bg-green-100 text-green-700";
+    icon = <CheckCircle size={13} />;
   } else if (status === "Medium") {
-
-    className +=
-      " bg-yellow-100 text-yellow-700";
-
+    className += " bg-yellow-100 text-yellow-700";
+    icon = <AlertTriangle size={13} />;
   } else if (status === "High") {
-
-    className +=
-      " bg-orange-100 text-orange-700";
-
+    className += " bg-orange-100 text-orange-700";
+    icon = <AlertTriangle size={13} />;
   } else {
-
-    className +=
-      " bg-red-100 text-red-700";
-
+    className += " bg-red-100 text-red-700";
+    icon = <AlertCircle size={13} />;
   }
 
-
   return (
-
     <span className={className}>
-      {status}
+      {icon}
+      {status || "Unknown"}
     </span>
-
   );
-
 }
 
 
