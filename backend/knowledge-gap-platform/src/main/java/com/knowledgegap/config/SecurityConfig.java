@@ -93,6 +93,14 @@ public class SecurityConfig {
                         // Manager only
                         .requestMatchers("/api/manager/**").hasRole("MANAGER")
 
+                        // Department Head only
+                        .requestMatchers("/api/department-head/**")
+                        .hasRole("DEPARTMENT_HEAD")
+
+                        // System Administrator only
+                        .requestMatchers("/api/system-admin/**")
+                        .hasRole("SYSTEM_ADMINISTRATOR")
+
                         // Employee only
                         .requestMatchers("/api/employee/**").hasRole("EMPLOYEE")
 

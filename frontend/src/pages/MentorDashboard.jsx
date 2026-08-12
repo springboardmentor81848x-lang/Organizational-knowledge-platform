@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
-function AdminDashboard() {
+function MentorDashboard() {
   const metrics = {
     totalEmployeeSkillScore: 78, // average score
     activeLearners: 124,
@@ -14,7 +14,7 @@ function AdminDashboard() {
       <Sidebar role={(localStorage.getItem("role") || "ADMIN")} />
 
       <div className="flex-1">
-        <Navbar title="Admin Dashboard" />
+        <Navbar title="Mentor Dashboard" />
 
         <div className="p-8">
           <div className="mb-8">
@@ -70,4 +70,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+export default MentorDashboard;

@@ -1,157 +1,384 @@
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { useState } from "react";
-
+import api from "../services/api";
 function Skills() {
-  const [skills, setSkills] = useState([
-    {
-      name: "Java",
-      category: "Development",
-      description: "Backend programming and object-oriented design.",
-      level: 85,
-    },
-    {
-      name: "React",
-      category: "Frontend",
-      description: "Component-driven UI development and state management.",
-      level: 70,
-    },
-    {
-      name: "SQL",
-      category: "Data",
-      description: "Database querying, optimization, and reporting.",
-      level: 80,
-    },
-  ]);
 
-  const [newSkillName, setNewSkillName] = useState("");
-  const [newSkillLevel, setNewSkillLevel] = useState(50);
-  const [newSkillCategory, setNewSkillCategory] = useState("Development");
+const employeeId = localStorage.getItem("employeeId");
 
-  const addSkill = (e) => {
-    e.preventDefault();
-    if (!newSkillName.trim()) return;
+const [designation, setDesignation] = useState("");
 
-    setSkills([
-      ...skills,
-      {
-        name: newSkillName.trim(),
-        category: newSkillCategory,
-        description: "New skill added to inventory.",
-        level: newSkillLevel,
-      },
-    ]);
-    setNewSkillName("");
-    setNewSkillLevel(50);
-    setNewSkillCategory("Development");
-  };
+const [skills, setSkills] = useState([]);
 
-  const updateSkillLevel = (index, level) => {
-    setSkills(skills.map((skill, idx) => (idx === index ? { ...skill, level } : skill)));
-  };
+const [allSkills, setAllSkills] = useState([]);
 
-  return (
-    <div className="flex bg-gray-100 min-h-screen">
-      <Sidebar role={(localStorage.getItem("role") || "EMPLOYEE")} />
+const [selectedSkill, setSelectedSkill] = useState("");
 
-      <div className="flex-1">
-        <Navbar title="Skill Inventory" />
+const [newSkillLevel, setNewSkillLevel] = useState(3);
 
-        <div className="p-8">
-          <h2 className="text-2xl font-bold mb-4">Skill Inventory</h2>
-          <p className="text-gray-500 mb-6">
-            Track your current proficiency levels and add new skills to your inventory.
-          </p>
 
-          <div className="grid xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 bg-white rounded-xl shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Current Skills</h3>
-              <div className="space-y-6">
-                {skills.map((skill, index) => (
-                  <div key={`${skill.name}-${index}`} className="border rounded-xl p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <div>
-                        <h4 className="text-md font-semibold">{skill.name}</h4>
-                        <p className="text-sm text-gray-500">{skill.category}</p>
-                      </div>
-                      <span className="text-sm font-semibold text-indigo-600">{skill.level}%</span>
-                    </div>
+const levelNames = {
+  1: "Beginner",
+  2: "Intermediate",
+  3: "Competent",
+  4: "Advanced",
+  5: "Expert",
+};
 
-                    <p className="text-sm text-gray-600 mb-3">{skill.description}</p>
 
-                    <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-                      <div
-                        className="bg-indigo-600 h-3 rounded-full"
-                        style={{ width: `${skill.level}%` }}
-                      />
-                    </div>
+useEffect(() => {
 
-                    <div className="flex items-center gap-3">
-                      <label className="text-sm text-gray-600">Update proficiency:</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={skill.level}
-                        onChange={(e) => updateSkillLevel(index, Number(e.target.value))}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+  if(!employeeId){
+    alert("Employee information not found. Please login again.");
+    return;
+  }
 
-            <div className="bg-white rounded-xl shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Add New Skill</h3>
-              <form onSubmit={addSkill} className="space-y-4">
-                <div>
-                  <label className="block mb-2 text-sm font-medium">Skill Name</label>
-                  <input
-                    value={newSkillName}
-                    onChange={(e) => setNewSkillName(e.target.value)}
-                    placeholder="e.g. Kubernetes"
-                    className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  />
-                </div>
+  loadEmployeeSkills();
+  loadAllSkills();
 
-                <div>
-                  <label className="block mb-2 text-sm font-medium">Category</label>
-                  <select
-                    value={newSkillCategory}
-                    onChange={(e) => setNewSkillCategory(e.target.value)}
-                    className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  >
-                    <option>Development</option>
-                    <option>Frontend</option>
-                    <option>Data</option>
-                    <option>Platform</option>
-                  </select>
-                </div>
+  setDesignation(localStorage.getItem("designation"));
 
-                <div>
-                  <label className="block mb-2 text-sm font-medium">Proficiency Level</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={newSkillLevel}
-                    onChange={(e) => setNewSkillLevel(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="mt-2 text-sm text-gray-600">Current level: {newSkillLevel}%</div>
-                </div>
+}, []);
 
-                <button className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
-                  Add Skill to Inventory
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+
+const loadEmployeeSkills = async () => {
+
+  try {
+
+    const response = await api.get(
+      `/employee-skills/employee/${employeeId}`
+    );
+
+    setSkills(response.data);
+
+  } catch (error) {
+
+    console.error(
+      "Error loading employee skills",
+      error
+    );
+
+  }
+
+};
+
+
+
+const loadAllSkills = async () => {
+
+  try {
+
+    const response = await api.get("/skills");
+
+    setAllSkills(response.data);
+
+  } catch (error) {
+
+    console.error(
+      "Error loading skills",
+      error
+    );
+
+  }
+
+};
+
+
+
+const addSkill = async (e) => {
+
+  e.preventDefault();
+
+
+  if (!selectedSkill) {
+
+    alert("Please select a skill");
+    return;
+
+  }
+
+
+  const alreadyExists = skills.some(
+    (s) => s.skill.id === Number(selectedSkill)
   );
-}
 
+
+  if(alreadyExists){
+
+    alert("Skill already added");
+    return;
+
+  }
+
+
+
+  try {
+
+    await api.post("/employee-skills/add", {
+
+      employeeId: employeeId,
+      skillId: Number(selectedSkill),
+      currentLevel: newSkillLevel,
+
+    });
+
+
+
+    alert("Skill added successfully");
+
+
+    setSelectedSkill("");
+
+    setNewSkillLevel(3);
+
+
+    loadEmployeeSkills();
+
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Unable to add skill");
+
+  }
+
+};
+
+
+
+
+const updateSkillLevel = async (
+  employeeSkillId,
+  level
+) => {
+
+  try {
+
+
+    await api.put(
+      `/employee-skills/${employeeSkillId}`,
+      {
+        currentLevel: level
+      }
+    );
+
+
+    loadEmployeeSkills();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Unable to update skill");
+
+  }
+
+};
+return (
+  <div className="flex min-h-screen bg-gray-100">
+    <Sidebar role={localStorage.getItem("role") || "EMPLOYEE"} />
+
+    <div className="flex-1">
+      <Navbar title="Skill Inventory" />
+
+      <div className="p-8">
+
+        <h2 className="text-2xl font-bold">Skill Inventory</h2>
+
+        <p className="text-gray-500 mb-6">
+          Manage your current skills and proficiency levels.
+        </p>
+
+        <div className="mb-6 bg-white rounded-xl shadow p-4">
+          <h3 className="font-semibold text-lg">Designation</h3>
+          <p className="text-indigo-600 font-semibold">
+            {designation}
+          </p>
+        </div>
+
+        <div className="grid xl:grid-cols-3 gap-6">
+
+          {/* Current Skills */}
+
+<div className="xl:col-span-2 bg-white rounded-xl shadow p-6">
+
+  <h3 className="text-lg font-semibold mb-4">
+    Current Skills
+  </h3>
+
+
+  <div className="space-y-5">
+
+    {skills.length === 0 && (
+      <p className="text-gray-500">
+        No skills added yet.
+      </p>
+    )}
+
+
+    {skills.map((skill) => (
+
+      <div
+        key={skill.id}
+        className="border rounded-xl p-4"
+      >
+
+        <div className="flex justify-between">
+
+          <div>
+
+            <h4 className="font-semibold">
+              {skill.skill?.skillName}
+            </h4>
+
+            <p className="text-sm text-gray-500">
+              {skill.skill?.category}
+            </p>
+
+          </div>
+
+
+          <span className="text-indigo-600 font-semibold">
+            {levelNames[skill.currentLevel]}
+          </span>
+
+
+        </div>
+
+
+        <div className="mt-4">
+
+          <label className="text-sm text-gray-600">
+            Update Level
+          </label>
+
+
+          <select
+            value={skill.currentLevel}
+            onChange={(e) =>
+              updateSkillLevel(
+                skill.id,
+                Number(e.target.value)
+              )
+            }
+            className="mt-2 w-full border rounded-lg px-3 py-2"
+          >
+
+            <option value={1}>Beginner</option>
+            <option value={2}>Intermediate</option>
+            <option value={3}>Competent</option>
+            <option value={4}>Advanced</option>
+            <option value={5}>Expert</option>
+
+          </select>
+
+
+        </div>
+
+
+      </div>
+
+    ))}
+
+  </div>
+
+</div>
+
+          {/* Add Skill */}
+
+          <div className="bg-white rounded-xl shadow p-6">
+
+            <h3 className="text-lg font-semibold mb-4">
+              Add New Skill
+            </h3>
+
+            <form onSubmit={addSkill} className="space-y-4">
+
+              <div>
+
+                <label className="block mb-2">
+                  Skill
+                </label>
+
+                <select
+                  value={selectedSkill}
+                  onChange={(e) =>
+                    setSelectedSkill(e.target.value)
+                  }
+                  className="w-full border rounded-lg px-3 py-3"
+                >
+
+                  <option value="">
+                    Select Skill
+                  </option>
+
+                  {allSkills
+                .filter(
+                (skill) =>
+                  !skills.some(
+                    (s) => s.skill?.id === skill.id
+                  )
+              )
+              .map((skill) => (
+
+                <option
+                  key={skill.id}
+                  value={skill.id}
+                >
+                  {skill.skillName}
+                </option>
+
+              ))}
+
+                </select>
+
+              </div>
+
+              <div>
+
+                <label className="block mb-2">
+                  Proficiency Level
+                </label>
+
+                <select
+                  value={newSkillLevel}
+                  onChange={(e) =>
+                    setNewSkillLevel(Number(e.target.value))
+                  }
+                  className="w-full border rounded-lg px-3 py-3"
+                >
+
+                  <option value={1}>Beginner</option>
+                  <option value={2}>Intermediate</option>
+                  <option value={3}>Competent</option>
+                  <option value={4}>Advanced</option>
+                  <option value={5}>Expert</option>
+
+                </select>
+
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 text-white rounded-lg py-3 hover:bg-indigo-700"
+              >
+                Add Skill
+              </button>
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+);}
 export default Skills;

@@ -9,6 +9,22 @@ function CompetencyFramework() {
   const [competencies, setCompetencies] = useState([]);
   const [role, setRole] = useState("Java Developer");
   const [requiredLevel, setRequiredLevel] = useState(70);
+  const getLevelName = (level) => {
+  switch(level) {
+    case 1:
+      return "Beginner";
+    case 2:
+      return "Basic";
+    case 3:
+      return "Intermediate";
+    case 4:
+      return "Advanced";
+    case 5:
+      return "Expert";
+    default:
+      return "Unknown";
+  }
+};
   const fetchCompetencies = async (designation) => {
   try {
     const response = await api.get(
@@ -16,12 +32,12 @@ function CompetencyFramework() {
     );
 
     setCompetencies(
-      response.data.map((item) => ({
-        id: item.id,
-        skillName: item.skill.skillName,
-        requiredLevel: item.requiredLevel * 20,
-      }))
-    );
+  response.data.map((item) => ({
+    id: item.id,
+    skillName: item.skill.skillName,
+    requiredLevel: item.requiredLevel,
+  }))
+);
   } catch (error) {
     console.error(error);
     setCompetencies([]);
@@ -118,7 +134,7 @@ function CompetencyFramework() {
                       <span className="text-indigo-600 font-semibold">{competency.requiredLevel}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div className="bg-indigo-600 h-3 rounded-full" style={{width: `${competency.requiredLevel}%`}} />
+                      <div className="bg-indigo-600 h-3 rounded-full" style={{width: `${competency.requiredLevel}*20%`}} />
                     </div>
                   </div>
                 ))}
@@ -154,7 +170,7 @@ function CompetencyFramework() {
                     onChange={(e) => setRequiredLevel(Number(e.target.value) * 20)}
                     className="w-full"
                   />
-                <div className="mt-2 text-sm text-gray-600">{requiredLevel}%</div>
+                <div className="mt-2 text-sm text-gray-600">{getLevelName(Math.round(requiredLevel / 20))}%</div>
                 </div>
                 <button className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition">
                   Add Required Skill

@@ -10,6 +10,14 @@ import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.Role;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.RoleRepository;
+import com.knowledgegap.entity.Competency;
+import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.Skill;
+import com.knowledgegap.repository.CompetencyRepository;
+import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.SkillRepository;
+
+import java.util.List;
 import com.knowledgegap.security.JWTService;
 
 @Service
@@ -19,16 +27,27 @@ public class AuthenticationService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
+    private final CompetencyRepository competencyRepository;
+    private final SkillRepository skillRepository;
+    private final EmployeeSkillRepository employeeSkillRepository;
 
     public AuthenticationService(EmployeeRepository employeeRepository,
-                                 RoleRepository roleRepository,
-                                 PasswordEncoder passwordEncoder,
-                                 JWTService jwtService) {
-        this.employeeRepository = employeeRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
+                             RoleRepository roleRepository,
+                             PasswordEncoder passwordEncoder,
+                             JWTService jwtService,
+                             CompetencyRepository competencyRepository,
+                             SkillRepository skillRepository,
+                             EmployeeSkillRepository employeeSkillRepository) {
+
+    this.employeeRepository = employeeRepository;
+    this.roleRepository = roleRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.jwtService = jwtService;
+
+    this.competencyRepository = competencyRepository;
+    this.skillRepository = skillRepository;
+    this.employeeSkillRepository = employeeSkillRepository;
+}
 
     // LOGIN
     // LOGIN
@@ -109,6 +128,30 @@ public AuthResponse login(LoginRequest request) {
         employee.setRole(role);
 
         employeeRepository.save(employee);
+        // Get all competencies for the employee's designation
+List<Competency> competencies =
+        competencyRepository.findByDesignation(employee.getDesignation());
+
+// Assign default skills
+for (Competency competency : competencies) {
+
+    Skill skill = skillRepository
+            .findBySkillName(competency.getDescription())
+            .orElse(null);
+
+    if (skill != null) {
+
+        EmployeeSkill employeeSkill = new EmployeeSkill();
+
+        employeeSkill.setEmployee(employee);
+        employeeSkill.setSkill(skill);
+
+        // Every new employee starts as Beginner
+        employeeSkill.setCurrentLevel(1);
+
+        employeeSkillRepository.save(employeeSkill);
+    }
+}
 
         String token = jwtService.generateToken(
                 employee.getEmail(),
