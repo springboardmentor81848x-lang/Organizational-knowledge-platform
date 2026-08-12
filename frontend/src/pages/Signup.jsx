@@ -227,7 +227,9 @@ function Signup() {
                 <option value="EMPLOYEE">EMPLOYEE</option>
                 <option value="HR">HR</option>
                 <option value="MANAGER">MANAGER</option>
-                <option value="ADMIN">ADMIN</option>
+                <option value="DEPARTMENT_HEAD">DEPARTMENT HEAD</option>
+                <option value="MENTOR">MENTOR</option>
+                <option value="SYSTEM_ADMINISTRATOR">SYSTEM ADMINISTRATOR</option>
               </select>
             </div>
             <Button text="Create Account" type="submit" />
