@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp">
+
+    <View
+        android:id="@+id/view_dot"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_centerVertical="true"
+        android:background="@android:color/holo_red_dark" />
+
+    <TextView
+        android:id="@+id/tv_legend_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_toEndOf="@id/view_dot"
+        android:text="Critical"
+        android:textColor="@color/gray_700"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tv_legend_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:text="8"
+        android:textColor="@color/text_dark"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>

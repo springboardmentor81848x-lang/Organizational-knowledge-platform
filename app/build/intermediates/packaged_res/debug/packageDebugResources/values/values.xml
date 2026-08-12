@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="role_options">
+        <item>Employee</item>
+        <item>Manager</item>
+        <item>HR Specialist</item>
+        <item>System Administrator</item>
+    </string-array>
+    <color name="accent_teal">#00CEC9</color>
+    <color name="black">#000000</color>
+    <color name="cream_bg">#FDFCF0</color>
+    <color name="gap_critical">#FF4D4D</color>
+    <color name="gap_high">#FFAD33</color>
+    <color name="gap_low">#2ECC71</color>
+    <color name="gap_medium">#F1C40F</color>
+    <color name="gray_200">#E2E8F0</color>
+    <color name="gray_500">#B2BEC3</color>
+    <color name="gray_700">#636E72</color>
+    <color name="neutral_bg">#F8F9FA</color>
+    <color name="overlay_emerald">#1A00B894</color>
+    <color name="primary_emerald">#00B894</color>
+    <color name="primary_purple">#6C5CE7</color>
+    <color name="primary_purple_dark">#4834D4</color>
+    <color name="primary_purple_light">#A29BFE</color>
+    <color name="secondary_teal">#0097A7</color>
+    <color name="surface_variant">#F1F2F6</color>
+    <color name="text_dark">#2D3436</color>
+    <color name="white">#FFFFFF</color>
+    <string name="already_have_account">Already have an account? Sign in</string>
+    <string name="app_name">KGap Intel</string>
+    <string name="at_least_8_characters">At least 8 characters</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="create_account">Create Account</string>
+    <string name="create_your_account">Create your account</string>
+    <string name="dont_have_account">Don\'t have an account? Sign up</string>
+    <string name="email_or_username">Email or username</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="full_name">Full Name</string>
+    <string name="include_a_number">Include a number</string>
+    <string name="include_an_uppercase">Include an uppercase</string>
+    <string name="lets_build_smarter">Let\'s build smarter together</string>
+    <string name="password">Password</string>
+    <string name="remember_me">Remember me</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_in_to_continue">Sign in to continue</string>
+    <string name="tagline">Organizational Knowledge Platform</string>
+    <string name="welcome_back">Welcome Back</string>
+    <string name="work_email">Work Email</string>
+    <style name="PremiumButton" parent="Widget.Material3.Button">
+        <item name="cornerRadius">8dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+    <style name="RoundedCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">4dp</item>
+    </style>
+    <style name="Theme.KGapIntel" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_purple</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/neutral_bg</item>
+    </style>
+    <style name="Theme.KGapIntel.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/primary_emerald</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>
