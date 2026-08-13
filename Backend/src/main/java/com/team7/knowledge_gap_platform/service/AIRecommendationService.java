@@ -47,4 +47,9 @@ public class AIRecommendationService {
 
         return aiRecommendationRepository.findByEmployeeId(employeeId);
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteByEmployeeId(Long employeeId) {
+        aiRecommendationRepository.deleteByEmployeeId(employeeId);
+    }
 }

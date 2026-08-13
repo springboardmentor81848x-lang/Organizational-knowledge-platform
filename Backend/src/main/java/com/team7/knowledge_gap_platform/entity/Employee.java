@@ -4,8 +4,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "employee")
 public class Employee {
     @Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +19,10 @@ private String email;
 private String phoneNumber;
 private String department;
 private String role;
+private Long jobRoleId;
+private String experience;
+private String education;
+private String bio;
 
 public Long getId() {
     return id;
@@ -74,4 +80,35 @@ public void setRole(String role) {
     this.role = role;
 }
 
+public Long getJobRoleId() {
+    return jobRoleId;
+}
+
+public void setJobRoleId(Long jobRoleId) {
+    this.jobRoleId = jobRoleId;
+}
+
+public String getExperience() {
+    return experience;
+}
+
+public void setExperience(String experience) {
+    this.experience = experience;
+}
+
+public String getEducation() {
+    return education;
+}
+
+public void setEducation(String education) {
+    this.education = education;
+}
+
+public String getBio() {
+    return bio;
+}
+
+public void setBio(String bio) {
+    this.bio = bio;
+}
 }

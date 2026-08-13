@@ -14,4 +14,6 @@ public interface AIRecommendationRepository
     List<AIRecommendation> findByEmployeeId(Long employeeId);
 
     List<AIRecommendation> findBySkillId(Long skillId);
+
+    void deleteByEmployeeId(Long employeeId);
 }

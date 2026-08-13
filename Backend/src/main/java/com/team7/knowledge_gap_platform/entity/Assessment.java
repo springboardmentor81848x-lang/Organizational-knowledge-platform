@@ -7,18 +7,20 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "competency_requirement")
-public class CompetencyRequirement {
+@Table(name = "assessment")
+public class Assessment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long jobRoleId;
-    private Long skillId;
-    private String requiredProficiencyLevel;
+    private String title;
 
-    public CompetencyRequirement() {
+    private Long skillId;
+
+    private Integer totalQuestions;
+
+    public Assessment() {
     }
 
     public Long getId() {
@@ -29,12 +31,12 @@ public class CompetencyRequirement {
         this.id = id;
     }
 
-    public Long getJobRoleId() {
-        return jobRoleId;
+    public String getTitle() {
+        return title;
     }
 
-    public void setJobRoleId(Long jobRoleId) {
-        this.jobRoleId = jobRoleId;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public Long getSkillId() {
@@ -45,11 +47,11 @@ public class CompetencyRequirement {
         this.skillId = skillId;
     }
 
-    public String getRequiredProficiencyLevel() {
-        return requiredProficiencyLevel;
+    public Integer getTotalQuestions() {
+        return totalQuestions;
     }
 
-    public void setRequiredProficiencyLevel(String requiredProficiencyLevel) {
-        this.requiredProficiencyLevel = requiredProficiencyLevel;
+    public void setTotalQuestions(Integer totalQuestions) {
+        this.totalQuestions = totalQuestions;
     }
 }

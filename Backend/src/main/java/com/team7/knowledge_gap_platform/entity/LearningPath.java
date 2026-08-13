@@ -18,6 +18,7 @@ public class LearningPath {
 
     private Long employeeId;
     private Long skillId;
+    private String skillName;
 
     private String currentLevel;
     private String targetLevel;
@@ -29,6 +30,10 @@ public class LearningPath {
     private Integer estimatedHours;
 
     private String courseLink;
+    private String provider;
+
+    private String status = "NOT_STARTED";
+    private Integer completionPercentage = 0;
 
     private LocalDateTime createdAt;
 
@@ -41,6 +46,22 @@ public class LearningPath {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getSkillName() {
+        return skillName;
+    }
+
+    public void setSkillName(String skillName) {
+        this.skillName = skillName;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     public Long getEmployeeId() {
@@ -121,5 +142,21 @@ public class LearningPath {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Integer getCompletionPercentage() {
+        return completionPercentage;
+    }
+
+    public void setCompletionPercentage(Integer completionPercentage) {
+        this.completionPercentage = completionPercentage;
     }
 }

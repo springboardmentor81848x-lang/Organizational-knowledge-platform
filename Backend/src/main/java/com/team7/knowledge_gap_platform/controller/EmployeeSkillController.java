@@ -29,6 +29,13 @@ public class EmployeeSkillController {
         return employeeSkillService.getAllEmployeeSkills();
     }
 
+    @GetMapping("/employee/{employeeId}")
+    public List<EmployeeSkill> getEmployeeSkillsByEmployeeId(
+            @PathVariable Long employeeId) {
+
+        return employeeSkillService.getEmployeeSkillsByEmployeeId(employeeId);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeSkill> getEmployeeSkillById(
             @PathVariable Long id) {

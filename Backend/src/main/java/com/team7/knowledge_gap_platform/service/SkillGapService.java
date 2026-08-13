@@ -3,14 +3,17 @@ package com.team7.knowledge_gap_platform.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.team7.knowledge_gap_platform.entity.CompetencyRequirement;
+import com.team7.knowledge_gap_platform.entity.Employee;
 import com.team7.knowledge_gap_platform.entity.EmployeeSkill;
 import com.team7.knowledge_gap_platform.entity.SkillGap;
 import com.team7.knowledge_gap_platform.repository.CompetencyRequirementRepository;
+import com.team7.knowledge_gap_platform.repository.EmployeeRepository;
 import com.team7.knowledge_gap_platform.repository.EmployeeSkillRepository;
 import com.team7.knowledge_gap_platform.repository.SkillGapRepository;
 
@@ -20,139 +23,81 @@ public class SkillGapService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final CompetencyRequirementRepository competencyRequirementRepository;
     private final SkillGapRepository skillGapRepository;
+    private final EmployeeRepository employeeRepository;
 
     public SkillGapService(
             EmployeeSkillRepository employeeSkillRepository,
             CompetencyRequirementRepository competencyRequirementRepository,
-            SkillGapRepository skillGapRepository) {
+            SkillGapRepository skillGapRepository,
+            EmployeeRepository employeeRepository) {
 
         this.employeeSkillRepository = employeeSkillRepository;
         this.competencyRequirementRepository = competencyRequirementRepository;
         this.skillGapRepository = skillGapRepository;
+        this.employeeRepository = employeeRepository;
     }
 
+    @Transactional
     public List<SkillGap> analyzeAndSaveGaps() {
+        List<Employee> allEmployees = employeeRepository.findAll();
+        List<SkillGap> allSavedGaps = new ArrayList<>();
 
-        List<EmployeeSkill> employeeSkills =
-                employeeSkillRepository.findAll();
-
-        List<CompetencyRequirement> requirements =
-                competencyRequirementRepository.findAll();
-
-        List<SkillGap> savedGaps = new ArrayList<>();
-
-        for (EmployeeSkill employeeSkill : employeeSkills) {
-
-            for (CompetencyRequirement requirement : requirements) {
-
-                if (employeeSkill.getSkillId() != null
-                        && employeeSkill.getSkillId()
-                        .equals(requirement.getSkillId())) {
-
-                    int currentLevel =
-                            getLevelValue(
-                                    employeeSkill.getProficiencyLevel());
-
-                    int requiredLevel =
-                            getLevelValue(
-                                    requirement.getRequiredProficiencyLevel());
-
-                    int gapScore =
-                            Math.max(requiredLevel - currentLevel, 0);
-
-                    SkillGap skillGap = new SkillGap();
-
-                    skillGap.setEmployeeId(
-                            employeeSkill.getEmployeeId());
-
-                    skillGap.setJobRoleId(
-                            requirement.getJobRoleId());
-
-                    skillGap.setSkillId(
-                            employeeSkill.getSkillId());
-
-                    skillGap.setCurrentProficiency(
-                            employeeSkill.getProficiencyLevel());
-
-                    skillGap.setRequiredProficiency(
-                            requirement.getRequiredProficiencyLevel());
-
-                    skillGap.setGapScore(gapScore);
-
-                    skillGap.setGapLevel(
-                            getGapLevel(gapScore));
-
-                    skillGap.setAnalyzedAt(
-                            LocalDateTime.now());
-
-                    savedGaps.add(
-                            skillGapRepository.save(skillGap));
-                }
+        for (Employee employee : allEmployees) {
+            try {
+                allSavedGaps.addAll(analyzeAndSaveGapsByEmployee(employee.getId()));
+            } catch (Exception e) {
+                // Skip employees without roles or other issues during batch processing
             }
         }
-
-        return savedGaps;
+        return allSavedGaps;
     }
 
     @Transactional
     public List<SkillGap> analyzeAndSaveGapsByEmployee(Long employeeId) {
 
-        List<EmployeeSkill> employeeSkills =
-                employeeSkillRepository.findByEmployeeId(employeeId);
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        Long jobRoleId = employee.getJobRoleId();
+        if (jobRoleId == null) {
+            throw new RuntimeException("Employee has no Job Role assigned");
+        }
 
         List<CompetencyRequirement> requirements =
-                competencyRequirementRepository.findAll();
+                competencyRequirementRepository.findByJobRoleId(jobRoleId);
 
         List<SkillGap> savedGaps = new ArrayList<>();
 
         skillGapRepository.deleteByEmployeeId(employeeId);
 
-        for (EmployeeSkill employeeSkill : employeeSkills) {
+        for (CompetencyRequirement requirement : requirements) {
+            Optional<EmployeeSkill> employeeSkillOpt =
+                    employeeSkillRepository.findByEmployeeIdAndSkillId(employeeId, requirement.getSkillId());
 
-            for (CompetencyRequirement requirement : requirements) {
+            int currentLevelValue = 0;
+            String currentLevelName = "UNAWARE";
 
-                if (employeeSkill.getSkillId() != null
-                        && employeeSkill.getSkillId()
-                        .equals(requirement.getSkillId())) {
+            if (employeeSkillOpt.isPresent()) {
+                currentLevelName = employeeSkillOpt.get().getProficiencyLevel();
+                currentLevelValue = getLevelValue(currentLevelName);
+            }
 
-                    int currentLevel =
-                            getLevelValue(
-                                    employeeSkill.getProficiencyLevel());
+            int requiredLevelValue = getLevelValue(requirement.getRequiredProficiencyLevel());
 
-                    int requiredLevel =
-                            getLevelValue(
-                                    requirement.getRequiredProficiencyLevel());
+            if (currentLevelValue < requiredLevelValue) {
+                int gapScore = requiredLevelValue - currentLevelValue;
 
-                    int gapScore =
-                            Math.max(requiredLevel - currentLevel, 0);
+                SkillGap skillGap = new SkillGap();
+                skillGap.setEmployeeId(employeeId);
+                skillGap.setJobRoleId(jobRoleId);
+                skillGap.setSkillId(requirement.getSkillId());
+                skillGap.setCurrentProficiency(currentLevelName);
+                skillGap.setRequiredProficiency(requirement.getRequiredProficiencyLevel());
+                skillGap.setGapScore(gapScore);
+                skillGap.setGapLevel(getGapLevel(gapScore));
+                skillGap.setAnalyzedAt(LocalDateTime.now());
 
-                    SkillGap skillGap = new SkillGap();
-
-                    skillGap.setEmployeeId(employeeId);
-
-                    skillGap.setJobRoleId(
-                            requirement.getJobRoleId());
-
-                    skillGap.setSkillId(
-                            employeeSkill.getSkillId());
-
-                    skillGap.setCurrentProficiency(
-                            employeeSkill.getProficiencyLevel());
-
-                    skillGap.setRequiredProficiency(
-                            requirement.getRequiredProficiencyLevel());
-
-                    skillGap.setGapScore(gapScore);
-
-                    skillGap.setGapLevel(
-                            getGapLevel(gapScore));
-
-                    skillGap.setAnalyzedAt(
-                            LocalDateTime.now());
-
-                    savedGaps.add(
-                            skillGapRepository.save(skillGap));
-                }
+                savedGaps.add(skillGapRepository.save(skillGap));
             }
         }
 

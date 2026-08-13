@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,27 +25,32 @@ public class DepartmentController {
     private DepartmentService departmentService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR')")
     public Department saveDepartment(@RequestBody Department department) {
         return departmentService.saveDepartment(department);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
     public List<Department> getAllDepartments() {
         return departmentService.getAllDepartments();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
     public Optional<Department> getDepartmentById(@PathVariable Long id) {
         return departmentService.getDepartmentById(id);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR')")
     public Department updateDepartment(@PathVariable Long id,
                                        @RequestBody Department department) {
         return departmentService.updateDepartment(id, department);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public String deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
         return "Department deleted successfully!";

@@ -3,6 +3,7 @@ package com.team7.knowledge_gap_platform.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class ExternalCourseController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_LEARNING_DEVELOPMENT_ADMIN')")
     public ResponseEntity<ExternalCourse> saveCourse(
             @RequestBody ExternalCourse course) {
 
@@ -36,6 +38,7 @@ public class ExternalCourseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_HR', 'ROLE_ADMIN', 'ROLE_DEPARTMENT_HEAD', 'ROLE_LEARNING_DEVELOPMENT_ADMIN', 'ROLE_MENTOR')")
     public ResponseEntity<List<ExternalCourse>> getAllCourses() {
 
         return ResponseEntity.ok(
@@ -44,6 +47,7 @@ public class ExternalCourseController {
     }
 
     @GetMapping("/skill/{skillName}")
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_HR', 'ROLE_ADMIN', 'ROLE_DEPARTMENT_HEAD', 'ROLE_LEARNING_DEVELOPMENT_ADMIN', 'ROLE_MENTOR')")
     public ResponseEntity<List<ExternalCourse>> getCoursesBySkill(
             @PathVariable String skillName) {
 
@@ -53,6 +57,7 @@ public class ExternalCourseController {
     }
 
     @GetMapping("/level/{level}")
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_HR', 'ROLE_ADMIN', 'ROLE_DEPARTMENT_HEAD', 'ROLE_LEARNING_DEVELOPMENT_ADMIN', 'ROLE_MENTOR')")
     public ResponseEntity<List<ExternalCourse>> getCoursesByLevel(
             @PathVariable String level) {
 
@@ -62,6 +67,7 @@ public class ExternalCourseController {
     }
 
     @GetMapping("/provider/{provider}")
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_HR', 'ROLE_ADMIN', 'ROLE_DEPARTMENT_HEAD', 'ROLE_LEARNING_DEVELOPMENT_ADMIN', 'ROLE_MENTOR')")
     public ResponseEntity<List<ExternalCourse>> getCoursesByProvider(
             @PathVariable String provider) {
 
@@ -71,6 +77,7 @@ public class ExternalCourseController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_LEARNING_DEVELOPMENT_ADMIN')")
     public ResponseEntity<String> deleteCourse(
             @PathVariable Long id) {
 

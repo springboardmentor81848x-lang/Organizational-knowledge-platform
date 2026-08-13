@@ -25,6 +25,10 @@ public class EmployeeSkillService {
         return employeeSkillRepository.findAll();
     }
 
+    public List<EmployeeSkill> getEmployeeSkillsByEmployeeId(Long employeeId) {
+        return employeeSkillRepository.findByEmployeeId(employeeId);
+    }
+
     public Optional<EmployeeSkill> getEmployeeSkillById(Long id) {
         return employeeSkillRepository.findById(id);
     }
