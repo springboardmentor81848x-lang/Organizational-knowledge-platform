@@ -1,5 +1,16 @@
 package com.knowledgegap.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.knowledgegap.dto.AssessmentAnswerRequest;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
@@ -15,11 +26,6 @@ import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.AssessmentQuestionRepository;
 import com.knowledgegap.repository.AssessmentRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.*;
 
 @Service
 public class AssessmentService {
@@ -29,7 +35,13 @@ public class AssessmentService {
     private final AssessmentAttemptRepository assessmentAttemptRepository;
     private final AssessmentAnswerRepository assessmentAnswerRepository;
     private final AssessmentGapResultRepository assessmentGapResultRepository;
+
     private final EmployeeService employeeService;
+
+    // ⭐ IMPORTANT
+    // This updates EmployeeSkill after assessment
+    private final EmployeeSkillService employeeSkillService;
+
 
     public AssessmentService(
             AssessmentRepository assessmentRepository,
@@ -37,18 +49,24 @@ public class AssessmentService {
             AssessmentAttemptRepository assessmentAttemptRepository,
             AssessmentAnswerRepository assessmentAnswerRepository,
             AssessmentGapResultRepository assessmentGapResultRepository,
-            EmployeeService employeeService) {
+            EmployeeService employeeService,
+            EmployeeSkillService employeeSkillService) {
 
         this.assessmentRepository = assessmentRepository;
         this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.assessmentAttemptRepository = assessmentAttemptRepository;
         this.assessmentAnswerRepository = assessmentAnswerRepository;
         this.assessmentGapResultRepository = assessmentGapResultRepository;
+
         this.employeeService = employeeService;
+
+        // ⭐ IMPORTANT
+        this.employeeSkillService = employeeSkillService;
     }
 
+
     // =========================================================
-    // ACTIVE ASSESSMENTS
+    // GET ACTIVE ASSESSMENTS
     // =========================================================
 
     public List<Assessment> getActiveAssessments() {
@@ -56,8 +74,9 @@ public class AssessmentService {
         return assessmentRepository.findByActiveTrue();
     }
 
+
     // =========================================================
-    // GET ASSESSMENT
+    // GET ASSESSMENT BY ID
     // =========================================================
 
     public Assessment getAssessmentById(Long id) {
@@ -66,8 +85,10 @@ public class AssessmentService {
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Assessment not found with id: " + id
-                        ));
+                        )
+                );
     }
+
 
     // =========================================================
     // GET QUESTIONS
@@ -83,6 +104,7 @@ public class AssessmentService {
                 .findByAssessment(assessment);
     }
 
+
     // =========================================================
     // SUBMIT ASSESSMENT
     // =========================================================
@@ -92,12 +114,17 @@ public class AssessmentService {
             AssessmentSubmitRequest request,
             String employeeIdentifier) {
 
+        // -----------------------------------------------------
+        // VALIDATE REQUEST
+        // -----------------------------------------------------
+
         if (request == null) {
 
             throw new IllegalArgumentException(
                     "Assessment submission cannot be null."
             );
         }
+
 
         if (request.getAssessmentId() == null) {
 
@@ -106,10 +133,16 @@ public class AssessmentService {
             );
         }
 
+
+        // -----------------------------------------------------
+        // GET ASSESSMENT
+        // -----------------------------------------------------
+
         Assessment assessment =
                 getAssessmentById(
                         request.getAssessmentId()
                 );
+
 
         if (!Boolean.TRUE.equals(
                 assessment.getActive())) {
@@ -118,6 +151,11 @@ public class AssessmentService {
                     "This assessment is not active."
             );
         }
+
+
+        // -----------------------------------------------------
+        // GET EMPLOYEE
+        // -----------------------------------------------------
 
         Employee employee =
                 employeeService
@@ -128,11 +166,20 @@ public class AssessmentService {
                                 new RuntimeException(
                                         "Employee not found: "
                                                 + employeeIdentifier
-                                ));
+                                )
+                        );
+
+
+        // -----------------------------------------------------
+        // GET QUESTIONS
+        // -----------------------------------------------------
 
         List<AssessmentQuestion> questions =
                 assessmentQuestionRepository
-                        .findByAssessment(assessment);
+                        .findByAssessment(
+                                assessment
+                        );
+
 
         if (questions.isEmpty()) {
 
@@ -141,8 +188,9 @@ public class AssessmentService {
             );
         }
 
+
         // =====================================================
-        // CREATE ASSESSMENT ATTEMPT
+        // CREATE ATTEMPT
         // =====================================================
 
         AssessmentAttempt attempt =
@@ -162,17 +210,20 @@ public class AssessmentService {
                 "Not Calculated"
         );
 
+
         attempt =
                 assessmentAttemptRepository.save(
                         attempt
                 );
 
+
         // =====================================================
-        // CREATE SUBMITTED ANSWERS MAP
+        // CREATE ANSWER MAP
         // =====================================================
 
         Map<Long, String> submittedAnswers =
                 new HashMap<>();
+
 
         if (request.getAnswers() != null) {
 
@@ -194,15 +245,18 @@ public class AssessmentService {
             }
         }
 
+
         // =====================================================
-        // SKILL CALCULATION
+        // MARK CALCULATION
         // =====================================================
 
         Map<String, Integer> skillTotalMarks =
                 new LinkedHashMap<>();
 
+
         Map<String, Integer> skillCorrectMarks =
                 new LinkedHashMap<>();
+
 
         int totalMarks = 0;
 
@@ -210,34 +264,48 @@ public class AssessmentService {
 
         int correctAnswers = 0;
 
+
         // =====================================================
-        // PROCESS QUESTIONS
+        // PROCESS EVERY QUESTION
         // =====================================================
 
-        for (AssessmentQuestion question : questions) {
+        for (
+                AssessmentQuestion question :
+                questions
+        ) {
 
             int marks =
                     Optional.ofNullable(
                             question.getMarks()
                     ).orElse(1);
 
+
             totalMarks += marks;
+
 
             String selectedAnswer =
                     submittedAnswers.get(
                             question.getId()
                     );
 
+
             String correctAnswer =
                     question.getCorrectAnswer();
+
 
             boolean correct =
                     selectedAnswer != null &&
                     correctAnswer != null &&
-                    selectedAnswer.trim()
+                    selectedAnswer
+                            .trim()
                             .equalsIgnoreCase(
                                     correctAnswer.trim()
                             );
+
+
+            // -------------------------------------------------
+            // OVERALL SCORE
+            // -------------------------------------------------
 
             if (correct) {
 
@@ -246,8 +314,14 @@ public class AssessmentService {
                 correctAnswers++;
             }
 
+
+            // -------------------------------------------------
+            // GET SKILL NAME
+            // -------------------------------------------------
+
             String skillName =
                     question.getSkillName();
+
 
             if (
                     skillName == null ||
@@ -256,6 +330,11 @@ public class AssessmentService {
 
                 skillName = "Other";
             }
+
+
+            skillName =
+                    skillName.trim();
+
 
             // -------------------------------------------------
             // TOTAL MARKS FOR SKILL
@@ -268,6 +347,7 @@ public class AssessmentService {
                             0
                     ) + marks
             );
+
 
             // -------------------------------------------------
             // CORRECT MARKS FOR SKILL
@@ -284,12 +364,14 @@ public class AssessmentService {
                 );
             }
 
+
             // -------------------------------------------------
             // SAVE ANSWER
             // -------------------------------------------------
 
             AssessmentAnswer answer =
                     new AssessmentAnswer();
+
 
             answer.setAttempt(attempt);
 
@@ -299,15 +381,19 @@ public class AssessmentService {
                     selectedAnswer
             );
 
-            answer.setCorrect(correct);
+            answer.setCorrect(
+                    correct
+            );
+
 
             assessmentAnswerRepository.save(
                     answer
             );
         }
 
+
         // =====================================================
-        // OVERALL SCORE
+        // CALCULATE OVERALL SCORE
         // =====================================================
 
         double overallScore =
@@ -316,34 +402,45 @@ public class AssessmentService {
                         totalMarks) * 100
                         : 0.0;
 
+
         overallScore =
                 Math.round(
                         overallScore * 100.0
                 ) / 100.0;
+
 
         String performanceLevel =
                 getPerformanceLevel(
                         overallScore
                 );
 
+
+        // =====================================================
+        // UPDATE ATTEMPT
+        // =====================================================
+
         attempt.setOverallScore(
                 overallScore
         );
+
 
         attempt.setPerformanceLevel(
                 performanceLevel
         );
 
+
         assessmentAttemptRepository.save(
                 attempt
         );
 
+
         // =====================================================
-        // SKILL GAP RESULTS
+        // SKILL RESULTS
         // =====================================================
 
         List<AssessmentSkillResultResponse> skillResults =
                 new ArrayList<>();
+
 
         for (
                 Map.Entry<String, Integer> entry :
@@ -353,8 +450,10 @@ public class AssessmentService {
             String skillName =
                     entry.getKey();
 
+
             int skillTotal =
                     entry.getValue();
+
 
             int skillCorrect =
                     skillCorrectMarks.getOrDefault(
@@ -362,8 +461,9 @@ public class AssessmentService {
                             0
                     );
 
+
             // -------------------------------------------------
-            // ACTUAL SKILL SCORE
+            // CALCULATE SKILL SCORE
             // -------------------------------------------------
 
             int actualScore =
@@ -374,14 +474,16 @@ public class AssessmentService {
                             )
                             : 0;
 
+
             // -------------------------------------------------
             // REQUIRED SCORE
             // -------------------------------------------------
 
             int requiredScore = 70;
 
+
             // -------------------------------------------------
-            // GAP
+            // CALCULATE GAP
             // -------------------------------------------------
 
             int gap =
@@ -390,48 +492,117 @@ public class AssessmentService {
                             0
                     );
 
+
             // -------------------------------------------------
             // GAP SEVERITY
             // -------------------------------------------------
 
             String gapSeverity =
-                    getGapSeverity(gap);
+                    getGapSeverity(
+                            gap
+                    );
+
 
             // =================================================
-            // SAVE ASSESSMENT GAP RESULT
+            // ⭐⭐ MOST IMPORTANT PART ⭐⭐
+            // =================================================
+            //
+            // Update EmployeeSkill table using assessment score.
+            //
+            // Example:
+            //
+            // Java = 100
+            //       ↓
+            // EmployeeSkill.currentLevel = 5
+            //
+            // SQL = 80
+            //      ↓
+            // EmployeeSkill.currentLevel = 4
+            //
+            // DSA = 60
+            //      ↓
+            // EmployeeSkill.currentLevel = 3
+            //
+            // This is what makes Skill Inventory change.
+            // =================================================
+
+            if (!skillName.equalsIgnoreCase("Other")) {
+
+                try {
+
+                    employeeSkillService
+                            .updateSkillFromAssessment(
+                                    employee,
+                                    skillName,
+                                    actualScore
+                            );
+
+                } catch (RuntimeException e) {
+
+                    /*
+                     * Do not stop the entire assessment if
+                     * a skill does not exist in the Skill table.
+                     *
+                     * Example:
+                     * Question has "Java"
+                     * but Skill table does not contain "Java".
+                     */
+
+                    System.out.println(
+                            "Unable to update EmployeeSkill for: "
+                                    + skillName
+                                    + " - "
+                                    + e.getMessage()
+                    );
+                }
+            }
+
+
+            // =================================================
+            // SAVE GAP RESULT
             // =================================================
 
             AssessmentGapResult gapResult =
                     new AssessmentGapResult();
 
-            gapResult.setAttempt(attempt);
+
+            gapResult.setAttempt(
+                    attempt
+            );
+
 
             gapResult.setSkillName(
                     skillName
             );
 
+
             gapResult.setActualScore(
                     actualScore
             );
+
 
             gapResult.setRequiredScore(
                     requiredScore
             );
 
+
             gapResult.setGap(
                     gap
             );
+
 
             gapResult.setGapSeverity(
                     gapSeverity
             );
 
+
             assessmentGapResultRepository.save(
                     gapResult
             );
 
+
             // =================================================
-            // ADD TO RESPONSE
+            // ADD RESPONSE
             // =================================================
 
             skillResults.add(
@@ -444,6 +615,7 @@ public class AssessmentService {
                     )
             );
         }
+
 
         // =====================================================
         // FINAL RESPONSE
@@ -461,8 +633,9 @@ public class AssessmentService {
         );
     }
 
+
     // =========================================================
-    // GET ASSESSMENT GAP RESULTS BY ATTEMPT ID
+    // GET GAP RESULTS
     // =========================================================
 
     public List<AssessmentGapResult> getAssessmentGapResults(
@@ -475,11 +648,16 @@ public class AssessmentService {
                                 new RuntimeException(
                                         "Assessment attempt not found with id: "
                                                 + attemptId
-                                ));
+                                )
+                        );
+
 
         return assessmentGapResultRepository
-                .findByAttempt(attempt);
+                .findByAttempt(
+                        attempt
+                );
     }
+
 
     // =========================================================
     // PERFORMANCE LEVEL
@@ -489,23 +667,32 @@ public class AssessmentService {
             double score) {
 
         if (score >= 90) {
+
             return "Expert";
         }
 
+
         if (score >= 75) {
+
             return "Advanced";
         }
 
+
         if (score >= 60) {
+
             return "Competent";
         }
 
+
         if (score >= 40) {
+
             return "Intermediate";
         }
 
+
         return "Beginner";
     }
+
 
     // =========================================================
     // GAP SEVERITY
@@ -515,20 +702,28 @@ public class AssessmentService {
             int gap) {
 
         if (gap <= 0) {
+
             return "NO GAP";
         }
 
+
         if (gap <= 10) {
+
             return "LOW";
         }
 
+
         if (gap <= 25) {
+
             return "MEDIUM";
         }
 
+
         if (gap <= 40) {
+
             return "HIGH";
         }
+
 
         return "CRITICAL";
     }
