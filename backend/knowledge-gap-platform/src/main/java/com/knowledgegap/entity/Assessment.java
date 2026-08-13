@@ -2,8 +2,6 @@ package com.knowledgegap.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "assessments")
@@ -17,14 +15,13 @@ public class Assessment {
 
     private String description;
 
+    @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
-    private Boolean active = true;
+    private Boolean active;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL)
-    private List<AssessmentQuestion> questions = new ArrayList<>();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     public Assessment() {
     }
@@ -75,13 +72,5 @@ public class Assessment {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public List<AssessmentQuestion> getQuestions() {
-        return questions;
-    }
-
-    public void setQuestions(List<AssessmentQuestion> questions) {
-        this.questions = questions;
     }
 }

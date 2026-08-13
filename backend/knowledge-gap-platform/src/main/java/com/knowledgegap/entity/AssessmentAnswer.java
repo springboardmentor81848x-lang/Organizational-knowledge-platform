@@ -1,10 +1,6 @@
 package com.knowledgegap.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "assessment_answers")
@@ -14,10 +10,15 @@ public class AssessmentAnswer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long attemptId;
+    @ManyToOne
+    @JoinColumn(name = "attempt_id")
+    private AssessmentAttempt attempt;
 
-    private Long questionId;
+    @ManyToOne
+    @JoinColumn(name = "question_id")
+    private AssessmentQuestion question;
 
+    @Column(name = "selected_answer")
     private String selectedAnswer;
 
     private Boolean correct;
@@ -29,20 +30,24 @@ public class AssessmentAnswer {
         return id;
     }
 
-    public Long getAttemptId() {
-        return attemptId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setAttemptId(Long attemptId) {
-        this.attemptId = attemptId;
+    public AssessmentAttempt getAttempt() {
+        return attempt;
     }
 
-    public Long getQuestionId() {
-        return questionId;
+    public void setAttempt(AssessmentAttempt attempt) {
+        this.attempt = attempt;
     }
 
-    public void setQuestionId(Long questionId) {
-        this.questionId = questionId;
+    public AssessmentQuestion getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(AssessmentQuestion question) {
+        this.question = question;
     }
 
     public String getSelectedAnswer() {

@@ -1,13 +1,6 @@
 package com.knowledgegap.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "assessment_questions")
@@ -18,26 +11,34 @@ public class AssessmentQuestion {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "assessment_id")
+    @JoinColumn(name = "assessment_id", nullable = false)
     private Assessment assessment;
 
+    @Column(name = "skill_name")
     private String skillName;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "question", columnDefinition = "TEXT")
     private String question;
 
+    @Column(name = "option_a")
     private String optionA;
 
+    @Column(name = "option_b")
     private String optionB;
 
+    @Column(name = "option_c")
     private String optionC;
 
+    @Column(name = "option_d")
     private String optionD;
 
+    @Column(name = "correct_answer")
     private String correctAnswer;
 
+    @Column(name = "difficulty")
     private String difficulty;
 
+    @Column(name = "marks")
     private Integer marks;
 
     public AssessmentQuestion() {

@@ -1,18 +1,20 @@
 package com.knowledgegap.service;
 
+import com.knowledgegap.dto.AssessmentAnswerRequest;
+import com.knowledgegap.dto.AssessmentResultResponse;
+import com.knowledgegap.dto.AssessmentSkillResultResponse;
+import com.knowledgegap.dto.AssessmentSubmitRequest;
 import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentAnswer;
 import com.knowledgegap.entity.AssessmentAttempt;
+import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.AssessmentQuestion;
 import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.SkillResult;
 import com.knowledgegap.repository.AssessmentAnswerRepository;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
+import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.AssessmentQuestionRepository;
 import com.knowledgegap.repository.AssessmentRepository;
-import com.knowledgegap.repository.EmployeeRepository;
-import com.knowledgegap.repository.SkillResultRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,351 +25,494 @@ import java.util.*;
 public class AssessmentService {
 
     private final AssessmentRepository assessmentRepository;
-    private final AssessmentQuestionRepository questionRepository;
-    private final AssessmentAttemptRepository attemptRepository;
-    private final AssessmentAnswerRepository answerRepository;
-    private final SkillResultRepository skillResultRepository;
-    private final EmployeeRepository employeeRepository;
+    private final AssessmentQuestionRepository assessmentQuestionRepository;
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
+    private final AssessmentAnswerRepository assessmentAnswerRepository;
+    private final AssessmentGapResultRepository assessmentGapResultRepository;
+    private final EmployeeService employeeService;
 
     public AssessmentService(
             AssessmentRepository assessmentRepository,
-            AssessmentQuestionRepository questionRepository,
-            AssessmentAttemptRepository attemptRepository,
-            AssessmentAnswerRepository answerRepository,
-            SkillResultRepository skillResultRepository,
-            EmployeeRepository employeeRepository) {
+            AssessmentQuestionRepository assessmentQuestionRepository,
+            AssessmentAttemptRepository assessmentAttemptRepository,
+            AssessmentAnswerRepository assessmentAnswerRepository,
+            AssessmentGapResultRepository assessmentGapResultRepository,
+            EmployeeService employeeService) {
 
         this.assessmentRepository = assessmentRepository;
-        this.questionRepository = questionRepository;
-        this.attemptRepository = attemptRepository;
-        this.answerRepository = answerRepository;
-        this.skillResultRepository = skillResultRepository;
-        this.employeeRepository = employeeRepository;
+        this.assessmentQuestionRepository = assessmentQuestionRepository;
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.assessmentAnswerRepository = assessmentAnswerRepository;
+        this.assessmentGapResultRepository = assessmentGapResultRepository;
+        this.employeeService = employeeService;
     }
 
-    /*
-     * Get the currently active assessment.
-     *
-     * IMPORTANT:
-     * correctAnswer is removed before sending the questions
-     * to the frontend.
-     */
-    public Map<String, Object> getCurrentAssessment() {
+    // =========================================================
+    // ACTIVE ASSESSMENTS
+    // =========================================================
 
-        Assessment assessment = assessmentRepository
-                .findFirstByActiveTrueOrderByIdDesc()
+    public List<Assessment> getActiveAssessments() {
+
+        return assessmentRepository.findByActiveTrue();
+    }
+
+    // =========================================================
+    // GET ASSESSMENT
+    // =========================================================
+
+    public Assessment getAssessmentById(Long id) {
+
+        return assessmentRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("No active assessment found"));
+                        new RuntimeException(
+                                "Assessment not found with id: " + id
+                        ));
+    }
 
-        List<AssessmentQuestion> questions =
-                questionRepository.findByAssessmentIdOrderByIdAsc(
-                        assessment.getId());
+    // =========================================================
+    // GET QUESTIONS
+    // =========================================================
 
-        List<Map<String, Object>> safeQuestions = new ArrayList<>();
+    public List<AssessmentQuestion> getQuestionsByAssessment(
+            Long assessmentId) {
 
-        for (AssessmentQuestion question : questions) {
+        Assessment assessment =
+                getAssessmentById(assessmentId);
 
-            Map<String, Object> q = new LinkedHashMap<>();
+        return assessmentQuestionRepository
+                .findByAssessment(assessment);
+    }
 
-            q.put("id", question.getId());
-            q.put("skillName", question.getSkillName());
-            q.put("question", question.getQuestion());
-            q.put("optionA", question.getOptionA());
-            q.put("optionB", question.getOptionB());
-            q.put("optionC", question.getOptionC());
-            q.put("optionD", question.getOptionD());
-            q.put("difficulty", question.getDifficulty());
-            q.put("marks", question.getMarks());
+    // =========================================================
+    // SUBMIT ASSESSMENT
+    // =========================================================
 
-            // DO NOT send correctAnswer
-            safeQuestions.add(q);
+    @Transactional
+    public AssessmentResultResponse submitAssessment(
+            AssessmentSubmitRequest request,
+            String employeeIdentifier) {
+
+        if (request == null) {
+
+            throw new IllegalArgumentException(
+                    "Assessment submission cannot be null."
+            );
         }
 
-        Map<String, Object> result = new LinkedHashMap<>();
+        if (request.getAssessmentId() == null) {
 
-        result.put("assessmentId", assessment.getId());
-        result.put("title", assessment.getTitle());
-        result.put("description", assessment.getDescription());
-        result.put("durationMinutes", assessment.getDurationMinutes());
-        result.put("totalQuestions", questions.size());
-        result.put("questions", safeQuestions);
+            throw new IllegalArgumentException(
+                    "Assessment ID is required."
+            );
+        }
 
-        return result;
-    }
+        Assessment assessment =
+                getAssessmentById(
+                        request.getAssessmentId()
+                );
 
+        if (!Boolean.TRUE.equals(
+                assessment.getActive())) {
 
-    /*
-     * Submit assessment.
-     */
-    @Transactional
-    public Map<String, Object> submitAssessment(
-            String email,
-            Long assessmentId,
-            List<Map<String, Object>> submittedAnswers) {
+            throw new IllegalStateException(
+                    "This assessment is not active."
+            );
+        }
 
-        Employee employee = employeeRepository
-                .findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
-
-        Assessment assessment = assessmentRepository
-                .findById(assessmentId)
-                .orElseThrow(() ->
-                        new RuntimeException("Assessment not found"));
+        Employee employee =
+                employeeService
+                        .getEmployeeByIdentifier(
+                                employeeIdentifier
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found: "
+                                                + employeeIdentifier
+                                ));
 
         List<AssessmentQuestion> questions =
-                questionRepository
-                        .findByAssessmentIdOrderByIdAsc(assessmentId);
+                assessmentQuestionRepository
+                        .findByAssessment(assessment);
 
         if (questions.isEmpty()) {
-            throw new RuntimeException(
-                    "No questions found for this assessment");
+
+            throw new IllegalStateException(
+                    "No questions found for this assessment."
+            );
         }
 
-        /*
-         * Convert submitted answers into a map:
-         *
-         * questionId -> selected answer
-         */
-        Map<Long, String> answerMap = new HashMap<>();
+        // =====================================================
+        // CREATE ASSESSMENT ATTEMPT
+        // =====================================================
 
-        if (submittedAnswers != null) {
+        AssessmentAttempt attempt =
+                new AssessmentAttempt();
 
-            for (Map<String, Object> answer : submittedAnswers) {
+        attempt.setEmployee(employee);
 
-                Object questionIdObject = answer.get("questionId");
-                Object selectedAnswerObject =
-                        answer.get("selectedAnswer");
+        attempt.setAssessment(assessment);
 
-                if (questionIdObject == null) {
-                    continue;
+        attempt.setCompletedAt(
+                LocalDateTime.now()
+        );
+
+        attempt.setOverallScore(0.0);
+
+        attempt.setPerformanceLevel(
+                "Not Calculated"
+        );
+
+        attempt =
+                assessmentAttemptRepository.save(
+                        attempt
+                );
+
+        // =====================================================
+        // CREATE SUBMITTED ANSWERS MAP
+        // =====================================================
+
+        Map<Long, String> submittedAnswers =
+                new HashMap<>();
+
+        if (request.getAnswers() != null) {
+
+            for (
+                    AssessmentAnswerRequest answerRequest :
+                    request.getAnswers()
+            ) {
+
+                if (
+                        answerRequest != null &&
+                        answerRequest.getQuestionId() != null
+                ) {
+
+                    submittedAnswers.put(
+                            answerRequest.getQuestionId(),
+                            answerRequest.getSelectedAnswer()
+                    );
                 }
-
-                Long questionId =
-                        Long.valueOf(questionIdObject.toString());
-
-                String selectedAnswer =
-                        selectedAnswerObject == null
-                                ? null
-                                : selectedAnswerObject.toString();
-
-                answerMap.put(questionId, selectedAnswer);
             }
         }
 
-        /*
-         * Create a new attempt.
-         *
-         * Every retake creates a NEW attempt.
-         */
-        AssessmentAttempt attempt = new AssessmentAttempt();
+        // =====================================================
+        // SKILL CALCULATION
+        // =====================================================
 
-        attempt.setEmployeeId(employee.getId());
-        attempt.setAssessmentId(assessmentId);
+        Map<String, Integer> skillTotalMarks =
+                new LinkedHashMap<>();
 
-        AssessmentAttempt savedAttempt =
-                attemptRepository.save(attempt);
+        Map<String, Integer> skillCorrectMarks =
+                new LinkedHashMap<>();
 
-        /*
-         * Skill-wise counters.
-         */
-        Map<String, Integer> skillCorrect = new HashMap<>();
-        Map<String, Integer> skillTotal = new HashMap<>();
-
-        int totalCorrect = 0;
         int totalMarks = 0;
 
-        /*
-         * Evaluate every question.
-         */
+        int obtainedMarks = 0;
+
+        int correctAnswers = 0;
+
+        // =====================================================
+        // PROCESS QUESTIONS
+        // =====================================================
+
         for (AssessmentQuestion question : questions) {
 
-            String skill = question.getSkillName();
-
-            int marks = question.getMarks() == null
-                    ? 1
-                    : question.getMarks();
+            int marks =
+                    Optional.ofNullable(
+                            question.getMarks()
+                    ).orElse(1);
 
             totalMarks += marks;
 
-            skillTotal.put(
-                    skill,
-                    skillTotal.getOrDefault(skill, 0) + marks
-            );
-
             String selectedAnswer =
-                    answerMap.get(question.getId());
+                    submittedAnswers.get(
+                            question.getId()
+                    );
+
+            String correctAnswer =
+                    question.getCorrectAnswer();
 
             boolean correct =
-                    selectedAnswer != null
-                            && selectedAnswer.trim()
+                    selectedAnswer != null &&
+                    correctAnswer != null &&
+                    selectedAnswer.trim()
                             .equalsIgnoreCase(
-                                    question.getCorrectAnswer().trim()
+                                    correctAnswer.trim()
                             );
 
             if (correct) {
 
-                totalCorrect += marks;
+                obtainedMarks += marks;
 
-                skillCorrect.put(
-                        skill,
-                        skillCorrect.getOrDefault(skill, 0) + marks
+                correctAnswers++;
+            }
+
+            String skillName =
+                    question.getSkillName();
+
+            if (
+                    skillName == null ||
+                    skillName.isBlank()
+            ) {
+
+                skillName = "Other";
+            }
+
+            // -------------------------------------------------
+            // TOTAL MARKS FOR SKILL
+            // -------------------------------------------------
+
+            skillTotalMarks.put(
+                    skillName,
+                    skillTotalMarks.getOrDefault(
+                            skillName,
+                            0
+                    ) + marks
+            );
+
+            // -------------------------------------------------
+            // CORRECT MARKS FOR SKILL
+            // -------------------------------------------------
+
+            if (correct) {
+
+                skillCorrectMarks.put(
+                        skillName,
+                        skillCorrectMarks.getOrDefault(
+                                skillName,
+                                0
+                        ) + marks
                 );
             }
 
-            /*
-             * Save individual answer.
-             */
+            // -------------------------------------------------
+            // SAVE ANSWER
+            // -------------------------------------------------
+
             AssessmentAnswer answer =
                     new AssessmentAnswer();
 
-            answer.setAttemptId(savedAttempt.getId());
-            answer.setQuestionId(question.getId());
-            answer.setSelectedAnswer(selectedAnswer);
+            answer.setAttempt(attempt);
+
+            answer.setQuestion(question);
+
+            answer.setSelectedAnswer(
+                    selectedAnswer
+            );
+
             answer.setCorrect(correct);
 
-            answerRepository.save(answer);
+            assessmentAnswerRepository.save(
+                    answer
+            );
         }
 
-        /*
-         * Overall percentage.
-         */
-        double overallScore = totalMarks == 0
-                ? 0
-                : ((double) totalCorrect / totalMarks) * 100;
+        // =====================================================
+        // OVERALL SCORE
+        // =====================================================
 
-        overallScore = round(overallScore);
+        double overallScore =
+                totalMarks > 0
+                        ? ((double) obtainedMarks /
+                        totalMarks) * 100
+                        : 0.0;
+
+        overallScore =
+                Math.round(
+                        overallScore * 100.0
+                ) / 100.0;
 
         String performanceLevel =
-                calculatePerformance(overallScore);
+                getPerformanceLevel(
+                        overallScore
+                );
 
-        savedAttempt.setOverallScore(overallScore);
-        savedAttempt.setPerformanceLevel(performanceLevel);
-        savedAttempt.setCompletedAt(LocalDateTime.now());
+        attempt.setOverallScore(
+                overallScore
+        );
 
-        attemptRepository.save(savedAttempt);
-
-        /*
-         * Skill-wise result and gap analysis.
-         *
-         * Required score = 70%.
-         */
-        final double REQUIRED_SCORE = 70.0;
-
-        List<Map<String, Object>> skillResults =
-                new ArrayList<>();
-
-        for (String skill : skillTotal.keySet()) {
-
-            int total = skillTotal.get(skill);
-
-            int correct =
-                    skillCorrect.getOrDefault(skill, 0);
-
-            double actualScore =
-                    total == 0
-                            ? 0
-                            : ((double) correct / total) * 100;
-
-            actualScore = round(actualScore);
-
-            double gap =
-                    Math.max(0, REQUIRED_SCORE - actualScore);
-
-            gap = round(gap);
-
-            String severity =
-                    calculateGapSeverity(gap);
-
-            SkillResult skillResult =
-                    new SkillResult();
-
-            skillResult.setAttemptId(
-                    savedAttempt.getId());
-
-            skillResult.setSkillName(skill);
-
-            skillResult.setActualScore(actualScore);
-
-            skillResult.setRequiredScore(REQUIRED_SCORE);
-
-            skillResult.setGap(gap);
-
-            skillResult.setGapSeverity(severity);
-
-            skillResultRepository.save(skillResult);
-
-            Map<String, Object> result =
-                    new LinkedHashMap<>();
-
-            result.put("skillName", skill);
-            result.put("actualScore", actualScore);
-            result.put("requiredScore", REQUIRED_SCORE);
-            result.put("gap", gap);
-            result.put("gapSeverity", severity);
-
-            skillResults.add(result);
-        }
-
-        /*
-         * Final response.
-         */
-        Map<String, Object> response =
-                new LinkedHashMap<>();
-
-        response.put("attemptId", savedAttempt.getId());
-        response.put("employeeId", employee.getId());
-        response.put("employeeName",
-                employee.getFirstName() + " "
-                        + employee.getLastName());
-
-        response.put("assessmentId", assessmentId);
-
-        response.put("totalQuestions", questions.size());
-
-        response.put("correctAnswers", totalCorrect);
-
-        response.put("overallScore", overallScore);
-
-        response.put(
-                "performanceLevel",
+        attempt.setPerformanceLevel(
                 performanceLevel
         );
 
-        response.put(
-                "skillResults",
-                skillResults
+        assessmentAttemptRepository.save(
+                attempt
         );
 
-        return response;
+        // =====================================================
+        // SKILL GAP RESULTS
+        // =====================================================
+
+        List<AssessmentSkillResultResponse> skillResults =
+                new ArrayList<>();
+
+        for (
+                Map.Entry<String, Integer> entry :
+                skillTotalMarks.entrySet()
+        ) {
+
+            String skillName =
+                    entry.getKey();
+
+            int skillTotal =
+                    entry.getValue();
+
+            int skillCorrect =
+                    skillCorrectMarks.getOrDefault(
+                            skillName,
+                            0
+                    );
+
+            // -------------------------------------------------
+            // ACTUAL SKILL SCORE
+            // -------------------------------------------------
+
+            int actualScore =
+                    skillTotal > 0
+                            ? (int) Math.round(
+                                    ((double) skillCorrect /
+                                            skillTotal) * 100
+                            )
+                            : 0;
+
+            // -------------------------------------------------
+            // REQUIRED SCORE
+            // -------------------------------------------------
+
+            int requiredScore = 70;
+
+            // -------------------------------------------------
+            // GAP
+            // -------------------------------------------------
+
+            int gap =
+                    Math.max(
+                            requiredScore - actualScore,
+                            0
+                    );
+
+            // -------------------------------------------------
+            // GAP SEVERITY
+            // -------------------------------------------------
+
+            String gapSeverity =
+                    getGapSeverity(gap);
+
+            // =================================================
+            // SAVE ASSESSMENT GAP RESULT
+            // =================================================
+
+            AssessmentGapResult gapResult =
+                    new AssessmentGapResult();
+
+            gapResult.setAttempt(attempt);
+
+            gapResult.setSkillName(
+                    skillName
+            );
+
+            gapResult.setActualScore(
+                    actualScore
+            );
+
+            gapResult.setRequiredScore(
+                    requiredScore
+            );
+
+            gapResult.setGap(
+                    gap
+            );
+
+            gapResult.setGapSeverity(
+                    gapSeverity
+            );
+
+            assessmentGapResultRepository.save(
+                    gapResult
+            );
+
+            // =================================================
+            // ADD TO RESPONSE
+            // =================================================
+
+            skillResults.add(
+                    new AssessmentSkillResultResponse(
+                            skillName,
+                            actualScore,
+                            requiredScore,
+                            gap,
+                            gapSeverity
+                    )
+            );
+        }
+
+        // =====================================================
+        // FINAL RESPONSE
+        // =====================================================
+
+        return new AssessmentResultResponse(
+                attempt.getId(),
+                assessment.getId(),
+                assessment.getTitle(),
+                overallScore,
+                performanceLevel,
+                correctAnswers,
+                questions.size(),
+                skillResults
+        );
     }
 
+    // =========================================================
+    // GET ASSESSMENT GAP RESULTS BY ATTEMPT ID
+    // =========================================================
 
-    /*
-     * Performance classification.
-     */
-    private String calculatePerformance(double score) {
+    public List<AssessmentGapResult> getAssessmentGapResults(
+            Long attemptId) {
 
-        if (score >= 85) {
-            return "EXCELLENT";
-        }
+        AssessmentAttempt attempt =
+                assessmentAttemptRepository
+                        .findById(attemptId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Assessment attempt not found with id: "
+                                                + attemptId
+                                ));
 
-        if (score >= 70) {
-            return "GOOD";
-        }
-
-        if (score >= 50) {
-            return "AVERAGE";
-        }
-
-        return "NEEDS IMPROVEMENT";
+        return assessmentGapResultRepository
+                .findByAttempt(attempt);
     }
 
+    // =========================================================
+    // PERFORMANCE LEVEL
+    // =========================================================
 
-    /*
-     * Gap classification.
-     */
-    private String calculateGapSeverity(double gap) {
+    private String getPerformanceLevel(
+            double score) {
+
+        if (score >= 90) {
+            return "Expert";
+        }
+
+        if (score >= 75) {
+            return "Advanced";
+        }
+
+        if (score >= 60) {
+            return "Competent";
+        }
+
+        if (score >= 40) {
+            return "Intermediate";
+        }
+
+        return "Beginner";
+    }
+
+    // =========================================================
+    // GAP SEVERITY
+    // =========================================================
+
+    private String getGapSeverity(
+            int gap) {
 
         if (gap <= 0) {
             return "NO GAP";
@@ -377,149 +522,14 @@ public class AssessmentService {
             return "LOW";
         }
 
-        if (gap <= 20) {
+        if (gap <= 25) {
             return "MEDIUM";
         }
 
-        return "HIGH";
-    }
-
-
-    private double round(double value) {
-
-        return Math.round(value * 100.0) / 100.0;
-    }
-
-
-    /*
-     * Latest assessment result.
-     */
-    public Map<String, Object> getLatestResult(
-            String email) {
-
-        Employee employee = employeeRepository
-                .findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
-
-        AssessmentAttempt attempt =
-                attemptRepository
-                        .findFirstByEmployeeIdOrderByCompletedAtDesc(
-                                employee.getId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "No assessment attempt found"));
-
-        return buildResult(attempt, employee);
-    }
-
-
-    /*
-     * Assessment history.
-     */
-    public List<Map<String, Object>> getAssessmentHistory(
-            String email) {
-
-        Employee employee = employeeRepository
-                .findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
-
-        List<AssessmentAttempt> attempts =
-                attemptRepository
-                        .findByEmployeeIdOrderByCompletedAtDesc(
-                                employee.getId());
-
-        List<Map<String, Object>> history =
-                new ArrayList<>();
-
-        for (AssessmentAttempt attempt : attempts) {
-
-            Map<String, Object> item =
-                    new LinkedHashMap<>();
-
-            item.put("attemptId", attempt.getId());
-            item.put("assessmentId",
-                    attempt.getAssessmentId());
-            item.put("overallScore",
-                    attempt.getOverallScore());
-            item.put("performanceLevel",
-                    attempt.getPerformanceLevel());
-            item.put("completedAt",
-                    attempt.getCompletedAt());
-
-            history.add(item);
+        if (gap <= 40) {
+            return "HIGH";
         }
 
-        return history;
-    }
-
-
-    /*
-     * Build complete result from a saved attempt.
-     */
-    private Map<String, Object> buildResult(
-            AssessmentAttempt attempt,
-            Employee employee) {
-
-        List<SkillResult> results =
-                skillResultRepository
-                        .findByAttemptId(attempt.getId());
-
-        List<Map<String, Object>> skillResults =
-                new ArrayList<>();
-
-        for (SkillResult result : results) {
-
-            Map<String, Object> item =
-                    new LinkedHashMap<>();
-
-            item.put("skillName",
-                    result.getSkillName());
-
-            item.put("actualScore",
-                    result.getActualScore());
-
-            item.put("requiredScore",
-                    result.getRequiredScore());
-
-            item.put("gap",
-                    result.getGap());
-
-            item.put("gapSeverity",
-                    result.getGapSeverity());
-
-            skillResults.add(item);
-        }
-
-        Map<String, Object> response =
-                new LinkedHashMap<>();
-
-        response.put("attemptId", attempt.getId());
-
-        response.put("employeeId",
-                employee.getId());
-
-        response.put("employeeName",
-                employee.getFirstName()
-                        + " "
-                        + employee.getLastName());
-
-        response.put("assessmentId",
-                attempt.getAssessmentId());
-
-        response.put("overallScore",
-                attempt.getOverallScore());
-
-        response.put("performanceLevel",
-                attempt.getPerformanceLevel());
-
-        response.put("completedAt",
-                attempt.getCompletedAt());
-
-        response.put("skillResults",
-                skillResults);
-
-        return response;
+        return "CRITICAL";
     }
 }

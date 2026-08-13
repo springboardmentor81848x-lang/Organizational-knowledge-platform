@@ -1,20 +1,20 @@
 package com.knowledgegap.controller;
 
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.knowledgegap.dto.AssessmentResultResponse;
+import com.knowledgegap.dto.AssessmentSubmitRequest;
+import com.knowledgegap.entity.Assessment;
+import com.knowledgegap.entity.AssessmentGapResult;
+import com.knowledgegap.entity.AssessmentQuestion;
 import com.knowledgegap.service.AssessmentService;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/employee/assessment")
+@RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
@@ -22,78 +22,111 @@ public class AssessmentController {
     public AssessmentController(
             AssessmentService assessmentService) {
 
-        this.assessmentService = assessmentService;
+        this.assessmentService =
+                assessmentService;
     }
 
+    // =========================================================
+    // ACTIVE ASSESSMENTS
+    // =========================================================
 
-    /*
-     * Get active assessment questions.
-     */
-    @GetMapping("/current")
-    public ResponseEntity<?> getCurrentAssessment() {
+    @GetMapping("/assessments/active")
+    public ResponseEntity<List<Assessment>>
+    getActiveAssessments() {
 
         return ResponseEntity.ok(
-                assessmentService.getCurrentAssessment()
+                assessmentService
+                        .getActiveAssessments()
         );
     }
 
+    // =========================================================
+    // ASSESSMENT BY ID
+    // =========================================================
 
-    /*
-     * Submit assessment.
-     */
-    @PostMapping("/submit")
-    public ResponseEntity<?> submitAssessment(
-            Authentication authentication,
-            @RequestBody Map<String, Object> request) {
+    @GetMapping("/assessments/{id}")
+    public ResponseEntity<Assessment>
+    getAssessment(
+            @PathVariable Long id) {
 
-        String email = authentication.getName();
+        return ResponseEntity.ok(
+                assessmentService
+                        .getAssessmentById(id)
+        );
+    }
 
-        Long assessmentId =
-                Long.valueOf(
-                        request.get("assessmentId").toString()
+    // =========================================================
+    // QUESTIONS
+    // =========================================================
+
+    @GetMapping(
+            "/assessments/{assessmentId}/questions"
+    )
+    public ResponseEntity<List<AssessmentQuestion>>
+    getQuestions(
+            @PathVariable Long assessmentId) {
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getQuestionsByAssessment(
+                                assessmentId
+                        )
+        );
+    }
+
+    // =========================================================
+    // SUBMIT ASSESSMENT
+    // =========================================================
+
+    @PostMapping(
+            "/employee/assessment/submit"
+    )
+    public ResponseEntity<AssessmentResultResponse>
+    submitAssessment(
+            @RequestBody AssessmentSubmitRequest request) {
+
+        throw new UnsupportedOperationException(
+                "Use /employee/assessment/submit/{employeeIdentifier}"
+        );
+    }
+
+    // =========================================================
+    // SUBMIT WITH EMPLOYEE IDENTIFIER
+    // =========================================================
+
+    @PostMapping(
+            "/employee/assessment/submit/{employeeIdentifier}"
+    )
+    public ResponseEntity<AssessmentResultResponse>
+    submitAssessment(
+            @PathVariable String employeeIdentifier,
+            @RequestBody AssessmentSubmitRequest request) {
+
+        AssessmentResultResponse result =
+                assessmentService.submitAssessment(
+                        request,
+                        employeeIdentifier
                 );
 
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> answers =
-                (List<Map<String, Object>>)
-                        request.get("answers");
-
-        return ResponseEntity.ok(
-                assessmentService.submitAssessment(
-                        email,
-                        assessmentId,
-                        answers
-                )
-        );
+        return ResponseEntity.ok(result);
     }
 
+    // =========================================================
+    // GET ASSESSMENT GAP RESULTS
+    // =========================================================
 
-    /*
-     * Get latest result.
-     */
-    @GetMapping("/result")
-    public ResponseEntity<?> getLatestResult(
-            Authentication authentication) {
-
-        String email = authentication.getName();
-
-        return ResponseEntity.ok(
-                assessmentService.getLatestResult(email)
-        );
-    }
-
-
-    /*
-     * Get previous attempts.
-     */
-    @GetMapping("/history")
-    public ResponseEntity<?> getHistory(
-            Authentication authentication) {
-
-        String email = authentication.getName();
+    @GetMapping(
+            "/employee/assessment/gaps/{attemptId}"
+    )
+    public ResponseEntity<List<AssessmentGapResult>>
+    getAssessmentGapResults(
+            @PathVariable Long attemptId) {
 
         return ResponseEntity.ok(
-                assessmentService.getAssessmentHistory(email)
+                assessmentService
+                        .getAssessmentGapResults(
+                                attemptId
+                        )
         );
     }
 }

@@ -1,16 +1,21 @@
 package com.knowledgegap.repository;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.knowledgegap.entity.AssessmentAttempt;
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.Assessment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.knowledgegap.entity.AssessmentAttempt;
+import java.util.Optional;
 
 public interface AssessmentAttemptRepository
         extends JpaRepository<AssessmentAttempt, Long> {
 
-    List<AssessmentAttempt> findByEmployeeIdOrderByCompletedAtDesc(Long employeeId);
+    Optional<AssessmentAttempt> findFirstByEmployeeAndAssessmentOrderByIdDesc(
+            Employee employee,
+            Assessment assessment
+    );
 
-    Optional<AssessmentAttempt> findFirstByEmployeeIdOrderByCompletedAtDesc(Long employeeId);
+    Optional<AssessmentAttempt> findFirstByEmployeeOrderByIdDesc(
+            Employee employee
+    );
 }

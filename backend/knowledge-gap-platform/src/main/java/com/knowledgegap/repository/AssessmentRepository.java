@@ -1,12 +1,13 @@
 package com.knowledgegap.repository;
 
-import java.util.Optional;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.knowledgegap.entity.Assessment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
+@Repository
 public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
 
-    Optional<Assessment> findFirstByActiveTrueOrderByIdDesc();
+    List<Assessment> findByActiveTrue();
 }

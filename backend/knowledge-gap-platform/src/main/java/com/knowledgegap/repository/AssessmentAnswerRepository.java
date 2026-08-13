@@ -1,13 +1,13 @@
 package com.knowledgegap.repository;
 
-import java.util.List;
-
+import com.knowledgegap.entity.AssessmentAnswer;
+import com.knowledgegap.entity.AssessmentAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.knowledgegap.entity.AssessmentAnswer;
+import java.util.List;
 
 public interface AssessmentAnswerRepository
         extends JpaRepository<AssessmentAnswer, Long> {
 
-    List<AssessmentAnswer> findByAttemptId(Long attemptId);
+    List<AssessmentAnswer> findByAttempt(AssessmentAttempt attempt);
 }

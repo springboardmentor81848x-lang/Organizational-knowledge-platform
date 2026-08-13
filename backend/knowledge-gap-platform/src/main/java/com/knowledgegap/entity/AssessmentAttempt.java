@@ -1,12 +1,7 @@
 package com.knowledgegap.entity;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "assessment_attempts")
@@ -16,14 +11,21 @@ public class AssessmentAttempt {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long employeeId;
+    @ManyToOne
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
 
-    private Long assessmentId;
+    @ManyToOne
+    @JoinColumn(name = "assessment_id")
+    private Assessment assessment;
 
+    @Column(name = "overall_score")
     private Double overallScore;
 
+    @Column(name = "performance_level")
     private String performanceLevel;
 
+    @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
     public AssessmentAttempt() {
@@ -33,20 +35,24 @@ public class AssessmentAttempt {
         return id;
     }
 
-    public Long getEmployeeId() {
-        return employeeId;
+    public Employee getEmployee() {
+        return employee;
     }
 
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
     }
 
-    public Long getAssessmentId() {
-        return assessmentId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setAssessmentId(Long assessmentId) {
-        this.assessmentId = assessmentId;
+    public Assessment getAssessment() {
+        return assessment;
+    }
+
+    public void setAssessment(Assessment assessment) {
+        this.assessment = assessment;
     }
 
     public Double getOverallScore() {
