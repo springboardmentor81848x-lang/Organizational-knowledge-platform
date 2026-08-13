@@ -1,47 +1,141 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import React from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+// ==================================================
+// COMMON PAGES
+// ==================================================
 
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import Profile from "../pages/Profile";
+import Notifications from "../pages/Notifications";
+import ReportsAndAnalytics from "../pages/ReportsAndAnalytics";
+
+// ==================================================
+// EMPLOYEE PAGES
+// ==================================================
 
 import EmployeeDashboard from "../pages/EmployeeDashboard";
-import HRDashboard from "../pages/HRDashboard";
-import ManagerDashboard from "../pages/ManagerDashboard";
-import MentorDashboard from "../pages/MentorDashboard";
-import DepartmentHeadDashboard from "../pages/DepartmentHeadDashboard";
-import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
-import Profile from "../pages/Profile";
-
 import Skills from "../pages/Skills";
-import KnowledgeGap from "../pages/KnowledgeGap";
-import CompetencyFramework from "../pages/CompetencyFramework";
-import LearningPath from "../pages/LearningPath";
 import EmployeeSkillAssessment from "../pages/EmployeeSkillAssessment";
-
-import Notifications from "../pages/Notifications";
+import Assessment from "../pages/Assessment";
+import AssessmentResult from "../pages/AssessmentResult";
+import KnowledgeGap from "../pages/KnowledgeGap";
+import LearningPath from "../pages/LearningPath";
+import TrainingLearning from "../pages/TrainingLearning";
 import KnowledgeSharing from "../pages/KnowledgeSharing";
-import ReportsAndAnalytics from "../pages/ReportsAndAnalytics";
+
+// ==================================================
+// HR PAGES
+// ==================================================
+
+import HRDashboard from "../pages/HRDashboard";
+import GapIntelligence from "../pages/GapIntelligence";
+import CompetencyFramework from "../pages/CompetencyFramework";
+
+// ==================================================
+// MANAGER
+// ==================================================
+
+import ManagerDashboard from "../pages/ManagerDashboard";
+
+// ==================================================
+// DEPARTMENT HEAD
+// ==================================================
+
+import DepartmentHeadDashboard from "../pages/DepartmentHeadDashboard";
+
+// ==================================================
+// MENTOR
+// ==================================================
+
+import MentorDashboard from "../pages/MentorDashboard";
+
+// ==================================================
+// SYSTEM ADMINISTRATOR
+// ==================================================
+
+import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
+
+// ==================================================
+// ROLE HELPER
+// ==================================================
+
+const getRole = () => {
+  const role =
+    localStorage.getItem("role") ||
+    localStorage.getItem("userRole") ||
+    "";
+
+  return role
+    .toUpperCase()
+    .replace("ROLE_", "")
+    .trim();
+};
+
+// ==================================================
+// PROTECTED ROUTE
+// ==================================================
+
+function ProtectedRoute({
+  children,
+  allowedRoles,
+}) {
+  const token = localStorage.getItem("token");
+  const role = getRole();
+
+  // --------------------------------------------------
+  // NOT LOGGED IN
+  // --------------------------------------------------
+
+  if (!token) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+  // --------------------------------------------------
+  // WRONG ROLE
+  // --------------------------------------------------
+
+  if (
+    allowedRoles &&
+    !allowedRoles.some(
+      (allowedRole) =>
+        allowedRole
+          .toUpperCase()
+          .trim() === role
+    )
+  ) {
+    return (
+      <Navigate
+        to="/unauthorized"
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
+// ==================================================
+// APP ROUTES
+// ==================================================
 
 function AppRoutes() {
   return (
     <Routes>
 
-      {/* ============================== */}
-      {/* DEFAULT ROUTE */}
-      {/* ============================== */}
-
-      <Route
-        path="/"
-        element={
-          <Navigate
-            to="/login"
-            replace
-          />
-        }
-      />
-
-      {/* ============================== */}
-      {/* AUTHENTICATION */}
-      {/* ============================== */}
+      {/* ==================================================
+          PUBLIC ROUTES
+      ================================================== */}
 
       <Route
         path="/login"
@@ -53,332 +147,448 @@ function AppRoutes() {
         element={<Signup />}
       />
 
-
-      {/* ============================== */}
-      {/* EMPLOYEE */}
-      {/* ============================== */}
-
-      <Route
-        path="/employee"
-        element={<EmployeeDashboard />}
-      />
+      {/* ==================================================
+          COMMON ROUTES
+      ================================================== */}
 
       <Route
         path="/profile"
-        element={<Profile />}
-      />
-
-      <Route
-        path="/skills"
-        element={<Skills />}
-      />
-
-      <Route
-        path="/employee-assessment"
-        element={<EmployeeSkillAssessment />}
-      />
-
-      <Route
-        path="/knowledge-gap"
-        element={<KnowledgeGap />}
-      />
-
-      <Route
-        path="/learning-path"
-        element={<LearningPath />}
-      />
-
-      <Route
-        path="/training"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Training & Learning
-          </div>
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
         }
-      />
-
-      <Route
-        path="/achievements"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Achievements
-          </div>
-        }
-      />
-
-      <Route
-        path="/certifications"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Certifications
-          </div>
-        }
-      />
-
-      <Route
-        path="/knowledge-sharing"
-        element={<KnowledgeSharing />}
       />
 
       <Route
         path="/notifications"
-        element={<Notifications />}
+        element={
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        }
       />
 
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <ReportsAndAnalytics />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* ============================== */}
-      {/* HR */}
-      {/* ============================== */}
+      {/* ==================================================
+          EMPLOYEE
+      ================================================== */}
+
+      <Route
+        path="/employee"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <EmployeeDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --------------------------------------------------
+          OLD DASHBOARD ALIAS
+      -------------------------------------------------- */}
+
+      <Route
+        path="/employee-dashboard"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <EmployeeDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          SKILL INVENTORY
+      ================================================== */}
+
+      <Route
+        path="/skills"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Skills />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          EMPLOYEE SKILL ASSESSMENT
+      ================================================== */}
+
+      <Route
+        path="/employee-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <EmployeeSkillAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/skill-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <EmployeeSkillAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/skill-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <EmployeeSkillAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          ACTUAL ASSESSMENT QUESTIONS
+      ================================================== */}
+
+      <Route
+        path="/employee/assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Assessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          ASSESSMENT RESULT
+      ================================================== */}
+
+      <Route
+        path="/employee/assessment/result"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <AssessmentResult />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          KNOWLEDGE GAP
+      ================================================== */}
+
+      <Route
+        path="/knowledge-gap"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <KnowledgeGap />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          LEARNING PATH
+      ================================================== */}
+
+      <Route
+        path="/learning-path"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <LearningPath />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          TRAINING & LEARNING
+      ================================================== */}
+
+      <Route
+        path="/training-learning"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <TrainingLearning />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Optional employee-specific alias */}
+
+      <Route
+        path="/employee/training-learning"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <TrainingLearning />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          KNOWLEDGE SHARING
+      ================================================== */}
+
+      <Route
+        path="/knowledge-sharing"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <KnowledgeSharing />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          HR
+      ================================================== */}
 
       <Route
         path="/hr"
-        element={<HRDashboard />}
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <HRDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/hr/dashboard"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <HRDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/hr/gap-intelligence"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <GapIntelligence />
+          </ProtectedRoute>
+        }
       />
 
       <Route
         path="/competency-framework"
-        element={<CompetencyFramework />}
-      />
-
-      <Route
-        path="/employees"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Employee Management
-          </div>
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <CompetencyFramework />
+          </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/training-effectiveness"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Training Effectiveness
-          </div>
-        }
-      />
-
-      <Route
-        path="/skill-forecast"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Strategic Skill Forecast
-          </div>
-        }
-      />
-
-      <Route
-        path="/users"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            User Management
-          </div>
-        }
-      />
-
-
-      {/* ============================== */}
-      {/* MANAGER */}
-      {/* ============================== */}
+      {/* ==================================================
+          MANAGER
+      ================================================== */}
 
       <Route
         path="/manager"
-        element={<ManagerDashboard />}
-      />
-
-      <Route
-        path="/team-skills"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Team Skill Coverage
-          </div>
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path="/team-gaps"
+        path="/manager/dashboard"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Team Skill Gaps
-          </div>
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/high-risk-gaps"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            High-Risk Gaps
-          </div>
-        }
-      />
-
-      <Route
-        path="/employee-progress"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Employee Progress
-          </div>
-        }
-      />
-
-      <Route
-        path="/learning-interventions"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Learning Interventions
-          </div>
-        }
-      />
-
-
-      {/* ============================== */}
-      {/* DEPARTMENT HEAD */}
-      {/* ============================== */}
+      {/* ==================================================
+          DEPARTMENT HEAD
+      ================================================== */}
 
       <Route
         path="/department-head"
-        element={<DepartmentHeadDashboard />}
-      />
-
-      <Route
-        path="/team-gap-heatmap"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Team Gap Heatmap
-          </div>
+          <ProtectedRoute
+            allowedRoles={[
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+            ]}
+          >
+            <DepartmentHeadDashboard />
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path="/department-skills"
+        path="/department-head/dashboard"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Department Skill Coverage
-          </div>
+          <ProtectedRoute
+            allowedRoles={[
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+            ]}
+          >
+            <DepartmentHeadDashboard />
+          </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/training-adoption"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Training Adoption
-          </div>
-        }
-      />
-
-      <Route
-        path="/department-risk-gaps"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            High-Risk Skill Gaps
-          </div>
-        }
-      />
-
-      <Route
-        path="/individual-progress"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Individual Progress
-          </div>
-        }
-      />
-
-
-      {/* ============================== */}
-      {/* MENTOR */}
-      {/* ============================== */}
+      {/* ==================================================
+          MENTOR
+      ================================================== */}
 
       <Route
         path="/mentor"
-        element={<MentorDashboard />}
-      />
-
-      <Route
-        path="/training-recommendations"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Training Recommendations
-          </div>
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <MentorDashboard />
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path="/training-catalog"
+        path="/mentor/dashboard"
         element={
-          <div className="p-8 text-2xl font-bold">
-            Training Catalog
-          </div>
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <MentorDashboard />
+          </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/external-resources"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            External Resources
-          </div>
-        }
-      />
-
-      <Route
-        path="/recommendation-analytics"
-        element={
-          <div className="p-8 text-2xl font-bold">
-            Recommendation Analytics
-          </div>
-        }
-      />
-
-
-      {/* ============================== */}
-      {/* SYSTEM ADMINISTRATOR */}
-      {/* ============================== */}
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR
+      ================================================== */}
 
       <Route
         path="/system-administrator"
         element={
-          <SystemAdministratorDashboard />
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <SystemAdministratorDashboard />
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path="/system-users"
+        path="/system-administrator/dashboard"
         element={
-          <div className="p-8 text-2xl font-bold">
-            System User Management
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <SystemAdministratorDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          UNAUTHORIZED
+      ================================================== */}
+
+      <Route
+        path="/unauthorized"
+        element={
+          <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center max-w-md w-full">
+
+              <h1 className="text-3xl font-bold text-red-600">
+                Unauthorized
+              </h1>
+
+              <p className="text-slate-500 mt-3">
+                You do not have permission to access this page.
+              </p>
+
+              <button
+                onClick={() =>
+                  window.history.back()
+                }
+                className="mt-6 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Go Back
+              </button>
+
+            </div>
+
           </div>
         }
       />
 
+      {/* ==================================================
+          DEFAULT
+      ================================================== */}
+
       <Route
-        path="/system-reports"
+        path="/"
         element={
-          <div className="p-8 text-2xl font-bold">
-            System Reports
-          </div>
+          <Navigate
+            to="/login"
+            replace
+          />
         }
       />
 
+      {/* ==================================================
+          UNKNOWN URL
+      ================================================== */}
+
       <Route
-        path="/system-settings"
+        path="*"
         element={
-          <div className="p-8 text-2xl font-bold">
-            System Settings
-          </div>
+          <Navigate
+            to="/login"
+            replace
+          />
         }
-      />
-
-
-      {/* ============================== */}
-      {/* COMMON REPORTS */}
-      {/* ============================== */}
-
-      <Route
-        path="/reports"
-        element={<ReportsAndAnalytics />}
       />
 
     </Routes>
