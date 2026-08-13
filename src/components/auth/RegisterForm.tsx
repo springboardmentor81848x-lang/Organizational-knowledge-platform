@@ -198,7 +198,7 @@ export const RegisterForm: React.FC = () => {
         </p>
 
         <button
-          type="submit"
+           type="submit"
           disabled={isLoading}
           className="w-full h-10 mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-purple-600/25 transition-all disabled:opacity-50 cursor-pointer"
         >

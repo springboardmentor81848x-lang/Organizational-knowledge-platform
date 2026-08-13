@@ -1,4 +1,9 @@
-export type UserRole = "ADMIN" | "HR" | "MANAGER" | "EMPLOYEE";
+export type UserRole =
+  | "ADMIN"
+  | "HR"
+  | "MANAGER"
+  | "EMPLOYEE";
+
 
 export interface User {
   id?: string;
@@ -8,13 +13,24 @@ export interface User {
   lastName?: string;
 }
 
+
 export interface AuthResponse {
   token: string;
   role: UserRole;
 }
 
+
 export interface LoginCredentials {
   email?: string;
   password?: string;
   role?: UserRole;
+}
+
+
+export interface RegisterCredentials {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  departmentId: number;
 }

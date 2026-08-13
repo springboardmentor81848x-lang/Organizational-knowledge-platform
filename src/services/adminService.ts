@@ -1,4 +1,4 @@
-import api from "./api";
+import API from "@/api/axios";
 
 /**
  * These values are the role names accepted by the Milestone 1 backend.  Keep
@@ -38,7 +38,7 @@ export interface CreateUserResponse {
 export const createUser = async (
   payload: CreateUserRequest
 ): Promise<CreateUserResponse> => {
-  const response = await api.post<CreateUserResponse>("/admin/users", payload);
+  const response = await API.post<CreateUserResponse>("/admin/users", payload);
 
   return response.data;
 };
