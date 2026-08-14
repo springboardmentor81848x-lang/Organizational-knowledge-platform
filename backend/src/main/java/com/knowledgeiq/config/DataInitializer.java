@@ -38,6 +38,9 @@ public class DataInitializer implements CommandLineRunner {
     private NotificationRepository notificationRepository;
 
     @Autowired
+    private TrainingCourseRepository courseRepository;
+
+    @Autowired
     private com.knowledgeiq.service.GapAnalysisService gapAnalysisService;
 
     @Autowired
@@ -72,6 +75,13 @@ public class DataInitializer implements CommandLineRunner {
         Skill javaSkill = ensureSkill("Java Spring Boot", "Backend framework", techCategory);
         Skill sqlSkill = ensureSkill("SQL", "Database querying", techCategory);
         Skill awsSkill = ensureSkill("Cloud / AWS", "Cloud infrastructure", techCategory);
+
+        // Seed Core Training Courses with Verified External Learning Resource URLs
+        ensureCourse("Spring Boot & Microservices Development", "Learn modern Java enterprise application architecture and REST API development with Spring Boot.", javaSkill, 5, "Spring / VMware", "https://spring.io/guides/gs/spring-boot", 8);
+        ensureCourse("Modern React Architecture & Component Design", "Comprehensive guide to React 18/19, custom hooks, state management, and modern component patterns.", reactSkill, 4, "React / Meta", "https://react.dev/learn", 6);
+        ensureCourse("Advanced SQL Query Optimization & Relational Modeling", "Master complex relational database queries, indexing strategies, and PostgreSQL optimization.", sqlSkill, 4, "PostgreSQL", "https://www.postgresql.org/docs/current/tutorial.html", 5);
+        ensureCourse("AWS Cloud Solutions Architect Foundations", "Hands-on cloud architecture fundamentals, IAM security, VPC networking, and compute scaling.", awsSkill, 4, "Amazon Web Services", "https://aws.amazon.com/getting-started/", 10);
+        ensureCourse("Executive Communication & Stakeholder Alignment", "Structured communication frameworks for technical leadership, cross-functional collaboration, and alignment.", ensureSkill("Communication & Stakeholder Management", "Clear oral and written communication", softCategory), 4, "Coursera", "https://www.coursera.org/learn/executive-presence", 4);
 
         // Marketing Skills
         Skill contentSkill = ensureSkill("Content Strategy & Copywriting", "Content creation and messaging", mktCategory);
@@ -236,6 +246,23 @@ public class DataInitializer implements CommandLineRunner {
                     skill.setDescription(description);
                     skill.setCategory(category);
                     return skillRepository.save(skill);
+                });
+    }
+
+    private TrainingCourse ensureCourse(String title, String description, Skill targetSkill, int targetLevel, String provider, String courseUrl, int durationHours) {
+        return courseRepository.findAll().stream()
+                .filter(c -> c.getTitle().equalsIgnoreCase(title))
+                .findFirst()
+                .orElseGet(() -> {
+                    TrainingCourse tc = new TrainingCourse();
+                    tc.setTitle(title);
+                    tc.setDescription(description);
+                    tc.setTargetSkill(targetSkill);
+                    tc.setTargetLevel(targetLevel);
+                    tc.setProvider(provider);
+                    tc.setCourseUrl(courseUrl);
+                    tc.setDurationHours(durationHours);
+                    return courseRepository.save(tc);
                 });
     }
 }

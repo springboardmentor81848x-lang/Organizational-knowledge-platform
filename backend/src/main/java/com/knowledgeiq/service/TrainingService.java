@@ -8,6 +8,8 @@ import com.knowledgeiq.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.knowledgeiq.util.UrlValidatorUtil;
+
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,46 +46,50 @@ public class TrainingService {
         TrainingCourse course = new TrainingCourse();
         course.setTitle((String) request.get("title"));
         course.setDescription((String) request.get("description"));
-        course.setProvider(request.get("provider") != null ? (String) request.get("provider") : "Internal Academy");
-        course.setCourseUrl((String) request.get("courseUrl"));
-        course.setDurationHours(request.get("durationHours") != null ? Integer.parseInt(request.get("durationHours").toString()) : 8);
-        
-        if (request.get("targetSkillId") != null && !request.get("targetSkillId").toString().isEmpty()) {
-            UUID skillId = UUID.fromString(request.get("targetSkillId").toString());
-            skillRepository.findById(skillId).ifPresent(course::setTargetSkill);
+        if (request.containsKey("targetSkillId") && request.get("targetSkillId") != null) {
+            try {
+                UUID skillId = UUID.fromString(request.get("targetSkillId").toString());
+                skillRepository.findById(skillId).ifPresent(course::setTargetSkill);
+            } catch (Exception ignored) {}
         }
-        if (request.get("targetLevel") != null) {
-            course.setTargetLevel(Integer.parseInt(request.get("targetLevel").toString()));
-        } else {
-            course.setTargetLevel(3);
+        if (request.containsKey("targetLevel")) {
+            course.setTargetLevel((Integer) request.get("targetLevel"));
         }
-        
+        if (request.containsKey("provider")) {
+            course.setProvider((String) request.get("provider"));
+        }
+        if (request.containsKey("courseUrl")) {
+            course.setCourseUrl(UrlValidatorUtil.sanitizeUrl((String) request.get("courseUrl")));
+        } else if (request.containsKey("url")) {
+            course.setCourseUrl(UrlValidatorUtil.sanitizeUrl((String) request.get("url")));
+        }
+        if (request.containsKey("durationHours")) {
+            course.setDurationHours((Integer) request.get("durationHours"));
+        }
         return courseRepository.save(course);
     }
 
     public TrainingCourse updateCourse(UUID id, Map<String, Object> request) {
         TrainingCourse course = courseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Course not found: " + id));
-        
+                .orElseThrow(() -> new RuntimeException("Course not found"));
         if (request.containsKey("title")) course.setTitle((String) request.get("title"));
         if (request.containsKey("description")) course.setDescription((String) request.get("description"));
+        if (request.containsKey("targetLevel")) course.setTargetLevel((Integer) request.get("targetLevel"));
         if (request.containsKey("provider")) course.setProvider((String) request.get("provider"));
-        if (request.containsKey("courseUrl")) course.setCourseUrl((String) request.get("courseUrl"));
+        if (request.containsKey("courseUrl")) {
+            course.setCourseUrl(UrlValidatorUtil.sanitizeUrl((String) request.get("courseUrl")));
+        } else if (request.containsKey("url")) {
+            course.setCourseUrl(UrlValidatorUtil.sanitizeUrl((String) request.get("url")));
+        }
         if (request.containsKey("durationHours") && request.get("durationHours") != null) {
             course.setDurationHours(Integer.parseInt(request.get("durationHours").toString()));
         }
-        if (request.containsKey("targetSkillId")) {
-            if (request.get("targetSkillId") != null && !request.get("targetSkillId").toString().isEmpty()) {
+        if (request.containsKey("targetSkillId") && request.get("targetSkillId") != null) {
+            try {
                 UUID skillId = UUID.fromString(request.get("targetSkillId").toString());
                 skillRepository.findById(skillId).ifPresent(course::setTargetSkill);
-            } else {
-                course.setTargetSkill(null);
-            }
+            } catch (Exception ignored) {}
         }
-        if (request.containsKey("targetLevel") && request.get("targetLevel") != null) {
-            course.setTargetLevel(Integer.parseInt(request.get("targetLevel").toString()));
-        }
-
         return courseRepository.save(course);
     }
 
@@ -231,13 +237,19 @@ public class TrainingService {
                     gap.getSkillName(), cur, roleTitle, req, gapPct);
 
             List<TrainingCourse> matchingCourses = courseRepository.findByTargetSkillId(gap.getSkillId());
+            if (matchingCourses.isEmpty()) {
+                TrainingCourse autoCreated = resolveOrCreateCourseForSkill(gap);
+                if (autoCreated != null) {
+                    matchingCourses = Collections.singletonList(autoCreated);
+                }
+            }
 
             if (!matchingCourses.isEmpty()) {
                 for (TrainingCourse tc : matchingCourses) {
                     String status = enrollmentStatuses.getOrDefault(tc.getId(), "NOT_STARTED");
                     boolean isExternal = tc.getCourseUrl() != null && tc.getCourseUrl().startsWith("http");
 
-                    steps.add(new PersonalizedRecommendationDto(
+                    PersonalizedRecommendationDto recDto = new PersonalizedRecommendationDto(
                             tc.getId(),
                             tc.getTitle(),
                             gap.getCategoryName(),
@@ -245,17 +257,22 @@ public class TrainingService {
                             tc.getDurationHours() != null ? tc.getDurationHours() : 6,
                             cur, req, gapPct, priority, status, whyText, tc.getCourseUrl(),
                             0, false, null, 0.0, isExternal
-                    ));
+                    );
+                    recDto.setSkillName(gap.getSkillName());
+                    recDto.setDescription(tc.getDescription());
+                    steps.add(recDto);
                 }
             } else {
-                steps.add(new PersonalizedRecommendationDto(
+                PersonalizedRecommendationDto fallbackDto = new PersonalizedRecommendationDto(
                         UUID.nameUUIDFromBytes(gap.getSkillName().getBytes()),
                         "Mastering " + gap.getSkillName() + " & Best Practices",
                         gap.getCategoryName(),
                         "KnowledgeIQ Learning Center",
                         6, cur, req, gapPct, priority, "NOT_STARTED", whyText, null,
                         0, false, null, 0.0, false
-                ));
+                );
+                fallbackDto.setSkillName(gap.getSkillName());
+                steps.add(fallbackDto);
             }
         }
 
@@ -440,5 +457,91 @@ public class TrainingService {
         m.put("courseUrl", courseUrl);
         m.put("badge", badge);
         return m;
+    }
+
+    private TrainingCourse resolveOrCreateCourseForSkill(SkillGapDto gap) {
+        if (gap == null || gap.getSkillName() == null) return null;
+        String skillName = gap.getSkillName().trim();
+        String lower = skillName.toLowerCase();
+
+        String title;
+        String provider;
+        String courseUrl;
+        String description;
+
+        if (lower.contains("spring") || lower.contains("java")) {
+            title = "Spring Boot & Microservices Development";
+            provider = "Spring / VMware";
+            courseUrl = "https://spring.io/guides/gs/spring-boot";
+            description = "Build enterprise-grade microservices and robust REST APIs with Spring Boot.";
+        } else if (lower.contains("react") || lower.contains("frontend")) {
+            title = "Modern React Architecture & Component Design";
+            provider = "React / Meta";
+            courseUrl = "https://react.dev/learn";
+            description = "Master React hooks, state management, and modern component patterns.";
+        } else if (lower.contains("python")) {
+            title = "Python Programming & Core Language Idioms";
+            provider = "Python Software Foundation";
+            courseUrl = "https://docs.python.org/3/tutorial/";
+            description = "Learn idiomatic Python, data structures, and automated scripting.";
+        } else if (lower.contains("sql") || lower.contains("postgres") || lower.contains("database")) {
+            title = "Advanced SQL Optimization & Relational Modeling";
+            provider = "PostgreSQL";
+            courseUrl = "https://www.postgresql.org/docs/current/tutorial.html";
+            description = "Relational database modeling, query tuning, and index optimization.";
+        } else if (lower.contains("aws") || lower.contains("cloud")) {
+            title = "AWS Cloud Solutions Architect Foundations";
+            provider = "Amazon Web Services";
+            courseUrl = "https://aws.amazon.com/getting-started/";
+            description = "Design resilient, scalable infrastructure on AWS cloud services.";
+        } else if (lower.contains("docker") || lower.contains("container")) {
+            title = "Docker Containerization & Compose Orchestration";
+            provider = "Docker";
+            courseUrl = "https://docs.docker.com/get-started/";
+            description = "Containerization fundamentals, multi-stage builds, and Compose workflows.";
+        } else if (lower.contains("kubernetes") || lower.contains("k8s")) {
+            title = "Kubernetes Production Cluster Orchestration";
+            provider = "Kubernetes";
+            courseUrl = "https://kubernetes.io/docs/tutorials/";
+            description = "Deploy, scale, and manage containerized microservices on Kubernetes.";
+        } else if (lower.contains("figma") || lower.contains("design") || lower.contains("ux") || lower.contains("ui")) {
+            title = "Figma Design Systems & Interactive Prototyping";
+            provider = "Figma";
+            courseUrl = "https://help.figma.com/hc/en-us/categories/360002051613-Get-started";
+            description = "Build scalable UI component libraries and high-fidelity interactive prototypes.";
+        } else if (lower.contains("recruit") || lower.contains("talent")) {
+            title = "Strategic Talent Acquisition & Hiring Frameworks";
+            provider = "SHRM";
+            courseUrl = "https://www.shrm.org/topics/talent-acquisition";
+            description = "Modern sourcing, competency-based interviewing, and talent pipelines.";
+        } else if (lower.contains("communication") || lower.contains("leadership") || lower.contains("stakeholder")) {
+            title = "Executive Communication & Stakeholder Alignment";
+            provider = "Coursera";
+            courseUrl = "https://www.coursera.org/learn/executive-presence";
+            description = "Frameworks for technical leadership and executive stakeholder communication.";
+        } else {
+            title = "Mastering " + skillName + " & Core Practices";
+            provider = "KnowledgeIQ Learning";
+            courseUrl = null;
+            description = "Comprehensive learning module covering " + skillName + " benchmarks.";
+        }
+
+        Skill skill = null;
+        if (gap.getSkillId() != null) {
+            skill = skillRepository.findById(gap.getSkillId()).orElse(null);
+        }
+        if (skill == null) {
+            skill = skillRepository.findAllByName(skillName).stream().findFirst().orElse(null);
+        }
+
+        TrainingCourse tc = new TrainingCourse();
+        tc.setTitle(title);
+        tc.setDescription(description);
+        tc.setProvider(provider);
+        tc.setCourseUrl(UrlValidatorUtil.sanitizeUrl(courseUrl));
+        tc.setTargetSkill(skill);
+        tc.setTargetLevel(gap.getRequiredLevel() != null ? gap.getRequiredLevel() : 4);
+        tc.setDurationHours(6);
+        return courseRepository.save(tc);
     }
 }

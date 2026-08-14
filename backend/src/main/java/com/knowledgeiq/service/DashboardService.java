@@ -144,13 +144,17 @@ public class DashboardService {
         for (TrainingCourse tc : recCourses) {
             String status = enrollmentStatuses.getOrDefault(tc.getId(), "NOT_STARTED");
             int progress = "COMPLETED".equalsIgnoreCase(status) ? 100 : "IN_PROGRESS".equalsIgnoreCase(status) ? 40 : 0;
-            path.add(Map.of(
-                    "title", tc.getTitle(),
-                    "tag", tc.getTargetSkill() != null && tc.getTargetSkill().getCategory() != null 
-                            ? tc.getTargetSkill().getCategory().getName() : "General",
-                    "progress", progress,
-                    "priority", tc.getTargetLevel() != null && tc.getTargetLevel() >= 4 ? "High" : "Medium"
-            ));
+            Map<String, Object> pathItem = new HashMap<>();
+            pathItem.put("id", tc.getId() != null ? tc.getId().toString() : null);
+            pathItem.put("title", tc.getTitle());
+            pathItem.put("tag", tc.getTargetSkill() != null && tc.getTargetSkill().getCategory() != null 
+                    ? tc.getTargetSkill().getCategory().getName() : "General");
+            pathItem.put("progress", progress);
+            pathItem.put("priority", tc.getTargetLevel() != null && tc.getTargetLevel() >= 4 ? "High" : "Medium");
+            pathItem.put("courseUrl", tc.getCourseUrl());
+            pathItem.put("url", tc.getCourseUrl());
+            pathItem.put("provider", tc.getProvider());
+            path.add(pathItem);
         }
         dto.setPath(path);
         dto.setPathInfo(Map.of("role", roleTitle, "readiness", skillScore, "reqGaps", gapCount));

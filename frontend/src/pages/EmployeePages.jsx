@@ -1633,21 +1633,39 @@ export function EmployeeAI({ user }) {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => step.isExternal && step.courseUrl ? window.open(step.courseUrl, '_blank') : handleEnroll(step.courseId)}
-                          disabled={isCompleted}
-                          className={`text-xs font-semibold rounded-xl px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 ${
-                            isCompleted
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : isInProgress
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
-                              : 'bg-lime-400 text-[#0B0F1A] hover:bg-lime-300 font-bold shadow-md'
-                          }`}
-                        >
-                          <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : step.isExternal ? 'external-link' : 'book-open'} className="w-3.5 h-3.5" />
-                          {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : step.isExternal ? 'Open External' : 'Start Learning'}
-                        </button>
+                        {step.courseUrl || step.url ? (
+                          <a
+                            href={step.courseUrl || step.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`text-xs font-semibold rounded-xl px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 ${
+                              isCompleted
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : isInProgress
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+                                : 'bg-lime-400 text-[#0B0F1A] hover:bg-lime-300 font-bold shadow-md shadow-lime-400/20'
+                            }`}
+                          >
+                            <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'external-link'} className="w-3.5 h-3.5" />
+                            {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Open course ↗'}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleEnroll(step.courseId)}
+                            disabled={isCompleted}
+                            className={`text-xs font-semibold rounded-xl px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 ${
+                              isCompleted
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : isInProgress
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+                                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'book-open'} className="w-3.5 h-3.5" />
+                            {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Start Learning'}
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -1706,21 +1724,39 @@ export function EmployeeAI({ user }) {
                   </div>
 
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => rec.isExternal && rec.courseUrl ? window.open(rec.courseUrl, '_blank') : handleEnroll(rec.courseId)}
-                      disabled={isCompleted}
-                      className={`flex-1 text-xs font-semibold rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 ${
-                        isCompleted
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : isInProgress
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-lime-400 text-[#0B0F1A] hover:bg-lime-300 font-bold shadow-md'
-                      }`}
-                    >
-                      <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : rec.isExternal ? 'external-link' : 'book-open'} className="w-3.5 h-3.5" />
-                      {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : rec.isExternal ? 'Open External' : 'Start Learning'}
-                    </button>
+                    {rec.courseUrl || rec.url ? (
+                      <a
+                        href={rec.courseUrl || rec.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex-1 text-xs font-semibold rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 ${
+                          isCompleted
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : isInProgress
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-lime-400 text-[#0B0F1A] hover:bg-lime-300 font-bold shadow-md shadow-lime-400/20'
+                        }`}
+                      >
+                        <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'external-link'} className="w-3.5 h-3.5" />
+                        {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Open course ↗'}
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleEnroll(rec.courseId)}
+                        disabled={isCompleted}
+                        className={`flex-1 text-xs font-semibold rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 ${
+                          isCompleted
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : isInProgress
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-white/5 border border-white/10 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'book-open'} className="w-3.5 h-3.5" />
+                        {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Start Learning'}
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -2014,22 +2050,40 @@ export function EmployeeTraining({ user }) {
                 </div>
 
                 {/* Action Button */}
-                <div className="pt-4">
-                  <button
-                    type="button"
-                    onClick={() => step.isExternal && step.courseUrl ? window.open(step.courseUrl, '_blank') : handleEnroll(step.courseId)}
-                    disabled={isCompleted}
-                    className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shadow-sm ${
-                      isCompleted
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : isInProgress
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
-                        : 'bg-[#0B0F1A] text-white hover:bg-slate-800 dark:bg-lime-400 dark:text-[#0B0F1A] dark:hover:bg-lime-300'
-                    }`}
-                  >
-                    <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : step.isExternal ? 'external-link' : 'book-open'} className="w-4 h-4" />
-                    {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Open course'}
-                  </button>
+                <div className="pt-4 flex items-center gap-3">
+                  {step.courseUrl || step.url ? (
+                    <a
+                      href={step.courseUrl || step.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 shadow-sm ${
+                        isCompleted
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : isInProgress
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+                          : 'bg-[#0B0F1A] text-white hover:bg-slate-800 dark:bg-lime-400 dark:text-[#0B0F1A] dark:hover:bg-lime-300 shadow-[0_4px_16px_rgba(166,226,46,0.3)]'
+                      }`}
+                    >
+                      <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'external-link'} className="w-4 h-4" />
+                      {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Open course ↗'}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleEnroll(step.courseId)}
+                      disabled={isCompleted}
+                      className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 shadow-sm ${
+                        isCompleted
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : isInProgress
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+                          : 'bg-white/5 border border-white/10 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Icon name={isCompleted ? 'check-circle' : isInProgress ? 'play' : 'book-open'} className="w-4 h-4" />
+                      {isCompleted ? 'Completed' : isInProgress ? 'Continue Learning' : 'Learning resource unavailable'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.knowledgeiq.util.UrlValidatorUtil;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -38,6 +39,9 @@ public class AiService {
 
     @Autowired
     private CourseEnrollmentRepository enrollmentRepository;
+
+    @Autowired
+    private TrainingCourseRepository courseRepository;
 
     @Autowired
     private AssessmentRepository assessmentRepository;
@@ -224,9 +228,31 @@ public class AiService {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
 
         String prompt = String.format(
-            "For the professional role/domain named \"%s\", generate exactly 5 core technical skills that are essential to master. " +
-            "Return the output as a valid JSON object matching this schema: " +
-            "{\"skills\": [{\"name\": \"Skill Name\", \"expectedLevel\": 4}, ...]}. " +
+            "You are an expert curriculum architect and technical mentor for KnowledgeIQ.\n" +
+            "For the professional role/domain named \"%s\", generate:\n" +
+            "1. Exactly 5 core technical skills that are essential to master, with expected proficiency levels (1-5).\n" +
+            "2. Exactly 3 to 5 high-quality course or tutorial recommendations that teach these skills.\n\n" +
+            "CRITICAL INSTRUCTIONS FOR COURSE URLS:\n" +
+            "- Provide a real, publicly accessible learning resource URL when possible.\n" +
+            "- Prefer official documentation and courses from reputable providers (e.g. Spring, Microsoft, AWS, Google, Oracle, MDN, Python.org, React.dev, PostgreSQL.org, Docker, Kubernetes, freeCodeCamp, Coursera, Udemy).\n" +
+            "- Do NOT invent or fabricate fake URLs. If a reliable, official URL cannot be provided, set \"url\": null.\n\n" +
+            "Return the output as a valid JSON object matching this schema:\n" +
+            "{\n" +
+            "  \"skills\": [\n" +
+            "    {\"name\": \"Skill Name\", \"expectedLevel\": 4}\n" +
+            "  ],\n" +
+            "  \"courses\": [\n" +
+            "    {\n" +
+            "      \"title\": \"Course Title\",\n" +
+            "      \"provider\": \"Provider Name (e.g. Spring, AWS, React, MDN, Coursera)\",\n" +
+            "      \"description\": \"Action-oriented summary of what this course covers...\",\n" +
+            "      \"url\": \"https://... or null\",\n" +
+            "      \"skill\": \"Target Skill Name\",\n" +
+            "      \"level\": 4,\n" +
+            "      \"durationHours\": 6\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}\n" +
             "Do not include markdown code block formatting (like ```json), just return the raw JSON string.",
             domain
         );
@@ -267,6 +293,10 @@ public class AiService {
 
     private Map<String, Object> syncSuggestionsWithDatabase(Map<String, Object> rawData) {
         List<Map<String, Object>> rawSkills = (List<Map<String, Object>>) rawData.get("skills");
+        List<Map<String, Object>> rawCourses = (List<Map<String, Object>>) rawData.get("courses");
+        if (rawCourses == null) {
+            rawCourses = (List<Map<String, Object>>) rawData.get("recommendations");
+        }
 
         SkillCategory category = skillCategoryRepository.findAll().stream().findFirst().orElseGet(() -> {
             SkillCategory cat = new SkillCategory();
@@ -275,20 +305,25 @@ public class AiService {
             return skillCategoryRepository.save(cat);
         });
 
+        Map<String, Skill> skillMapByName = new HashMap<>();
         List<Map<String, Object>> syncedSkills = new ArrayList<>();
         if (rawSkills != null) {
             for (Map<String, Object> rawSkillMap : rawSkills) {
                 String skillName = (String) rawSkillMap.get("name");
+                if (skillName == null || skillName.isBlank()) continue;
                 Integer expectedLevel = (Integer) rawSkillMap.get("expectedLevel");
+                if (expectedLevel == null) expectedLevel = 4;
 
-                Skill skill = skillRepository.findAllByName(skillName).stream().findFirst()
+                final String sName = skillName;
+                Skill skill = skillRepository.findAllByName(sName).stream().findFirst()
                         .orElseGet(() -> {
                             Skill s = new Skill();
-                            s.setName(skillName);
+                            s.setName(sName);
                             s.setCategory(category);
                             s.setDescription("AI Suggested Skill for domain");
                             return skillRepository.save(s);
                         });
+                skillMapByName.put(sName.toLowerCase(), skill);
                 
                 Map<String, Object> skillInfo = new HashMap<>();
                 skillInfo.put("skillId", skill.getId().toString());
@@ -298,50 +333,175 @@ public class AiService {
             }
         }
 
+        List<Map<String, Object>> syncedCourses = new ArrayList<>();
+        if (rawCourses != null) {
+            for (Map<String, Object> rawCourseMap : rawCourses) {
+                String title = (String) rawCourseMap.get("title");
+                if (title == null || title.isBlank()) continue;
+                String provider = (String) rawCourseMap.get("provider");
+                String description = (String) rawCourseMap.get("description");
+                String rawUrl = (String) rawCourseMap.get("url");
+                String sanitizedUrl = UrlValidatorUtil.sanitizeUrl(rawUrl);
+
+                String targetSkillName = (String) rawCourseMap.get("skill");
+                if (targetSkillName == null) targetSkillName = (String) rawCourseMap.get("targetSkill");
+                
+                Skill targetSkill = null;
+                if (targetSkillName != null && !targetSkillName.isBlank()) {
+                    targetSkill = skillMapByName.get(targetSkillName.toLowerCase());
+                    if (targetSkill == null) {
+                        final String finalSkillName = targetSkillName;
+                        targetSkill = skillRepository.findAllByName(finalSkillName).stream().findFirst()
+                                .orElseGet(() -> {
+                                    Skill s = new Skill();
+                                    s.setName(finalSkillName);
+                                    s.setCategory(category);
+                                    s.setDescription("AI Suggested Skill");
+                                    return skillRepository.save(s);
+                                });
+                        skillMapByName.put(targetSkillName.toLowerCase(), targetSkill);
+                    }
+                }
+
+                Object lvlObj = rawCourseMap.get("level");
+                if (lvlObj == null) lvlObj = rawCourseMap.get("targetLevel");
+                int targetLevel = 4;
+                if (lvlObj instanceof Integer) targetLevel = (Integer) lvlObj;
+                else if (lvlObj instanceof String) {
+                    try { targetLevel = Integer.parseInt((String) lvlObj); } catch (Exception ignored) {}
+                }
+
+                Object durObj = rawCourseMap.get("durationHours");
+                int durationHours = 6;
+                if (durObj instanceof Integer) durationHours = (Integer) durObj;
+                else if (durObj instanceof String) {
+                    try { durationHours = Integer.parseInt((String) durObj); } catch (Exception ignored) {}
+                }
+
+                final Skill fSkill = targetSkill;
+                final String fTitle = title;
+                final String fDesc = description;
+                final String fProvider = provider != null ? provider : "KnowledgeIQ Learning";
+                final String fUrl = sanitizedUrl;
+                final int fLevel = targetLevel;
+                final int fDur = durationHours;
+
+                TrainingCourse course = courseRepository.findAll().stream()
+                        .filter(c -> c.getTitle().equalsIgnoreCase(fTitle))
+                        .findFirst()
+                        .orElse(null);
+
+                if (course == null && fSkill != null) {
+                    List<TrainingCourse> existingForSkill = courseRepository.findByTargetSkillId(fSkill.getId());
+                    if (!existingForSkill.isEmpty()) {
+                        course = existingForSkill.get(0);
+                    }
+                }
+
+                if (course == null) {
+                    course = new TrainingCourse();
+                    course.setTitle(fTitle);
+                    course.setDescription(fDesc != null ? fDesc : "Master " + (fSkill != null ? fSkill.getName() : fTitle) + " with practical exercises.");
+                    course.setProvider(fProvider);
+                    course.setCourseUrl(fUrl);
+                    course.setTargetSkill(fSkill);
+                    course.setTargetLevel(fLevel);
+                    course.setDurationHours(fDur);
+                    course = courseRepository.save(course);
+                } else {
+                    // Update URL if existing was null/empty and new one is valid
+                    boolean updated = false;
+                    if ((course.getCourseUrl() == null || course.getCourseUrl().isBlank()) && fUrl != null) {
+                        course.setCourseUrl(fUrl);
+                        updated = true;
+                    }
+                    if (course.getProvider() == null && fProvider != null) {
+                        course.setProvider(fProvider);
+                        updated = true;
+                    }
+                    if (updated) {
+                        course = courseRepository.save(course);
+                    }
+                }
+
+                Map<String, Object> courseInfo = new HashMap<>();
+                courseInfo.put("id", course.getId().toString());
+                courseInfo.put("title", course.getTitle());
+                courseInfo.put("provider", course.getProvider());
+                courseInfo.put("description", course.getDescription());
+                courseInfo.put("url", course.getCourseUrl());
+                courseInfo.put("courseUrl", course.getCourseUrl());
+                courseInfo.put("skill", targetSkill != null ? targetSkill.getName() : null);
+                courseInfo.put("level", course.getTargetLevel());
+                courseInfo.put("durationHours", course.getDurationHours());
+                syncedCourses.add(courseInfo);
+            }
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("skills", syncedSkills);
+        result.put("courses", syncedCourses);
         return result;
     }
 
     private Map<String, Object> getLocalFallbackSuggestions(String domain) {
         String cleanDomain = domain.toLowerCase().trim();
         List<Map<String, Object>> skills = new ArrayList<>();
+        List<Map<String, Object>> courses = new ArrayList<>();
 
         if (cleanDomain.contains("devops") || cleanDomain.contains("infrastructure") || cleanDomain.contains("site reliability")) {
             skills = Arrays.asList(
-                createSkillMap("Linux", 4), createSkillMap("Git", 4), createSkillMap("Docker", 4),
-                createSkillMap("Kubernetes", 4), createSkillMap("CI/CD", 4), createSkillMap("Terraform", 3),
-                createSkillMap("Ansible", 3), createSkillMap("Cloud/AWS", 3)
+                createSkillMap("Docker", 4), createSkillMap("Kubernetes", 4), createSkillMap("Cloud / AWS", 4),
+                createSkillMap("Linux", 4), createSkillMap("CI/CD", 4)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Docker Containerization & Compose", "Docker", "https://docs.docker.com/get-started/", "Docker", 4, 6, "Learn container fundamentals, multi-stage builds, and Compose orchestration."),
+                createCourseMap("Kubernetes Production Cluster Orchestration", "Kubernetes", "https://kubernetes.io/docs/tutorials/", "Kubernetes", 4, 8, "Deploy, scale, and manage microservices on production Kubernetes."),
+                createCourseMap("AWS Cloud Practitioner & Architecture", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 4, 10, "Design scalable, resilient cloud architectures using core AWS services.")
             );
         } else if (cleanDomain.contains("design") || cleanDomain.contains("ux") || cleanDomain.contains("ui") || cleanDomain.contains("product designer")) {
             skills = Arrays.asList(
                 createSkillMap("Figma", 4), createSkillMap("UI/UX Design", 4), createSkillMap("Wireframing", 3),
-                createSkillMap("User Research", 3), createSkillMap("Interaction Design", 3), createSkillMap("Typography", 3)
+                createSkillMap("User Research", 3), createSkillMap("Interaction Design", 3)
             );
-        } else if (cleanDomain.contains("sales") || cleanDomain.contains("business development") || cleanDomain.contains("sales executive")) {
-            skills = Arrays.asList(
-                createSkillMap("Sales Pipeline", 4), createSkillMap("Negotiation", 4), createSkillMap("CRM Tools", 3),
-                createSkillMap("Presentation", 3), createSkillMap("Lead Generation", 3), createSkillMap("Communication", 4)
+            courses = Arrays.asList(
+                createCourseMap("Figma Design Systems & Interactive Prototyping", "Figma", "https://help.figma.com/hc/en-us/categories/360002051613-Get-started", "Figma", 4, 6, "Build scalable UI component libraries, variants, and high-fidelity prototypes."),
+                createCourseMap("Interaction Design & Usability Testing", "Interaction Design Foundation", "https://www.interaction-design.org/literature", "UI/UX Design", 4, 8, "Master user research methodologies and usability evaluation heuristics.")
             );
         } else if (cleanDomain.contains("data") || cleanDomain.contains("sql") || cleanDomain.contains("analytics") || cleanDomain.contains("python")) {
             skills = Arrays.asList(
                 createSkillMap("SQL", 4), createSkillMap("Python", 4), createSkillMap("Data Analytics", 4),
-                createSkillMap("Excel", 3), createSkillMap("Tableau", 3), createSkillMap("Communication", 3)
+                createSkillMap("Cloud / AWS", 3), createSkillMap("Communication & Stakeholder Management", 3)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Advanced SQL Query Optimization & Modeling", "PostgreSQL", "https://www.postgresql.org/docs/current/tutorial.html", "SQL", 4, 5, "Write performant SQL queries, understand execution plans, and design relational schemas."),
+                createCourseMap("Python for Data Analysis & Engineering", "Python Software Foundation", "https://docs.python.org/3/tutorial/", "Python", 4, 8, "Data manipulation, Pandas dataframes, and automated analytical pipelines.")
             );
         } else if (cleanDomain.contains("java") || cleanDomain.contains("backend") || cleanDomain.contains("spring")) {
             skills = Arrays.asList(
-                createSkillMap("Java Spring Boot", 4), createSkillMap("SQL", 4), createSkillMap("System Design", 4),
-                createSkillMap("Cloud/AWS", 3), createSkillMap("Security", 3)
+                createSkillMap("Java Spring Boot", 5), createSkillMap("SQL", 4), createSkillMap("Cloud / AWS", 4),
+                createSkillMap("Security", 3), createSkillMap("Communication & Stakeholder Management", 4)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Spring Boot & Microservices Development", "Spring / VMware", "https://spring.io/guides/gs/spring-boot", "Java Spring Boot", 5, 8, "Build production-grade REST APIs, dependency injection, and cloud-native microservices."),
+                createCourseMap("Advanced SQL Query Optimization & Relational Modeling", "PostgreSQL", "https://www.postgresql.org/docs/current/tutorial.html", "SQL", 4, 5, "Database schema design, indexing strategies, and transaction isolation."),
+                createCourseMap("AWS Cloud Solutions Architect Foundations", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 4, 10, "Architecting resilient backend services on Amazon Web Services infrastructure.")
             );
         } else {
             skills = Arrays.asList(
-                createSkillMap("Git", 4), createSkillMap("SQL", 3), createSkillMap("System Design", 4),
-                createSkillMap("JavaScript", 4), createSkillMap("Security", 3), createSkillMap("Communication", 3)
+                createSkillMap("React", 4), createSkillMap("Java Spring Boot", 4), createSkillMap("SQL", 4),
+                createSkillMap("Cloud / AWS", 3), createSkillMap("Communication & Stakeholder Management", 4)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Modern React Architecture & Component Design", "React / Meta", "https://react.dev/learn", "React", 4, 6, "Learn modern React 18/19 hooks, component trees, and state management."),
+                createCourseMap("Spring Boot & Microservices Development", "Spring / VMware", "https://spring.io/guides/gs/spring-boot", "Java Spring Boot", 4, 8, "Enterprise application development using Java Spring Boot."),
+                createCourseMap("Executive Communication & Stakeholder Alignment", "Coursera", "https://www.coursera.org/learn/executive-presence", "Communication & Stakeholder Management", 4, 4, "Technical leadership and executive communication strategies.")
             );
         }
 
         Map<String, Object> result = new HashMap<>();
         result.put("skills", skills);
+        result.put("courses", courses);
         return result;
     }
 
@@ -350,6 +510,18 @@ public class AiService {
         skill.put("name", name);
         skill.put("expectedLevel", expectedLevel);
         return skill;
+    }
+
+    private Map<String, Object> createCourseMap(String title, String provider, String url, String skill, int level, int durationHours, String description) {
+        Map<String, Object> course = new HashMap<>();
+        course.put("title", title);
+        course.put("provider", provider);
+        course.put("url", url);
+        course.put("skill", skill);
+        course.put("level", level);
+        course.put("durationHours", durationHours);
+        course.put("description", description);
+        return course;
     }
 
     public Map<String, Object> generateAiAssessment(String domain, String difficulty, Integer questionCount) {
