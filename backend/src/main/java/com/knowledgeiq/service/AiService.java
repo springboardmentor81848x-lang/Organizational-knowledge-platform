@@ -566,88 +566,203 @@ public class AiService {
     }
 
     private Map<String, Object> getFallbackAiAssessment(String domain, String difficulty, int count) {
-        String clean = domain.toLowerCase();
-        List<Map<String, Object>> questions = new ArrayList<>();
+        String clean = domain.toLowerCase().trim();
+        List<Map<String, Object>> pool = new ArrayList<>();
+        Random rng = new Random();
 
-        if (clean.contains("data") || clean.contains("sql") || clean.contains("analytics") || clean.contains("python")) {
-            questions.add(createQuestion("q1", "What is the primary function of the SQL HAVING clause?",
-                    Arrays.asList("Filter rows before grouping", "Filter groups formed by GROUP BY clause", "Sort result set in descending order", "Join two tables on primary key"), 1,
-                    "HAVING is used to filter aggregated group records, whereas WHERE filters individual rows prior to aggregation.", "SQL", difficulty));
-            questions.add(createQuestion("q2", "In pandas / Data Analytics, which method handles missing NaN values effectively?",
-                    Arrays.asList("df.fillna() or df.dropna()", "df.clean_nulls()", "df.remove_nan()", "df.filter_empty()"), 0,
-                    "fillna() replaces missing NaN values with specified data or statistics, while dropna() removes rows containing NaN.", "Data Analytics", difficulty));
-            questions.add(createQuestion("q3", "What distinguishes INNER JOIN from LEFT JOIN in relational databases?",
-                    Arrays.asList("INNER JOIN returns all rows from left table regardless of match", "LEFT JOIN returns all rows from left table and matching rows from right table", "They produce identical results in ANSI SQL", "INNER JOIN includes null values from both tables"), 1,
-                    "LEFT JOIN retains all rows from the left table regardless of whether a matching record exists in the right table.", "SQL", difficulty));
-            questions.add(createQuestion("q4", "Which chart type is best suited to display data distribution and quartiles?",
-                    Arrays.asList("Pie Chart", "Box Plot (Box-and-Whisker)", "Line Graph", "Donut Chart"), 1,
-                    "Box plots visually depict five-number statistical summaries: minimum, lower quartile, median, upper quartile, and maximum.", "Data Analytics", difficulty));
-            questions.add(createQuestion("q5", "What is the key advantage of using CTEs (Common Table Expressions) with WITH clause?",
-                    Arrays.asList("Increases query execution speed by 10x", "Improves query readability and enables recursive querying", "Permanently indexes the target table", "Bypasses database security permissions"), 1,
-                    "CTEs break complex queries into modular, readable named temporary result sets that can be referenced multiple times.", "SQL", difficulty));
-        } else if (clean.contains("react") || clean.contains("frontend") || clean.contains("javascript")) {
-            questions.add(createQuestion("q1", "In React, what is the main purpose of the useEffect hook?",
-                    Arrays.asList("To directly modify DOM elements synchronously", "To handle side effects like data fetching and subscriptions", "To compile JSX into plain HTML", "To replace Redux store state"), 1,
-                    "useEffect runs side effects after component rendering, accommodating API calls, event listeners, and timers.", "React", difficulty));
-            questions.add(createQuestion("q2", "What happens when you mutate a React state variable directly without setter function?",
-                    Arrays.asList("React re-renders immediately with updated state", "React will not trigger a re-render because state reference unchanged", "A JavaScript SyntaxError is thrown", "The component drops state permanently"), 1,
-                    "React relies on state reference changes to trigger reconciliation and re-rendering.", "React", difficulty));
-            questions.add(createQuestion("q3", "Which method optimizes functional components by preventing unnecessary re-renders?",
-                    Arrays.asList("React.memo()", "React.useRef()", "React.cloneElement()", "React.createRef()"), 0,
-                    "React.memo is a higher-order component that skips rendering if component props have not changed.", "React", difficulty));
-            questions.add(createQuestion("q4", "What is the key feature of the Virtual DOM in React?",
-                    Arrays.asList("Directly replaces browser window DOM API", "In-memory light representation of real DOM to batch and diff updates efficiently", "A database for storing local storage items", "A WebGL engine for 3D rendering"), 1,
-                    "React computes diffs in the Virtual DOM and performs minimal real DOM batch updates.", "React", difficulty));
-            questions.add(createQuestion("q5", "What does the Dependency Array in useEffect control?",
-                    Arrays.asList("The CSS style overrides", "When the effect callback re-executes based on value changes", "The HTML template parameters", "Component route permissions"), 1,
-                    "If dependencies change between renders, React re-executes the effect callback.", "React", difficulty));
-        } else if (clean.contains("java") || clean.contains("spring") || clean.contains("backend")) {
-            questions.add(createQuestion("q1", "What does the @Autowired annotation do in Spring Boot?",
-                    Arrays.asList("Enables HTTP cross-origin requests", "Injects bean dependencies automatically via Spring IoC container", "Compiles Java bytecode into native machine code", "Creates a SQL database table schema"), 1,
-                    "@Autowired enables Spring's dependency injection mechanism to wire beans automatically into your components.", "Java Spring Boot", difficulty));
-            questions.add(createQuestion("q2", "What is the difference between @RestController and @Controller in Spring MVC?",
-                    Arrays.asList("@Controller returns JSON by default while @RestController returns HTML views", "@RestController combines @Controller and @ResponseBody, returning serialized JSON/XML data", "They are exact synonyms with no behavioral differences", "@RestController cannot handle HTTP GET requests"), 1,
-                    "@RestController automatically serializes domain object return values directly into HTTP response bodies as JSON.", "Java Spring Boot", difficulty));
-            questions.add(createQuestion("q3", "Which annotation marks a method to execute within a database transaction boundary?",
-                    Arrays.asList("@Transactional", "@Entity", "@Repository", "@Configuration"), 0,
-                    "@Transactional manages database transaction start, commit, and rollback logic automatically.", "Java Spring Boot", difficulty));
-            questions.add(createQuestion("q4", "What is the primary role of Spring Security's SecurityFilterChain?",
-                    Arrays.asList("Generates database indexes", "Configures servlet filters to authenticate and authorize HTTP requests", "Formats JSON API output", "Monitors JVM memory consumption"), 1,
-                    "SecurityFilterChain specifies authentication rules, endpoint security policies, and CORS/CSRF handling.", "Java Spring Boot", difficulty));
-            questions.add(createQuestion("q5", "In JPA/Hibernate, what does FetchType.LAZY accomplish?",
-                    Arrays.asList("Loads related entities immediately on parent query", "Defers loading of child entities until explicitly accessed to save memory", "Prevents database writes permanently", "Disables database transactions"), 1,
-                    "LAZY fetching avoids unnecessary database joins until the entity property is read.", "Java Spring Boot", difficulty));
+        if (clean.contains("data") || clean.contains("sql") || clean.contains("analytics") || clean.contains("python") || clean.contains("tableau")) {
+            pool.add(createDynamicQuestion("What is the primary function of the SQL HAVING clause?",
+                    Arrays.asList("Filter groups formed by GROUP BY clause", "Filter rows before grouping", "Sort result set in descending order", "Join two tables on primary key"),
+                    "HAVING is used to filter aggregated group records, whereas WHERE filters individual rows prior to aggregation.", "SQL", difficulty, rng));
+            pool.add(createDynamicQuestion("In pandas / Data Analytics, which method handles missing NaN values effectively?",
+                    Arrays.asList("df.fillna() or df.dropna()", "df.clean_nulls()", "df.remove_nan()", "df.filter_empty()"),
+                    "fillna() replaces missing NaN values with specified data or statistics, while dropna() removes rows containing NaN.", "Data Analytics", difficulty, rng));
+            pool.add(createDynamicQuestion("What distinguishes INNER JOIN from LEFT JOIN in relational databases?",
+                    Arrays.asList("LEFT JOIN returns all rows from left table and matching rows from right table", "INNER JOIN returns all rows from left table regardless of match", "They produce identical results in ANSI SQL", "INNER JOIN includes null values from both tables"),
+                    "LEFT JOIN retains all rows from the left table regardless of whether a matching record exists in the right table.", "SQL", difficulty, rng));
+            pool.add(createDynamicQuestion("Which chart type is best suited to display data distribution, outliers, and quartiles?",
+                    Arrays.asList("Box Plot (Box-and-Whisker)", "Pie Chart", "Line Graph", "Donut Chart"),
+                    "Box plots visually depict five-number statistical summaries: minimum, lower quartile, median, upper quartile, and maximum.", "Data Analytics", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the key advantage of using Common Table Expressions (CTEs) with WITH clause in SQL?",
+                    Arrays.asList("Improves query readability and enables recursive querying", "Increases query execution speed by 10x", "Permanently indexes the target table", "Bypasses database security permissions"),
+                    "CTEs break complex queries into modular, readable named temporary result sets that can be referenced multiple times.", "SQL", difficulty, rng));
+            pool.add(createDynamicQuestion("In Python data analysis, which library is specifically optimized for vectorized multidimensional array operations?",
+                    Arrays.asList("NumPy", "Flask", "Requests", "BeautifulSoup"),
+                    "NumPy provides C-optimized ndarray data structures and vectorized broadcasting routines.", "Python", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the difference between RANK() and DENSE_RANK() in SQL window functions?",
+                    Arrays.asList("DENSE_RANK() does not skip rank numbers for duplicate values, while RANK() leaves gaps", "RANK() only works on unique strings", "DENSE_RANK() always calculates running totals", "They are identical synonyms in PostgreSQL"),
+                    "RANK() assigns 1, 2, 2, 4 whereas DENSE_RANK() assigns 1, 2, 2, 3 without skipping sequence numbers.", "SQL", difficulty, rng));
+            pool.add(createDynamicQuestion("In statistical analysis, what does a p-value less than 0.05 typically signify?",
+                    Arrays.asList("Statistically significant evidence to reject the null hypothesis", "The sample size is too small", "The test was calculated incorrectly", "The dataset contains 95% missing values"),
+                    "A p-value < 0.05 indicates the observed effect is unlikely to have occurred solely by random chance.", "Data Analytics", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the main purpose of Database Normalization (3NF)?",
+                    Arrays.asList("Reduce data redundancy and prevent insertion/deletion anomalies", "Increase table size artificially", "Disable primary key constraints", "Format dates into ISO 8601 strings"),
+                    "Third Normal Form (3NF) minimizes duplicate data and ensures non-key attributes depend solely on the primary key.", "Database Architecture", difficulty, rng));
+            pool.add(createDynamicQuestion("Which Python method combines multiple DataFrames along a specified axis without SQL-like keys?",
+                    Arrays.asList("pd.concat()", "pd.merge()", "pd.join()", "pd.combine_all()"),
+                    "pd.concat() concatenates pandas objects along a particular axis (rows or columns) sequentially.", "Data Analytics", difficulty, rng));
+        } else if (clean.contains("react") || clean.contains("frontend") || clean.contains("javascript") || clean.contains("ui") || clean.contains("css")) {
+            pool.add(createDynamicQuestion("In React, what is the main purpose of the useEffect hook?",
+                    Arrays.asList("To handle side effects like data fetching, subscriptions, and DOM updates", "To directly modify DOM elements synchronously", "To compile JSX into plain HTML", "To replace Redux store state"),
+                    "useEffect runs side effects after component rendering, accommodating API calls, event listeners, and timers.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("What happens when you mutate a React state variable directly without setter function?",
+                    Arrays.asList("React will not trigger a re-render because object reference unchanged", "React re-renders immediately with updated state", "A JavaScript SyntaxError is thrown", "The component drops state permanently"),
+                    "React relies on immutable state reference changes to trigger reconciliation and re-rendering.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("Which technique prevents unnecessary re-rendering of child components when parent props remain equal?",
+                    Arrays.asList("React.memo() and useMemo() / useCallback()", "document.getElementById()", "componentWillMount()", "useLayoutEffect() with inline arrow functions"),
+                    "React.memo memoizes the rendered output of the wrapped component and skips renders if props are unchanged.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the key advantage of React's Virtual DOM reconciliation algorithm?",
+                    Arrays.asList("Batches and calculates minimum necessary real DOM changes efficiently", "Replaces the browser window object", "Directly connects to PostgreSQL databases", "Runs client code in web workers automatically"),
+                    "Virtual DOM diffing determines minimal DOM mutations, avoiding costly full page repaints.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("What does the Dependency Array in useEffect control?",
+                    Arrays.asList("When the effect callback re-executes based on value changes", "The CSS styling rules applied", "The HTML template parameters", "Component route permissions"),
+                    "If dependencies change between renders, React cleans up and re-executes the effect callback.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("In modern JavaScript (ES6+), what is the difference between let/const and var?",
+                    Arrays.asList("let and const have block scope, whereas var is function scoped and hoisted", "var is immutable while const is mutable", "let cannot be reassigned", "const can be redeclared anywhere"),
+                    "let and const prevent accidental global leakage by enforcing strict block-level lexical scoping.", "JavaScript", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the primary purpose of the useCallback hook in React?",
+                    Arrays.asList("Memoize callback function instances across renders to preserve reference equality", "Execute asynchronous HTTP requests on every keystroke", "Manage CSS class transitions", "Replace useState for primitives"),
+                    "useCallback returns a memoized version of the callback that only changes if dependencies update.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("In CSS Flexbox, which property aligns flex items along the cross axis?",
+                    Arrays.asList("align-items", "justify-content", "flex-direction", "flex-wrap"),
+                    "align-items defines default alignment along the cross axis, while justify-content aligns along the main axis.", "CSS", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the purpose of React Portal (ReactDOM.createPortal)?",
+                    Arrays.asList("Render children into a DOM node outside the parent component's DOM hierarchy (e.g. Modals)", "Establish WebSocket connections to backend servers", "Preload image assets in parallel", "Compress JavaScript bundles for production"),
+                    "Portals allow modals, tooltips, and floating drawers to break out of overflow/z-index clipping containers.", "React", difficulty, rng));
+            pool.add(createDynamicQuestion("In JavaScript, what does Promise.all() do when one of the promises rejects?",
+                    Arrays.asList("Immediately rejects the entire returned promise with that rejection reason", "Ignores the failed promise and returns only resolved values", "Retries the failed request 3 times", "Pauses execution indefinitely"),
+                    "Promise.all has fail-fast behavior: if any promise rejects, the entire master promise rejects immediately.", "JavaScript", difficulty, rng));
+        } else if (clean.contains("java") || clean.contains("spring") || clean.contains("backend") || clean.contains("api") || clean.contains("microservice")) {
+            pool.add(createDynamicQuestion("What does the @Autowired annotation do in Spring Boot?",
+                    Arrays.asList("Injects bean dependencies automatically via Spring IoC container", "Enables HTTP cross-origin requests", "Compiles Java bytecode into native machine code", "Creates a SQL database table schema"),
+                    "@Autowired enables Spring's dependency injection mechanism to wire beans automatically into your components.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the difference between @RestController and @Controller in Spring MVC?",
+                    Arrays.asList("@RestController combines @Controller and @ResponseBody, returning serialized JSON/XML data", "@Controller returns JSON by default while @RestController returns HTML views", "They are exact synonyms with no behavioral differences", "@RestController cannot handle HTTP GET requests"),
+                    "@RestController automatically serializes domain object return values directly into HTTP response bodies as JSON.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("Which annotation marks a method to execute within a database transaction boundary?",
+                    Arrays.asList("@Transactional", "@Entity", "@Repository", "@Configuration"),
+                    "@Transactional manages database transaction start, commit, and rollback logic automatically.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the primary role of Spring Security's SecurityFilterChain?",
+                    Arrays.asList("Configures servlet filters to authenticate and authorize HTTP requests", "Generates database indexes", "Formats JSON API output", "Monitors JVM memory consumption"),
+                    "SecurityFilterChain specifies authentication rules, endpoint security policies, and CORS/CSRF handling.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("In JPA/Hibernate, what does FetchType.LAZY accomplish?",
+                    Arrays.asList("Defers loading of child entities until explicitly accessed to save memory and queries", "Loads related entities immediately on parent query", "Prevents database writes permanently", "Disables database transactions"),
+                    "LAZY fetching avoids unnecessary database joins until the entity property is read.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the purpose of Spring Boot's @ExceptionHandler annotation?",
+                    Arrays.asList("Intercept and handle specific exceptions across controllers with custom error response DTOs", "Throw RuntimeExceptions automatically", "Log CPU usage statistics", "Encrypt sensitive properties"),
+                    "@ExceptionHandler defines centralized methods for handling runtime exceptions and returning standardized HTTP error codes.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("In Java Concurrency, what is the key feature of ConcurrentHashMap over Collections.synchronizedMap()?",
+                    Arrays.asList("Lock striping / bucket-level locking allowing concurrent reads and writes without locking the whole map", "Disallows all null keys and values", "Stores data in disk storage", "Restricts access to a single thread"),
+                    "ConcurrentHashMap achieves high concurrency by segmenting buckets so threads rarely contend for the same lock.", "Java", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the difference between Spring Bean scopes 'singleton' and 'prototype'?",
+                    Arrays.asList("Singleton creates a single shared instance per container; prototype creates a new instance on every injection", "Prototype is only used for unit testing", "Singleton creates one instance per HTTP request", "They share identical lifecycle rules"),
+                    "Singleton is the default scope with one instance per Spring context, whereas prototype creates a new bean every time.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("In Spring Data JPA, what does the @Modifying annotation signify?",
+                    Arrays.asList("Indicates that a custom @Query method executes an INSERT, UPDATE, or DELETE query", "Creates a temporary clone of the entity", "Marks an entity as read-only", "Enables cache eviction"),
+                    "@Modifying informs Spring Data that the query modifies table data and should not be treated as a SELECT query.", "Java Spring Boot", difficulty, rng));
+            pool.add(createDynamicQuestion("In JVM performance tuning, which generation stores newly created objects before promotion?",
+                    Arrays.asList("Eden Space in the Young Generation", "Old / Tenured Generation", "Metaspace", "Native Memory Heap"),
+                    "New objects are allocated in Eden Space; survivors of minor GC cycles move to Survivor spaces and then Tenured generation.", "Java", difficulty, rng));
+        } else if (clean.contains("cloud") || clean.contains("devops") || clean.contains("docker") || clean.contains("kubernetes") || clean.contains("aws")) {
+            pool.add(createDynamicQuestion("What is the primary advantage of Multi-Stage Builds in Dockerfiles?",
+                    Arrays.asList("Minimizes final image size by discarding build tools and intermediate artifacts", "Compiles code 10x faster", "Bypasses container security scanning", "Allows running multiple OS kernels simultaneously"),
+                    "Multi-stage builds copy only compiled artifacts to a lean runtime base image, keeping production images compact and secure.", "Cloud & DevOps", difficulty, rng));
+            pool.add(createDynamicQuestion("In Kubernetes, what is the role of an Ingress Controller?",
+                    Arrays.asList("Routes external HTTP/HTTPS traffic to internal cluster Services based on host/path rules", "Allocates CPU memory to worker nodes", "Backs up etcd storage to AWS S3", "Compiles container binaries"),
+                    "Ingress manages external access to cluster services, providing reverse proxy routing, SSL termination, and name-based virtual hosting.", "Cloud & DevOps", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the core concept behind Infrastructure as Code (IaC) with tools like Terraform?",
+                    Arrays.asList("Declaratively provisioning and version-controlling cloud infrastructure resources", "Writing application frontend templates", "Replacing database backups", "Auto-generating CSS classes"),
+                    "IaC defines cloud infrastructure in human-readable code files that can be versioned, reviewed, and automated.", "Cloud & DevOps", difficulty, rng));
+            pool.add(createDynamicQuestion("What does the Principle of Least Privilege dictate in Cloud IAM security?",
+                    Arrays.asList("Granting users and service accounts only the absolute minimum permissions needed to perform tasks", "Giving all team members root administrator access", "Allowing public read access to all S3 buckets", "Disabling password expiration policies"),
+                    "Least Privilege prevents blast radius escalation by strictly restricting permissions to required actions.", "Cloud & DevOps", difficulty, rng));
+            pool.add(createDynamicQuestion("In CI/CD, what is the difference between Continuous Delivery and Continuous Deployment?",
+                    Arrays.asList("Continuous Delivery requires manual approval before production deployment; Continuous Deployment deploys automatically", "Continuous Delivery does not run unit tests", "Continuous Deployment only applies to mobile apps", "They are identical processes"),
+                    "Continuous Deployment automates the complete pipeline through to production without human gatekeeper intervention.", "Cloud & DevOps", difficulty, rng));
+            pool.add(createDynamicQuestion("Which metric is critical for monitoring microservice health in Prometheus?",
+                    Arrays.asList("Request Rate, Error Rate, and Duration / Latency (RED Method)", "Line count per Dockerfile", "Local disk temperature", "Font bundle compression ratio"),
+                    "The RED method focuses on Rate, Errors, and Duration to evaluate microservice performance and user experience.", "Cloud & DevOps", difficulty, rng));
+        } else if (clean.contains("marketing") || clean.contains("sales") || clean.contains("growth") || clean.contains("seo")) {
+            pool.add(createDynamicQuestion("What is Customer Acquisition Cost (CAC) and how is it calculated?",
+                    Arrays.asList("Total sales & marketing spend divided by number of new customers acquired", "Total revenue divided by employee count", "Monthly recurring revenue multiplied by churn rate", "Total website visitors minus bounce rate"),
+                    "CAC measures total expenses invested in acquiring a new customer over a specific campaign period.", "Marketing Strategy", difficulty, rng));
+            pool.add(createDynamicQuestion("In Search Engine Optimization (SEO), what is the purpose of a Canonical Tag (rel='canonical')?",
+                    Arrays.asList("Specifies the preferred master URL to search engines to prevent duplicate content penalties", "Increases keyword density artificially", "Compresses page images", "Blocks search engines from crawling the site"),
+                    "Canonical tags inform search engines which URL represents the original source when multiple URLs have duplicate content.", "SEO & Digital Strategy", difficulty, rng));
+            pool.add(createDynamicQuestion("What does the LTV:CAC ratio measure in business growth strategy?",
+                    Arrays.asList("The long-term value of a customer relative to the cost of acquiring them (benchmark >= 3:1)", "The ratio of marketing staff to sales staff", "The bounce rate of mobile visitors", "The speed of page rendering"),
+                    "An LTV:CAC ratio of 3x or higher indicates sustainable and profitable customer acquisition economics.", "Marketing Strategy", difficulty, rng));
+            pool.add(createDynamicQuestion("In Conversion Rate Optimization (CRO), what is the purpose of A/B Split Testing?",
+                    Arrays.asList("Comparing two variants (A vs B) with randomized traffic to measure statistically significant conversion differences", "Replacing all website copy simultaneously", "Sending marketing emails to unsubscribed users", "Increasing ad budget automatically"),
+                    "A/B testing validates whether design or copy changes causally improve target user conversion metrics.", "Marketing Strategy", difficulty, rng));
+        } else if (clean.contains("hr") || clean.contains("talent") || clean.contains("recruit") || clean.contains("people")) {
+            pool.add(createDynamicQuestion("What is the primary purpose of Structured Competency-Based Interviews?",
+                    Arrays.asList("Assessing candidates against standardized rubric criteria to eliminate bias and predict job performance", "Asking unstructured trivia questions", "Testing general memory recall", "Shortening interviews to under 5 minutes"),
+                    "Structured interviews evaluate specific demonstrated competencies using identical scoring rubrics for all candidates.", "HR Operations", difficulty, rng));
+            pool.add(createDynamicQuestion("In organizational talent management, what does the 9-Box Grid evaluate?",
+                    Arrays.asList("Employee Performance versus Future Leadership Potential", "Attendance records versus salary bands", "Department budget versus headcount", "Software licenses versus hardware inventory"),
+                    "The 9-Box grid plots current performance against growth potential to guide succession planning and development.", "Talent Management", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the key differentiator between OKRs (Objectives and Key Results) and traditional KPIs?",
+                    Arrays.asList("OKRs focus on ambitious, qualitative growth targets with measurable milestones; KPIs measure ongoing operational health", "KPIs are only used for marketing teams", "OKRs replace financial accounting standards", "KPIs cannot be tracked with numbers"),
+                    "OKRs drive strategic transformation and alignment, while KPIs monitor ongoing business-as-usual operational metrics.", "HR Strategy", difficulty, rng));
+            pool.add(createDynamicQuestion("What is the strategic objective of 360-Degree Peer Feedback in performance appraisals?",
+                    Arrays.asList("Gathering multidimensional perspectives from peers, reports, and managers to eliminate single-evaluator bias", "Comparing employee salaries publicly", "Assigning daily task tickets", "Automating payroll deductions"),
+                    "360-degree feedback provides holistic behavioral insights from cross-functional colleagues.", "Talent Management", difficulty, rng));
         } else {
-            questions.add(createQuestion("q1", "What is the key principle of Modular System Architecture?",
-                    Arrays.asList("Combining all code into one single file", "Decoupling components into independent, reusable modules with clear contracts", "Eliminating database persistence", "Avoiding version control systems"), 1,
-                    "Modular architecture promotes maintainability, testability, and isolated component scaling.", domain, difficulty));
-            questions.add(createQuestion("q2", "Which metric best evaluates system reliability and uptime?",
-                    Arrays.asList("SLO / SLA Availability Percentage (e.g. 99.99%)", "Line count per module", "CSS bundle size", "Database table count"), 0,
-                    "Service Level Objectives (SLOs) measure uptime and acceptable error budgets.", domain, difficulty));
-            questions.add(createQuestion("q3", "What is the primary benefit of Automated CI/CD Pipelines?",
-                    Arrays.asList("Increases manual QA effort", "Delivers rapid, reliable code integration, testing, and automated deployment", "Eliminates unit testing requirements", "Replaces cloud hosting infrastructure"), 1,
-                    "Continuous Integration and Continuous Deployment automate testing and releases, shortening feedback loops.", domain, difficulty));
-            questions.add(createQuestion("q4", "What is the purpose of API Rate Limiting?",
-                    Arrays.asList("Increases network latency for all users", "Protects backend infrastructure from denial-of-service and resource exhaustion", "Deletes database records automatically", "Encodes API payloads in binary"), 1,
-                    "Rate limiting caps excessive requests to preserve system health and security.", domain, difficulty));
-            questions.add(createQuestion("q5", "Which practice ensures zero downtime during production software releases?",
-                    Arrays.asList("Shutting down servers during peak hours", "Blue-Green or Canary Deployments", "Hardcoding database credentials", "Disabling automated logging"), 1,
-                    "Blue-Green and Canary strategies route traffic gradually to new releases without interrupting service.", domain, difficulty));
+            pool.add(createDynamicQuestion("What is the key principle of Modular Software Architecture?",
+                    Arrays.asList("Decoupling components into independent, reusable modules with clear contracts", "Combining all code into one single file", "Eliminating database persistence", "Avoiding version control systems"),
+                    "Modular architecture promotes maintainability, testability, and isolated component scaling.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("Which metric best evaluates system reliability and service availability?",
+                    Arrays.asList("SLO / SLA Availability Percentage (e.g. 99.99%)", "Line count per module", "CSS bundle size", "Database table count"),
+                    "Service Level Objectives (SLOs) measure uptime and acceptable error budgets.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("What is the primary benefit of Automated CI/CD Pipelines?",
+                    Arrays.asList("Delivers rapid, reliable code integration, testing, and automated deployment", "Increases manual QA effort", "Eliminates unit testing requirements", "Replaces cloud hosting infrastructure"),
+                    "Continuous Integration and Continuous Deployment automate testing and releases, shortening feedback loops.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("What is the purpose of API Rate Limiting in distributed systems?",
+                    Arrays.asList("Protects backend infrastructure from denial-of-service and resource exhaustion", "Increases network latency for all users", "Deletes database records automatically", "Encodes API payloads in binary"),
+                    "Rate limiting caps excessive requests to preserve system health and security.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("Which practice ensures zero downtime during production software releases?",
+                    Arrays.asList("Blue-Green or Canary Deployments", "Shutting down servers during peak hours", "Hardcoding database credentials", "Disabling automated logging"),
+                    "Blue-Green and Canary strategies route traffic gradually to new releases without interrupting service.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("In distributed computing, what does the CAP theorem state regarding partition tolerance?",
+                    Arrays.asList("A distributed system can guarantee at most two of Consistency, Availability, and Partition Tolerance simultaneously", "All databases must be ACID compliant", "Networks never experience latency or packet loss", "Microservices must share a single database"),
+                    "Under network partitions, a distributed system must choose between strict Consistency or continuous Availability.", domain, difficulty, rng));
+            pool.add(createDynamicQuestion("What is the primary purpose of an Asynchronous Message Queue (e.g. Kafka, RabbitMQ)?",
+                    Arrays.asList("Decouple producer and consumer services, buffer traffic spikes, and enable reliable background processing", "Render HTML templates in the browser", "Replace relational database indexes", "Encrypt client SSL connections"),
+                    "Message brokers decouple services and prevent cascading failures by buffering asynchronous workloads.", domain, difficulty, rng));
+        }
+
+        // Shuffle question pool randomly every single execution
+        Collections.shuffle(pool, rng);
+
+        int selectedCount = Math.min(count, pool.size());
+        List<Map<String, Object>> selectedQuestions = new ArrayList<>(pool.subList(0, selectedCount));
+
+        // Assign randomized unique question IDs
+        for (int i = 0; i < selectedQuestions.size(); i++) {
+            Map<String, Object> q = selectedQuestions.get(i);
+            q.put("id", "q_" + (i + 1) + "_" + UUID.randomUUID().toString().substring(0, 6));
         }
 
         Map<String, Object> result = new HashMap<>();
         result.put("domain", domain);
         result.put("difficulty", difficulty);
-        result.put("questions", questions.subList(0, Math.min(count, questions.size())));
+        result.put("questions", selectedQuestions);
         return result;
     }
 
-    private Map<String, Object> createQuestion(String id, String text, List<String> options, int correctIdx, String explanation, String skill, String difficulty) {
+    private Map<String, Object> createDynamicQuestion(String text, List<String> originalOptions, String explanation, String skill, String difficulty, Random rng) {
+        String correctText = originalOptions.get(0); // Index 0 is always the correct option in template
+        List<String> shuffledOptions = new ArrayList<>(originalOptions);
+        Collections.shuffle(shuffledOptions, rng); // Randomize option positions A, B, C, D
+
+        int newCorrectIdx = shuffledOptions.indexOf(correctText);
+
         Map<String, Object> q = new HashMap<>();
-        q.put("id", id);
+        q.put("id", "q_" + UUID.randomUUID().toString().substring(0, 8));
         q.put("questionText", text);
-        q.put("options", options);
-        q.put("correctOptionIndex", correctIdx);
+        q.put("options", shuffledOptions);
+        q.put("correctOptionIndex", newCorrectIdx);
         q.put("explanation", explanation);
         q.put("targetSkill", skill);
         q.put("difficulty", difficulty);

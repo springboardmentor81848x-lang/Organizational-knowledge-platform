@@ -2919,9 +2919,10 @@ export function EmployeeAssessments({ onNav }) {
                   {onNav && (
                     <button
                       type="button"
-                      onClick={() => onNav('gaps')}
-                      className="bg-lime-400 text-[#0B0F1A] font-bold text-xs px-4 py-2.5 rounded-xl transition-all hover:bg-lime-300 shadow-md">
-                      View Knowledge Gap Analysis &rarr;
+                      onClick={() => onNav('skills')}
+                      className="bg-lime-400 text-[#0B0F1A] font-bold text-xs px-4 py-2.5 rounded-xl transition-all hover:bg-lime-300 shadow-md flex items-center gap-1.5">
+                      <Icon name="layers" className="w-3.5 h-3.5" />
+                      View My Skill Inventory &rarr;
                     </button>
                   )}
                 </div>
