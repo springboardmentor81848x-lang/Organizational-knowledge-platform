@@ -213,7 +213,7 @@ export default function App() {
 function PageRouter({ role, page, onNav, user }) {
   if (page === 'profile') return <ProfilePage role={role} user={user} />
   if (page === 'notifications') return <NotificationsPage onNav={onNav} />
-  if (page === 'gaps' && role !== 'manager') return <GapAnalysis role={role} />
+  if (page === 'gaps' && role !== 'manager' && role !== 'employee') return <GapAnalysis role={role} />
 
   if (role === 'employee') {
     switch (page) {
@@ -240,11 +240,11 @@ function PageRouter({ role, page, onNav, user }) {
   if (role === 'hr') {
     switch (page) {
       case 'dashboard': return <HRDashboard onNav={onNav} user={user} />
-      case 'directory': return <HRDirectory />
-      case 'matrix': return <HRMatrix />
-      case 'forecasting': return <HRForecasting />
-      case 'reports': return <HRReports />
-      case 'departments': return <HRDepartments />
+      case 'directory': return <HRDirectory user={user} onNav={onNav} />
+      case 'matrix': return <HRMatrix user={user} onNav={onNav} />
+      case 'forecasting': return <HRForecasting user={user} onNav={onNav} />
+      case 'reports': return <HRReports user={user} onNav={onNav} />
+      case 'departments': return <HRDepartments user={user} onNav={onNav} />
       default: return <NotFound />
     }
   }

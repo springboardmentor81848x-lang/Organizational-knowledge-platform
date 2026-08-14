@@ -245,7 +245,7 @@ public class GapAnalysisService {
         boolean isHrOrAdmin = sysRole == SystemRole.HR_SPECIALIST || sysRole == SystemRole.SYSTEM_ADMIN || sysRole == SystemRole.L_AND_D_ADMIN;
 
         if (isHrOrAdmin) {
-            return buildOrganizationHeatmap();
+            return buildOrganizationHeatmap(currentUser);
         } else if (isManagerOrHead) {
             return buildDepartmentHeatmap(currentUser);
         } else {
@@ -319,17 +319,7 @@ public class GapAnalysisService {
 
         boolean isDemoManager = manager.getEmail() != null && manager.getEmail().equalsIgnoreCase("manager@northwind.io");
 
-        if (teamMembers.isEmpty() && !isDemoManager) {
-            return new HeatmapResponseDto(
-                    "DEPARTMENT",
-                    (dept != null ? dept.getName() : "Team") + " Department Scope",
-                    Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
-                    Collections.emptyList(), Collections.emptyList(),
-                    Map.of("totalUsers", 0, "criticalGaps", 0, "avgGapPercent", 0)
-            );
-        }
-
-        if (isDemoManager && teamMembers.isEmpty()) {
+        if (isDemoManager) {
             List<String> cols = List.of(
                     "Communication",
                     "Java Spring Boot",
@@ -372,6 +362,16 @@ public class GapAnalysisService {
             summary.put("criticalGaps", cells.stream().filter(c -> "Critical".equals(c.getSeverity())).count());
             summary.put("avgGapPercent", 23);
             return new HeatmapResponseDto("DEPARTMENT", deptName + " Department Scope", rows, cols, values, cells, alerts, summary);
+        }
+
+        if (teamMembers.isEmpty()) {
+            return new HeatmapResponseDto(
+                    "DEPARTMENT",
+                    (dept != null ? dept.getName() : "Team") + " Department Scope",
+                    Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+                    Collections.emptyList(), Collections.emptyList(),
+                    Map.of("totalUsers", 0, "criticalGaps", 0, "avgGapPercent", 0)
+            );
         }
 
         // DYNAMIC LIVE CALCULATION FOR REAL REGISTERED MANAGERS
@@ -440,8 +440,13 @@ public class GapAnalysisService {
         );
     }
 
-    private HeatmapResponseDto buildOrganizationHeatmap() {
-        List<User> allUsers = userRepository.findAll();
+    private HeatmapResponseDto buildOrganizationHeatmap(User currentUser) {
+        List<User> allUsers;
+        if (currentUser != null && currentUser.getOrganization() != null) {
+            allUsers = userRepository.findByOrganizationId(currentUser.getOrganization().getId());
+        } else {
+            allUsers = userRepository.findAll();
+        }
         Map<String, List<User>> usersByDept = allUsers.stream()
                 .filter(u -> u.getDepartment() != null)
                 .collect(Collectors.groupingBy(u -> u.getDepartment().getName()));

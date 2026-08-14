@@ -8,6 +8,83 @@ import { Pill, SectionHead, StatCard, statusColor, sevColor, heatColor } from '.
 import api from '../services/api.js'
 
 // ----------------------------------------------------------------------
+// Dynamic Domain Team Grouping for Department Managers
+// ----------------------------------------------------------------------
+export function groupMembersIntoDomainTeams(profiles = [], departmentName = '') {
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    return {}
+  }
+
+  const domainMatchers = [
+    { key: 'java', name: 'Java Engineering Team', color: 'emerald', keywords: ['java', 'spring', 'jvm', 'j2ee', 'hibernate', 'microservices'] },
+    { key: 'python', name: 'Python Engineering Team', color: 'amber', keywords: ['python', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'pytorch'] },
+    { key: 'frontend', name: 'Frontend & UI Team', color: 'indigo', keywords: ['react', 'vue', 'angular', 'frontend', 'ui', 'ux', 'figma', 'css', 'tailwind', 'designer'] },
+    { key: 'cloud_devops', name: 'Cloud & DevOps Team', color: 'purple', keywords: ['devops', 'cloud', 'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'k8s', 'infra', 'terraform', 'ci/cd', 'security', 'sre'] },
+    { key: 'data', name: 'Data & Analytics Team', color: 'cyan', keywords: ['data', 'analytics', 'sql', 'bi', 'tableau', 'power bi', 'ml', 'ai', 'database'] },
+    { key: 'qa', name: 'Quality Engineering Team', color: 'rose', keywords: ['qa', 'test', 'automation', 'sdet', 'selenium', 'cypress'] },
+    { key: 'product', name: 'Product & Strategy Team', color: 'blue', keywords: ['product', 'scrum', 'agile', 'owner', 'manager'] },
+    { key: 'hr', name: 'Talent & HR Team', color: 'pink', keywords: ['talent', 'recruiting', 'hr', 'people', 'human'] },
+    { key: 'finance', name: 'Finance & Accounting Team', color: 'teal', keywords: ['finance', 'accountant', 'payroll', 'budget'] },
+    { key: 'sales_marketing', name: 'Sales & Growth Team', color: 'orange', keywords: ['sales', 'marketing', 'growth', 'seo', 'content'] }
+  ]
+
+  const teamGroups = {}
+
+  profiles.forEach(member => {
+    const textToMatch = [
+      member.roleTitle || '',
+      member.fullName || '',
+      ...(member.skills ? member.skills.map(s => s.skillName || s.name || s.skill || '') : [])
+    ].join(' ').toLowerCase()
+
+    let matchedDomain = null
+    for (const dm of domainMatchers) {
+      if (dm.keywords.some(kw => textToMatch.includes(kw))) {
+        matchedDomain = dm
+        break
+      }
+    }
+
+    const domainKey = matchedDomain ? matchedDomain.key : (member.roleTitle ? member.roleTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'general')
+    const domainName = matchedDomain ? matchedDomain.name : `${member.roleTitle || 'Specialist'} Team`
+    const domainColor = matchedDomain ? matchedDomain.color : 'emerald'
+
+    if (!teamGroups[domainKey]) {
+      teamGroups[domainKey] = {
+        id: domainKey,
+        name: domainName,
+        color: domainColor,
+        members: [],
+        totalMembers: 0,
+        criticalGaps: 0,
+        avgGapPct: 0,
+        activeInterventions: '0 Assigned'
+      }
+    }
+
+    teamGroups[domainKey].members.push(member)
+  })
+
+  // Calculate cluster stats
+  Object.values(teamGroups).forEach(tg => {
+    tg.totalMembers = tg.members.length
+    let sumGap = 0
+    let crit = 0
+    let activeInterv = 0
+    tg.members.forEach(m => {
+      sumGap += (m.gapPercentage || 20)
+      if (m.criticalGapsCount > 0 || m.riskStatus === 'Critical Risk') crit++
+      if (m.activeTrainingStatus && m.activeTrainingStatus !== 'No Active Courses') activeInterv++
+    })
+    tg.avgGapPct = tg.totalMembers > 0 ? Math.round((sumGap / tg.totalMembers) * 10) / 10 : 0
+    tg.criticalGaps = crit
+    tg.activeInterventions = `${activeInterv} Assigned`
+  })
+
+  return teamGroups
+}
+
+// ----------------------------------------------------------------------
 // Team Configuration Data (Team 1, Team 2, Team 3)
 // ----------------------------------------------------------------------
 export const TEAMS_DATA = {
@@ -195,6 +272,9 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
   }, [])
 
   const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee')
+  const domainTeams = groupMembersIntoDomainTeams(teamProfiles, user?.department)
+  const domainKeys = Object.keys(domainTeams)
+
   const baseData = customHeatmapData || heatmapData || { rows: [], cols: [], values: [] }
   let rows = baseData.rows || []
   let cols = baseData.cols || []
@@ -213,10 +293,21 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
     cols = TEAMS_DATA.team3.heatmap.cols
     values = TEAMS_DATA.team3.heatmap.values
   } else if (!isDemoManager && selectedTeamFilter !== 'ALL') {
-    const idx = rows.indexOf(selectedTeamFilter)
-    if (idx !== -1) {
-      rows = [rows[idx]]
-      values = [values[idx]]
+    if (domainTeams[selectedTeamFilter]) {
+      // Filter by domain team
+      const memberNames = domainTeams[selectedTeamFilter].members.map(m => m.fullName)
+      const filteredIndices = rows.map((r, i) => memberNames.includes(r) ? i : -1).filter(i => i !== -1)
+      if (filteredIndices.length > 0) {
+        rows = filteredIndices.map(i => rows[i])
+        values = filteredIndices.map(i => values[i])
+      }
+    } else {
+      // Filter to single member
+      const idx = rows.indexOf(selectedTeamFilter)
+      if (idx !== -1) {
+        rows = [rows[idx]]
+        values = [values[idx]]
+      }
     }
   }
 
@@ -367,42 +458,76 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
           </div>
         </div>
       ) : (
-        <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 space-y-3">
+        <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-3">
             <div className="flex items-center gap-2 text-lime-400 text-xs font-bold uppercase tracking-wider font-display">
-              <Icon name="users" className="w-4 h-4" /> Team Direct Reports ({teamProfiles.length || rows.length})
+              <Icon name="users" className="w-4 h-4" /> Domain Teams Breakdown ({domainKeys.length} Teams • {teamProfiles.length || rows.length} Members)
             </div>
             <span className="text-xs text-slate-400 font-medium">
-              {teamProfiles.length || rows.length} Direct Report{(teamProfiles.length || rows.length) === 1 ? '' : 's'} assigned to your team
+              Grouped by technical specialization under {user?.department || 'Department'}
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-            {(teamProfiles.length > 0 ? teamProfiles : rows.map(r => ({ fullName: r, roleTitle: 'Direct Report', departmentName: user?.department || 'Department' }))).map((m, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white text-sm">{m.fullName}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    m.riskStatus === 'Critical Risk' ? 'bg-rose-500/20 text-rose-300' :
-                    m.riskStatus === 'At Risk' ? 'bg-amber-500/20 text-amber-300' :
-                    'bg-emerald-500/20 text-emerald-300'
-                  }`}>
-                    {m.riskStatus || 'Active'}
-                  </span>
+            {domainKeys.length > 0 ? (
+              domainKeys.map(key => {
+                const dt = domainTeams[key]
+                const colorTheme = dt.color === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                                   dt.color === 'amber' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
+                                   dt.color === 'purple' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' :
+                                   dt.color === 'cyan' ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' :
+                                   dt.color === 'rose' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' :
+                                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+
+                const badgeTheme = dt.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-300' :
+                                   dt.color === 'amber' ? 'bg-amber-500/20 text-amber-300' :
+                                   dt.color === 'purple' ? 'bg-purple-500/20 text-purple-300' :
+                                   dt.color === 'cyan' ? 'bg-cyan-500/20 text-cyan-300' :
+                                   dt.color === 'rose' ? 'bg-rose-500/20 text-rose-300' :
+                                   'bg-indigo-500/20 text-indigo-300'
+
+                return (
+                  <div key={key} className={`p-4 rounded-xl border space-y-3 ${colorTheme}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white">{dt.name}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeTheme}`}>
+                        {dt.totalMembers} Member{dt.totalMembers === 1 ? '' : 's'} • {dt.avgGapPct}% Gap
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-slate-300">
+                      {dt.members.map((m, mIdx) => (
+                        <div key={mIdx} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 dark:border-white/5 last:border-none">
+                          <span className="font-semibold text-slate-800 dark:text-white">• {m.fullName}</span>
+                          <span className="text-[11px] text-slate-400">{m.roleTitle || 'Engineer'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              (teamProfiles.length > 0 ? teamProfiles : rows.map(r => ({ fullName: r, roleTitle: 'Direct Report', departmentName: user?.department || 'Department' }))).map((m, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-white text-sm">{m.fullName}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
+                      {m.riskStatus || 'Active'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    <div>{m.roleTitle || 'Team Member'}</div>
+                    <div className="text-slate-500 text-[10px]">{m.departmentName || user?.department || 'Organization'}</div>
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400">
-                  <div>{m.roleTitle || 'Team Member'}</div>
-                  <div className="text-slate-500 text-[10px]">{m.departmentName || user?.department || 'Organization'}</div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
 
       {/* Heatmap Grid Container */}
       <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 overflow-hidden">
-        <SectionHead title="Team Skill Competency Matrix" sub="Aggregated proficiency & gap percentages by direct report" />
+        <SectionHead title="Team Skill Competency Matrix" sub="Aggregated proficiency & gap percentages by direct report and domain team" />
 
         {/* Team Matrix Switcher Bar */}
         <div className="flex items-center gap-2 overflow-x-auto my-3 pb-1 border-b border-slate-200 dark:border-white/10">
@@ -428,8 +553,9 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
             ))
           ) : (
             [
-              { id: 'ALL', label: `All Team Members (${rows.length})` },
-              ...rows.map(r => ({ id: r, label: r }))
+              { id: 'ALL', label: `All Department Teams (${teamProfiles.length || rows.length} Members)` },
+              ...domainKeys.map(key => ({ id: key, label: `${domainTeams[key].name} (${domainTeams[key].totalMembers})` })),
+              ...rows.map(r => ({ id: r, label: `👤 ${r}` }))
             ].map(t => (
               <button
                 key={t.id}
@@ -561,13 +687,16 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
 // ----------------------------------------------------------------------
 // 2. Team Progress & Profile Overview Table Component
 // ----------------------------------------------------------------------
-export function TeamProfilesOverview({ profiles = [], onSelectMember, onNav }) {
+export function TeamProfilesOverview({ profiles = [], onSelectMember, onNav, user }) {
   const [filterRisk, setFilterRisk] = useState('ALL')
   const [filterTeam, setFilterTeam] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedUser, setExpandedUser] = useState(null)
 
   const list = profiles || []
+  const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee')
+  const domainTeams = groupMembersIntoDomainTeams(list, user?.department)
+  const domainKeys = Object.keys(domainTeams)
 
   if (list.length === 0) {
     return (
@@ -588,12 +717,16 @@ export function TeamProfilesOverview({ profiles = [], onSelectMember, onNav }) {
     const matchesSearch = (p.fullName && p.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
                           (p.roleTitle && p.roleTitle.toLowerCase().includes(searchQuery.toLowerCase()))
     let matchesTeam = true
-    if (filterTeam === 'team1') {
-      matchesTeam = ['Ava Chen', 'Liam Harper', 'Chloe Adams'].includes(p.fullName)
-    } else if (filterTeam === 'team2') {
-      matchesTeam = ['Jordan Taylor', 'Ravi Shah', 'Grace Kim'].includes(p.fullName)
-    } else if (filterTeam === 'team3') {
-      matchesTeam = ['Sofia Ruiz', 'Daniel Osei'].includes(p.fullName)
+    if (filterTeam !== 'ALL') {
+      if (domainTeams[filterTeam]) {
+        matchesTeam = domainTeams[filterTeam].members.some(m => m.id === p.id || m.fullName === p.fullName)
+      } else if (filterTeam === 'team1') {
+        matchesTeam = ['Ava Chen', 'Liam Harper', 'Chloe Adams'].includes(p.fullName)
+      } else if (filterTeam === 'team2') {
+        matchesTeam = ['Jordan Taylor', 'Ravi Shah', 'Grace Kim'].includes(p.fullName)
+      } else if (filterTeam === 'team3') {
+        matchesTeam = ['Sofia Ruiz', 'Daniel Osei'].includes(p.fullName)
+      }
     }
     return matchesRisk && matchesSearch && matchesTeam
   })
@@ -607,28 +740,45 @@ export function TeamProfilesOverview({ profiles = [], onSelectMember, onNav }) {
   return (
     <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <SectionHead title="Direct Reports Competency & Training Status" sub="Track role benchmarks, active training, and gap risks" />
+        <SectionHead title="Direct Reports Competency & Training Status" sub="Track role benchmarks, active training, and gap risks by domain team" />
         
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Team Filter Selector */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
-            {[
-              { id: 'ALL', label: `All (${list.length})` },
-              { id: 'team1', label: 'Team 1' },
-              { id: 'team2', label: 'Team 2' },
-              { id: 'team3', label: 'Team 3' }
-            ].map(t => (
-              <button
-                key={t.id}
-                onClick={() => setFilterTeam(t.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  filterTeam === t.id ? 'bg-lime-400 text-[#0B0F1A] shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+          {/* Team / Domain Filter Selector */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto">
+            {isDemoManager ? (
+              [
+                { id: 'ALL', label: `All (${list.length})` },
+                { id: 'team1', label: 'Team 1' },
+                { id: 'team2', label: 'Team 2' },
+                { id: 'team3', label: 'Team 3' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setFilterTeam(t.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                    filterTeam === t.id ? 'bg-lime-400 text-[#0B0F1A] shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))
+            ) : (
+              [
+                { id: 'ALL', label: `All Teams (${list.length})` },
+                ...domainKeys.map(key => ({ id: key, label: `${domainTeams[key].name} (${domainTeams[key].totalMembers})` }))
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setFilterTeam(t.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                    filterTeam === t.id ? 'bg-lime-400 text-[#0B0F1A] shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))
+            )}
           </div>
 
           <div className="relative">
@@ -1050,6 +1200,8 @@ export function ManagerDashboard({ onNav, user }) {
 
   const hasRealMembers = Array.isArray(teamProfiles) && teamProfiles.length > 0
   const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee')
+  const domainTeams = groupMembersIntoDomainTeams(teamProfiles, user?.department)
+  const domainKeys = Object.keys(domainTeams)
 
   let profilesList = []
   let activeHeatmap = { rows: [], cols: [], values: [] }
@@ -1058,20 +1210,37 @@ export function ManagerDashboard({ onNav, user }) {
   let criticalGapsCount = 0
   let avgGapPercentage = 0
   let activeInterventions = '0 Active'
-  let teamName = user?.company ? `${user.company} Team` : 'Organization Team'
+  let teamName = user?.department ? `${user.department} Department` : 'Organization Team'
 
   if (hasRealMembers) {
-    profilesList = teamProfiles
-    totalTeamMembers = teamProfiles.length
-    criticalGapsCount = teamGaps?.criticalGapsCount ?? 0
-    avgGapPercentage = teamGaps?.avgGapPercentage ?? 0
-    skillGaps = teamGaps?.skillGaps || []
-    activeHeatmap = heatmapData || {
-      rows: teamProfiles.map(p => p.fullName),
-      cols: skillGaps.map(g => g.skillName),
-      values: teamProfiles.map(() => skillGaps.map(g => Math.round(g.gapPercentage || 20)))
+    if (selectedTeamKey !== 'all' && domainTeams[selectedTeamKey]) {
+      const dt = domainTeams[selectedTeamKey]
+      profilesList = dt.members
+      totalTeamMembers = dt.totalMembers
+      criticalGapsCount = dt.criticalGaps
+      avgGapPercentage = dt.avgGapPct
+      activeInterventions = dt.activeInterventions
+      teamName = dt.name
+      skillGaps = teamGaps?.skillGaps || []
+      activeHeatmap = heatmapData || {
+        rows: dt.members.map(p => p.fullName),
+        cols: skillGaps.map(g => g.skillName),
+        values: dt.members.map(() => skillGaps.map(g => Math.round(g.gapPercentage || 20)))
+      }
+    } else {
+      profilesList = teamProfiles
+      totalTeamMembers = teamProfiles.length
+      criticalGapsCount = teamGaps?.criticalGapsCount ?? 0
+      avgGapPercentage = teamGaps?.avgGapPercentage ?? 0
+      skillGaps = teamGaps?.skillGaps || []
+      activeHeatmap = heatmapData || {
+        rows: teamProfiles.map(p => p.fullName),
+        cols: skillGaps.map(g => g.skillName),
+        values: teamProfiles.map(() => skillGaps.map(g => Math.round(g.gapPercentage || 20)))
+      }
+      activeInterventions = `${criticalGapsCount} Identified`
+      teamName = `All ${user?.department || 'Department'} Teams`
     }
-    activeInterventions = `${criticalGapsCount} Identified`
   } else if (isDemoManager) {
     const activeTeam = selectedTeamKey === 'all'
       ? {
@@ -1125,7 +1294,7 @@ export function ManagerDashboard({ onNav, user }) {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B0F1A] via-[#141433] to-[#0B0F1A] p-6 sm:p-8">
         <div className="grad-blob w-64 h-64 bg-lime-400/15 -top-10 right-10"></div>
         <div className="relative z-10">
-          <Pill text={<span className="inline-flex items-center gap-1.5"><Icon name="circle" className="w-2 h-2 fill-current text-lime-400" /> Team Gap Intelligence Active</span>} className="bg-lime-400/15 text-lime-300 mb-4" />
+          <Pill text={<span className="inline-flex items-center gap-1.5"><Icon name="circle" className="w-2 h-2 fill-current text-lime-400" /> Department Gap Intelligence Active</span>} className="bg-lime-400/15 text-lime-300 mb-4" />
           <h1 className="font-display text-3xl font-bold text-white mb-2">{user?.name || user?.fullName || 'Manager'} 👋</h1>
           <p className="text-slate-400 text-sm max-w-2xl">
             {totalTeamMembers > 0 ? (
@@ -1152,16 +1321,20 @@ export function ManagerDashboard({ onNav, user }) {
         </div>
       </div>
 
-      {/* Team Selection Toolbar for Demo */}
-      {isDemoManager && !hasRealMembers && (
+      {/* Dynamic Team Switcher Toolbar for Department Domain Teams */}
+      {(hasRealMembers || isDemoManager) && (
         <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-lime-400/20 text-lime-400 flex items-center justify-center shrink-0">
-              <Icon name="users" className="w-5 h-5" />
+              <Icon name="layers" className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-base font-bold text-slate-900 dark:text-white font-display">Active Team Skill Gap View</div>
-              <div className="text-xs text-slate-400">Select team gap view to switch direct reports, gap percentages, and skill matrices</div>
+              <div className="text-base font-bold text-slate-900 dark:text-white font-display">
+                {user?.department ? `${user.department} Domain Teams` : 'Department Domain Teams'}
+              </div>
+              <div className="text-xs text-slate-400">
+                Switch between domain teams ({domainKeys.length > 0 ? domainKeys.map(k => domainTeams[k].name.replace(' Team', '')).join(', ') : 'all domains'}) to view specialized gap matrices
+              </div>
             </div>
           </div>
 
@@ -1175,44 +1348,47 @@ export function ManagerDashboard({ onNav, user }) {
               }`}
             >
               <span className="w-2.5 h-2.5 rounded-full bg-lime-500"></span>
-              All Teams Gap (23.4%)
+              All {user?.department || 'Department'} ({teamProfiles.length || totalTeamMembers} Members • {teamGaps?.avgGapPercentage || 0}% Gap)
             </button>
 
-            <button
-              onClick={() => setSelectedTeamKey('team1')}
-              className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
-                selectedTeamKey === 'team1'
-                  ? 'bg-lime-400 text-[#0B0F1A] shadow-md shadow-lime-400/20 scale-105'
-                  : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
-              }`}
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              Team 1 Gap (13.8%)
-            </button>
-
-            <button
-              onClick={() => setSelectedTeamKey('team2')}
-              className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
-                selectedTeamKey === 'team2'
-                  ? 'bg-lime-400 text-[#0B0F1A] shadow-md shadow-lime-400/20 scale-105'
-                  : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
-              }`}
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              Team 2 Gap (32.0%)
-            </button>
-
-            <button
-              onClick={() => setSelectedTeamKey('team3')}
-              className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
-                selectedTeamKey === 'team3'
-                  ? 'bg-lime-400 text-[#0B0F1A] shadow-md shadow-lime-400/20 scale-105'
-                  : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
-              }`}
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-              Team 3 Gap (22.5%)
-            </button>
+            {hasRealMembers ? (
+              domainKeys.map(key => {
+                const dt = domainTeams[key]
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedTeamKey(key)}
+                    className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
+                      selectedTeamKey === key
+                        ? 'bg-lime-400 text-[#0B0F1A] shadow-md shadow-lime-400/20 scale-105'
+                        : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    {dt.name} ({dt.totalMembers} • {dt.avgGapPct}%)
+                  </button>
+                )
+              })
+            ) : (
+              [
+                { id: 'team1', label: 'Team 1 Gap (13.8%)', color: 'bg-emerald-500' },
+                { id: 'team2', label: 'Team 2 Gap (32.0%)', color: 'bg-amber-500' },
+                { id: 'team3', label: 'Team 3 Gap (22.5%)', color: 'bg-indigo-500' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTeamKey(t.id)}
+                  className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
+                    selectedTeamKey === t.id
+                      ? 'bg-lime-400 text-[#0B0F1A] shadow-md shadow-lime-400/20 scale-105'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${t.color}`}></span>
+                  {t.label}
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}

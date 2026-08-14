@@ -180,7 +180,7 @@ export const api = {
   },
 
   getHrDashboard: async () => {
-    return request('/dashboard/hr')
+    return request('/hr/dashboard')
   },
 
   getAdminDashboard: async () => {

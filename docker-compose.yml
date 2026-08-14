@@ -39,7 +39,7 @@ services:
 
   frontend:
     build:
-      context: ./knowledgeiq-react
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: knowledgeiq-frontend
     ports:

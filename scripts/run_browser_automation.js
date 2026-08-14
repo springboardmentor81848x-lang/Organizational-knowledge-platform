@@ -1,4 +1,4 @@
-const puppeteer = require('./knowledgeiq-react/node_modules/puppeteer-core');
+const puppeteer = require('../frontend/node_modules/puppeteer-core');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -58,9 +58,7 @@ async function runBrowserAutomation() {
   const results = [];
 
   try {
-    // ----------------------------------------------------
     // 0. CAPTURE LOGIN PAGE
-    // ----------------------------------------------------
     console.log('1. Navigating to Login Page (http://localhost:5173/) ...');
     await page.goto('http://localhost:5173/', { timeout: 15000 }).catch(() => {});
     await page.waitForSelector('#demo-employee', { timeout: 15000 });
@@ -71,9 +69,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 01_login_screen.png');
     results.push({ role: 'Public / Auth', test: 'Login Screen with 6-Role Quick Access', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 1. ROLE 1: EMPLOYEE
-    // ----------------------------------------------------
     console.log('\n--- 2. ROLE 1: EMPLOYEE (Ava Chen) ---');
     const empAuth = await loginApi('employee@northwind.io', 'password123');
     await page.evaluate((auth) => {
@@ -102,9 +98,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 03_employee_skills.png');
     results.push({ role: 'Employee', test: 'Competency Proficiencies (1-5 Sliders)', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 2. ROLE 2: MANAGER / TEAM LEAD
-    // ----------------------------------------------------
     console.log('\n--- 3. ROLE 2: TEAM LEAD / MANAGER (Marcus Lee) ---');
     const mgrAuth = await loginApi('manager@northwind.io', 'password123');
     await page.evaluate((auth) => {
@@ -133,9 +127,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 05_manager_team2.png');
     results.push({ role: 'Manager', test: 'Multi-Team Switcher (Team 2 DevOps/Security)', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 3. ROLE 3: HR SPECIALIST
-    // ----------------------------------------------------
     console.log('\n--- 4. ROLE 3: HR SPECIALIST (Priya Nair) ---');
     const hrAuth = await loginApi('hr@northwind.io', 'password123');
     await page.evaluate((auth) => {
@@ -188,9 +180,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 18_hr_strategic_forecasting.png');
     results.push({ role: 'HR Specialist', test: 'Strategic Skills Deficit Projections & Analytics', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 4. ROLE 4: DEPARTMENT HEAD
-    // ----------------------------------------------------
     console.log('\n--- 5. ROLE 4: DEPARTMENT HEAD ---');
     const dhAuth = await loginApi('depthead@northwind.io', 'password123');
     await page.evaluate((auth) => {
@@ -231,9 +221,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 09_depthead_allocation.png');
     results.push({ role: 'Department Head', test: 'Resource & Budget Allocation ($150,000 Total, 3.8x ROI)', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 5. ROLE 5: L&D ADMIN
-    // ----------------------------------------------------
     console.log('\n--- 6. ROLE 5: L&D ADMIN ---');
     const ldAuth = await loginApi('ldadmin@northwind.io', 'password123');
     await page.evaluate((auth) => {
@@ -274,9 +262,7 @@ async function runBrowserAutomation() {
     console.log('✔ [Captured] 12_ldadmin_certs.png');
     results.push({ role: 'L&D Admin', test: 'Credential Verification Queue (One-Click Skill Upgrade)', status: 'PASS' });
 
-    // ----------------------------------------------------
     // 6. ROLE 6: SYSTEM ADMIN
-    // ----------------------------------------------------
     console.log('\n--- 7. ROLE 6: SYSTEM ADMINISTRATOR ---');
     const admAuth = await loginApi('admin@northwind.io', 'password123');
     await page.evaluate((auth) => {

@@ -12,10 +12,11 @@
 *.env
 !.env.example
 !backend/.env.example
-!knowledgeiq-react/.env.example
+!frontend/.env.example
 
 # Node Dependencies & Package Locks
 node_modules/
+frontend/node_modules/
 backend/node_modules/
 knowledgeiq-react/node_modules/
 
@@ -23,6 +24,7 @@ knowledgeiq-react/node_modules/
 target/
 backend/target/
 dist/
+frontend/dist/
 knowledgeiq-react/dist/
 build/
 out/

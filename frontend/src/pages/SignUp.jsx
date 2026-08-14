@@ -30,15 +30,28 @@ const DEPT_OPTIONS = [
   'Data & Analytics', 'Finance', 'Legal', 'Design', 'Customer Success', 'Other'
 ]
 
+const ROLE_SUGGESTIONS = {
+  'Engineering': ['Java Developer', 'Python Developer', 'React Developer', 'Full Stack Engineer', 'DevOps & Cloud Engineer', 'QA Automation Engineer', 'Software Engineer'],
+  'Product': ['Product Manager', 'Associate Product Manager', 'Product Owner', 'Scrum Master', 'Technical Program Manager'],
+  'HR & Operations': ['HR Specialist', 'Talent Acquisition Specialist', 'People Operations Lead', 'HR Business Partner'],
+  'Sales & Marketing': ['Marketing Strategist', 'Growth Specialist', 'Account Executive', 'Sales Development Rep', 'Content Strategist'],
+  'Data & Analytics': ['Data Analyst', 'Data Engineer', 'Business Intelligence Developer', 'Machine Learning Engineer', 'Data Scientist'],
+  'Finance': ['Financial Analyst', 'Accountant', 'Finance Operations Manager', 'Billing & Payroll Specialist'],
+  'Legal': ['Legal Counsel', 'Compliance Officer', 'Contracts Specialist', 'Privacy Analyst'],
+  'Design': ['UI/UX Designer', 'Product Designer', 'Design Systems Lead', 'Visual & Brand Designer'],
+  'Customer Success': ['Customer Success Manager', 'Support Engineer', 'Client Onboarding Specialist'],
+  'Other': ['Specialist', 'Consultant', 'Operations Analyst']
+}
+
 export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLogin, initialRole = 'employee' }) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState(initialRole)
-  const [company, setCompany] = useState('Northwind Labs')
+  const [company, setCompany] = useState('')
   const [department, setDepartment] = useState(initialRole === 'hr' ? 'HR & Operations' : 'Engineering')
-  const [jobTitle, setJobTitle] = useState(initialRole === 'hr' ? 'HR Specialist' : 'Software Engineer')
+  const [jobTitle, setJobTitle] = useState(initialRole === 'hr' ? 'HR Specialist' : 'Java Developer')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -145,7 +158,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
           </div>
           <div>
             <div className="font-display font-bold text-white text-lg leading-none">KnowledgeIQ</div>
-            <div className="text-slate-400 text-xs mt-0.5">Northwind Labs</div>
+            <div className="text-slate-400 text-xs mt-0.5">Enterprise Platform</div>
           </div>
         </div>
 
@@ -323,11 +336,31 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                     type="text"
                     value={jobTitle}
                     onChange={e => setJobTitle(e.target.value)}
-                    placeholder="e.g. Senior HR Specialist"
+                    placeholder="e.g. Java Developer"
                     required
                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
                   />
                 </div>
+                {/* Domain / Role Suggestions */}
+                {ROLE_SUGGESTIONS[department] && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[10px] text-slate-500 font-medium mr-1">Suggestions:</span>
+                    {ROLE_SUGGESTIONS[department].map(sug => (
+                      <button
+                        type="button"
+                        key={sug}
+                        onClick={() => setJobTitle(sug)}
+                        className={`text-[11px] px-2 py-0.5 rounded-lg border transition-all ${
+                          jobTitle === sug
+                            ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
+                            : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
+                        }`}
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

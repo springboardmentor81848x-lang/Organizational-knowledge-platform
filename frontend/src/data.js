@@ -11,8 +11,7 @@ export const NAV = {
   employee: [
     { section: 'Overview', items: [
       { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-      { id: 'skills', label: 'Skill Inventory', icon: 'layers' },
-      { id: 'gaps', label: 'Knowledge Gap Analysis', icon: 'search' }
+      { id: 'skills', label: 'Skill Inventory', icon: 'layers' }
     ]},
     { section: 'Learning', items: [
       { id: 'ai', label: 'AI Recommendations', icon: 'sparkles' },
