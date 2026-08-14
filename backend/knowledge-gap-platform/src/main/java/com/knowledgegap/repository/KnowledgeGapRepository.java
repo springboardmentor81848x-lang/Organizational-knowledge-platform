@@ -10,8 +10,10 @@ import java.util.List;
 
 @Repository
 @Transactional
+public interface KnowledgeGapRepository
+        extends JpaRepository<KnowledgeGap, Long> {
 
-public interface KnowledgeGapRepository extends JpaRepository<KnowledgeGap, Long> {
     List<KnowledgeGap> findByEmployee(Employee employee);
+
     void deleteByEmployee(Employee employee);
 }

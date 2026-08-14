@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.EmployeeSkillRequest;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
@@ -25,18 +27,26 @@ public class EmployeeSkillService {
             EmployeeRepository employeeRepository,
             SkillRepository skillRepository) {
 
-        this.employeeSkillRepository = employeeSkillRepository;
-        this.employeeRepository = employeeRepository;
-        this.skillRepository = skillRepository;
+        this.employeeSkillRepository =
+                employeeSkillRepository;
+
+        this.employeeRepository =
+                employeeRepository;
+
+        this.skillRepository =
+                skillRepository;
     }
 
     // =========================================================
     // SAVE EMPLOYEE SKILL
     // =========================================================
 
-    public EmployeeSkill saveEmployeeSkill(EmployeeSkill employeeSkill) {
+    public EmployeeSkill saveEmployeeSkill(
+            EmployeeSkill employeeSkill) {
 
-        return employeeSkillRepository.save(employeeSkill);
+        return employeeSkillRepository.save(
+                employeeSkill
+        );
     }
 
     // =========================================================
@@ -52,7 +62,8 @@ public class EmployeeSkillService {
     // GET EMPLOYEE SKILL BY ID
     // =========================================================
 
-    public Optional<EmployeeSkill> getEmployeeSkillById(Long id) {
+    public Optional<EmployeeSkill> getEmployeeSkillById(
+            Long id) {
 
         return employeeSkillRepository.findById(id);
     }
@@ -64,12 +75,13 @@ public class EmployeeSkillService {
     public List<EmployeeSkill> getSkillsByEmployee(
             Employee employee) {
 
-        return employeeSkillRepository.findByEmployee(employee);
+        return employeeSkillRepository.findByEmployee(
+                employee
+        );
     }
 
     // =========================================================
     // GET SKILLS BY EMPLOYEE ID
-    // Example: EMP001
     // =========================================================
 
     public List<EmployeeSkill> getEmployeeSkillsByEmployee(
@@ -82,9 +94,12 @@ public class EmployeeSkillService {
                                 new RuntimeException(
                                         "Employee not found: "
                                                 + employeeId
-                                ));
+                                )
+                        );
 
-        return employeeSkillRepository.findByEmployee(employee);
+        return employeeSkillRepository.findByEmployee(
+                employee
+        );
     }
 
     // =========================================================
@@ -110,7 +125,8 @@ public class EmployeeSkillService {
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Employee Skill not found"
-                                ));
+                                )
+                        );
 
         if (updatedSkill.getCurrentLevel() != null) {
 
@@ -154,7 +170,8 @@ public class EmployeeSkillService {
                                 new RuntimeException(
                                         "Employee not found: "
                                                 + request.getEmployeeId()
-                                ));
+                                )
+                        );
 
         Skill skill =
                 skillRepository
@@ -165,14 +182,52 @@ public class EmployeeSkillService {
                                 new RuntimeException(
                                         "Skill not found: "
                                                 + request.getSkillId()
-                                ));
+                                )
+                        );
+
+        // -----------------------------------------------------
+        // CHECK IF SKILL ALREADY EXISTS
+        // -----------------------------------------------------
+
+        Optional<EmployeeSkill> existingSkill =
+                employeeSkillRepository
+                        .findByEmployeeAndSkill(
+                                employee,
+                                skill
+                        );
+
+        // -----------------------------------------------------
+        // UPDATE EXISTING SKILL
+        // -----------------------------------------------------
+
+        if (existingSkill.isPresent()) {
+
+            EmployeeSkill employeeSkill =
+                    existingSkill.get();
+
+            employeeSkill.setCurrentLevel(
+                    request.getCurrentLevel()
+            );
+
+            return employeeSkillRepository.save(
+                    employeeSkill
+            );
+        }
+
+        // -----------------------------------------------------
+        // CREATE NEW SKILL
+        // -----------------------------------------------------
 
         EmployeeSkill employeeSkill =
                 new EmployeeSkill();
 
-        employeeSkill.setEmployee(employee);
+        employeeSkill.setEmployee(
+                employee
+        );
 
-        employeeSkill.setSkill(skill);
+        employeeSkill.setSkill(
+                skill
+        );
 
         employeeSkill.setCurrentLevel(
                 request.getCurrentLevel()
@@ -184,24 +239,55 @@ public class EmployeeSkillService {
     }
 
     // =========================================================
-    // UPDATE SKILL FROM ASSESSMENT
+    // REPLACE EMPLOYEE SKILLS FROM LATEST ASSESSMENT
     // =========================================================
     //
-    // This method is used after the employee completes
-    // an assessment.
+    // IMPORTANT:
+    //
+    // Whenever an assessment is submitted:
+    //
+    // 1. Delete the employee's previous EmployeeSkill records
+    // 2. Read the skills from the latest assessment
+    // 3. Create EmployeeSkill records for those skills only
     //
     // Example:
     //
-    // Java = 100%  -> Level 5
-    // SQL  = 80%   -> Level 4
-    // DSA  = 60%   -> Level 3
+    // OLD:
+    // Java
+    // SQL
+    // Python
+    // React
+    // Git
+    // HTML
+    // CSS
+    // Spring Boot
+    // JavaScript
+    // Excel
+    // Power BI
+    // Docker
+    // Linux
+    // Testing
+    //
+    // NEW ASSESSMENT:
+    // Java
+    // SQL
+    // Spring Boot
+    // React
+    // Git
+    //
+    // AFTER SUBMISSION:
+    // Java
+    // SQL
+    // Spring Boot
+    // React
+    // Git
     //
     // =========================================================
 
-    public EmployeeSkill updateSkillFromAssessment(
+    @Transactional
+    public void replaceSkillsFromAssessment(
             Employee employee,
-            String skillName,
-            int assessmentScore) {
+            List<AssessmentSkillResultResponse> skillResults) {
 
         // -----------------------------------------------------
         // VALIDATE EMPLOYEE
@@ -215,8 +301,132 @@ public class EmployeeSkillService {
         }
 
         // -----------------------------------------------------
-        // VALIDATE SKILL NAME
+        // DELETE PREVIOUS EMPLOYEE SKILLS
         // -----------------------------------------------------
+
+        employeeSkillRepository.deleteByEmployee(
+                employee
+        );
+
+        // -----------------------------------------------------
+        // IF NO SKILLS WERE FOUND
+        // -----------------------------------------------------
+
+        if (skillResults == null ||
+                skillResults.isEmpty()) {
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // ADD ONLY LATEST ASSESSMENT SKILLS
+        // -----------------------------------------------------
+
+        for (
+                AssessmentSkillResultResponse result :
+                skillResults
+        ) {
+
+            if (result == null) {
+                continue;
+            }
+
+            String skillName =
+                    result.getSkillName();
+
+            if (skillName == null ||
+                    skillName.isBlank()) {
+
+                continue;
+            }
+
+            final String finalSkillName =
+                    skillName.trim();
+
+            // -------------------------------------------------
+            // FIND SKILL IN SKILL TABLE
+            // -------------------------------------------------
+
+            Optional<Skill> skillOptional =
+                    skillRepository
+                            .findBySkillNameIgnoreCase(
+                                    finalSkillName
+                            );
+
+            // -------------------------------------------------
+            // SKIP IF SKILL DOES NOT EXIST
+            // -------------------------------------------------
+
+            if (skillOptional.isEmpty()) {
+
+                System.out.println(
+                        "Skill not found in Skill table: "
+                                + finalSkillName
+                );
+
+                continue;
+            }
+
+            Skill skill =
+                    skillOptional.get();
+
+            // -------------------------------------------------
+            // CONVERT ASSESSMENT SCORE TO LEVEL
+            // -------------------------------------------------
+
+            int level =
+                    convertScoreToLevel(
+                            result.getActualScore()
+                    );
+
+            // -------------------------------------------------
+            // CREATE EMPLOYEE SKILL
+            // -------------------------------------------------
+
+            EmployeeSkill employeeSkill =
+                    new EmployeeSkill();
+
+            employeeSkill.setEmployee(
+                    employee
+            );
+
+            employeeSkill.setSkill(
+                    skill
+            );
+
+            employeeSkill.setCurrentLevel(
+                    level
+            );
+
+            // -------------------------------------------------
+            // SAVE
+            // -------------------------------------------------
+
+            employeeSkillRepository.save(
+                    employeeSkill
+            );
+        }
+    }
+
+    // =========================================================
+    // UPDATE SKILL FROM SINGLE ASSESSMENT RESULT
+    // =========================================================
+    //
+    // This method can still be used elsewhere if required.
+    //
+    // =========================================================
+
+    public EmployeeSkill updateSkillFromAssessment(
+            Employee employee,
+            String skillName,
+            int assessmentScore) {
+
+        if (employee == null) {
+
+            throw new IllegalArgumentException(
+                    "Employee cannot be null"
+            );
+        }
 
         if (skillName == null ||
                 skillName.isBlank()) {
@@ -226,47 +436,25 @@ public class EmployeeSkillService {
             );
         }
 
-        // -----------------------------------------------------
-        // CLEAN SKILL NAME
-        // -----------------------------------------------------
-
-        skillName = skillName.trim();
-
-        // -----------------------------------------------------
-        // CONVERT SCORE TO LEVEL
-        // -----------------------------------------------------
+        final String finalSkillName =
+                skillName.trim();
 
         int level =
                 convertScoreToLevel(
                         assessmentScore
                 );
 
-        // -----------------------------------------------------
-        // IMPORTANT:
-        // Create a final variable because we use the
-        // skill name inside the lambda below.
-        // -----------------------------------------------------
-
-        final String finalSkillName = skillName;
-
-        // -----------------------------------------------------
-        // FIND SKILL IN DATABASE
-        // -----------------------------------------------------
-
         Skill skill =
                 skillRepository
-                        .findBySkillName(
+                        .findBySkillNameIgnoreCase(
                                 finalSkillName
                         )
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Skill not found in Skill table: "
                                                 + finalSkillName
-                                ));
-
-        // -----------------------------------------------------
-        // CHECK IF EMPLOYEE ALREADY HAS THIS SKILL
-        // -----------------------------------------------------
+                                )
+                        );
 
         Optional<EmployeeSkill> existingSkill =
                 employeeSkillRepository
@@ -277,22 +465,12 @@ public class EmployeeSkillService {
 
         EmployeeSkill employeeSkill;
 
-        // -----------------------------------------------------
-        // EXISTING SKILL
-        // -----------------------------------------------------
-
         if (existingSkill.isPresent()) {
 
             employeeSkill =
                     existingSkill.get();
 
-        }
-
-        // -----------------------------------------------------
-        // NEW SKILL
-        // -----------------------------------------------------
-
-        else {
+        } else {
 
             employeeSkill =
                     new EmployeeSkill();
@@ -306,17 +484,9 @@ public class EmployeeSkillService {
             );
         }
 
-        // -----------------------------------------------------
-        // UPDATE LEVEL BASED ON ASSESSMENT
-        // -----------------------------------------------------
-
         employeeSkill.setCurrentLevel(
                 level
         );
-
-        // -----------------------------------------------------
-        // SAVE TO DATABASE
-        // -----------------------------------------------------
 
         return employeeSkillRepository.save(
                 employeeSkill
@@ -331,22 +501,18 @@ public class EmployeeSkillService {
             int score) {
 
         if (score >= 90) {
-
             return 5;
         }
 
         if (score >= 75) {
-
             return 4;
         }
 
         if (score >= 60) {
-
             return 3;
         }
 
         if (score >= 40) {
-
             return 2;
         }
 

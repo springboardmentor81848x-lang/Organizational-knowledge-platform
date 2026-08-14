@@ -1,384 +1,567 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import api from "../services/api";
+import {
+  Target,
+  CheckCircle,
+  AlertTriangle,
+  BarChart3,
+  RefreshCw,
+} from "lucide-react";
+
 function Skills() {
+  const [skills, setSkills] = useState([]);
+  const [overallScore, setOverallScore] = useState(0);
+  const [assessmentTitle, setAssessmentTitle] = useState("");
+  const [loading, setLoading] = useState(true);
 
-const employeeId = localStorage.getItem("employeeId");
+  // =========================================================
+  // PROFICIENCY LEVEL
+  // =========================================================
 
-const [designation, setDesignation] = useState("");
+  const getProficiencyLevel = (score) => {
+    score = Number(score) || 0;
 
-const [skills, setSkills] = useState([]);
+    if (score >= 90) {
+      return "Expert";
+    }
 
-const [allSkills, setAllSkills] = useState([]);
+    if (score >= 75) {
+      return "Advanced";
+    }
 
-const [selectedSkill, setSelectedSkill] = useState("");
+    if (score >= 60) {
+      return "Competent";
+    }
 
-const [newSkillLevel, setNewSkillLevel] = useState(3);
+    if (score >= 40) {
+      return "Intermediate";
+    }
 
+    return "Beginner";
+  };
 
-const levelNames = {
-  1: "Beginner",
-  2: "Intermediate",
-  3: "Competent",
-  4: "Advanced",
-  5: "Expert",
-};
+  // =========================================================
+  // PROFICIENCY STYLE
+  // =========================================================
 
+  const getProficiencyStyle = (level) => {
+    switch (level) {
+      case "Expert":
+        return "bg-green-100 text-green-700";
 
-useEffect(() => {
+      case "Advanced":
+        return "bg-blue-100 text-blue-700";
 
-  if(!employeeId){
-    alert("Employee information not found. Please login again.");
-    return;
-  }
+      case "Competent":
+        return "bg-indigo-100 text-indigo-700";
 
-  loadEmployeeSkills();
-  loadAllSkills();
+      case "Intermediate":
+        return "bg-yellow-100 text-yellow-700";
 
-  setDesignation(localStorage.getItem("designation"));
+      case "Beginner":
+        return "bg-orange-100 text-orange-700";
 
-}, []);
+      default:
+        return "bg-slate-100 text-slate-600";
+    }
+  };
 
+  // =========================================================
+  // GAP STYLE
+  // =========================================================
 
+  const getGapStyle = (severity) => {
+    switch (String(severity || "").toUpperCase()) {
+      case "NO GAP":
+        return "bg-green-100 text-green-700";
 
-const loadEmployeeSkills = async () => {
+      case "LOW":
+        return "bg-blue-100 text-blue-700";
 
-  try {
+      case "MEDIUM":
+        return "bg-yellow-100 text-yellow-700";
 
-    const response = await api.get(
-      `/employee-skills/employee/${employeeId}`
-    );
+      case "HIGH":
+        return "bg-orange-100 text-orange-700";
 
-    setSkills(response.data);
+      case "CRITICAL":
+        return "bg-red-100 text-red-700";
 
-  } catch (error) {
+      default:
+        return "bg-slate-100 text-slate-600";
+    }
+  };
 
-    console.error(
-      "Error loading employee skills",
-      error
-    );
+  // =========================================================
+  // LOAD SKILLS FROM ASSESSMENT RESULT
+  // =========================================================
 
-  }
+  useEffect(() => {
+    loadAssessmentSkills();
+  }, []);
 
-};
+  const loadAssessmentSkills = () => {
+    try {
+      setLoading(true);
 
+      const storedResult =
+        sessionStorage.getItem("assessmentResult");
 
-
-const loadAllSkills = async () => {
-
-  try {
-
-    const response = await api.get("/skills");
-
-    setAllSkills(response.data);
-
-  } catch (error) {
-
-    console.error(
-      "Error loading skills",
-      error
-    );
-
-  }
-
-};
-
-
-
-const addSkill = async (e) => {
-
-  e.preventDefault();
-
-
-  if (!selectedSkill) {
-
-    alert("Please select a skill");
-    return;
-
-  }
-
-
-  const alreadyExists = skills.some(
-    (s) => s.skill.id === Number(selectedSkill)
-  );
-
-
-  if(alreadyExists){
-
-    alert("Skill already added");
-    return;
-
-  }
-
-
-
-  try {
-
-    await api.post("/employee-skills/add", {
-
-      employeeId: employeeId,
-      skillId: Number(selectedSkill),
-      currentLevel: newSkillLevel,
-
-    });
-
-
-
-    alert("Skill added successfully");
-
-
-    setSelectedSkill("");
-
-    setNewSkillLevel(3);
-
-
-    loadEmployeeSkills();
-
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert("Unable to add skill");
-
-  }
-
-};
-
-
-
-
-const updateSkillLevel = async (
-  employeeSkillId,
-  level
-) => {
-
-  try {
-
-
-    await api.put(
-      `/employee-skills/${employeeSkillId}`,
-      {
-        currentLevel: level
+      if (!storedResult) {
+        setSkills([]);
+        return;
       }
-    );
 
+      const result = JSON.parse(storedResult);
 
-    loadEmployeeSkills();
+      console.log(
+        "Skill Inventory - Assessment Result:",
+        result
+      );
 
+      const skillResults = Array.isArray(result.skillResults)
+        ? result.skillResults
+        : [];
 
-  } catch (error) {
+      setSkills(skillResults);
 
-    console.error(error);
+      setOverallScore(
+        Number(result.overallScore) || 0
+      );
 
-    alert("Unable to update skill");
+      setAssessmentTitle(
+        result.title || ""
+      );
 
-  }
+    } catch (error) {
+      console.error(
+        "Unable to load assessment skills:",
+        error
+      );
 
-};
-return (
-  <div className="flex min-h-screen bg-gray-100">
-    <Sidebar role={localStorage.getItem("role") || "EMPLOYEE"} />
+      setSkills([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    <div className="flex-1">
-      <Navbar title="Skill Inventory" />
+  // =========================================================
+  // REFRESH
+  // =========================================================
 
-      <div className="p-8">
+  const refreshSkills = () => {
+    loadAssessmentSkills();
+  };
 
-        <h2 className="text-2xl font-bold">Skill Inventory</h2>
+  // =========================================================
+  // LOADING
+  // =========================================================
 
-        <p className="text-gray-500 mb-6">
-          Manage your current skills and proficiency levels.
-        </p>
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-slate-50">
 
-        <div className="mb-6 bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold text-lg">Designation</h3>
-          <p className="text-indigo-600 font-semibold">
-            {designation}
-          </p>
-        </div>
+        <Sidebar
+          role={
+            localStorage.getItem("role") ||
+            "EMPLOYEE"
+          }
+        />
 
-        <div className="grid xl:grid-cols-3 gap-6">
+        <div className="flex-1">
 
-          {/* Current Skills */}
+          <Navbar title="Skill Inventory" />
 
-<div className="xl:col-span-2 bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-center min-h-[80vh]">
 
-  <h3 className="text-lg font-semibold mb-4">
-    Current Skills
-  </h3>
+            <div className="text-center">
 
+              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
 
-  <div className="space-y-5">
+              <p className="text-slate-500">
+                Loading your skills...
+              </p>
 
-    {skills.length === 0 && (
-      <p className="text-gray-500">
-        No skills added yet.
-      </p>
-    )}
-
-
-    {skills.map((skill) => (
-
-      <div
-        key={skill.id}
-        className="border rounded-xl p-4"
-      >
-
-        <div className="flex justify-between">
-
-          <div>
-
-            <h4 className="font-semibold">
-              {skill.skill?.skillName}
-            </h4>
-
-            <p className="text-sm text-gray-500">
-              {skill.skill?.category}
-            </p>
+            </div>
 
           </div>
 
-
-          <span className="text-indigo-600 font-semibold">
-            {levelNames[skill.currentLevel]}
-          </span>
-
-
         </div>
-
-
-        <div className="mt-4">
-
-          <label className="text-sm text-gray-600">
-            Update Level
-          </label>
-
-
-          <select
-            value={skill.currentLevel}
-            onChange={(e) =>
-              updateSkillLevel(
-                skill.id,
-                Number(e.target.value)
-              )
-            }
-            className="mt-2 w-full border rounded-lg px-3 py-2"
-          >
-
-            <option value={1}>Beginner</option>
-            <option value={2}>Intermediate</option>
-            <option value={3}>Competent</option>
-            <option value={4}>Advanced</option>
-            <option value={5}>Expert</option>
-
-          </select>
-
-
-        </div>
-
 
       </div>
+    );
+  }
 
-    ))}
+  // =========================================================
+  // MAIN UI
+  // =========================================================
 
-  </div>
+  return (
+    <div className="flex min-h-screen bg-slate-50">
 
-</div>
+      <Sidebar
+        role={
+          localStorage.getItem("role") ||
+          "EMPLOYEE"
+        }
+      />
 
-          {/* Add Skill */}
+      <div className="flex-1 min-w-0">
 
-          <div className="bg-white rounded-xl shadow p-6">
+        <Navbar title="Skill Inventory" />
 
-            <h3 className="text-lg font-semibold mb-4">
-              Add New Skill
-            </h3>
+        <main className="p-5 md:p-8">
 
-            <form onSubmit={addSkill} className="space-y-4">
+          {/* =================================================
+              HEADER
+          ================================================= */}
 
-              <div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 
-                <label className="block mb-2">
-                  Skill
-                </label>
+            <div>
 
-                <select
-                  value={selectedSkill}
-                  onChange={(e) =>
-                    setSelectedSkill(e.target.value)
-                  }
-                  className="w-full border rounded-lg px-3 py-3"
-                >
+              <div className="flex items-center gap-3 mb-2">
 
-                  <option value="">
-                    Select Skill
-                  </option>
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
 
-                  {allSkills
-                .filter(
-                (skill) =>
-                  !skills.some(
-                    (s) => s.skill?.id === skill.id
-                  )
-              )
-              .map((skill) => (
+                  <Target
+                    size={25}
+                    className="text-indigo-600"
+                  />
 
-                <option
-                  key={skill.id}
-                  value={skill.id}
-                >
-                  {skill.skillName}
-                </option>
+                </div>
 
-              ))}
+                <div>
 
-                </select>
+                  <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+                    Skill Inventory
+                  </h1>
 
-              </div>
+                  <p className="text-slate-500">
+                    Your current skills based on your latest assessment.
+                  </p>
 
-              <div>
-
-                <label className="block mb-2">
-                  Proficiency Level
-                </label>
-
-                <select
-                  value={newSkillLevel}
-                  onChange={(e) =>
-                    setNewSkillLevel(Number(e.target.value))
-                  }
-                  className="w-full border rounded-lg px-3 py-3"
-                >
-
-                  <option value={1}>Beginner</option>
-                  <option value={2}>Intermediate</option>
-                  <option value={3}>Competent</option>
-                  <option value={4}>Advanced</option>
-                  <option value={5}>Expert</option>
-
-                </select>
+                </div>
 
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 text-white rounded-lg py-3 hover:bg-indigo-700"
-              >
-                Add Skill
-              </button>
+              {assessmentTitle && (
+                <p className="text-sm text-indigo-600 font-medium mt-3">
+                  Based on: {assessmentTitle}
+                </p>
+              )}
 
-            </form>
+            </div>
+
+            <button
+              onClick={refreshSkills}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-600 rounded-lg hover:bg-white transition"
+            >
+              <RefreshCw size={17} />
+
+              Refresh
+            </button>
 
           </div>
 
-        </div>
+          {/* =================================================
+              NO ASSESSMENT RESULT
+          ================================================= */}
+
+          {skills.length === 0 ? (
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
+
+              <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-5">
+
+                <BarChart3
+                  size={30}
+                  className="text-indigo-600"
+                />
+
+              </div>
+
+              <h2 className="text-xl font-bold text-slate-800">
+                No Assessment Skills Available
+              </h2>
+
+              <p className="text-slate-500 mt-2 max-w-md mx-auto">
+                Complete a skill assessment to see your current
+                skills and proficiency levels here.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <>
+
+              {/* =================================================
+                  OVERALL SCORE
+              ================================================= */}
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+
+                  <div>
+
+                    <p className="text-sm text-slate-500">
+                      Overall Assessment Score
+                    </p>
+
+                    <p className="text-4xl font-bold text-indigo-600 mt-1">
+                      {overallScore}%
+                    </p>
+
+                  </div>
+
+                  <div className="w-full md:w-2/3">
+
+                    <div className="flex justify-between text-sm mb-2">
+
+                      <span className="text-slate-500">
+                        Overall Proficiency
+                      </span>
+
+                      <span className="font-semibold text-slate-700">
+                        {getProficiencyLevel(
+                          overallScore
+                        )}
+                      </span>
+
+                    </div>
+
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+
+                      <div
+                        className="h-full bg-indigo-600 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(
+                            Math.max(
+                              overallScore,
+                              0
+                            ),
+                            100
+                          )}%`,
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  CURRENT SKILLS
+              ================================================= */}
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+
+                <div className="flex items-center gap-3 mb-6">
+
+                  <div className="p-2.5 rounded-lg bg-indigo-100 text-indigo-600">
+
+                    <Target size={21} />
+
+                  </div>
+
+                  <div>
+
+                    <h2 className="text-xl font-bold text-slate-800">
+                      Current Skills
+                    </h2>
+
+                    <p className="text-sm text-slate-500">
+                      Skills and proficiency levels determined from your assessment.
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="space-y-5">
+
+                  {skills.map((skill, index) => {
+
+                    const actualScore =
+                      Number(
+                        skill.actualScore
+                      ) || 0;
+
+                    const requiredScore =
+                      Number(
+                        skill.requiredScore
+                      ) || 70;
+
+                    const gap =
+                      Number(skill.gap) || 0;
+
+                    const proficiencyLevel =
+                      getProficiencyLevel(
+                        actualScore
+                      );
+
+                    const percentage =
+                      Math.min(
+                        Math.max(
+                          actualScore,
+                          0
+                        ),
+                        100
+                      );
+
+                    return (
+
+                      <div
+                        key={
+                          skill.skillName ||
+                          index
+                        }
+                        className="border border-slate-200 rounded-xl p-5"
+                      >
+
+                        {/* Skill Header */}
+
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                          <div>
+
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              {skill.skillName ||
+                                "Unknown Skill"}
+                            </h3>
+
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+
+                              <span className="text-sm text-slate-500">
+                                Current Level:
+                              </span>
+
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getProficiencyStyle(
+                                  proficiencyLevel
+                                )}`}
+                              >
+                                {proficiencyLevel}
+                              </span>
+
+                            </div>
+
+                          </div>
+
+                          <div className="flex items-center gap-3">
+
+                            <span className="text-xl font-bold text-slate-800">
+                              {actualScore}%
+                            </span>
+
+                            <span
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getGapStyle(
+                                skill.gapSeverity
+                              )}`}
+                            >
+                              {skill.gapSeverity ||
+                                "UNKNOWN"}
+                            </span>
+
+                          </div>
+
+                        </div>
+
+                        {/* Progress */}
+
+                        <div className="mt-5">
+
+                          <div className="flex justify-between text-xs text-slate-500 mb-2">
+
+                            <span>
+                              Current: {actualScore}%
+                            </span>
+
+                            <span>
+                              Required: {requiredScore}%
+                            </span>
+
+                          </div>
+
+                          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+
+                            <div
+                              className={
+                                actualScore >=
+                                requiredScore
+                                  ? "h-full bg-green-500 rounded-full transition-all"
+                                  : "h-full bg-orange-500 rounded-full transition-all"
+                              }
+                              style={{
+                                width: `${percentage}%`,
+                              }}
+                            />
+
+                          </div>
+
+                        </div>
+
+                        {/* Gap Status */}
+
+                        {gap > 0 ? (
+
+                          <div className="flex items-center gap-2 mt-4 text-sm text-orange-600">
+
+                            <AlertTriangle
+                              size={16}
+                            />
+
+                            <span>
+                              Knowledge gap:
+                            </span>
+
+                            <strong>
+                              {gap}%
+                            </strong>
+
+                          </div>
+
+                        ) : (
+
+                          <div className="flex items-center gap-2 mt-4 text-sm text-green-600">
+
+                            <CheckCircle
+                              size={16}
+                            />
+
+                            <span>
+                              Required skill level achieved
+                            </span>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    );
+                  })}
+
+                </div>
+
+              </div>
+
+            </>
+
+          )}
+
+        </main>
 
       </div>
 
     </div>
+  );
+}
 
-  </div>
-);}
 export default Skills;
