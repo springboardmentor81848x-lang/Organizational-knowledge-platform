@@ -23,6 +23,10 @@ public class Assessment {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Existing database column
+    @Column(name = "assessment_role_id", nullable = false)
+    private Long assessmentRoleId;
+
     public Assessment() {
     }
 
@@ -72,5 +76,13 @@ public class Assessment {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getAssessmentRoleId() {
+        return assessmentRoleId;
+    }
+
+    public void setAssessmentRoleId(Long assessmentRoleId) {
+        this.assessmentRoleId = assessmentRoleId;
     }
 }

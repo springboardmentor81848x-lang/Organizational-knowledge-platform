@@ -19,12 +19,6 @@ function Assessment() {
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
-  // Stores the actual selected option text.
-  // Example:
-  // {
-  //   1: "extends",
-  //   2: "main()"
-  // }
   const [answers, setAnswers] = useState({});
 
   const [timeLeft, setTimeLeft] = useState(null);
@@ -34,7 +28,7 @@ function Assessment() {
   const [error, setError] = useState("");
 
   // =========================================================
-  // LOAD ACTIVE ASSESSMENT
+  // LOAD ROLE-SPECIFIC ASSESSMENT
   // =========================================================
 
   useEffect(() => {
@@ -46,39 +40,82 @@ function Assessment() {
       setLoading(true);
       setError("");
 
-      // Get active assessment
-      const assessmentResponse =
-        await api.get("/assessments/active");
+      // -------------------------------------------------------
+      // Get selected target role
+      // -------------------------------------------------------
+
+      const targetRoleId =
+        localStorage.getItem("targetRoleId");
+
+      const targetRole =
+        localStorage.getItem("targetRole");
 
       console.log(
-        "Active assessments:",
-        assessmentResponse.data
+        "Assessment page - Target Role ID:",
+        targetRoleId
       );
 
-      const activeAssessments =
-        Array.isArray(assessmentResponse.data)
-          ? assessmentResponse.data
-          : [];
+      console.log(
+        "Assessment page - Target Role:",
+        targetRole
+      );
 
-      if (activeAssessments.length === 0) {
+      if (!targetRoleId) {
         setError(
-          "No active assessment is available right now."
+          "Target role was not selected. Please select a role first."
         );
         return;
       }
 
-      // Use the first active assessment
-      const selectedAssessment =
-        activeAssessments[0];
+      // -------------------------------------------------------
+      // Get role-specific assessment
+      // -------------------------------------------------------
 
-      // Get questions
+      const assessmentResponse =
+        await api.get(
+          `/assessments/role/${targetRoleId}`
+        );
+
+      console.log(
+        "Role-specific assessment response:",
+        assessmentResponse.data
+      );
+
+      let selectedAssessment =
+        assessmentResponse.data;
+
+      // -------------------------------------------------------
+      // Safety: handle array response if backend returns array
+      // -------------------------------------------------------
+
+      if (Array.isArray(selectedAssessment)) {
+        selectedAssessment =
+          selectedAssessment[0];
+      }
+
+      if (!selectedAssessment) {
+        setError(
+          `No assessment is available for ${targetRole || "this role"}.`
+        );
+        return;
+      }
+
+      console.log(
+        "Selected assessment:",
+        selectedAssessment
+      );
+
+      // -------------------------------------------------------
+      // Get questions for THIS assessment
+      // -------------------------------------------------------
+
       const questionsResponse =
         await api.get(
           `/assessments/${selectedAssessment.id}/questions`
         );
 
       console.log(
-        "Assessment questions:",
+        "Role-specific questions:",
         questionsResponse.data
       );
 
@@ -89,22 +126,44 @@ function Assessment() {
 
       if (questions.length === 0) {
         setError(
-          "The assessment does not contain any questions."
+          `No questions are available for ${
+            targetRole || "the selected role"
+          } assessment.`
         );
         return;
       }
 
+      // -------------------------------------------------------
+      // Store assessment
+      // -------------------------------------------------------
+
       setAssessment({
         ...selectedAssessment,
 
-        // Keep both values for compatibility
         id: selectedAssessment.id,
+
         assessmentId: selectedAssessment.id,
+
+        targetRoleId: Number(targetRoleId),
+
+        targetRole: targetRole,
 
         questions,
       });
 
+      // -------------------------------------------------------
+      // Store selected assessment ID
+      // -------------------------------------------------------
+
+      sessionStorage.setItem(
+        "selectedAssessmentId",
+        String(selectedAssessment.id)
+      );
+
+      // -------------------------------------------------------
       // Start timer
+      // -------------------------------------------------------
+
       if (selectedAssessment.durationMinutes) {
         setTimeLeft(
           Number(
@@ -114,7 +173,7 @@ function Assessment() {
       }
     } catch (err) {
       console.error(
-        "Error loading assessment:",
+        "Error loading role-specific assessment:",
         err
       );
 
@@ -125,6 +184,7 @@ function Assessment() {
 
       setError(
         err.response?.data?.message ||
+          err.response?.data ||
           `Unable to load assessment. Status: ${
             err.response?.status || "Unknown"
           }`
@@ -198,8 +258,6 @@ function Assessment() {
     setAnswers((previous) => ({
       ...previous,
 
-      // IMPORTANT:
-      // Save actual option text, not A/B/C/D.
       [question.id]: answer,
     }));
 
@@ -253,6 +311,9 @@ function Assessment() {
     }
 
     if (!assessment?.questions?.length) {
+      setError(
+        "Assessment questions are not available."
+      );
       return;
     }
 
@@ -287,7 +348,7 @@ function Assessment() {
     }
 
     // -------------------------------------------------------
-    // Get logged-in employee
+    // Get employee ID
     // -------------------------------------------------------
 
     const employeeId =
@@ -296,6 +357,21 @@ function Assessment() {
     if (!employeeId) {
       setError(
         "Employee ID was not found. Please log in again."
+      );
+      return;
+    }
+
+    // -------------------------------------------------------
+    // Get assessment ID
+    // -------------------------------------------------------
+
+    const assessmentId =
+      assessment.assessmentId ||
+      assessment.id;
+
+    if (!assessmentId) {
+      setError(
+        "Assessment ID was not found."
       );
       return;
     }
@@ -313,7 +389,6 @@ function Assessment() {
           (question) => ({
             questionId: question.id,
 
-            // Send null if unanswered
             selectedAnswer:
               answers[question.id] || null,
           })
@@ -324,16 +399,17 @@ function Assessment() {
       // -----------------------------------------------------
 
       const payload = {
-        assessmentId:
-          assessment.assessmentId ||
-          assessment.id,
+        assessmentId: Number(assessmentId),
 
         answers: submittedAnswers,
       };
 
       console.log(
-        "Submitting assessment:",
-        payload
+        "================================="
+      );
+
+      console.log(
+        "SUBMITTING ASSESSMENT"
       );
 
       console.log(
@@ -341,8 +417,32 @@ function Assessment() {
         employeeId
       );
 
+      console.log(
+        "Target Role ID:",
+        assessment.targetRoleId
+      );
+
+      console.log(
+        "Target Role:",
+        assessment.targetRole
+      );
+
+      console.log(
+        "Assessment ID:",
+        assessmentId
+      );
+
+      console.log(
+        "Payload:",
+        payload
+      );
+
+      console.log(
+        "================================="
+      );
+
       // -----------------------------------------------------
-      // Send to backend
+      // Submit to backend
       // -----------------------------------------------------
 
       const response =
@@ -352,17 +452,25 @@ function Assessment() {
         );
 
       console.log(
-        "Assessment saved successfully:",
+        "Assessment submission response:",
         response.data
       );
 
       // -----------------------------------------------------
-      // Store returned result temporarily
+      // Save result
       // -----------------------------------------------------
 
       sessionStorage.setItem(
         "assessmentResult",
         JSON.stringify(response.data)
+      );
+
+      // -----------------------------------------------------
+      // Clear temporary assessment data
+      // -----------------------------------------------------
+
+      sessionStorage.removeItem(
+        "selectedAssessmentId"
       );
 
       // -----------------------------------------------------
@@ -374,8 +482,21 @@ function Assessment() {
       );
     } catch (err) {
       console.error(
-        "Error submitting assessment:",
+        "================================="
+      );
+
+      console.error(
+        "ASSESSMENT SUBMISSION FAILED"
+      );
+
+      console.error(
+        "Error:",
         err
+      );
+
+      console.error(
+        "Status:",
+        err.response?.status
       );
 
       console.error(
@@ -383,10 +504,20 @@ function Assessment() {
         err.response?.data
       );
 
+      console.error(
+        "================================="
+      );
+
       setError(
         err.response?.data?.message ||
-          err.response?.data ||
-          "Unable to submit assessment. Please try again."
+          err.response?.data?.error ||
+          (typeof err.response?.data ===
+          "string"
+            ? err.response.data
+            : null) ||
+          `Unable to submit assessment. Status: ${
+            err.response?.status || "Unknown"
+          }`
       );
 
       setSubmitting(false);
@@ -503,10 +634,6 @@ function Assessment() {
         100
       : 0;
 
-  // ---------------------------------------------------------
-  // Options
-  // ---------------------------------------------------------
-
   const options = [
     {
       key: "A",
@@ -545,19 +672,27 @@ function Assessment() {
 
             <div>
 
+              <div className="flex items-center gap-2 mb-1">
+
+                {assessment.targetRole && (
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                    {assessment.targetRole}
+                  </span>
+                )}
+
+              </div>
+
               <h1 className="text-xl md:text-2xl font-bold text-slate-800">
                 {assessment.title}
               </h1>
 
               <p className="text-sm text-slate-500 mt-1">
-                Technical Skill Assessment
+                Role-Specific Technical Skill Assessment
               </p>
 
             </div>
 
-            {/* =================================================
-                TIMER
-            ================================================= */}
+            {/* TIMER */}
 
             <div
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${
@@ -588,9 +723,7 @@ function Assessment() {
 
       <main className="max-w-5xl mx-auto px-5 md:px-8 py-8">
 
-        {/* ===================================================
-            DESCRIPTION
-        =================================================== */}
+        {/* DESCRIPTION */}
 
         {assessment.description && (
           <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
@@ -602,9 +735,7 @@ function Assessment() {
           </div>
         )}
 
-        {/* ===================================================
-            PROGRESS
-        =================================================== */}
+        {/* PROGRESS */}
 
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
 
@@ -636,9 +767,7 @@ function Assessment() {
 
         </div>
 
-        {/* ===================================================
-            QUESTION CARD
-        =================================================== */}
+        {/* QUESTION CARD */}
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
 
@@ -676,15 +805,12 @@ function Assessment() {
             {question.question}
           </h2>
 
-          {/* =================================================
-              OPTIONS
-          ================================================= */}
+          {/* OPTIONS */}
 
           <div className="space-y-4">
 
             {options.map((option) => {
 
-              // Don't show empty options
               if (!option.value) {
                 return null;
               }
@@ -710,8 +836,6 @@ function Assessment() {
                   }
                 >
 
-                  {/* Option Letter */}
-
                   <div
                     className={
                       selected
@@ -722,8 +846,6 @@ function Assessment() {
                     {option.key}
                   </div>
 
-                  {/* Option Text */}
-
                   <span
                     className={
                       selected
@@ -733,8 +855,6 @@ function Assessment() {
                   >
                     {option.value}
                   </span>
-
-                  {/* Selected Icon */}
 
                   {selected && (
                     <CheckCircle
@@ -749,9 +869,7 @@ function Assessment() {
 
           </div>
 
-          {/* =================================================
-              ERROR
-          ================================================= */}
+          {/* ERROR */}
 
           {error && (
             <div className="mt-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -759,13 +877,11 @@ function Assessment() {
             </div>
           )}
 
-          {/* =================================================
-              NAVIGATION
-          ================================================= */}
+          {/* NAVIGATION */}
 
           <div className="flex flex-col sm:flex-row justify-between gap-3 mt-10">
 
-            {/* Previous */}
+            {/* PREVIOUS */}
 
             <button
               type="button"
@@ -779,10 +895,9 @@ function Assessment() {
               <ChevronLeft size={18} />
 
               Previous
-
             </button>
 
-            {/* Next / Submit */}
+            {/* NEXT / SUBMIT */}
 
             {currentQuestion <
             totalQuestions - 1 ? (
@@ -796,7 +911,6 @@ function Assessment() {
                 Next
 
                 <ChevronRight size={18} />
-
               </button>
 
             ) : (
@@ -811,7 +925,7 @@ function Assessment() {
                 {submitting ? (
                   <>
                     <Spinner />
-                    Saving...
+                    Submitting...
                   </>
                 ) : (
                   <>
@@ -828,9 +942,7 @@ function Assessment() {
 
         </div>
 
-        {/* ===================================================
-            QUESTION NAVIGATOR
-        =================================================== */}
+        {/* QUESTION NAVIGATOR */}
 
         <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6">
 
