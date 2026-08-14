@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KnowledgeIQ — Organizational Knowledge Gap Intelligence Platform</title>
+
+<!-- Tailwind (utility classes) — CDN script must load BEFORE tailwind.config is set -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: {
+    fontFamily: {
+      display: ['"Sora"', '"Segoe UI"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      body: ['"Inter"', '"Segoe UI"', 'ui-sans-serif', 'system-ui', 'sans-serif']
+    },
+    colors: { ink: '#0B0F1A', panel: '#0F1420' }
+  } } }
+</script>
+
+<!-- Webfonts: loaded with swap + local fallback, so text is never invisible if the fetch is blocked -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    /* Fallback stack loads immediately; webfont swaps in once fetched */
+    font-family: 'Inter', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Sora', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #CBD2E1; border-radius: 8px; }
+  .dark ::-webkit-scrollbar-thumb { background: #2A3244; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .fade-in { animation: fadeIn .45s ease both; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+  .stagger > * { animation: fadeIn .45s ease both; }
+
+  .glass { background: rgba(255,255,255,0.06); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.12); }
+  .grad-blob { position:absolute; border-radius:9999px; filter: blur(70px); opacity:.55; animation: float 12s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,-24px) scale(1.08)} }
+
+  .navlink { transition: all .18s ease; }
+  .navlink:hover { background: rgba(255,255,255,0.06); }
+  .navlink.active { background: rgba(166,226,46,0.12); color:#DCF89C; }
+  .navlink.active .nl-icon { color: #A6E22E; }
+  .navlink.active .nl-bar { opacity:1; }
+
+  .card { transition: box-shadow .2s ease, transform .2s ease; }
+  .card:hover { box-shadow: 0 4px 6px rgba(16,24,40,.04), 0 16px 32px -12px rgba(16,24,40,.14); }
+
+  .heat { transition: transform .15s ease; }
+  .heat:hover { transform: scale(1.08); z-index: 5; }
+
+  input[type=checkbox].switch { appearance:none; width:38px; height:22px; border-radius:9999px; background:#CBD2E1; position:relative; cursor:pointer; transition:.2s; }
+  input[type=checkbox].switch:checked { background:#A6E22E; }
+  input[type=checkbox].switch::after { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:9999px; background:#fff; transition:.2s; box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  input[type=checkbox].switch:checked::after { left:18px; }
+
+  .modal-backdrop { background: rgba(9,12,20,.55); backdrop-filter: blur(4px); }
+</style>
+</head>
+<body class="bg-[#F5F6FB] text-slate-800 dark:bg-[#0B0F1A] dark:text-slate-200">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

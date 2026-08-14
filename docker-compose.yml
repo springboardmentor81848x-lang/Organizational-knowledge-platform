@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: knowledgeiq-db
+    environment:
+      POSTGRES_DB: knowledgeiq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d knowledgeiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - knowledgeiq-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: knowledgeiq-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/knowledgeiq
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - knowledgeiq-network
+
+  frontend:
+    build:
+      context: ./knowledgeiq-react
+      dockerfile: Dockerfile
+    container_name: knowledgeiq-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - knowledgeiq-network
+
+volumes:
+  postgres_data:
+
+networks:
+  knowledgeiq-network:
+    driver: bridge
