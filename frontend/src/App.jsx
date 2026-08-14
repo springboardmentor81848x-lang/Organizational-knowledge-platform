@@ -150,9 +150,9 @@ export default function App() {
       return (
         <SignUp
           initialRole={signUpRole}
-          onLogin={(appRole, authData) => handleLogin(appRole, authData, true)}
+          onLogin={(appRole, authData, isNewUser) => handleLogin(appRole, authData, isNewUser)}
           onSwitchToLogin={() => setAuthScreen('login')}
-          onSwitchToSignUpManager={() => setAuthScreen('signup-manager')}
+          onSwitchToSignUpManager={() => { setSignUpRole('manager'); setAuthScreen('signup') }}
         />
       )
     }
@@ -168,9 +168,9 @@ export default function App() {
     return (
       <Login
         onLogin={handleLogin}
-        onSwitchToSignUp={() => { setSignUpRole('employee'); setAuthScreen('signup') }}
+        onSwitchToSignUp={(roleKey = 'employee') => { setSignUpRole(roleKey); setAuthScreen('signup') }}
         onSwitchToSignUpHR={() => { setSignUpRole('hr'); setAuthScreen('signup') }}
-        onSwitchToSignUpManager={() => setAuthScreen('signup-manager')}
+        onSwitchToSignUpManager={() => { setSignUpRole('manager'); setAuthScreen('signup') }}
       />
     )
   }

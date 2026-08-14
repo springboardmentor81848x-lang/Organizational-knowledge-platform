@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Icon from '../components/Icon.jsx'
 import api from '../services/api.js'
 
@@ -16,13 +16,122 @@ function calcStrength(pw) {
 const STRENGTH_LABELS = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong']
 const STRENGTH_COLORS = ['', '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
-const ROLE_OPTIONS = [
-  { key: 'employee', label: 'Employee', icon: 'user', desc: 'Track skills & learning paths' },
-  { key: 'manager', label: 'Team Lead / Manager', icon: 'users', desc: 'Team gap heatmap & coverage' },
-  { key: 'hr', label: 'HR Specialist', icon: 'bar-chart-2', desc: 'Manage workforce intelligence' },
-  { key: 'depthead', label: 'Department Head', icon: 'building', desc: 'Department strategy & budgets' },
-  { key: 'ldadmin', label: 'L&D Admin / Mentor', icon: 'graduation-cap', desc: 'Catalogs & learning paths' },
-  { key: 'admin', label: 'System Administrator', icon: 'shield', desc: 'User access & security' },
+export const ALL_ROLES = [
+  {
+    key: 'employee',
+    label: 'Employee',
+    systemRole: 'EMPLOYEE',
+    icon: 'user',
+    badge: 'Individual Contributor',
+    color: 'emerald',
+    tagline: 'Skills, AI domain assessments, peer reviews & learning paths',
+    capabilities: [
+      'Create & update professional profile',
+      'Maintain verified skill profile & proficiency levels',
+      'Perform self-assessments & AI domain quizzes',
+      'Participate in 360° peer assessments',
+      'Identify personal skill gaps & benchmark requirements',
+      'Enroll in recommended courses & track progress',
+      'Earn verifiable achievements & manage certifications',
+      'Connect with technical mentors & receive notifications'
+    ],
+    defaultDept: 'Engineering',
+    defaultTitle: 'Java Developer'
+  },
+  {
+    key: 'manager',
+    label: 'Team Lead / Manager',
+    systemRole: 'MANAGER',
+    icon: 'users',
+    badge: 'Team & People Lead',
+    color: 'indigo',
+    tagline: 'Domain team grouping, skill coverage heatmap & interventions',
+    capabilities: [
+      'View department domain team grouping (Java, Python, Frontend, etc.)',
+      'Analyze department skill coverage heatmap (Exclusive)',
+      'Identify team capability gaps & critical shortage risks',
+      'Monitor employee benchmark progress & training adoption',
+      'Track individual learning trajectories & course completions',
+      'Assign targeted AI learning interventions & recommendations',
+      'Review direct reports & manage team competencies'
+    ],
+    defaultDept: 'Engineering',
+    defaultTitle: 'Engineering Manager'
+  },
+  {
+    key: 'hr',
+    label: 'HR Specialist',
+    systemRole: 'HR_SPECIALIST',
+    icon: 'bar-chart-2',
+    badge: 'Workforce Intelligence',
+    color: 'amber',
+    tagline: 'Org-wide gap intelligence, workforce directory & forecasting',
+    capabilities: [
+      'Organization-wide capability gap intelligence & heatmaps',
+      'Manage complete workforce skill inventory & directory',
+      'Measure training effectiveness & learning ROI metrics',
+      'Run strategic skill forecasting & predictive hiring models',
+      'Manage company departments & user role assignments',
+      'Generate executive reports & compliance audit exports'
+    ],
+    defaultDept: 'HR & Operations',
+    defaultTitle: 'HR Specialist'
+  },
+  {
+    key: 'depthead',
+    label: 'Department Head',
+    systemRole: 'DEPARTMENT_HEAD',
+    icon: 'building',
+    badge: 'Executive Strategy',
+    color: 'cyan',
+    tagline: 'Department competency frameworks, benchmarks & budgets',
+    capabilities: [
+      'Department-wide competency matrix & capability health',
+      'Define & approve standardized role benchmark levels',
+      'Allocate learning budgets & prioritize team funding',
+      'Monitor department performance & risk distribution',
+      'Oversee multiple domain teams & team managers'
+    ],
+    defaultDept: 'Engineering',
+    defaultTitle: 'Head of Engineering'
+  },
+  {
+    key: 'ldadmin',
+    label: 'L&D Admin / Mentor',
+    systemRole: 'L_AND_D_ADMIN',
+    icon: 'graduation-cap',
+    badge: 'Learning & Mentorship',
+    color: 'purple',
+    tagline: 'Personalized learning paths, catalogs & mentor programs',
+    capabilities: [
+      'Manage internal training catalog & external learning links',
+      'Build adaptive, personalized learning path curriculums',
+      'Configure AI recommendation scoring algorithms',
+      'Monitor training participation & completion rates',
+      'Verify employee certifications & renewal processes',
+      'Support mentorship programs & expert knowledge sharing'
+    ],
+    defaultDept: 'HR & Operations',
+    defaultTitle: 'L&D Program Lead / Mentor'
+  },
+  {
+    key: 'admin',
+    label: 'System Administrator',
+    systemRole: 'SYSTEM_ADMIN',
+    icon: 'shield',
+    badge: 'Platform Security & Access',
+    color: 'rose',
+    tagline: 'User provisioning, access control, system monitoring & security',
+    capabilities: [
+      'Manage user accounts, invitations & account activation',
+      'Role-based access control (RBAC) & permissions management',
+      'Authentication, JWT token security & OAuth integrations',
+      'Live system monitoring, uptime tracking & audit logs',
+      'Database health, system configuration & global taxonomies'
+    ],
+    defaultDept: 'Engineering',
+    defaultTitle: 'System Administrator'
+  }
 ]
 
 const DEPT_OPTIONS = [
@@ -31,33 +140,58 @@ const DEPT_OPTIONS = [
 ]
 
 const ROLE_SUGGESTIONS = {
-  'Engineering': ['Java Developer', 'Python Developer', 'React Developer', 'Full Stack Engineer', 'DevOps & Cloud Engineer', 'QA Automation Engineer', 'Software Engineer'],
-  'Product': ['Product Manager', 'Associate Product Manager', 'Product Owner', 'Scrum Master', 'Technical Program Manager'],
-  'HR & Operations': ['HR Specialist', 'Talent Acquisition Specialist', 'People Operations Lead', 'HR Business Partner'],
-  'Sales & Marketing': ['Marketing Strategist', 'Growth Specialist', 'Account Executive', 'Sales Development Rep', 'Content Strategist'],
-  'Data & Analytics': ['Data Analyst', 'Data Engineer', 'Business Intelligence Developer', 'Machine Learning Engineer', 'Data Scientist'],
-  'Finance': ['Financial Analyst', 'Accountant', 'Finance Operations Manager', 'Billing & Payroll Specialist'],
+  'Engineering': ['Java Developer', 'Python Developer', 'React Developer', 'Full Stack Engineer', 'DevOps & Cloud Engineer', 'QA Automation Engineer', 'Software Engineer', 'Engineering Manager', 'Head of Engineering'],
+  'Product': ['Product Manager', 'Associate Product Manager', 'Product Owner', 'Scrum Master', 'Technical Program Manager', 'Director of Product'],
+  'HR & Operations': ['HR Specialist', 'Talent Acquisition Specialist', 'People Operations Lead', 'HR Business Partner', 'L&D Program Lead / Mentor', 'Chief People Officer'],
+  'Sales & Marketing': ['Marketing Strategist', 'Growth Specialist', 'Account Executive', 'Sales Development Rep', 'Content Strategist', 'VP of Marketing'],
+  'Data & Analytics': ['Data Analyst', 'Data Engineer', 'Business Intelligence Developer', 'Machine Learning Engineer', 'Data Scientist', 'Analytics Lead'],
+  'Finance': ['Financial Analyst', 'Accountant', 'Finance Operations Manager', 'Billing & Payroll Specialist', 'VP of Finance'],
   'Legal': ['Legal Counsel', 'Compliance Officer', 'Contracts Specialist', 'Privacy Analyst'],
-  'Design': ['UI/UX Designer', 'Product Designer', 'Design Systems Lead', 'Visual & Brand Designer'],
+  'Design': ['UI/UX Designer', 'Product Designer', 'Design Systems Lead', 'Visual & Brand Designer', 'Head of Design'],
   'Customer Success': ['Customer Success Manager', 'Support Engineer', 'Client Onboarding Specialist'],
   'Other': ['Specialist', 'Consultant', 'Operations Analyst']
 }
 
 export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLogin, initialRole = 'employee' }) {
+  const [selectedRoleKey, setSelectedRoleKey] = useState(initialRole || 'employee')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [role, setRole] = useState(initialRole)
-  const [company, setCompany] = useState('')
-  const [department, setDepartment] = useState(initialRole === 'hr' ? 'HR & Operations' : 'Engineering')
-  const [jobTitle, setJobTitle] = useState(initialRole === 'hr' ? 'HR Specialist' : 'Java Developer')
+  const [company, setCompany] = useState('Northwind Labs')
+  const [existingOrgs, setExistingOrgs] = useState([])
+  const [department, setDepartment] = useState('Engineering')
+  const [jobTitle, setJobTitle] = useState('Java Developer')
+  const [bio, setBio] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+
+  const activeRoleObj = ALL_ROLES.find(r => r.key === selectedRoleKey) || ALL_ROLES[0]
+
+  useEffect(() => {
+    // Load available organizations for smart autocomplete
+    api.getOrganizations()
+      .then(res => {
+        if (Array.isArray(res) && res.length > 0) {
+          setExistingOrgs(res)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // When role changes, set sensible department and title defaults
+  function handleRoleSelect(roleKey) {
+    setSelectedRoleKey(roleKey)
+    const targetRole = ALL_ROLES.find(r => r.key === roleKey)
+    if (targetRole) {
+      setDepartment(targetRole.defaultDept)
+      setJobTitle(targetRole.defaultTitle)
+    }
+  }
 
   const strength = calcStrength(password)
   const passwordsMatch = password && confirmPassword && password === confirmPassword
@@ -75,37 +209,35 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
       setError('Password must be at least 8 characters.')
       return
     }
+    if (!company.trim()) {
+      setError('Please provide your Organization / Company name.')
+      return
+    }
     if (!agreedToTerms) {
-      setError('Please accept the terms to continue.')
+      setError('Please accept the terms of service to continue.')
       return
     }
 
     setLoading(true)
-    const systemRoleMap = {
-      employee: 'EMPLOYEE',
-      manager: 'MANAGER',
-      hr: 'HR_SPECIALIST',
-      depthead: 'DEPARTMENT_HEAD',
-      ldadmin: 'L_AND_D_ADMIN',
-      admin: 'SYSTEM_ADMIN'
-    }
-    const mappedSystemRole = systemRoleMap[role] || 'EMPLOYEE'
 
     const payload = {
-      fullName,
-      email,
+      fullName: fullName.trim(),
+      email: email.trim().toLowerCase(),
       password,
-      role: mappedSystemRole,
+      role: activeRoleObj.systemRole,
       company: company.trim(),
       departmentName: department,
-      roleTitle: jobTitle
+      roleTitle: jobTitle.trim(),
+      bio: bio.trim() || `${activeRoleObj.label} in ${department} at ${company.trim()}.`
     }
 
     try {
       const authData = await api.register(payload)
       setSuccess(true)
       setTimeout(() => {
-        onLogin(role, authData, true)
+        // For employee, route to onboarding setup; for managers and admins, enter dashboard
+        const isNewEmployee = activeRoleObj.key === 'employee'
+        onLogin(activeRoleObj.key, authData, isNewEmployee)
       }, 800)
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
@@ -116,13 +248,18 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
   // ── Success state ────────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 fade-in">
+      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 fade-in text-center max-w-sm">
           <div className="w-16 h-16 rounded-2xl bg-lime-400 flex items-center justify-center shadow-[0_0_32px_rgba(166,226,46,0.5)]">
             <Icon name="check" className="w-8 h-8 text-[#0B0F1A]" />
           </div>
-          <div className="text-white font-display font-bold text-xl">Account created!</div>
-          <div className="text-slate-400 text-sm">Signing you in…</div>
+          <div className="text-white font-display font-bold text-2xl">Account Created!</div>
+          <div className="text-slate-300 text-sm">
+            Welcome to <span className="text-lime-300 font-semibold">{company}</span> as <span className="text-white font-semibold">{activeRoleObj.label}</span>.
+          </div>
+          <div className="text-slate-400 text-xs mt-2 animate-pulse">
+            Configuring workspace & linking organization...
+          </div>
         </div>
       </div>
     )
@@ -131,12 +268,13 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
   // ── Loading state ────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-lime-400 flex items-center justify-center animate-pulse">
-            <Icon name="brain-circuit" className="w-6 h-6 text-[#0B0F1A]" />
+      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center animate-pulse shadow-[0_0_24px_rgba(166,226,46,0.4)]">
+            <Icon name="brain-circuit" className="w-7 h-7 text-[#0B0F1A]" />
           </div>
-          <div className="text-slate-400 text-sm">Creating your account…</div>
+          <div className="text-white font-bold text-lg">Provisioning {activeRoleObj.label} Workspace</div>
+          <div className="text-slate-400 text-xs">Binding organization benchmarks & intelligence...</div>
         </div>
       </div>
     )
@@ -144,162 +282,226 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
 
   return (
     <div className="min-h-screen w-full flex bg-[#0B0F1A] relative overflow-hidden">
-      {/* Animated background blobs */}
-      <div className="grad-blob w-[420px] h-[420px] bg-lime-400/25 -top-20 -right-20" />
-      <div className="grad-blob w-[380px] h-[380px] bg-indigo-500/25 bottom-0 -left-10" style={{ animationDelay: '-4s' }} />
-      <div className="grad-blob w-[300px] h-[300px] bg-violet-500/20 top-1/3 left-1/3" style={{ animationDelay: '-8s' }} />
+      {/* Animated background decorative blobs */}
+      <div className="grad-blob w-[450px] h-[450px] bg-lime-400/20 -top-20 -right-20" />
+      <div className="grad-blob w-[400px] h-[400px] bg-indigo-500/20 bottom-0 -left-10" style={{ animationDelay: '-4s' }} />
+      <div className="grad-blob w-[320px] h-[320px] bg-purple-500/15 top-1/3 left-1/4" style={{ animationDelay: '-8s' }} />
 
-      {/* ── Left: Brand panel ── */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 p-14 relative z-10">
-        {/* Logo */}
+      {/* ── Left: Brand & Live Role Capability Panel (Desktop) ── */}
+      <div className="hidden xl:flex flex-col justify-between w-[440px] 2xl:w-[480px] p-10 2xl:p-12 relative z-10 border-r border-white/5 bg-[#0B0F1A]/70 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-lime-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-lime-400 flex items-center justify-center shadow-[0_0_20px_rgba(166,226,46,0.4)]">
             <Icon name="brain-circuit" className="w-5 h-5 text-[#0B0F1A]" />
           </div>
           <div>
             <div className="font-display font-bold text-white text-lg leading-none">KnowledgeIQ</div>
-            <div className="text-slate-400 text-xs mt-0.5">Enterprise Platform</div>
+            <div className="text-slate-400 text-xs mt-0.5">Enterprise Workforce Intelligence</div>
           </div>
         </div>
 
-        {/* Hero copy */}
-        <div className="max-w-md fade-in">
-          <span className="inline-flex items-center gap-2 text-xs font-medium text-lime-300 bg-lime-400/10 border border-lime-400/20 rounded-full px-3 py-1 mb-6">
-            <Icon name="sparkles" className="w-3.5 h-3.5" /> Join 1,284 mapped employees
-          </span>
-          <h1 className="font-display text-4xl xl:text-[2.75rem] font-bold text-white leading-[1.1] mb-5">
-            Start closing your knowledge gaps today.
-          </h1>
-          <p className="text-slate-400 text-base leading-relaxed">
-            Get instant access to AI-powered skill mapping, personalized learning paths, and real-time workforce intelligence — all in one platform.
-          </p>
+        <div className="my-auto space-y-6">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-300">
+            <Icon name="sparkles" className="w-3.5 h-3.5" />
+            Selected Role Overview
+          </div>
 
-          {/* Feature bullets */}
-          <div className="mt-10 space-y-4">
-            {[
-              { icon: 'zap', text: 'AI-generated skill recommendations tailored to your role' },
-              { icon: 'bar-chart-2', text: 'Real-time gap analysis against your team benchmarks' },
-              { icon: 'graduation-cap', text: 'Curated courses that actually move your proficiency needle' },
-            ].map(({ icon, text }) => (
-              <div key={icon} className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-lime-400/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Icon name={icon} className="w-3.5 h-3.5 text-lime-300" />
-                </div>
-                <span className="text-slate-300 text-sm leading-relaxed">{text}</span>
+          <div>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lime-300">
+                <Icon name={activeRoleObj.icon} className="w-4 h-4" />
               </div>
-            ))}
+              <div>
+                <h2 className="font-display text-2xl font-bold text-white leading-tight">
+                  {activeRoleObj.label}
+                </h2>
+                <div className="text-[11px] text-lime-400/90 font-medium">{activeRoleObj.badge}</div>
+              </div>
+            </div>
+            <p className="text-slate-400 text-xs leading-relaxed mt-2">
+              {activeRoleObj.tagline}
+            </p>
           </div>
 
-          {/* Stats row */}
-          <div className="mt-10 grid grid-cols-3 gap-4">
-            <div className="glass rounded-2xl p-4">
-              <div className="text-lime-300 font-display text-2xl font-bold">1,284</div>
-              <div className="text-slate-400 text-xs mt-1">Employees mapped</div>
+          {/* Included Capabilities Checklist */}
+          <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+            <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+              <span>Role Responsibilities & Access</span>
+              <span className="text-lime-400 text-[10px] lowercase">connected to organization</span>
             </div>
-            <div className="glass rounded-2xl p-4">
-              <div className="text-lime-300 font-display text-2xl font-bold">96%</div>
-              <div className="text-slate-400 text-xs mt-1">Skill coverage</div>
+            <div className="space-y-2 mt-2">
+              {activeRoleObj.capabilities.map((cap, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
+                  <div className="w-4 h-4 rounded-full bg-lime-400/15 text-lime-300 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon name="check" className="w-2.5 h-2.5 text-lime-400" />
+                  </div>
+                  <span className="leading-snug">{cap}</span>
+                </div>
+              ))}
             </div>
-            <div className="glass rounded-2xl p-4">
-              <div className="text-lime-300 font-display text-2xl font-bold">3.4x</div>
-              <div className="text-slate-400 text-xs mt-1">Learning ROI</div>
-            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs flex items-center gap-2.5">
+            <Icon name="link-2" className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span>All user roles in the same organization collaborate in real time with shared taxonomy & benchmark standards.</span>
           </div>
         </div>
 
-        <div className="text-slate-500 text-xs">© 2026 Northwind Labs. All rights reserved.</div>
+        <div className="text-slate-500 text-xs">© 2026 KnowledgeIQ Platform. All rights reserved.</div>
       </div>
 
-      {/* ── Right: Sign-up form ── */}
-      <div className="flex-1 flex items-center justify-center p-6 relative z-10 overflow-y-auto py-10">
+      {/* ── Right: Comprehensive Multi-Role Sign-Up Form ── */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10 relative z-10 overflow-y-auto max-h-screen">
         <form
           id="signup-form"
           onSubmit={handleSubmit}
-          className="w-full max-w-md glass rounded-3xl p-8 sm:p-10 fade-in my-auto"
+          className="w-full max-w-2xl glass rounded-3xl p-6 sm:p-9 fade-in my-auto border border-white/10 shadow-2xl"
         >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-lime-400 flex items-center justify-center">
-              <Icon name="brain-circuit" className="w-[18px] h-[18px] text-[#0B0F1A]" />
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">Create your account</h1>
+              <p className="text-slate-400 text-xs sm:text-sm mt-1">Select your organization role and set up your workspace</p>
             </div>
-            <div className="font-display font-bold text-white">KnowledgeIQ</div>
+            <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300">
+              <Icon name="shield-check" className="w-3.5 h-3.5 text-lime-400" />
+              <span>Enterprise RBAC</span>
+            </div>
           </div>
-
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Create your account</h2>
-          <p className="text-slate-400 text-sm mb-6">Join the workforce intelligence platform</p>
 
           {/* Error banner */}
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
               <Icon name="alert-circle" className="w-4 h-4 flex-shrink-0" />
-              {error}
+              <span>{error}</span>
             </div>
           )}
 
+          {/* ── 1. Interactive Role Selector ── */}
+          <div className="mb-6">
+            <label className="text-xs font-semibold text-slate-300 mb-2.5 flex items-center justify-between">
+              <span>Choose your Platform Role:</span>
+              <span className="text-[11px] text-lime-400 font-normal">Active: {activeRoleObj.label}</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {ALL_ROLES.map(r => {
+                const isSelected = selectedRoleKey === r.key
+                return (
+                  <button
+                    type="button"
+                    key={r.key}
+                    id={`signup-role-${r.key}`}
+                    onClick={() => handleRoleSelect(r.key)}
+                    className={`relative text-left rounded-2xl border p-3 transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-lime-400/15 border-lime-400 text-white shadow-[0_0_16px_rgba(166,226,46,0.2)]'
+                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-4 h-4 bg-lime-400 rounded-full flex items-center justify-center">
+                        <Icon name="check" className="w-2.5 h-2.5 text-[#0B0F1A]" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Icon name={r.icon} className={`w-4 h-4 ${isSelected ? 'text-lime-300' : 'text-slate-500'}`} />
+                      <span className="font-bold text-xs text-white truncate">{r.label}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 leading-tight line-clamp-2">{r.tagline}</div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── 2. Account & Organization Fields ── */}
           <div className="space-y-4">
-            {/* Full Name */}
-            <div>
-              <label htmlFor="signup-fullname" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                Full name
-              </label>
-              <div className="relative">
-                <Icon name="user" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  id="signup-fullname"
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Jane Smith"
-                  required
-                  autoComplete="name"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="signup-email" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                Work email
-              </label>
-              <div className="relative">
-                <Icon name="mail" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  id="signup-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="jane@company.io"
-                  required
-                  autoComplete="email"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Organization / Company Name */}
-            {role !== 'admin' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Full Name */}
               <div>
-                <label htmlFor="signup-company" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                  Organization / Company name
+                <label htmlFor="signup-fullname" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                  Full Name
                 </label>
                 <div className="relative">
-                  <Icon name="building" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Icon name="user" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    id="signup-company"
+                    id="signup-fullname"
                     type="text"
-                    value={company}
-                    onChange={e => setCompany(e.target.value)}
-                    placeholder="Northwind Labs"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="e.g. Jane Doe"
                     required
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                    autoComplete="name"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
                   />
                 </div>
               </div>
-            )}
 
-            {/* Department */}
-            {role !== 'admin' && (
+              {/* Work Email */}
+              <div>
+                <label htmlFor="signup-email" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                  Work Email Address
+                </label>
+                <div className="relative">
+                  <Icon name="mail" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="name@organization.com"
+                    required
+                    autoComplete="email"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Organization / Company Connection */}
+            <div>
+              <label htmlFor="signup-company" className="text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>Organization / Company Name</span>
+                <span className="text-[10px] text-slate-500">Connects users within the same organization</span>
+              </label>
+              <div className="relative">
+                <Icon name="building" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  id="signup-company"
+                  type="text"
+                  value={company}
+                  onChange={e => setCompany(e.target.value)}
+                  placeholder="e.g. Northwind Labs or Acme Corp"
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                />
+              </div>
+              {existingOrgs.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[10px] text-slate-500">Existing organizations:</span>
+                  {existingOrgs.slice(0, 4).map(org => {
+                    const orgName = typeof org === 'string' ? org : org.name
+                    return (
+                      <button
+                        type="button"
+                        key={orgName}
+                        onClick={() => setCompany(orgName)}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                          company.toLowerCase() === orgName.toLowerCase()
+                            ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
+                            : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
+                        }`}
+                      >
+                        {orgName}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Department & Job Title Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Department */}
               <div>
                 <label htmlFor="signup-dept" className="text-xs font-medium text-slate-300 mb-1.5 block">
                   Department
@@ -311,9 +513,8 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                     value={department}
                     onChange={e => setDepartment(e.target.value)}
                     required
-                    className="w-full bg-[#111625] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all appearance-none"
+                    className="w-full bg-[#111625] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all appearance-none"
                   >
-                    <option value="" disabled>Select Department</option>
                     {DEPT_OPTIONS.map(d => (
                       <option key={d} value={d}>{d}</option>
                     ))}
@@ -321,13 +522,11 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                   <Icon name="chevron-down" className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
-            )}
 
-            {/* Job Title */}
-            {role !== 'admin' && (
+              {/* Job Title */}
               <div>
                 <label htmlFor="signup-jobtitle" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                  Job title / Role title
+                  Job / Domain Title
                 </label>
                 <div className="relative">
                   <Icon name="user-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -338,177 +537,127 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                     onChange={e => setJobTitle(e.target.value)}
                     placeholder="e.g. Java Developer"
                     required
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
                   />
                 </div>
-                {/* Domain / Role Suggestions */}
-                {ROLE_SUGGESTIONS[department] && (
-                  <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-                    <span className="text-[10px] text-slate-500 font-medium mr-1">Suggestions:</span>
-                    {ROLE_SUGGESTIONS[department].map(sug => (
-                      <button
-                        type="button"
-                        key={sug}
-                        onClick={() => setJobTitle(sug)}
-                        className={`text-[11px] px-2 py-0.5 rounded-lg border transition-all ${
-                          jobTitle === sug
-                            ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
-                            : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
-                        }`}
-                      >
-                        {sug}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              </div>
+            </div>
+
+            {/* Role Title Suggestions */}
+            {ROLE_SUGGESTIONS[department] && (
+              <div className="flex flex-wrap gap-1.5 items-center">
+                <span className="text-[10px] text-slate-500 font-medium mr-1">Suggestions for {department}:</span>
+                {ROLE_SUGGESTIONS[department].slice(0, 6).map(sug => (
+                  <button
+                    type="button"
+                    key={sug}
+                    onClick={() => setJobTitle(sug)}
+                    className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                      jobTitle === sug
+                        ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
+                        : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    {sug}
+                  </button>
+                ))}
               </div>
             )}
 
-            {/* Password */}
-            <div>
-              <label htmlFor="signup-password" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                Password
-              </label>
-              <div className="relative">
-                <Icon name="lock" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  id="signup-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
-                  required
-                  autoComplete="new-password"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                />
-                <button
-                  type="button"
-                  id="signup-toggle-password"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <Icon name={showPassword ? 'eye-off' : 'eye'} className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Strength meter */}
-              {password.length > 0 && (
-                <div className="mt-2">
-                  <div className="flex gap-1 mb-1">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div
-                        key={i}
-                        className="h-1 flex-1 rounded-full transition-all duration-300"
-                        style={{
-                          background: i <= strength ? STRENGTH_COLORS[strength] : 'rgba(255,255,255,0.1)'
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="text-xs" style={{ color: STRENGTH_COLORS[strength] }}>
-                    {STRENGTH_LABELS[strength]}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="signup-confirm" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                Confirm password
-              </label>
-              <div className="relative">
-                <Icon
-                  name={passwordMismatch ? 'x-circle' : passwordsMatch ? 'check-circle' : 'lock'}
-                  className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
-                    passwordMismatch ? 'text-rose-400' : passwordsMatch ? 'text-lime-400' : 'text-slate-500'
-                  }`}
-                />
-                <input
-                  id="signup-confirm"
-                  type={showConfirm ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
-                  required
-                  autoComplete="new-password"
-                  className={`w-full bg-white/5 border rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
-                    passwordMismatch
-                      ? 'border-rose-500/50 focus:ring-rose-500/30'
-                      : passwordsMatch
-                      ? 'border-lime-400/50 focus:ring-lime-400/30'
-                      : 'border-white/10 focus:ring-lime-400/50 focus:border-lime-400/50'
-                  }`}
-                />
-                <button
-                  type="button"
-                  id="signup-toggle-confirm"
-                  onClick={() => setShowConfirm(v => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <Icon name={showConfirm ? 'eye-off' : 'eye'} className="w-4 h-4" />
-                </button>
-              </div>
-              {passwordMismatch && (
-                <p className="text-rose-400 text-xs mt-1">Passwords do not match</p>
-              )}
-            </div>
-
-            {/* Role selection */}
-            <div>
-              <label className="text-xs font-medium text-slate-300 mb-2 block">I am joining as</label>
-              <div className="grid grid-cols-2 gap-2">
-                {ROLE_OPTIONS.map(opt => (
+            {/* Passwords */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Password */}
+              <div>
+                <label htmlFor="signup-password" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                  Password
+                </label>
+                <div className="relative">
+                  <Icon name="lock" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="signup-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Min. 8 characters"
+                    required
+                    autoComplete="new-password"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                  />
                   <button
                     type="button"
-                    key={opt.key}
-                    id={`signup-role-${opt.key}`}
-                    onClick={() => {
-                      if (opt.key === 'manager' && onSwitchToSignUpManager) {
-                        onSwitchToSignUpManager()
-                      } else {
-                        setRole(opt.key)
-                        if (opt.key === 'hr') {
-                          setDepartment('HR & Operations')
-                          setJobTitle('HR Specialist')
-                        } else if (opt.key === 'depthead') {
-                          setDepartment('Engineering')
-                          setJobTitle('Department Head')
-                        } else if (opt.key === 'ldadmin') {
-                          setDepartment('HR & Operations')
-                          setJobTitle('L&D Specialist')
-                        } else if (opt.key === 'admin') {
-                          setDepartment('Engineering')
-                          setJobTitle('Platform Administrator')
-                        } else {
-                          setDepartment('Engineering')
-                          setJobTitle('Software Engineer')
-                        }
-                      }
-                    }}
-                    className={`relative text-left rounded-xl border p-3 transition-all ${
-                      role === opt.key
-                        ? 'bg-lime-400/10 border-lime-400/50 text-white'
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                    }`}
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                   >
-                    {role === opt.key && (
-                      <div className="absolute top-2 right-2 w-4 h-4 bg-lime-400 rounded-full flex items-center justify-center">
-                        <Icon name="check" className="w-2.5 h-2.5 text-[#0B0F1A]" />
-                      </div>
-                    )}
-                    <Icon name={opt.icon} className={`w-4 h-4 mb-1.5 ${role === opt.key ? 'text-lime-300' : 'text-slate-500'}`} />
-                    <div className="font-medium text-xs">{opt.label}</div>
-                    <div className="text-slate-500 text-[10px] mt-0.5 leading-tight">{opt.desc}</div>
+                    <Icon name={showPassword ? 'eye-off' : 'eye'} className="w-4 h-4" />
                   </button>
-                ))}
+                </div>
+
+                {password.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div
+                          key={i}
+                          className="h-1 flex-1 rounded-full transition-all duration-300"
+                          style={{
+                            background: i <= strength ? STRENGTH_COLORS[strength] : 'rgba(255,255,255,0.1)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-[10px]" style={{ color: STRENGTH_COLORS[strength] }}>
+                      {STRENGTH_LABELS[strength]}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label htmlFor="signup-confirm" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Icon
+                    name={passwordMismatch ? 'x-circle' : passwordsMatch ? 'check-circle' : 'lock'}
+                    className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                      passwordMismatch ? 'text-rose-400' : passwordsMatch ? 'text-lime-400' : 'text-slate-500'
+                    }`}
+                  />
+                  <input
+                    id="signup-confirm"
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    required
+                    autoComplete="new-password"
+                    className={`w-full bg-white/5 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
+                      passwordMismatch
+                        ? 'border-rose-500/50 focus:ring-rose-500/30'
+                        : passwordsMatch
+                        ? 'border-lime-400/50 focus:ring-lime-400/30'
+                        : 'border-white/10 focus:ring-lime-400/50 focus:border-lime-400/50'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(v => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    <Icon name={showConfirm ? 'eye-off' : 'eye'} className="w-4 h-4" />
+                  </button>
+                </div>
+                {passwordMismatch && (
+                  <p className="text-rose-400 text-[11px] mt-1">Passwords do not match</p>
+                )}
               </div>
             </div>
 
             {/* Terms */}
             <label
               htmlFor="signup-terms"
-              className="flex items-start gap-3 cursor-pointer group"
+              className="flex items-start gap-3 cursor-pointer group pt-1"
             >
               <div className="relative mt-0.5">
                 <input
@@ -519,50 +668,37 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                   className="sr-only"
                 />
                 <div
-                  className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-all ${
+                  className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
                     agreedToTerms
                       ? 'bg-lime-400 border-lime-400'
                       : 'bg-white/5 border-white/20 group-hover:border-lime-400/50'
                   }`}
-                  style={{ width: '18px', height: '18px' }}
                 >
-                  {agreedToTerms && <Icon name="check" className="w-3 h-3 text-[#0B0F1A]" />}
+                  {agreedToTerms && <Icon name="check" className="w-2.5 h-2.5 text-[#0B0F1A]" />}
                 </div>
               </div>
               <span className="text-xs text-slate-400 leading-relaxed select-none">
                 I agree to the{' '}
-                <span className="text-lime-300 hover:text-lime-200 cursor-pointer">Terms of Service</span>{' '}
+                <span className="text-lime-300 hover:text-lime-200 font-medium">Terms of Service</span>{' '}
                 and{' '}
-                <span className="text-lime-300 hover:text-lime-200 cursor-pointer">Privacy Policy</span>
+                <span className="text-lime-300 hover:text-lime-200 font-medium">Privacy Policy</span>.
               </span>
             </label>
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
               id="signup-submit"
               disabled={loading || passwordMismatch || !agreedToTerms}
-              className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F1A] font-semibold rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(166,226,46,0.5)] mt-2"
+              className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F1A] font-bold rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(166,226,46,0.5)] mt-2"
             >
-              Create account <Icon name="arrow-right" className="w-4 h-4" />
+              Register as {activeRoleObj.label} <Icon name="arrow-right" className="w-4 h-4" />
             </button>
-
-            {/* Manager registration link */}
-            <div className="text-center text-xs text-slate-400 mt-2">
-              Are you a manager?{' '}
-              <button
-                type="button"
-                onClick={onSwitchToSignUpManager}
-                className="text-lime-300 hover:text-lime-200 font-semibold focus:outline-none"
-              >
-                Register your organization here
-              </button>
-            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3 py-1">
               <div className="h-px bg-white/10 flex-1" />
-              <span className="text-xs text-slate-500">already have an account?</span>
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider">Already have an account?</span>
               <div className="h-px bg-white/10 flex-1" />
             </div>
 
@@ -571,9 +707,9 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               type="button"
               id="signup-go-login"
               onClick={onSwitchToLogin}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-2.5 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
             >
-              <Icon name="log-in" className="w-4 h-4" /> Sign in instead
+              <Icon name="log-in" className="w-4 h-4" /> Sign In to Existing Account
             </button>
           </div>
         </form>

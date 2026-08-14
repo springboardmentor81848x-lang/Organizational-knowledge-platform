@@ -600,6 +600,14 @@ export const api = {
 
   getPersonalizedLearningPath: async () => {
     return request('/training/learning-path/personalized')
+  },
+
+  getOrganizations: async () => {
+    return request('/auth/organizations')
+  },
+
+  getDepartments: async (orgName) => {
+    return request(`/auth/departments?orgName=${encodeURIComponent(orgName || '')}`)
   }
 }
 

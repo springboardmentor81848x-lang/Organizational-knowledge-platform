@@ -276,38 +276,63 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
               <>
                 <div className="flex items-center gap-3 py-1">
                   <div className="h-px bg-white/10 flex-1" />
-                  <span className="text-xs text-slate-500">new to KnowledgeIQ?</span>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider text-[11px]">New to KnowledgeIQ?</span>
                   <div className="h-px bg-white/10 flex-1" />
                 </div>
                 <div className="space-y-2">
                   <button
                     type="button"
                     id="login-go-signup"
-                    onClick={onSwitchToSignUp}
-                    className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/30 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2"
+                    onClick={() => onSwitchToSignUp('employee')}
+                    className="w-full bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold rounded-xl py-2.5 text-sm transition-all flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(166,226,46,0.3)]"
                   >
-                    <Icon name="user-plus" className="w-4 h-4 text-lime-300" /> Join as Employee
+                    <Icon name="user-plus" className="w-4 h-4" /> Create Account / Join Organization
                   </button>
-                  {onSwitchToSignUpHR && (
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
                     <button
                       type="button"
-                      id="login-go-signup-hr"
-                      onClick={onSwitchToSignUpHR}
-                      className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/30 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2"
+                      onClick={() => onSwitchToSignUp('manager')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
                     >
-                      <Icon name="user-check" className="w-4 h-4 text-lime-300" /> Join as HR Specialist
+                      👥 Manager
                     </button>
-                  )}
-                  {onSwitchToSignUpManager && (
                     <button
                       type="button"
-                      id="login-go-signup-manager"
-                      onClick={onSwitchToSignUpManager}
-                      className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/30 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2"
+                      onClick={() => onSwitchToSignUp('hr')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
                     >
-                      <Icon name="users" className="w-4 h-4 text-lime-300" /> Register as Manager
+                      📊 HR Specialist
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => onSwitchToSignUp('depthead')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
+                    >
+                      🏛️ Dept Head
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchToSignUp('ldadmin')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
+                    >
+                      🎓 L&D Mentor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchToSignUp('admin')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
+                    >
+                      🛡️ System Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchToSignUp('employee')}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-lime-400/40 text-slate-300 hover:text-white rounded-lg py-1.5 px-2 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1"
+                    >
+                      👤 Employee
+                    </button>
+                  </div>
                 </div>
               </>
             )}
