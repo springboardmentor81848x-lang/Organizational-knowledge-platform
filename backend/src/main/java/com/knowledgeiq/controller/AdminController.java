@@ -103,7 +103,7 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getUsers(Authentication auth) {
+    public ResponseEntity<List<Map<String, Object>>> getUsers(Authentication auth) {
         UUID adminId = UUID.fromString((String) auth.getPrincipal());
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
@@ -112,17 +112,31 @@ public class AdminController {
             return ResponseEntity.ok(Collections.emptyList());
         }
 
-        return ResponseEntity.ok(userRepository.findByOrganizationId(admin.getOrganization().getId()));
+        List<User> orgUsers = userRepository.findByOrganizationId(admin.getOrganization().getId());
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (User u : orgUsers) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", u.getId());
+            map.put("fullName", u.getFullName());
+            map.put("email", u.getEmail());
+            map.put("systemRole", u.getSystemRole().name());
+            map.put("department", u.getDepartment() != null ? u.getDepartment().getName() : "N/A");
+            map.put("roleTitle", u.getRoleTitle() != null ? u.getRoleTitle() : "N/A");
+            map.put("isActive", u.getIsActive() != null ? u.getIsActive() : true);
+            result.add(map);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/users/{id}/status")
     @Transactional
-    public ResponseEntity<User> toggleUserStatus(@PathVariable UUID id, Authentication auth) {
+    public ResponseEntity<Map<String, Object>> toggleUserStatus(@PathVariable UUID id, Authentication auth) {
         User target = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
 
         target.setIsActive(!target.getIsActive());
-        return ResponseEntity.ok(userRepository.save(target));
+        userRepository.save(target);
+        return ResponseEntity.ok(Map.of("success", true, "isActive", target.getIsActive()));
     }
 
     @Autowired
@@ -133,14 +147,15 @@ public class AdminController {
 
     @PutMapping("/users/{id}/role")
     @Transactional
-    public ResponseEntity<User> updateUserRole(@PathVariable UUID id, @RequestBody Map<String, String> request, Authentication auth) {
+    public ResponseEntity<Map<String, Object>> updateUserRole(@PathVariable UUID id, @RequestBody Map<String, String> request, Authentication auth) {
         User target = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
 
         String roleStr = request.get("role");
         SystemRole newRole = SystemRole.valueOf(roleStr.toUpperCase());
         target.setSystemRole(newRole);
-        return ResponseEntity.ok(userRepository.save(target));
+        userRepository.save(target);
+        return ResponseEntity.ok(Map.of("success", true, "systemRole", target.getSystemRole().name()));
     }
 
     @PostMapping("/skills")

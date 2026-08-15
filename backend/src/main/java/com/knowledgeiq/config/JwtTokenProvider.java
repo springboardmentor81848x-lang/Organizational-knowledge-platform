@@ -23,13 +23,29 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(UUID userId, String email, String role) {
+        return generateToken(userId, email, role, null, null, null);
+    }
+
+    public String generateToken(UUID userId, String email, String role, UUID organizationId, UUID departmentId, String teamName) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("email", email)
-                .claim("role", role)
+                .claim("role", role);
+
+        if (organizationId != null) {
+            builder.claim("organizationId", organizationId.toString());
+        }
+        if (departmentId != null) {
+            builder.claim("departmentId", departmentId.toString());
+        }
+        if (teamName != null && !teamName.isBlank()) {
+            builder.claim("teamName", teamName);
+        }
+
+        return builder
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

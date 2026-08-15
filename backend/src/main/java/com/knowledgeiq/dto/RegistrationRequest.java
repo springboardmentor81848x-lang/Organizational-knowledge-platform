@@ -8,6 +8,8 @@ public class RegistrationRequest {
     private String password;
     private String role;
     private String departmentName;
+    private String teamName;
+    private String teamId;
     private String roleTitle;
     private String company;
     private String bio;
@@ -54,6 +56,12 @@ public class RegistrationRequest {
 
     public String getDepartmentName() { return departmentName; }
     public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
+
+    public String getTeamId() { return teamId; }
+    public void setTeamId(String teamId) { this.teamId = teamId; }
 
     public String getRoleTitle() { return roleTitle; }
     public void setRoleTitle(String roleTitle) { this.roleTitle = roleTitle; }

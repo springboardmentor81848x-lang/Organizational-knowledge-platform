@@ -140,10 +140,17 @@ public class AuthService {
             }
         }
 
-        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole().name());
+        String token = tokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getSystemRole().name(),
+                user.getOrganization() != null ? user.getOrganization().getId() : null,
+                user.getDepartment() != null ? user.getDepartment().getId() : null,
+                user.getTeamName()
+        );
 
-        String roleTitle = user.getRole() != null ? user.getRole().getTitle() : "N/A";
-        String deptName = user.getDepartment() != null ? user.getDepartment().getName() : "N/A";
+        String roleTitle = user.getRole() != null ? user.getRole().getTitle() : user.getRoleTitle();
+        String deptName = user.getDepartment() != null ? user.getDepartment().getName() : null;
 
         return new AuthResponse(
                 token,
@@ -152,13 +159,49 @@ public class AuthService {
                 user.getFullName(),
                 user.getSystemRole().name(),
                 roleTitle,
-                deptName
+                deptName,
+                user.getTeamName(),
+                user.getOrganization() != null ? user.getOrganization().getId() : null,
+                user.getOrganization() != null ? user.getOrganization().getName() : user.getCompany()
         );
+    }
+
+    private static final Map<String, List<String>> DEPT_TEAMS_MAP = Map.ofEntries(
+            Map.entry("Engineering", List.of("Java", "Python", "Frontend", "DevOps", "QA", "Cloud & DevOps", "Full Stack")),
+            Map.entry("Finance", List.of("Accounting", "Financial Analysis", "Payroll & Tax", "Budgeting", "Analysis")),
+            Map.entry("Marketing", List.of("Digital Marketing", "Content & Copywriting", "SEO & Growth", "Brand Strategy", "Content")),
+            Map.entry("Product", List.of("Product Management", "UI/UX Design", "Scrum & Agile", "Design")),
+            Map.entry("Data & Analytics", List.of("Data Engineering", "Business Intelligence", "Machine Learning", "Data")),
+            Map.entry("Sales", List.of("Enterprise Sales", "Business Development", "Account Management")),
+            Map.entry("Sales & Marketing", List.of("Digital Marketing", "Content & Copywriting", "SEO & Growth", "Brand Strategy", "Sales")),
+            Map.entry("HR & Operations", List.of("People Operations", "Talent Acquisition", "Operations")),
+            Map.entry("Customer Success", List.of("Customer Support", "Client Onboarding", "Support")),
+            Map.entry("Legal", List.of("Corporate Legal", "Regulatory Compliance")),
+            Map.entry("Other", List.of("General Team", "Operations"))
+    );
+
+    public boolean validateTeamForDepartment(String departmentName, String teamName) {
+        if (departmentName == null || teamName == null) return false;
+        List<String> validTeams = DEPT_TEAMS_MAP.get(departmentName.trim());
+        if (validTeams == null) {
+            return !teamName.trim().isEmpty();
+        }
+        String cleanTeam = teamName.trim().toLowerCase();
+        return validTeams.stream().anyMatch(t -> t.equalsIgnoreCase(cleanTeam) || cleanTeam.contains(t.toLowerCase()) || t.toLowerCase().contains(cleanTeam));
     }
 
     @org.springframework.transaction.annotation.Transactional
     public AuthResponse registerUser(RegistrationRequest req) {
-        if (userRepository.findByEmail(req.getEmail()).isPresent()) {
+        if (req.getEmail() == null || req.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email is required.");
+        }
+        if (req.getPassword() == null || req.getPassword().length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters.");
+        }
+        if (req.getFullName() == null || req.getFullName().trim().isEmpty()) {
+            throw new RuntimeException("Full name is required.");
+        }
+        if (userRepository.findByEmailIgnoreCase(req.getEmail().trim()).isPresent()) {
             throw new RuntimeException("A user with this email already exists");
         }
 
@@ -167,69 +210,191 @@ public class AuthService {
         if (roleStr == null || roleStr.isBlank()) {
             systemRole = SystemRole.EMPLOYEE;
         } else {
-            switch (roleStr.toUpperCase()) {
-                case "MANAGER" -> systemRole = SystemRole.MANAGER;
+            switch (roleStr.trim().toUpperCase()) {
+                case "MANAGER", "TEAM_LEAD", "TEAM_LEAD_MANAGER" -> systemRole = SystemRole.MANAGER;
                 case "HR", "HR_SPECIALIST" -> systemRole = SystemRole.HR_SPECIALIST;
                 case "DEPARTMENT_HEAD", "DEPT_HEAD", "DEPTHEAD" -> systemRole = SystemRole.DEPARTMENT_HEAD;
-                case "L_AND_D_ADMIN", "LD_ADMIN", "LDADMIN" -> systemRole = SystemRole.L_AND_D_ADMIN;
+                case "L_AND_D_ADMIN", "LD_ADMIN", "LDADMIN", "L_AND_D_MENTOR", "LD_MENTOR" -> systemRole = SystemRole.L_AND_D_ADMIN;
                 case "ADMIN", "SYSTEM_ADMIN" -> systemRole = SystemRole.SYSTEM_ADMIN;
                 default -> systemRole = SystemRole.EMPLOYEE;
             }
         }
 
+        // 1. Organization is REQUIRED for ALL roles
+        String orgName = req.getCompany();
+        if (orgName == null || orgName.trim().isEmpty()) {
+            throw new RuntimeException("Organization / Company name is required for registration.");
+        }
+        orgName = orgName.trim();
+        final String finalOrgName = orgName;
+        Organization organization = organizationRepository.findByNameIgnoreCase(orgName)
+                .orElseGet(() -> organizationRepository.save(new Organization(finalOrgName, finalOrgName + " Organization")));
+
         User user = new User();
-        user.setFullName(req.getFullName());
-        user.setEmail(req.getEmail());
+        user.setFullName(req.getFullName().trim());
+        user.setEmail(req.getEmail().trim());
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setSystemRole(systemRole);
         user.setIsActive(true);
-        // Resolve Organization
-        String orgName = req.getCompany() != null && !req.getCompany().isBlank() 
-                ? req.getCompany().trim() 
-                : "KnowledgeIQ Enterprise";
-        Organization organization = organizationRepository.findByNameIgnoreCase(orgName)
-                .orElseGet(() -> {
-                    Organization org = new Organization(orgName, orgName + " Organization");
-                    return organizationRepository.save(org);
-                });
         user.setOrganization(organization);
         user.setCompany(orgName);
         user.setBio(req.getBio());
         user.setEducation(req.getEducation());
         user.setExperience(req.getExperience());
 
-        // Resolve Department (scoped to Organization)
-        String deptName = req.getDepartmentName() != null && !req.getDepartmentName().isBlank()
-                ? req.getDepartmentName().trim()
-                : "Engineering";
-        final Organization finalOrg = organization;
-        Department dept = departmentRepository.findByNameAndOrganizationId(deptName, organization.getId())
-                .orElseGet(() -> {
-                    Department d = new Department(deptName, deptName + " Department");
-                    d.setOrganization(finalOrg);
-                    return departmentRepository.save(d);
-                });
-        user.setDepartment(dept);
+        Department dept = null;
+        Role role = null;
 
-        // Resolve Role
-        String roleTitle = req.getRoleTitle() != null && !req.getRoleTitle().isBlank()
-                ? req.getRoleTitle()
-                : (systemRole == SystemRole.HR_SPECIALIST ? "HR Specialist" : "Software Engineer");
-        Role role = roleRepository.findAllByTitle(roleTitle).stream().findFirst()
-                .orElseGet(() -> roleRepository.save(new Role(roleTitle, dept, roleTitle)));
-        user.setRole(role);
+        String rawDept = req.getDepartmentName() != null && !req.getDepartmentName().isBlank() ? req.getDepartmentName().trim() : null;
+        String rawTeam = req.getTeamName() != null && !req.getTeamName().isBlank() ? req.getTeamName().trim() : null;
+        String rawTitle = req.getRoleTitle() != null && !req.getRoleTitle().isBlank() ? req.getRoleTitle().trim() : null;
 
-        // Map employee to manager within organization and department
+        // 2. Role-specific validation and assignment
         if (systemRole == SystemRole.EMPLOYEE) {
+            if (rawDept == null) {
+                throw new RuntimeException("Department is required for Employee registration.");
+            }
+            if (rawTeam == null) {
+                throw new RuntimeException("Team / Domain is required for Employee registration.");
+            }
+            if (rawTitle == null) {
+                throw new RuntimeException("Job / Domain Title is required for Employee registration.");
+            }
+            if (!validateTeamForDepartment(rawDept, rawTeam)) {
+                throw new RuntimeException("Team '" + rawTeam + "' is not a valid team within the '" + rawDept + "' department.");
+            }
+
+            final Organization finalOrg = organization;
+            dept = departmentRepository.findByNameAndOrganizationId(rawDept, organization.getId())
+                    .orElseGet(() -> {
+                        Department d = new Department(rawDept, rawDept + " Department");
+                        d.setOrganization(finalOrg);
+                        return departmentRepository.save(d);
+                    });
+            user.setDepartment(dept);
+            user.setTeamName(rawTeam);
+
+            final Department finalDept = dept;
+            final String finalTitle = rawTitle;
+            role = roleRepository.findByTitle(finalTitle)
+                    .orElseGet(() -> roleRepository.save(new Role(finalTitle, finalDept, finalTitle)));
+            user.setRole(role);
+
+            // Auto-assign to manager in this department
             userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
                     SystemRole.MANAGER, organization.getId(), dept.getId()
             ).ifPresent(user::setManager);
+
+        } else if (systemRole == SystemRole.MANAGER) {
+            if (rawDept == null) {
+                throw new RuntimeException("Department is required for Manager registration.");
+            }
+            if (rawTeam != null) {
+                throw new RuntimeException("Team/domain must not be specified for Manager. Managers oversee the entire department.");
+            }
+
+            final Organization finalOrg = organization;
+            dept = departmentRepository.findByNameAndOrganizationId(rawDept, organization.getId())
+                    .orElseGet(() -> {
+                        Department d = new Department(rawDept, rawDept + " Department");
+                        d.setOrganization(finalOrg);
+                        return departmentRepository.save(d);
+                    });
+
+            // ENFORCE ONE MANAGER PER DEPARTMENT
+            boolean managerAlreadyExists = userRepository.existsBySystemRoleAndOrganizationIdAndDepartmentId(
+                    SystemRole.MANAGER, organization.getId(), dept.getId()
+            );
+            if (managerAlreadyExists) {
+                throw new RuntimeException("This department already has a Manager.");
+            }
+
+            user.setDepartment(dept);
+            user.setTeamName(null);
+
+            final Department finalDept = dept;
+            String mgrTitle = rawDept + " Manager";
+            role = roleRepository.findByTitle(mgrTitle)
+                    .orElseGet(() -> roleRepository.save(new Role(mgrTitle, finalDept, "Department Manager")));
+            user.setRole(role);
+
+        } else if (systemRole == SystemRole.DEPARTMENT_HEAD) {
+            if (rawDept == null) {
+                throw new RuntimeException("Department is required for Department Head registration.");
+            }
+            if (rawTeam != null) {
+                throw new RuntimeException("Team/domain must not be specified for Department Head.");
+            }
+
+            final Organization finalOrg = organization;
+            dept = departmentRepository.findByNameAndOrganizationId(rawDept, organization.getId())
+                    .orElseGet(() -> {
+                        Department d = new Department(rawDept, rawDept + " Department");
+                        d.setOrganization(finalOrg);
+                        return departmentRepository.save(d);
+                    });
+            user.setDepartment(dept);
+            user.setTeamName(null);
+
+            final Department finalDept = dept;
+            String dhTitle = "Head of " + rawDept;
+            role = roleRepository.findByTitle(dhTitle)
+                    .orElseGet(() -> roleRepository.save(new Role(dhTitle, finalDept, "Head of Department")));
+            user.setRole(role);
+
+        } else if (systemRole == SystemRole.HR_SPECIALIST) {
+            if (rawDept != null) {
+                throw new RuntimeException("Department must not be specified for HR Specialist. HR operates organization-wide.");
+            }
+            if (rawTeam != null) {
+                throw new RuntimeException("Team/domain must not be specified for HR Specialist.");
+            }
+
+            user.setDepartment(null);
+            user.setTeamName(null);
+
+            role = roleRepository.findByTitle("HR Specialist")
+                    .orElseGet(() -> roleRepository.save(new Role("HR Specialist", null, "Organization-wide HR Specialist")));
+            user.setRole(role);
+
+        } else if (systemRole == SystemRole.L_AND_D_ADMIN) {
+            if (rawDept != null) {
+                throw new RuntimeException("Department must not be specified for L&D Admin. L&D operates organization-wide.");
+            }
+            if (rawTeam != null) {
+                throw new RuntimeException("Team/domain must not be specified for L&D Admin.");
+            }
+
+            user.setDepartment(null);
+            user.setTeamName(null);
+
+            role = roleRepository.findByTitle("L&D Admin")
+                    .orElseGet(() -> roleRepository.save(new Role("L&D Admin", null, "Organization-wide Learning & Development Admin")));
+            user.setRole(role);
+
+        } else if (systemRole == SystemRole.SYSTEM_ADMIN) {
+            if (rawDept != null) {
+                throw new RuntimeException("Department must not be specified for System Administrator. System Administration operates platform-wide.");
+            }
+            if (rawTeam != null) {
+                throw new RuntimeException("Team/domain must not be specified for System Administrator.");
+            }
+
+            user.setDepartment(null);
+            user.setTeamName(null);
+
+            role = roleRepository.findByTitle("System Administrator")
+                    .orElseGet(() -> roleRepository.save(new Role("System Administrator", null, "Platform System Administrator")));
+            user.setRole(role);
         }
 
         user = userRepository.save(user);
 
-        // Map existing unmanaged employees to this manager within organization and department
-        if (systemRole == SystemRole.MANAGER) {
+        // If newly registered user is a Manager, link to Department and link all unmanaged employees
+        if (systemRole == SystemRole.MANAGER && dept != null) {
+            dept.setManagerId(user.getId());
+            departmentRepository.save(dept);
+
             java.util.List<User> unmanaged = userRepository.findBySystemRoleAndOrganizationIdAndDepartmentIdAndManagerIsNull(
                     SystemRole.EMPLOYEE, organization.getId(), dept.getId()
             );
@@ -239,8 +404,8 @@ public class AuthService {
             }
         }
 
-        // Save initial skills if provided
-        if (req.getSkills() != null && !req.getSkills().isEmpty()) {
+        // Save initial skills if provided (applicable for Employee)
+        if (req.getSkills() != null && !req.getSkills().isEmpty() && systemRole == SystemRole.EMPLOYEE) {
             SkillCategory category = skillCategoryRepository.findAll().stream().findFirst().orElseGet(() -> {
                 SkillCategory cat = new SkillCategory();
                 cat.setName("Technical");
@@ -308,20 +473,29 @@ public class AuthService {
             }
         }
 
-        // Generate initial gap snapshot on registration
-        try {
-            gapAnalysisService.recalculateUserGaps(user.getId());
-            notificationService.createRecommendationNotification(
-                    user,
-                    "AI Personalized Learning Path Ready",
-                    "A personalized learning path has been created for your " + role.getTitle() + " role benchmarks.",
-                    "/learning"
-            );
-        } catch (Exception e) {
-            System.err.println("Failed to calculate initial gap snapshot on registration: " + e.getMessage());
+        // Generate initial gap snapshot on registration if Employee
+        if (systemRole == SystemRole.EMPLOYEE && role != null) {
+            try {
+                gapAnalysisService.recalculateUserGaps(user.getId());
+                notificationService.createRecommendationNotification(
+                        user,
+                        "AI Personalized Learning Path Ready",
+                        "A personalized learning path has been created for your " + role.getTitle() + " role benchmarks.",
+                        "/learning"
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to calculate initial gap snapshot on registration: " + e.getMessage());
+            }
         }
 
-        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole().name());
+        String token = tokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getSystemRole().name(),
+                organization.getId(),
+                user.getDepartment() != null ? user.getDepartment().getId() : null,
+                user.getTeamName()
+        );
 
         return new AuthResponse(
                 token,
@@ -329,8 +503,11 @@ public class AuthService {
                 user.getEmail(),
                 user.getFullName(),
                 user.getSystemRole().name(),
-                role.getTitle(),
-                dept.getName()
+                role != null ? role.getTitle() : user.getRoleTitle(),
+                dept != null ? dept.getName() : null,
+                user.getTeamName(),
+                organization.getId(),
+                organization.getName()
         );
     }
 
@@ -365,29 +542,42 @@ public class AuthService {
         if (profileData.containsKey("experience")) user.setExperience((String) profileData.get("experience"));
         if (profileData.containsKey("education")) user.setEducation((String) profileData.get("education"));
 
-        if (profileData.containsKey("departmentName") || profileData.containsKey("department")) {
-            String deptName = (String) profileData.getOrDefault("departmentName", profileData.get("department"));
-            if (deptName != null && !deptName.isBlank() && user.getOrganization() != null) {
-                final Organization finalOrg = user.getOrganization();
-                Department dept = departmentRepository.findByNameAndOrganizationId(deptName, finalOrg.getId())
-                        .orElseGet(() -> {
-                            Department d = new Department(deptName, deptName + " Department");
-                            d.setOrganization(finalOrg);
-                            return departmentRepository.save(d);
-                        });
-                user.setDepartment(dept);
-            }
-        }
-
-        if (profileData.containsKey("roleTitle") || profileData.containsKey("role")) {
-            String roleTitle = (String) profileData.getOrDefault("roleTitle", profileData.get("role"));
-            if (roleTitle != null && !roleTitle.isBlank() && user.getDepartment() != null) {
-                Role role = roleRepository.findAllByTitle(roleTitle).stream().findFirst().orElse(null);
-                if (role == null) {
-                    role = roleRepository.save(new Role(roleTitle, user.getDepartment(), roleTitle));
+        // Only allow department / team / role updates if appropriate for role
+        SystemRole role = user.getSystemRole();
+        if (role == SystemRole.EMPLOYEE || role == SystemRole.MANAGER || role == SystemRole.DEPARTMENT_HEAD) {
+            if (profileData.containsKey("departmentName") || profileData.containsKey("department")) {
+                String deptName = (String) profileData.getOrDefault("departmentName", profileData.get("department"));
+                if (deptName != null && !deptName.isBlank() && user.getOrganization() != null) {
+                    final Organization finalOrg = user.getOrganization();
+                    Department dept = departmentRepository.findByNameAndOrganizationId(deptName, finalOrg.getId())
+                            .orElseGet(() -> {
+                                Department d = new Department(deptName, deptName + " Department");
+                                d.setOrganization(finalOrg);
+                                return departmentRepository.save(d);
+                            });
+                    user.setDepartment(dept);
                 }
-                user.setRole(role);
             }
+            if (role == SystemRole.EMPLOYEE && profileData.containsKey("teamName")) {
+                String team = (String) profileData.get("teamName");
+                if (team != null && !team.isBlank()) {
+                    user.setTeamName(team.trim());
+                }
+            }
+            if (role == SystemRole.EMPLOYEE && (profileData.containsKey("roleTitle") || profileData.containsKey("role"))) {
+                String roleTitle = (String) profileData.getOrDefault("roleTitle", profileData.get("role"));
+                if (roleTitle != null && !roleTitle.isBlank() && user.getDepartment() != null) {
+                    Role r = roleRepository.findAllByTitle(roleTitle).stream().findFirst().orElse(null);
+                    if (r == null) {
+                        r = roleRepository.save(new Role(roleTitle, user.getDepartment(), roleTitle));
+                    }
+                    user.setRole(r);
+                }
+            }
+        } else {
+            // Organization-wide roles (HR, L&D, Admin) must never be assigned a department or team
+            user.setDepartment(null);
+            user.setTeamName(null);
         }
 
         boolean companyOrDeptChanged = profileData.containsKey("company") || profileData.containsKey("departmentName") || profileData.containsKey("department");

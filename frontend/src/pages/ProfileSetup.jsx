@@ -57,12 +57,13 @@ export default function ProfileSetup({ authData, onComplete }) {
   const [error, setError] = useState(null)
 
   const avatarLetter = (authData?.fullName || 'U')[0].toUpperCase()
-  const role = authData?.systemRole?.toLowerCase().includes('hr') ? 'hr' : 'employee'
-  const titleOptions = TITLE_SUGGESTIONS[role] || TITLE_SUGGESTIONS.employee
+  const isEmployee = !authData?.systemRole || authData.systemRole === 'EMPLOYEE' || authData.systemRole === 'employee'
+  const titleOptions = TITLE_SUGGESTIONS.employee
 
-  // Fetch AI Suggestions function
+  // Fetch AI Suggestions function strictly for Employee onboarding
   const fetchAiSuggestions = (roleToFetch) => {
-    const targetRole = roleToFetch || jobTitle || (role === 'hr' ? 'HR Specialist' : 'Software Engineer')
+    if (!isEmployee) return
+    const targetRole = roleToFetch || jobTitle || 'Software Engineer'
     setFetchingAi(true)
     api.getAiOnboardingSuggestions(targetRole)
       .then(res => {
@@ -80,13 +81,14 @@ export default function ProfileSetup({ authData, onComplete }) {
       .finally(() => setFetchingAi(false))
   }
 
-  // Automatically fetch AI suggestions whenever jobTitle changes or when entering Step 2 if not fetched yet
+  // Automatically fetch AI suggestions strictly for Employee onboarding
   useEffect(() => {
-    const targetRole = jobTitle || (role === 'hr' ? 'HR Specialist' : 'Software Engineer')
+    if (!isEmployee) return
+    const targetRole = jobTitle || 'Software Engineer'
     if (targetRole !== lastFetchedRole || (step === 2 && aiSkills.length === 0 && !fetchingAi)) {
       fetchAiSuggestions(targetRole)
     }
-  }, [jobTitle, step])
+  }, [jobTitle, step, isEmployee])
 
   // Fetch unique registered manager organizations
   useEffect(() => {

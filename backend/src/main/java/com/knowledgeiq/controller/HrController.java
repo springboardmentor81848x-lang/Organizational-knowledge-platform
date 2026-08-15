@@ -76,8 +76,19 @@ public class HrController {
         Map<UUID, List<SkillGapDto>> userGapsCache = new HashMap<>();
         Map<UUID, List<CourseEnrollment>> userEnrollmentsCache = new HashMap<>();
         for (User emp : employees) {
-            userGapsCache.put(emp.getId(), gapAnalysisService.calculateUserGaps(emp.getId()));
-            userEnrollmentsCache.put(emp.getId(), enrollmentRepository.findByUserId(emp.getId()));
+            if (emp == null || emp.getId() == null) continue;
+            try {
+                List<SkillGapDto> gList = gapAnalysisService.calculateUserGaps(emp.getId());
+                userGapsCache.put(emp.getId(), gList != null ? gList : Collections.emptyList());
+            } catch (Exception ignored) {
+                userGapsCache.put(emp.getId(), Collections.emptyList());
+            }
+            try {
+                List<CourseEnrollment> eList = enrollmentRepository.findByUserId(emp.getId());
+                userEnrollmentsCache.put(emp.getId(), eList != null ? eList : Collections.emptyList());
+            } catch (Exception ignored) {
+                userEnrollmentsCache.put(emp.getId(), Collections.emptyList());
+            }
         }
 
         // 2. Count critical gaps & overall gap analysis
@@ -86,12 +97,13 @@ public class HrController {
         int enrollmentCount = 0;
 
         for (User emp : employees) {
+            if (emp == null || emp.getId() == null) continue;
             List<SkillGapDto> gaps = userGapsCache.getOrDefault(emp.getId(), Collections.emptyList());
-            criticalGaps += gaps.stream().filter(g -> g.getIsCritical() != null && g.getIsCritical()).count();
+            criticalGaps += gaps.stream().filter(g -> g != null && g.getIsCritical() != null && g.getIsCritical()).count();
 
             List<CourseEnrollment> enrollments = userEnrollmentsCache.getOrDefault(emp.getId(), Collections.emptyList());
             if (!enrollments.isEmpty()) {
-                long completed = enrollments.stream().filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
+                long completed = enrollments.stream().filter(e -> e != null && "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
                 totalCompletion += (double) completed / enrollments.size() * 100.0;
                 enrollmentCount++;
             }
@@ -101,12 +113,17 @@ public class HrController {
         int avgComp = enrollmentCount > 0 ? (int) Math.round(totalCompletion / enrollmentCount) : 0;
         data.put("avgCompletion", avgComp);
 
-        long activeCerts = certificationRepository.findByUserOrganizationIdOrderByCreatedAtDesc(orgId).stream()
-                .filter(c -> "VERIFIED".equalsIgnoreCase(c.getStatus())).count();
-        long pendingCerts = certificationRepository.findByUserOrganizationIdOrderByCreatedAtDesc(orgId).stream()
-                .filter(c -> "UPLOADED".equalsIgnoreCase(c.getStatus()) || "PENDING".equalsIgnoreCase(c.getStatus())).count();
-        long expiredCerts = certificationRepository.findByUserOrganizationIdOrderByCreatedAtDesc(orgId).stream()
-                .filter(c -> "EXPIRED".equalsIgnoreCase(c.getStatus())).count();
+        long activeCerts = 0;
+        long pendingCerts = 0;
+        long expiredCerts = 0;
+        try {
+            List<Certification> orgCerts = certificationRepository.findByUserOrganizationIdOrderByCreatedAtDesc(orgId);
+            if (orgCerts != null) {
+                activeCerts = orgCerts.stream().filter(c -> c != null && "VERIFIED".equalsIgnoreCase(c.getStatus())).count();
+                pendingCerts = orgCerts.stream().filter(c -> c != null && ("UPLOADED".equalsIgnoreCase(c.getStatus()) || "PENDING".equalsIgnoreCase(c.getStatus()))).count();
+                expiredCerts = orgCerts.stream().filter(c -> c != null && "EXPIRED".equalsIgnoreCase(c.getStatus())).count();
+            }
+        } catch (Exception ignored) {}
 
         double dynamicRoi = 1.0 + (activeCerts * 0.25) + (avgComp / 100.0 * 1.8);
         data.put("roi", String.format(Locale.US, "%.1fx", Math.max(1.0, dynamicRoi)));
@@ -116,20 +133,22 @@ public class HrController {
         List<Map<String, Object>> deptsData = new ArrayList<>();
 
         for (Department d : orgDepts) {
+            if (d == null) continue;
             List<User> deptEmps = employees.stream()
-                    .filter(e -> e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
+                    .filter(e -> e != null && e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
                     .collect(Collectors.toList());
             double deptCompletion = 0.0;
             long deptGaps = 0;
             int deptEnrollmentCount = 0;
 
             for (User de : deptEmps) {
+                if (de == null || de.getId() == null) continue;
                 List<SkillGapDto> gaps = userGapsCache.getOrDefault(de.getId(), Collections.emptyList());
-                deptGaps += gaps.stream().filter(g -> g.getIsCritical() != null && g.getIsCritical()).count();
+                deptGaps += gaps.stream().filter(g -> g != null && g.getIsCritical() != null && g.getIsCritical()).count();
 
                 List<CourseEnrollment> enrollments = userEnrollmentsCache.getOrDefault(de.getId(), Collections.emptyList());
                 if (!enrollments.isEmpty()) {
-                    long completed = enrollments.stream().filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
+                    long completed = enrollments.stream().filter(e -> e != null && "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
                     deptCompletion += (double) completed / enrollments.size() * 100.0;
                     deptEnrollmentCount++;
                 }
@@ -145,9 +164,11 @@ public class HrController {
         data.put("departments", deptsData);
 
         // 4. Heatmap data (Departments x Skills) - dynamically query org skills
-        List<String> heatmapRows = orgDepts.stream().map(Department::getName).collect(Collectors.toList());
+        List<String> heatmapRows = orgDepts.stream().filter(Objects::nonNull).map(Department::getName).collect(Collectors.toList());
         List<String> heatmapCols = skillRepository.findAll().stream()
+                .filter(Objects::nonNull)
                 .map(Skill::getName)
+                .filter(Objects::nonNull)
                 .distinct()
                 .limit(6)
                 .collect(Collectors.toList());
@@ -158,21 +179,29 @@ public class HrController {
         List<List<Integer>> heatmapValues = new ArrayList<>();
 
         for (Department d : orgDepts) {
+            if (d == null) continue;
             List<Integer> deptValues = new ArrayList<>();
             List<User> deptEmps = employees.stream()
-                    .filter(e -> e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
+                    .filter(e -> e != null && e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
                     .collect(Collectors.toList());
 
             for (String col : heatmapCols) {
+                if (col == null) continue;
                 double totalLvl = 0;
                 int empCount = 0;
 
                 for (User de : deptEmps) {
+                    if (de == null || de.getId() == null) continue;
                     List<SkillGapDto> gaps = userGapsCache.getOrDefault(de.getId(), Collections.emptyList());
-                    Optional<SkillGapDto> matching = gaps.stream().filter(g -> g.getSkillName().equalsIgnoreCase(col)).findFirst();
+                    Optional<SkillGapDto> matching = gaps.stream()
+                            .filter(g -> g != null && g.getSkillName() != null && g.getSkillName().equalsIgnoreCase(col))
+                            .findFirst();
                     if (matching.isPresent()) {
-                        totalLvl += matching.get().getCurrentLevel();
-                        empCount++;
+                        Integer lvl = matching.get().getCurrentLevel();
+                        if (lvl != null) {
+                            totalLvl += lvl;
+                            empCount++;
+                        }
                     }
                 }
                 int scaledVal = empCount > 0 ? (int) Math.round((totalLvl / empCount) * 20.0) : 0;
@@ -338,25 +367,37 @@ public class HrController {
         
         List<Map<String, Object>> result = new ArrayList<>();
         for (Department d : orgDepts) {
+            if (d == null) continue;
             List<User> deptEmps = employees.stream()
-                    .filter(e -> e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
+                    .filter(e -> e != null && e.getDepartment() != null && e.getDepartment().getId().equals(d.getId()))
                     .collect(Collectors.toList());
             
             String managerName = "Unassigned";
             if (d.getManagerId() != null) {
-                User mgr = userRepository.findById(d.getManagerId()).orElse(null);
-                if (mgr != null) managerName = mgr.getFullName();
+                try {
+                    User mgr = userRepository.findById(d.getManagerId()).orElse(null);
+                    if (mgr != null && mgr.getFullName() != null) managerName = mgr.getFullName();
+                } catch (Exception ignored) {}
             }
             
             long criticalGaps = 0;
             double totalCompletion = 0;
             int enrollmentCount = 0;
             for (User de : deptEmps) {
-                List<SkillGapDto> gaps = gapAnalysisService.calculateUserGaps(de.getId());
-                criticalGaps += gaps.stream().filter(g -> g.getIsCritical() != null && g.getIsCritical()).count();
-                List<CourseEnrollment> enrollments = enrollmentRepository.findByUserId(de.getId());
-                if (!enrollments.isEmpty()) {
-                    long completed = enrollments.stream().filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
+                if (de == null) continue;
+                List<SkillGapDto> gaps = Collections.emptyList();
+                try {
+                    gaps = gapAnalysisService.calculateUserGaps(de.getId());
+                } catch (Exception ignored) {}
+                if (gaps != null) {
+                    criticalGaps += gaps.stream().filter(g -> g != null && g.getIsCritical() != null && g.getIsCritical()).count();
+                }
+                List<CourseEnrollment> enrollments = Collections.emptyList();
+                try {
+                    enrollments = enrollmentRepository.findByUserId(de.getId());
+                } catch (Exception ignored) {}
+                if (enrollments != null && !enrollments.isEmpty()) {
+                    long completed = enrollments.stream().filter(e -> e != null && "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
                     totalCompletion += (double) completed / enrollments.size() * 100.0;
                     enrollmentCount++;
                 }
@@ -364,7 +405,7 @@ public class HrController {
             
             Map<String, Object> dMap = new HashMap<>();
             dMap.put("id", d.getId());
-            dMap.put("name", d.getName());
+            dMap.put("name", d.getName() != null ? d.getName() : "Department");
             dMap.put("description", d.getDescription() != null ? d.getDescription() : "");
             dMap.put("managerName", managerName);
             dMap.put("headcount", deptEmps.size());
@@ -418,13 +459,20 @@ public class HrController {
         Map<String, Integer> gapWeights = new HashMap<>();
         Map<String, Integer> criticalGaps = new HashMap<>();
         for (User emp : employees) {
-            List<SkillGapDto> gaps = gapAnalysisService.calculateUserGaps(emp.getId());
+            if (emp == null) continue;
+            List<SkillGapDto> gaps = Collections.emptyList();
+            try {
+                gaps = gapAnalysisService.calculateUserGaps(emp.getId());
+            } catch (Exception ignored) {}
+            if (gaps == null) continue;
             for (SkillGapDto g : gaps) {
-                if (g.getCurrentLevel() < g.getRequiredLevel()) {
-                    int diff = g.getRequiredLevel() - g.getCurrentLevel();
-                    gapWeights.put(g.getSkillName(), gapWeights.getOrDefault(g.getSkillName(), 0) + diff);
-                    if (g.getIsCritical() != null && g.getIsCritical()) {
-                        criticalGaps.put(g.getSkillName(), criticalGaps.getOrDefault(g.getSkillName(), 0) + 1);
+                if (g != null && g.getSkillName() != null && g.getCurrentLevel() != null && g.getRequiredLevel() != null) {
+                    if (g.getCurrentLevel() < g.getRequiredLevel()) {
+                        int diff = g.getRequiredLevel() - g.getCurrentLevel();
+                        gapWeights.put(g.getSkillName(), gapWeights.getOrDefault(g.getSkillName(), 0) + diff);
+                        if (g.getIsCritical() != null && g.getIsCritical()) {
+                            criticalGaps.put(g.getSkillName(), criticalGaps.getOrDefault(g.getSkillName(), 0) + 1);
+                        }
                     }
                 }
             }

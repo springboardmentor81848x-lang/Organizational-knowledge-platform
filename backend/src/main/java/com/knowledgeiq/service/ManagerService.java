@@ -174,14 +174,22 @@ public class ManagerService {
         List<TeamMemberProfileDto> profiles = new ArrayList<>();
 
         for (User member : teamMembers) {
-            UserProfileDto userProfile = employeeService.getEmployeeProfile(member.getId());
-            List<SkillDto> skills = userProfile.getSkills() != null ? userProfile.getSkills() : Collections.emptyList();
+            if (member == null) continue;
+            UserProfileDto userProfile = null;
+            try {
+                userProfile = employeeService.getEmployeeProfile(member.getId());
+            } catch (Exception ignored) {}
+
+            List<SkillDto> skills = (userProfile != null && userProfile.getSkills() != null)
+                    ? userProfile.getSkills()
+                    : Collections.emptyList();
 
             int totalCurr = 0;
             int totalReq = 0;
             int criticalGapsCount = 0;
 
             for (SkillDto s : skills) {
+                if (s == null) continue;
                 int cur = 0;
                 int req = 0;
                 try {
@@ -201,9 +209,17 @@ public class ManagerService {
 
             int gapPct = totalReq > 0 ? (int) Math.round(((double) Math.max(0, totalReq - totalCurr) / totalReq) * 100) : 0;
 
-            List<CourseEnrollment> enrollments = enrollmentRepository.findByUserId(member.getId());
-            long inProgressCount = enrollments.stream().filter(e -> "IN_PROGRESS".equalsIgnoreCase(e.getStatus())).count();
-            long completedCount = enrollments.stream().filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
+            List<CourseEnrollment> enrollments = Collections.emptyList();
+            try {
+                enrollments = enrollmentRepository.findByUserId(member.getId());
+            } catch (Exception ignored) {}
+
+            long inProgressCount = enrollments.stream()
+                    .filter(e -> e != null && "IN_PROGRESS".equalsIgnoreCase(e.getStatus()))
+                    .count();
+            long completedCount = enrollments.stream()
+                    .filter(e -> e != null && "COMPLETED".equalsIgnoreCase(e.getStatus()))
+                    .count();
 
             String activeTrainingStatus;
             if (inProgressCount > 0) {
@@ -233,12 +249,20 @@ public class ManagerService {
                 riskStatus = "On Track";
             }
 
+            String title = (userProfile != null && userProfile.getTitle() != null && !userProfile.getTitle().isBlank())
+                    ? userProfile.getTitle()
+                    : (member.getRole() != null ? member.getRole().getTitle() : "Software Engineer");
+
+            String department = (userProfile != null && userProfile.getDepartment() != null && !userProfile.getDepartment().isBlank())
+                    ? userProfile.getDepartment()
+                    : (member.getDepartment() != null ? member.getDepartment().getName() : "Engineering");
+
             profiles.add(new TeamMemberProfileDto(
                     member.getId(),
-                    member.getFullName(),
-                    member.getEmail(),
-                    userProfile.getTitle(),
-                    userProfile.getDepartment(),
+                    member.getFullName() != null ? member.getFullName() : "Team Member",
+                    member.getEmail() != null ? member.getEmail() : "",
+                    title,
+                    department,
                     member.getAvatarUrl(),
                     totalCurr,
                     totalReq,

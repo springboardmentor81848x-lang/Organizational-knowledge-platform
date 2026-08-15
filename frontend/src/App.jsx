@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Login from './pages/Login.jsx'
 import SignUp from './pages/SignUp.jsx'
 import SignUpManager from './pages/SignUpManager.jsx'
@@ -23,36 +23,84 @@ import { DeptHeadDashboard, DeptHeadBenchmarks, DeptHeadAllocation } from './pag
 import { LdAdminDashboard, LdAdminCatalog, LdAdminPaths, LdAdminCerts } from './pages/LdAdminPages.jsx'
 import api from './services/api.js'
 
+function parseRouteFromLocation() {
+  const hash = window.location.hash || ''
+  if (hash.startsWith('#signup')) {
+    const parts = hash.split('?')
+    const params = new URLSearchParams(parts[1] || '')
+    const roleParam = params.get('role') || 'employee'
+    return { isAuth: true, authScreen: 'signup', signUpRole: roleParam, page: 'dashboard' }
+  }
+  if (hash.startsWith('#login')) {
+    return { isAuth: true, authScreen: 'login', signUpRole: 'employee', page: 'dashboard' }
+  }
+  if (hash.startsWith('#')) {
+    const clean = hash.replace(/^#\/?/, '').split('?')[0]
+    if (clean) return { isAuth: false, page: clean, authScreen: 'login', signUpRole: 'employee' }
+  }
+  return { isAuth: false, page: 'dashboard', authScreen: 'login', signUpRole: 'employee' }
+}
+
 export default function App() {
+  const initialRoute = parseRouteFromLocation()
+
   const [authed, setAuthed] = useState(false)
   const [role, setRole] = useState('employee')
   const [user, setUser] = useState(null)
-  const [page, setPage] = useState('dashboard')
+  const [page, setPage] = useState(initialRoute.page || 'dashboard')
   const [dark, setDark] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [authScreen, setAuthScreen] = useState('login') // 'login' | 'signup'
-  const [signUpRole, setSignUpRole] = useState('employee')
+  const [authScreen, setAuthScreen] = useState(initialRoute.authScreen || 'login') // 'login' | 'signup'
+  const [signUpRole, setSignUpRole] = useState(initialRoute.signUpRole || 'employee')
   const [pendingSetup, setPendingSetup] = useState(null) // holds authData for new users
 
+  // ── Browser History & Back/Forward Button Synchronization ──────────────────
+  useEffect(() => {
+    function handlePopState(e) {
+      const currentRoute = parseRouteFromLocation()
+      if (!authed) {
+        if (currentRoute.authScreen === 'signup') {
+          setAuthScreen('signup')
+          setSignUpRole(currentRoute.signUpRole)
+        } else {
+          setAuthScreen('login')
+        }
+      } else {
+        const targetPage = currentRoute.page || 'dashboard'
+        setPage(targetPage)
+      }
+      setMobileNavOpen(false)
+      setPaletteOpen(false)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [authed])
+
+  // ── Check Existing Session on Startup ──────────────────────────────────────
   useEffect(() => {
     const storedToken = api.getToken()
     const storedUser = api.getCurrentUserFromStorage()
 
-    // If no session at all, stay on login
-    if (!storedToken || !storedUser) return
+    // If no session at all, sync hash if empty
+    if (!storedToken || !storedUser) {
+      if (!window.location.hash) {
+        window.history.replaceState({ authed: false, authScreen: 'login' }, '', '#login')
+      }
+      return
+    }
 
-    // Guard: old "fallback" sessions had no real email (they came from the offline catch block).
-    // If the stored user has no email or no token, force re-login so the user sees their real account.
+    // Guard: old sessions with missing emails
     if (!storedUser.email) {
       api.logout()
+      window.history.replaceState({ authed: false, authScreen: 'login' }, '', '#login')
       return
     }
 
     // Validate the token is still accepted by the live backend
     api.getCurrentUser()
       .then(liveUser => {
-        // Backend returned the real user — use that as ground truth
         const fullName = liveUser.fullName || liveUser.full_name || storedUser.fullName || ''
         const sysRole = (liveUser.systemRole || storedUser.systemRole || '').toUpperCase()
         const appRole = sysRole.includes('MANAGER') ? 'manager'
@@ -81,10 +129,18 @@ export default function App() {
           department: liveUser.department || storedUser.department || '',
         })
         setAuthed(true)
+
+        // If on initial login/signup hash, navigate to current tab or dashboard
+        const currentRoute = parseRouteFromLocation()
+        const initialPage = (currentRoute.page && currentRoute.page !== 'dashboard') ? currentRoute.page : 'dashboard'
+        setPage(initialPage)
+        window.history.replaceState({ authed: true, page: initialPage, role: appRole }, '', `#${initialPage}`)
       })
       .catch(() => {
         // Token rejected by backend — force fresh login
         api.logout()
+        setAuthed(false)
+        window.history.replaceState({ authed: false, authScreen: 'login' }, '', '#login')
       })
   }, [])
 
@@ -116,6 +172,7 @@ export default function App() {
     setPage('dashboard')
     setAuthed(true)
     setAuthScreen('login')
+    window.history.replaceState({ authed: true, page: 'dashboard', role: selectedRole }, '', '#dashboard')
   }
 
   function handleSetupComplete(updatedAuthData) {
@@ -129,11 +186,35 @@ export default function App() {
     setAuthed(false)
     setRole('employee')
     setUser(null)
+    setAuthScreen('login')
+    window.history.replaceState({ authed: false, authScreen: 'login' }, '', '#login')
   }
 
-  function nav(id) {
+  // ── Tab & Page Navigation with History Pushing ─────────────────────────────
+  function nav(id, replace = false) {
     setPage(id)
     setMobileNavOpen(false)
+    const targetHash = `#${id}`
+    if (replace) {
+      window.history.replaceState({ authed: true, page: id, role }, '', targetHash)
+    } else {
+      window.history.pushState({ authed: true, page: id, role }, '', targetHash)
+    }
+  }
+
+  // ── Switch between Login and Sign Up with History Tracking ──────────────────
+  function switchAuthScreen(screen, roleKey = 'employee', replace = false) {
+    setAuthScreen(screen)
+    setSignUpRole(roleKey)
+    const targetHash = screen === 'signup'
+      ? `#signup${roleKey ? `?role=${roleKey}` : ''}`
+      : '#login'
+
+    if (replace) {
+      window.history.replaceState({ authed: false, authScreen: screen, signUpRole: roleKey }, '', targetHash)
+    } else {
+      window.history.pushState({ authed: false, authScreen: screen, signUpRole: roleKey }, '', targetHash)
+    }
   }
 
   if (pendingSetup) {
@@ -151,8 +232,8 @@ export default function App() {
         <SignUp
           initialRole={signUpRole}
           onLogin={(appRole, authData, isNewUser) => handleLogin(appRole, authData, isNewUser)}
-          onSwitchToLogin={() => setAuthScreen('login')}
-          onSwitchToSignUpManager={() => { setSignUpRole('manager'); setAuthScreen('signup') }}
+          onSwitchToLogin={() => switchAuthScreen('login')}
+          onSwitchToSignUpManager={() => switchAuthScreen('signup', 'manager')}
         />
       )
     }
@@ -160,17 +241,17 @@ export default function App() {
       return (
         <SignUpManager
           onLogin={(appRole, authData) => handleLogin(appRole, authData, false)}
-          onSwitchToLogin={() => setAuthScreen('login')}
-          onSwitchToSignUp={() => setAuthScreen('signup')}
+          onSwitchToLogin={() => switchAuthScreen('login')}
+          onSwitchToSignUp={() => switchAuthScreen('signup', 'employee')}
         />
       )
     }
     return (
       <Login
         onLogin={handleLogin}
-        onSwitchToSignUp={(roleKey = 'employee') => { setSignUpRole(roleKey); setAuthScreen('signup') }}
-        onSwitchToSignUpHR={() => { setSignUpRole('hr'); setAuthScreen('signup') }}
-        onSwitchToSignUpManager={() => { setSignUpRole('manager'); setAuthScreen('signup') }}
+        onSwitchToSignUp={(roleKey = 'employee') => switchAuthScreen('signup', roleKey)}
+        onSwitchToSignUpHR={() => switchAuthScreen('signup', 'hr')}
+        onSwitchToSignUpManager={() => switchAuthScreen('signup', 'manager')}
       />
     )
   }
@@ -211,9 +292,9 @@ export default function App() {
 }
 
 function PageRouter({ role, page, onNav, user }) {
-  if (page === 'profile') return <ProfilePage role={role} user={user} />
+  if (page === 'profile') return <ProfilePage role={role} user={user} onNav={onNav} />
   if (page === 'notifications') return <NotificationsPage onNav={onNav} />
-  if (page === 'gaps' && role !== 'manager' && role !== 'employee') return <GapAnalysis role={role} />
+  if (page === 'gaps' && role !== 'manager' && role !== 'employee') return <GapAnalysis role={role} onNav={onNav} />
 
   if (role === 'employee') {
     switch (page) {
@@ -222,7 +303,7 @@ function PageRouter({ role, page, onNav, user }) {
       case 'ai': return <EmployeeAI user={user} onNav={onNav} />
       case 'training': return <EmployeeTraining user={user} onNav={onNav} />
       case 'assessments': return <EmployeeAssessments onNav={onNav} />
-      default: return <NotFound />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
@@ -233,7 +314,7 @@ function PageRouter({ role, page, onNav, user }) {
       case 'gaps': return <ManagerDashboard onNav={onNav} user={user} />
       case 'progress': return <TeamProfilesOverview onNav={onNav} user={user} />
       case 'interventions': return <ActionableInterventionsPanel onNav={onNav} user={user} />
-      default: return <NotFound />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
@@ -245,44 +326,56 @@ function PageRouter({ role, page, onNav, user }) {
       case 'forecasting': return <HRForecasting user={user} onNav={onNav} />
       case 'reports': return <HRReports user={user} onNav={onNav} />
       case 'departments': return <HRDepartments user={user} onNav={onNav} />
-      default: return <NotFound />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
   if (role === 'depthead') {
     switch (page) {
       case 'dashboard': return <DeptHeadDashboard onNav={onNav} user={user} />
-      case 'benchmarks': return <DeptHeadBenchmarks />
-      case 'allocation': return <DeptHeadAllocation />
-      default: return <NotFound />
+      case 'benchmarks': return <DeptHeadBenchmarks onNav={onNav} />
+      case 'allocation': return <DeptHeadAllocation onNav={onNav} />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
   if (role === 'ldadmin') {
     switch (page) {
       case 'dashboard': return <LdAdminDashboard onNav={onNav} user={user} />
-      case 'catalog': return <LdAdminCatalog />
-      case 'paths': return <LdAdminPaths />
-      case 'certs': return <LdAdminCerts />
-      default: return <NotFound />
+      case 'catalog': return <LdAdminCatalog onNav={onNav} />
+      case 'paths': return <LdAdminPaths onNav={onNav} />
+      case 'certs': return <LdAdminCerts onNav={onNav} />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
   if (role === 'admin') {
     switch (page) {
       case 'dashboard': return <AdminDashboard onNav={onNav} user={user} />
-      case 'users': return <AdminUsers />
-      case 'roles': return <AdminRoles />
-      case 'skills': return <AdminSkills />
-      case 'audit': return <AdminAudit />
-      case 'settings': return <AdminSettings />
-      default: return <NotFound />
+      case 'users': return <AdminUsers onNav={onNav} />
+      case 'roles': return <AdminRoles onNav={onNav} />
+      case 'skills': return <AdminSkills onNav={onNav} />
+      case 'audit': return <AdminAudit onNav={onNav} />
+      case 'settings': return <AdminSettings onNav={onNav} />
+      default: return <NotFound onNav={onNav} />
     }
   }
 
-  return <NotFound />
+  return <NotFound onNav={onNav} />
 }
 
-function NotFound() {
-  return <div className="text-slate-400 text-sm">Page not found.</div>
+function NotFound({ onNav }) {
+  return (
+    <div className="p-8 text-center space-y-4">
+      <div className="text-slate-400 text-sm">Page not found.</div>
+      {onNav && (
+        <button
+          onClick={() => onNav('dashboard')}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-lime-400 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/10 transition-colors"
+        >
+          Return to Dashboard
+        </button>
+      )}
+    </div>
+  )
 }

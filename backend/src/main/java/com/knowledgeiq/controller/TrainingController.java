@@ -6,6 +6,7 @@ import com.knowledgeiq.model.TrainingCourse;
 import com.knowledgeiq.service.TrainingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,16 +32,19 @@ public class TrainingController {
     }
 
     @PostMapping("/courses")
+    @PreAuthorize("hasAnyRole('L_AND_D_ADMIN', 'HR_SPECIALIST', 'SYSTEM_ADMIN')")
     public ResponseEntity<TrainingCourse> createCourse(@RequestBody Map<String, Object> request) {
         return ResponseEntity.ok(trainingService.createCourse(request));
     }
 
     @PutMapping("/courses/{id}")
+    @PreAuthorize("hasAnyRole('L_AND_D_ADMIN', 'HR_SPECIALIST', 'SYSTEM_ADMIN')")
     public ResponseEntity<TrainingCourse> updateCourse(@PathVariable UUID id, @RequestBody Map<String, Object> request) {
         return ResponseEntity.ok(trainingService.updateCourse(id, request));
     }
 
     @DeleteMapping("/courses/{id}")
+    @PreAuthorize("hasAnyRole('L_AND_D_ADMIN', 'HR_SPECIALIST', 'SYSTEM_ADMIN')")
     public ResponseEntity<Map<String, String>> deleteCourse(@PathVariable UUID id) {
         trainingService.deleteCourse(id);
         return ResponseEntity.ok(Map.of("message", "Course deleted successfully"));

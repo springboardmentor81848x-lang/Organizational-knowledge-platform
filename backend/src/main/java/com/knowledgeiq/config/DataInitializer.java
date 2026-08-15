@@ -51,19 +51,37 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        User employee = ensureUserExists("employee@northwind.io", "Ava Chen", SystemRole.EMPLOYEE, "Engineering", "Senior Product Engineer");
-        User softwareEngineer = ensureUserExists("swe@northwind.io", "Liam Harper", SystemRole.EMPLOYEE, "Engineering", "Software Engineer");
-        User juniorDeveloper = ensureUserExists("juniordev@northwind.io", "Chloe Adams", SystemRole.EMPLOYEE, "Engineering", "Junior Developer");
-        User jordanTaylor = ensureUserExists("jordan.taylor@knowledgeiq.com", "Jordan Taylor", SystemRole.EMPLOYEE, "Engineering", "DevOps & Security Specialist");
-        User raviShah = ensureUserExists("ravi.shah@knowledgeiq.com", "Ravi Shah", SystemRole.EMPLOYEE, "Engineering", "Full Stack Engineer I");
-        User graceKim = ensureUserExists("grace.kim@knowledgeiq.com", "Grace Kim", SystemRole.EMPLOYEE, "Engineering", "Backend Engineer II");
-        User sofiaRuiz = ensureUserExists("sofia.ruiz@knowledgeiq.com", "Sofia Ruiz", SystemRole.EMPLOYEE, "Engineering", "Lead UI/UX Engineer");
-        User danielOsei = ensureUserExists("daniel.osei@knowledgeiq.com", "Daniel Osei", SystemRole.EMPLOYEE, "Engineering", "Cloud Infrastructure Engineer");
-        User manager = ensureUserExists("manager@northwind.io", "Marcus Lee", SystemRole.MANAGER, "Engineering", "Manager");
-        User hr = ensureUserExists("hr@northwind.io", "Priya Nair", SystemRole.HR_SPECIALIST, "HR & Operations", "HR Operations Lead");
-        User depthead = ensureUserExists("depthead@northwind.io", "David Vance", SystemRole.DEPARTMENT_HEAD, "Engineering", "Head of Department");
-        User ldadmin = ensureUserExists("ldadmin@northwind.io", "Elena Rostova", SystemRole.L_AND_D_ADMIN, "HR & Operations", "L&D Program Lead");
-        User admin = ensureUserExists("admin@northwind.io", "Noah Bennett", SystemRole.SYSTEM_ADMIN, "Platform", "Platform Administrator");
+        // --- 1. Engineering Department ---
+        User manager = ensureUserExists("manager@northwind.io", "Marcus Lee", SystemRole.MANAGER, "Engineering", null, "Engineering Manager");
+        User employee = ensureUserExists("employee@northwind.io", "Ava Chen", SystemRole.EMPLOYEE, "Engineering", "Java", "Senior Product Engineer");
+        User softwareEngineer = ensureUserExists("swe@northwind.io", "Liam Harper", SystemRole.EMPLOYEE, "Engineering", "Java", "Software Engineer");
+        User juniorDeveloper = ensureUserExists("juniordev@northwind.io", "Chloe Adams", SystemRole.EMPLOYEE, "Engineering", "Java", "Junior Developer");
+        User jordanTaylor = ensureUserExists("jordan.taylor@knowledgeiq.com", "Jordan Taylor", SystemRole.EMPLOYEE, "Engineering", "DevOps", "DevOps & Security Specialist");
+        User raviShah = ensureUserExists("ravi.shah@knowledgeiq.com", "Ravi Shah", SystemRole.EMPLOYEE, "Engineering", "Frontend", "Full Stack Engineer I");
+        User graceKim = ensureUserExists("grace.kim@knowledgeiq.com", "Grace Kim", SystemRole.EMPLOYEE, "Engineering", "Java", "Backend Engineer II");
+        User sofiaRuiz = ensureUserExists("sofia.ruiz@knowledgeiq.com", "Sofia Ruiz", SystemRole.EMPLOYEE, "Engineering", "Frontend", "Lead UI/UX Engineer");
+        User danielOsei = ensureUserExists("daniel.osei@knowledgeiq.com", "Daniel Osei", SystemRole.EMPLOYEE, "Engineering", "DevOps", "Cloud Infrastructure Engineer");
+        User alexRivera = ensureUserExists("alex.rivera@knowledgeiq.com", "Alex Rivera", SystemRole.EMPLOYEE, "Engineering", "Python", "Python Developer");
+        User depthead = ensureUserExists("depthead@northwind.io", "David Vance", SystemRole.DEPARTMENT_HEAD, "Engineering", null, "Head of Department");
+
+        // --- 2. Finance Department ---
+        User financeMgr = ensureUserExists("finance.mgr@northwind.io", "Elena Vance", SystemRole.MANAGER, "Finance", null, "Finance Manager");
+        User thomasCole = ensureUserExists("thomas.cole@knowledgeiq.com", "Thomas Cole", SystemRole.EMPLOYEE, "Finance", "Accounting", "Senior Accountant");
+        User mayaPatel = ensureUserExists("maya.patel@knowledgeiq.com", "Maya Patel", SystemRole.EMPLOYEE, "Finance", "Accounting", "Payroll Specialist");
+        User lucasScott = ensureUserExists("lucas.scott@knowledgeiq.com", "Lucas Scott", SystemRole.EMPLOYEE, "Finance", "Analysis", "Financial Analyst");
+        User sarahJenkins = ensureUserExists("sarah.jenkins@knowledgeiq.com", "Sarah Jenkins", SystemRole.EMPLOYEE, "Finance", "Analysis", "Budget & Planning Analyst");
+
+        // --- 3. Marketing Department ---
+        User marketingMgr = ensureUserExists("marketing.mgr@northwind.io", "Rachel Green", SystemRole.MANAGER, "Marketing", null, "Marketing Manager");
+        User evanWright = ensureUserExists("evan.wright@knowledgeiq.com", "Evan Wright", SystemRole.EMPLOYEE, "Marketing", "Digital Marketing", "Digital Marketing Specialist");
+        User zoeChen = ensureUserExists("zoe.chen@knowledgeiq.com", "Zoe Chen", SystemRole.EMPLOYEE, "Marketing", "Digital Marketing", "Growth & SEO Strategist");
+        User emmaWatson = ensureUserExists("emma.watson@knowledgeiq.com", "Emma Watson", SystemRole.EMPLOYEE, "Marketing", "Content", "Content & Copywriting Lead");
+        User oliverReed = ensureUserExists("oliver.reed@knowledgeiq.com", "Oliver Reed", SystemRole.EMPLOYEE, "Marketing", "Content", "Brand Copywriter");
+
+        // --- 4. Organization-wide Roles ---
+        User hr = ensureUserExists("hr@northwind.io", "Priya Nair", SystemRole.HR_SPECIALIST, null, null, "HR Specialist");
+        User ldadmin = ensureUserExists("ldadmin@northwind.io", "Elena Rostova", SystemRole.L_AND_D_ADMIN, null, null, "L&D Admin");
+        User admin = ensureUserExists("admin@northwind.io", "Noah Bennett", SystemRole.SYSTEM_ADMIN, null, null, "System Administrator");
         
         SkillCategory techCategory = ensureCategory("Technical", "Engineering and software development skills");
         SkillCategory mktCategory = ensureCategory("Marketing", "Digital marketing, SEO, content, and analytics");
@@ -188,7 +206,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private User ensureUserExists(String email, String fullName, SystemRole systemRole, String deptName, String roleTitle) {
+    private User ensureUserExists(String email, String fullName, SystemRole systemRole, String deptName, String teamName, String roleTitle) {
         return userRepository.findByEmail(email).orElseGet(() -> {
             Organization defaultOrg = organizationRepository.findByNameIgnoreCase("KnowledgeIQ Enterprise")
                     .orElseGet(() -> organizationRepository.save(new Organization("KnowledgeIQ Enterprise", "Default organization")));
@@ -202,19 +220,31 @@ public class DataInitializer implements CommandLineRunner {
             user.setOrganization(defaultOrg);
             user.setCompany(defaultOrg.getName());
 
-            Department dept = departmentRepository.findByNameAndOrganizationId(deptName, defaultOrg.getId())
-                    .orElseGet(() -> {
-                        Department d = new Department(deptName, deptName + " Department");
-                        d.setOrganization(defaultOrg);
-                        return departmentRepository.save(d);
-                    });
-            user.setDepartment(dept);
-
-            Role role = roleRepository.findByTitle(roleTitle)
-                    .orElseGet(() -> roleRepository.save(new Role(roleTitle, dept, roleTitle)));
-            user.setRole(role);
+            Department dept = null;
+            if (deptName != null && !deptName.isBlank()) {
+                dept = departmentRepository.findByNameAndOrganizationId(deptName, defaultOrg.getId())
+                        .orElseGet(() -> {
+                            Department d = new Department(deptName, deptName + " Department");
+                            d.setOrganization(defaultOrg);
+                            return departmentRepository.save(d);
+                        });
+                user.setDepartment(dept);
+            } else {
+                user.setDepartment(null);
+            }
 
             if (systemRole == SystemRole.EMPLOYEE) {
+                user.setTeamName(teamName != null ? teamName : "Java");
+            } else {
+                user.setTeamName(null);
+            }
+
+            final Department finalDept = dept;
+            Role role = roleRepository.findByTitle(roleTitle)
+                    .orElseGet(() -> roleRepository.save(new Role(roleTitle, finalDept, roleTitle)));
+            user.setRole(role);
+
+            if (systemRole == SystemRole.EMPLOYEE && dept != null) {
                 userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
                         SystemRole.MANAGER, defaultOrg.getId(), dept.getId()
                 ).ifPresent(user::setManager);

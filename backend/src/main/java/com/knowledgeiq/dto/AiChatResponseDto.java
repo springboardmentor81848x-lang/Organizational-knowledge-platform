@@ -18,6 +18,8 @@ public class AiChatResponseDto {
 
     public String getReply() { return reply; }
     public void setReply(String reply) { this.reply = reply; }
+    public String getResponse() { return reply; }
+    public String getMessage() { return reply; }
 
     public Map<String, Object> getUserSummary() { return userSummary; }
     public void setUserSummary(Map<String, Object> userSummary) { this.userSummary = userSummary; }

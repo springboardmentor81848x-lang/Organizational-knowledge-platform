@@ -1,11 +1,13 @@
 package com.knowledgeiq.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "skills")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Skill {
 
     @Id

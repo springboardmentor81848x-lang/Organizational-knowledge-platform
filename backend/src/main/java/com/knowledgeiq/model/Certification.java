@@ -20,7 +20,10 @@ public class Certification {
     @JoinColumn(name = "skill_id")
     private Skill skill;
 
-    @Column(nullable = false)
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    @Column(name = "name")
     private String name;
 
     @Column(name = "issuing_organization", nullable = false)
@@ -64,6 +67,7 @@ public class Certification {
     public Certification(User user, String name, String issuingOrganization, String issueDate, String expirationDate, String credentialId, String credentialUrl) {
         this.user = user;
         this.name = name;
+        this.title = name;
         this.issuingOrganization = issuingOrganization;
         this.issueDate = issueDate;
         this.expirationDate = expirationDate;
@@ -80,8 +84,17 @@ public class Certification {
     public Skill getSkill() { return skill; }
     public void setSkill(Skill skill) { this.skill = skill; }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() { return name != null ? name : title; }
+    public void setName(String name) {
+        this.name = name;
+        if (this.title == null) this.title = name;
+    }
+
+    public String getTitle() { return title != null ? title : name; }
+    public void setTitle(String title) {
+        this.title = title;
+        if (this.name == null) this.name = title;
+    }
 
     public String getIssuingOrganization() { return issuingOrganization; }
     public void setIssuingOrganization(String issuingOrganization) { this.issuingOrganization = issuingOrganization; }

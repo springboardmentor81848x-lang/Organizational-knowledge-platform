@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Icon from '../components/Icon.jsx'
+import GoogleSignInModal from '../components/GoogleSignInModal.jsx'
 import api from '../services/api.js'
 
 // Password strength calculator
@@ -25,57 +26,33 @@ export const ALL_ROLES = [
     badge: 'Individual Contributor',
     color: 'emerald',
     tagline: 'Skills, AI domain assessments, peer reviews & learning paths',
+    scopeText: 'Belongs to a specific Department and Team/Domain with tailored skill benchmarks.',
     capabilities: [
-      'Create & update professional profile',
-      'Maintain verified skill profile & proficiency levels',
-      'Perform self-assessments & AI domain quizzes',
-      'Participate in 360° peer assessments',
-      'Identify personal skill gaps & benchmark requirements',
-      'Enroll in recommended courses & track progress',
+      'Create & update professional skill profile',
+      'Select Department, Team / Domain & Job Title specialization',
+      'AI domain assessments & adaptive skill quizzes',
+      'Personalized learning pathways & course tracking',
       'Earn verifiable achievements & manage certifications',
-      'Connect with technical mentors & receive notifications'
-    ],
-    defaultDept: 'Engineering',
-    defaultTitle: 'Java Developer'
+      'Connect with technical mentors & peers'
+    ]
   },
   {
     key: 'manager',
     label: 'Team Lead / Manager',
     systemRole: 'MANAGER',
     icon: 'users',
-    badge: 'Team & People Lead',
+    badge: 'Department People Lead',
     color: 'indigo',
-    tagline: 'Domain team grouping, skill coverage heatmap & interventions',
+    tagline: 'Oversees all teams and employees across the entire department',
+    scopeText: 'You manage the entire department and all teams/domains within it.',
     capabilities: [
-      'View department domain team grouping (Java, Python, Frontend, etc.)',
+      'Manages the entire department and all teams (Java, Python, Frontend, DevOps, etc.)',
       'Analyze department skill coverage heatmap (Exclusive)',
       'Identify team capability gaps & critical shortage risks',
       'Monitor employee benchmark progress & training adoption',
-      'Track individual learning trajectories & course completions',
       'Assign targeted AI learning interventions & recommendations',
-      'Review direct reports & manage team competencies'
-    ],
-    defaultDept: 'Engineering',
-    defaultTitle: 'Engineering Manager'
-  },
-  {
-    key: 'hr',
-    label: 'HR Specialist',
-    systemRole: 'HR_SPECIALIST',
-    icon: 'bar-chart-2',
-    badge: 'Workforce Intelligence',
-    color: 'amber',
-    tagline: 'Org-wide gap intelligence, workforce directory & forecasting',
-    capabilities: [
-      'Organization-wide capability gap intelligence & heatmaps',
-      'Manage complete workforce skill inventory & directory',
-      'Measure training effectiveness & learning ROI metrics',
-      'Run strategic skill forecasting & predictive hiring models',
-      'Manage company departments & user role assignments',
-      'Generate executive reports & compliance audit exports'
-    ],
-    defaultDept: 'HR & Operations',
-    defaultTitle: 'HR Specialist'
+      'Review direct reports across all department domains'
+    ]
   },
   {
     key: 'depthead',
@@ -85,15 +62,32 @@ export const ALL_ROLES = [
     badge: 'Executive Strategy',
     color: 'cyan',
     tagline: 'Department competency frameworks, benchmarks & budgets',
+    scopeText: 'You oversee the entire department, role benchmarks, and learning budget allocations.',
     capabilities: [
       'Department-wide competency matrix & capability health',
       'Define & approve standardized role benchmark levels',
       'Allocate learning budgets & prioritize team funding',
       'Monitor department performance & risk distribution',
       'Oversee multiple domain teams & team managers'
-    ],
-    defaultDept: 'Engineering',
-    defaultTitle: 'Head of Engineering'
+    ]
+  },
+  {
+    key: 'hr',
+    label: 'HR Specialist',
+    systemRole: 'HR_SPECIALIST',
+    icon: 'bar-chart-2',
+    badge: 'Workforce Intelligence',
+    color: 'amber',
+    tagline: 'Org-wide gap intelligence, workforce directory & forecasting',
+    scopeText: 'HR operates across the entire organization.',
+    capabilities: [
+      'Organization-wide capability gap intelligence & heatmaps',
+      'Manage complete workforce skill inventory & directory',
+      'Measure training effectiveness & learning ROI metrics',
+      'Run strategic skill forecasting & predictive hiring models',
+      'Manage company departments & user role assignments',
+      'Generate executive reports & compliance audit exports'
+    ]
   },
   {
     key: 'ldadmin',
@@ -103,6 +97,7 @@ export const ALL_ROLES = [
     badge: 'Learning & Mentorship',
     color: 'purple',
     tagline: 'Personalized learning paths, catalogs & mentor programs',
+    scopeText: 'L&D manages learning and development across the organization.',
     capabilities: [
       'Manage internal training catalog & external learning links',
       'Build adaptive, personalized learning path curriculums',
@@ -110,9 +105,7 @@ export const ALL_ROLES = [
       'Monitor training participation & completion rates',
       'Verify employee certifications & renewal processes',
       'Support mentorship programs & expert knowledge sharing'
-    ],
-    defaultDept: 'HR & Operations',
-    defaultTitle: 'L&D Program Lead / Mentor'
+    ]
   },
   {
     key: 'admin',
@@ -122,35 +115,73 @@ export const ALL_ROLES = [
     badge: 'Platform Security & Access',
     color: 'rose',
     tagline: 'User provisioning, access control, system monitoring & security',
+    scopeText: 'System Administration operates at organization/platform level.',
     capabilities: [
       'Manage user accounts, invitations & account activation',
       'Role-based access control (RBAC) & permissions management',
       'Authentication, JWT token security & OAuth integrations',
       'Live system monitoring, uptime tracking & audit logs',
       'Database health, system configuration & global taxonomies'
-    ],
-    defaultDept: 'Engineering',
-    defaultTitle: 'System Administrator'
+    ]
   }
 ]
 
-const DEPT_OPTIONS = [
-  'Engineering', 'Product', 'HR & Operations', 'Sales & Marketing',
-  'Data & Analytics', 'Finance', 'Legal', 'Design', 'Customer Success', 'Other'
-]
-
-const ROLE_SUGGESTIONS = {
-  'Engineering': ['Java Developer', 'Python Developer', 'React Developer', 'Full Stack Engineer', 'DevOps & Cloud Engineer', 'QA Automation Engineer', 'Software Engineer', 'Engineering Manager', 'Head of Engineering'],
-  'Product': ['Product Manager', 'Associate Product Manager', 'Product Owner', 'Scrum Master', 'Technical Program Manager', 'Director of Product'],
-  'HR & Operations': ['HR Specialist', 'Talent Acquisition Specialist', 'People Operations Lead', 'HR Business Partner', 'L&D Program Lead / Mentor', 'Chief People Officer'],
-  'Sales & Marketing': ['Marketing Strategist', 'Growth Specialist', 'Account Executive', 'Sales Development Rep', 'Content Strategist', 'VP of Marketing'],
-  'Data & Analytics': ['Data Analyst', 'Data Engineer', 'Business Intelligence Developer', 'Machine Learning Engineer', 'Data Scientist', 'Analytics Lead'],
-  'Finance': ['Financial Analyst', 'Accountant', 'Finance Operations Manager', 'Billing & Payroll Specialist', 'VP of Finance'],
-  'Legal': ['Legal Counsel', 'Compliance Officer', 'Contracts Specialist', 'Privacy Analyst'],
-  'Design': ['UI/UX Designer', 'Product Designer', 'Design Systems Lead', 'Visual & Brand Designer', 'Head of Design'],
-  'Customer Success': ['Customer Success Manager', 'Support Engineer', 'Client Onboarding Specialist'],
-  'Other': ['Specialist', 'Consultant', 'Operations Analyst']
+export const DEPARTMENT_TEAMS_MAP = {
+  'Engineering': ['Java', 'Python', 'Frontend', 'DevOps', 'QA'],
+  'Finance': ['Accounting', 'Financial Analysis', 'Payroll & Tax', 'Budgeting'],
+  'Marketing': ['Digital Marketing', 'Content & Copywriting', 'SEO & Growth', 'Brand Strategy'],
+  'Product': ['Product Management', 'UI/UX Design', 'Scrum & Agile'],
+  'Data & Analytics': ['Data Engineering', 'Business Intelligence', 'Machine Learning'],
+  'Sales': ['Enterprise Sales', 'Business Development', 'Account Management'],
+  'Sales & Marketing': ['Digital Marketing', 'Content & Copywriting', 'SEO & Growth', 'Brand Strategy'],
+  'HR & Operations': ['People Operations', 'Talent Acquisition', 'Operations'],
+  'Customer Success': ['Customer Support', 'Client Onboarding'],
+  'Legal': ['Corporate Legal', 'Regulatory Compliance'],
+  'Other': ['General Team']
 }
+
+export const TEAM_JOB_SUGGESTIONS = {
+  'Engineering': {
+    'Java': ['Java Developer', 'Spring Boot Developer', 'Backend Developer', 'Full Stack Java Developer'],
+    'Python': ['Python Developer', 'Django Developer', 'FastAPI Developer', 'Backend Python Engineer'],
+    'Frontend': ['Frontend Developer', 'React Developer', 'UI Engineer', 'Frontend Engineer'],
+    'DevOps': ['DevOps Engineer', 'Cloud Solutions Engineer', 'Infrastructure Specialist', 'Site Reliability Engineer'],
+    'QA': ['QA Automation Engineer', 'SDET', 'Software Test Engineer']
+  },
+  'Finance': {
+    'Accounting': ['Senior Accountant', 'General Ledger Accountant', 'Audit Specialist'],
+    'Financial Analysis': ['Financial Analyst', 'Senior Budget Analyst', 'Valuation Associate'],
+    'Payroll & Tax': ['Payroll Specialist', 'Tax Analyst'],
+    'Budgeting': ['Budget Coordinator', 'Finance Manager']
+  },
+  'Marketing': {
+    'Digital Marketing': ['Digital Marketing Specialist', 'PPC & Ads Manager', 'Performance Marketer'],
+    'Content & Copywriting': ['Content Lead', 'Copywriter', 'Brand Messaging Specialist'],
+    'SEO & Growth': ['Growth Specialist', 'SEO Manager', 'Inbound Strategist'],
+    'Brand Strategy': ['Brand Manager', 'Marketing Strategist']
+  },
+  'Product': {
+    'Product Management': ['Product Manager', 'Associate Product Manager', 'Product Owner'],
+    'UI/UX Design': ['UI/UX Designer', 'Product Designer', 'Design Systems Lead'],
+    'Scrum & Agile': ['Scrum Master', 'Agile Coach']
+  },
+  'Data & Analytics': {
+    'Data Engineering': ['Data Engineer', 'ETL Specialist', 'Big Data Developer'],
+    'Business Intelligence': ['BI Analyst', 'Tableau / PowerBI Specialist'],
+    'Machine Learning': ['ML Engineer', 'AI Research Specialist', 'Data Scientist']
+  },
+  'Sales': {
+    'Enterprise Sales': ['Account Executive', 'Enterprise Sales Director'],
+    'Business Development': ['BDR Lead', 'Sales Development Rep'],
+    'Account Management': ['Key Account Manager', 'Client Partner']
+  },
+  'Customer Success': {
+    'Customer Support': ['Customer Support Engineer', 'Technical Support Lead'],
+    'Client Onboarding': ['Client Onboarding Specialist', 'Implementation Consultant']
+  }
+}
+
+export const DEPT_OPTIONS = Object.keys(DEPARTMENT_TEAMS_MAP)
 
 export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLogin, initialRole = 'employee' }) {
   const [selectedRoleKey, setSelectedRoleKey] = useState(initialRole || 'employee')
@@ -160,13 +191,18 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
   const [confirmPassword, setConfirmPassword] = useState('')
   const [company, setCompany] = useState('Northwind Labs')
   const [existingOrgs, setExistingOrgs] = useState([])
+  
+  // Scoped fields
   const [department, setDepartment] = useState('Engineering')
+  const [team, setTeam] = useState('Java')
   const [jobTitle, setJobTitle] = useState('Java Developer')
   const [bio, setBio] = useState('')
+  
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showGoogleModal, setShowGoogleModal] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
 
@@ -183,19 +219,66 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
       .catch(() => {})
   }, [])
 
-  // When role changes, set sensible department and title defaults
+  // Handle role change with clean state sanitization
   function handleRoleSelect(roleKey) {
     setSelectedRoleKey(roleKey)
-    const targetRole = ALL_ROLES.find(r => r.key === roleKey)
-    if (targetRole) {
-      setDepartment(targetRole.defaultDept)
-      setJobTitle(targetRole.defaultTitle)
+    setError(null)
+
+    if (roleKey === 'employee') {
+      // Employee needs Department, Team, and Job Title
+      const defaultDept = 'Engineering'
+      const defaultTeam = 'Java'
+      const defaultTitle = 'Java Developer'
+      setDepartment(defaultDept)
+      setTeam(defaultTeam)
+      setJobTitle(defaultTitle)
+    } else if (roleKey === 'manager' || roleKey === 'depthead') {
+      // Manager & Dept Head only need Department
+      setDepartment(prev => (prev && DEPT_OPTIONS.includes(prev) ? prev : 'Engineering'))
+      setTeam('')
+      setJobTitle('')
+    } else {
+      // HR, L&D Admin, System Admin operate organization-wide (no department, no team, no job title)
+      setDepartment('')
+      setTeam('')
+      setJobTitle('')
+    }
+  }
+
+  // Handle department change for Employee or Manager/DeptHead
+  function handleDepartmentChange(newDept) {
+    setDepartment(newDept)
+    if (selectedRoleKey === 'employee') {
+      const teams = DEPARTMENT_TEAMS_MAP[newDept] || ['General Team']
+      const firstTeam = teams[0] || ''
+      setTeam(firstTeam)
+      const suggestions = TEAM_JOB_SUGGESTIONS[newDept]?.[firstTeam] || []
+      setJobTitle(suggestions[0] || `${newDept} Specialist`)
+    }
+  }
+
+  // Handle team change for Employee
+  function handleTeamChange(newTeam) {
+    setTeam(newTeam)
+    if (selectedRoleKey === 'employee') {
+      const suggestions = TEAM_JOB_SUGGESTIONS[department]?.[newTeam] || []
+      if (suggestions.length > 0) {
+        setJobTitle(suggestions[0])
+      }
     }
   }
 
   const strength = calcStrength(password)
   const passwordsMatch = password && confirmPassword && password === confirmPassword
   const passwordMismatch = confirmPassword && password !== confirmPassword
+
+  // Available teams for current department
+  const availableTeams = DEPARTMENT_TEAMS_MAP[department] || ['General Team']
+  
+  // Available AI job suggestions for current Employee department + team
+  const availableJobSuggestions = (selectedRoleKey === 'employee' && department && team)
+    ? (TEAM_JOB_SUGGESTIONS[department]?.[team] || [])
+    : []
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -213,6 +296,28 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
       setError('Please provide your Organization / Company name.')
       return
     }
+
+    // Role-specific frontend validation
+    if (selectedRoleKey === 'employee') {
+      if (!department) {
+        setError('Please select a Department for your Employee role.')
+        return
+      }
+      if (!team) {
+        setError('Please select a Team / Domain for your Employee role.')
+        return
+      }
+      if (!jobTitle.trim()) {
+        setError('Please specify your Job / Domain Title.')
+        return
+      }
+    } else if (selectedRoleKey === 'manager' || selectedRoleKey === 'depthead') {
+      if (!department) {
+        setError(`Please select a Department for your ${activeRoleObj.label} role.`)
+        return
+      }
+    }
+
     if (!agreedToTerms) {
       setError('Please accept the terms of service to continue.')
       return
@@ -220,24 +325,27 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
 
     setLoading(true)
 
+    // Build role-accurate payload
+    const isEmployee = selectedRoleKey === 'employee'
+    const isDeptScoped = selectedRoleKey === 'employee' || selectedRoleKey === 'manager' || selectedRoleKey === 'depthead'
+
     const payload = {
       fullName: fullName.trim(),
       email: email.trim().toLowerCase(),
       password,
       role: activeRoleObj.systemRole,
       company: company.trim(),
-      departmentName: department,
-      roleTitle: jobTitle.trim(),
-      bio: bio.trim() || `${activeRoleObj.label} in ${department} at ${company.trim()}.`
+      departmentName: isDeptScoped ? department : null,
+      teamName: isEmployee ? team : null,
+      roleTitle: isEmployee ? jobTitle.trim() : null,
+      bio: bio.trim() || `${activeRoleObj.label} at ${company.trim()}.`
     }
 
     try {
       const authData = await api.register(payload)
       setSuccess(true)
       setTimeout(() => {
-        // For employee, route to onboarding setup; for managers and admins, enter dashboard
-        const isNewEmployee = activeRoleObj.key === 'employee'
-        onLogin(activeRoleObj.key, authData, isNewEmployee)
+        onLogin(activeRoleObj.key, authData, isEmployee)
       }, 800)
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
@@ -325,8 +433,8 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
           {/* Included Capabilities Checklist */}
           <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
             <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-              <span>Role Responsibilities & Access</span>
-              <span className="text-lime-400 text-[10px] lowercase">connected to organization</span>
+              <span>Role Responsibilities & Scope</span>
+              <span className="text-lime-400 text-[10px] lowercase">enterprise RBAC</span>
             </div>
             <div className="space-y-2 mt-2">
               {activeRoleObj.capabilities.map((cap, idx) => (
@@ -349,13 +457,26 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
         <div className="text-slate-500 text-xs">© 2026 KnowledgeIQ Platform. All rights reserved.</div>
       </div>
 
-      {/* ── Right: Comprehensive Multi-Role Sign-Up Form ── */}
+      {/* ── Right: Multi-Role Sign-Up Form ── */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10 relative z-10 overflow-y-auto max-h-screen">
         <form
           id="signup-form"
           onSubmit={handleSubmit}
           className="w-full max-w-2xl glass rounded-3xl p-6 sm:p-9 fade-in my-auto border border-white/10 shadow-2xl"
         >
+          {/* Top Return to Sign In Button */}
+          <div className="mb-4">
+            <button
+              type="button"
+              id="signup-top-back"
+              onClick={onSwitchToLogin}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl transition-all shadow-sm group cursor-pointer"
+            >
+              <Icon name="arrow-left" className="w-3.5 h-3.5 text-lime-400 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back to Sign In</span>
+            </button>
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -413,7 +534,77 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
             </div>
           </div>
 
-          {/* ── 2. Account & Organization Fields ── */}
+          {/* ── 2. Role-Aware Organizational Scope Help Banner ── */}
+          <div className="mb-5">
+            {selectedRoleKey === 'manager' && (
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-3.5 text-xs text-indigo-300 flex items-start gap-3">
+                <Icon name="shield-check" className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Department Manager Scope</div>
+                  <p className="mt-0.5 text-indigo-200/90 leading-relaxed">
+                    You manage the entire department and all teams/domains within it. Direct reports will automatically appear on your management console. (One Manager per Department).
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedRoleKey === 'depthead' && (
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-3.5 text-xs text-cyan-300 flex items-start gap-3">
+                <Icon name="building" className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Department Head Scope</div>
+                  <p className="mt-0.5 text-cyan-200/90 leading-relaxed">
+                    You oversee the entire department, role benchmarks, competency frameworks, and learning budget allocations.
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedRoleKey === 'hr' && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 text-xs text-amber-300 flex items-start gap-3">
+                <Icon name="globe" className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Organization-Wide Scope</div>
+                  <p className="mt-0.5 text-amber-200/90 leading-relaxed">
+                    HR operates across the entire organization with cross-department workforce directory, strategic forecasting, and ROI analytics.
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedRoleKey === 'ldadmin' && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-3.5 text-xs text-purple-300 flex items-start gap-3">
+                <Icon name="graduation-cap" className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Organization-Wide Learning Scope</div>
+                  <p className="mt-0.5 text-purple-200/90 leading-relaxed">
+                    L&D manages learning and development, course catalogs, adaptive pathways, and certifications across the entire organization.
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedRoleKey === 'admin' && (
+              <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3.5 text-xs text-rose-300 flex items-start gap-3">
+                <Icon name="shield" className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Platform Administrator Scope</div>
+                  <p className="mt-0.5 text-rose-200/90 leading-relaxed">
+                    System Administration operates at the platform and organization level, governing users, roles, audit logs, and skill taxonomy.
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedRoleKey === 'employee' && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3.5 text-xs text-emerald-300 flex items-start gap-3">
+                <Icon name="user-check" className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-white">Employee Onboarding Workflow</div>
+                  <p className="mt-0.5 text-emerald-200/90 leading-relaxed">
+                    Select your Department, Team / Domain specialization, and Job Title to establish your benchmark requirements and customized AI learning path.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── 3. Account & Organization Fields ── */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Full Name */}
@@ -457,7 +648,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               </div>
             </div>
 
-            {/* Organization / Company Connection */}
+            {/* Organization / Company (REQUIRED FOR ALL ROLES) */}
             <div>
               <label htmlFor="signup-company" className="text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
                 <span>Organization / Company Name</span>
@@ -499,9 +690,105 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               )}
             </div>
 
-            {/* Department & Job Title Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Department */}
+            {/* ── 4. Role-Specific Organizational Fields ── */}
+
+            {/* (A) EMPLOYEE: Department → Team/Domain → Job Title + AI suggestions */}
+            {selectedRoleKey === 'employee' && (
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Department */}
+                  <div>
+                    <label htmlFor="signup-dept" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                      Department
+                    </label>
+                    <div className="relative">
+                      <Icon name="briefcase" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <select
+                        id="signup-dept"
+                        value={department}
+                        onChange={e => handleDepartmentChange(e.target.value)}
+                        required
+                        className="w-full bg-[#111625] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all appearance-none"
+                      >
+                        {DEPT_OPTIONS.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                      <Icon name="chevron-down" className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Team / Domain (Scoped strictly to Department) */}
+                  <div>
+                    <label htmlFor="signup-team" className="text-xs font-medium text-slate-300 mb-1.5 block">
+                      Team / Domain Specialization
+                    </label>
+                    <div className="relative">
+                      <Icon name="layers" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <select
+                        id="signup-team"
+                        value={team}
+                        onChange={e => handleTeamChange(e.target.value)}
+                        required
+                        className="w-full bg-[#111625] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all appearance-none"
+                      >
+                        {availableTeams.map(t => (
+                          <option key={t} value={t}>{t} Team</option>
+                        ))}
+                      </select>
+                      <Icon name="chevron-down" className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Job / Domain Title */}
+                <div>
+                  <label htmlFor="signup-jobtitle" className="text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span>Job / Domain Title</span>
+                    <span className="text-[10px] text-slate-400">e.g. for {department} → {team}</span>
+                  </label>
+                  <div className="relative">
+                    <Icon name="user-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      id="signup-jobtitle"
+                      type="text"
+                      value={jobTitle}
+                      onChange={e => setJobTitle(e.target.value)}
+                      placeholder="e.g. Java Developer"
+                      required
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                    />
+                  </div>
+
+                  {/* AI Suggestions strictly for Employee Department + Team */}
+                  {availableJobSuggestions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5 items-center">
+                      <span className="text-[10px] text-slate-400 font-medium mr-1">
+                        <Icon name="sparkles" className="w-3 h-3 inline text-lime-400 mr-1" />
+                        AI Suggestions for {department} ({team}):
+                      </span>
+                      {availableJobSuggestions.map(sug => (
+                        <button
+                          type="button"
+                          key={sug}
+                          onClick={() => setJobTitle(sug)}
+                          className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                            jobTitle === sug
+                              ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
+                              : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
+                          }`}
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* (B) MANAGER or DEPARTMENT HEAD: Department Selector ONLY (No team, no job title, no AI suggestions) */}
+            {(selectedRoleKey === 'manager' || selectedRoleKey === 'depthead') && (
               <div>
                 <label htmlFor="signup-dept" className="text-xs font-medium text-slate-300 mb-1.5 block">
                   Department
@@ -511,7 +798,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                   <select
                     id="signup-dept"
                     value={department}
-                    onChange={e => setDepartment(e.target.value)}
+                    onChange={e => handleDepartmentChange(e.target.value)}
                     required
                     className="w-full bg-[#111625] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all appearance-none"
                   >
@@ -521,51 +808,17 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                   </select>
                   <Icon name="chevron-down" className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-              </div>
-
-              {/* Job Title */}
-              <div>
-                <label htmlFor="signup-jobtitle" className="text-xs font-medium text-slate-300 mb-1.5 block">
-                  Job / Domain Title
-                </label>
-                <div className="relative">
-                  <Icon name="user-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="signup-jobtitle"
-                    type="text"
-                    value={jobTitle}
-                    onChange={e => setJobTitle(e.target.value)}
-                    placeholder="e.g. Java Developer"
-                    required
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Role Title Suggestions */}
-            {ROLE_SUGGESTIONS[department] && (
-              <div className="flex flex-wrap gap-1.5 items-center">
-                <span className="text-[10px] text-slate-500 font-medium mr-1">Suggestions for {department}:</span>
-                {ROLE_SUGGESTIONS[department].slice(0, 6).map(sug => (
-                  <button
-                    type="button"
-                    key={sug}
-                    onClick={() => setJobTitle(sug)}
-                    className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
-                      jobTitle === sug
-                        ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
-                        : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
-                    }`}
-                  >
-                    {sug}
-                  </button>
-                ))}
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {selectedRoleKey === 'manager' 
+                    ? 'As a Manager, you oversee all teams and direct reports within this department.'
+                    : 'As Department Head, you lead strategy and benchmarks for this entire department.'}
+                </p>
               </div>
             )}
 
+
             {/* Passwords */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               {/* Password */}
               <div>
                 <label htmlFor="signup-password" className="text-xs font-medium text-slate-300 mb-1.5 block">
@@ -654,7 +907,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               </div>
             </div>
 
-            {/* Terms */}
+            {/* Terms & Conditions */}
             <label
               htmlFor="signup-terms"
               className="flex items-start gap-3 cursor-pointer group pt-1"
@@ -690,9 +943,25 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               type="submit"
               id="signup-submit"
               disabled={loading || passwordMismatch || !agreedToTerms}
-              className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F1A] font-bold rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(166,226,46,0.5)] mt-2"
+              className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F1A] font-bold rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(166,226,46,0.5)] mt-2 cursor-pointer"
             >
               Register as {activeRoleObj.label} <Icon name="arrow-right" className="w-4 h-4" />
+            </button>
+
+            {/* Google OAuth */}
+            <button
+              type="button"
+              id="signup-google"
+              onClick={() => setShowGoogleModal(true)}
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47c-.28 1.48-1.13 2.73-2.4 3.58v3h3.88c2.27-2.09 3.54-5.17 3.54-8.82z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.92H1.3v3.09C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.31 14.32A7.2 7.2 0 0 1 4.89 12c0-.8.14-1.58.42-2.32V6.59H1.3A11.98 11.98 0 0 0 0 12c0 1.93.46 3.76 1.3 5.41l4.01-3.09z" />
+                <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.94 1.19 15.23 0 12 0 7.31 0 3.26 2.7 1.3 6.59l4.01 3.09C6.25 6.86 8.89 4.77 12 4.77z" />
+              </svg>
+              Sign up with Google
             </button>
 
             {/* Divider */}
@@ -707,13 +976,21 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
               type="button"
               id="signup-go-login"
               onClick={onSwitchToLogin}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-2.5 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-2.5 text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Icon name="log-in" className="w-4 h-4" /> Sign In to Existing Account
             </button>
           </div>
         </form>
       </div>
+
+      {/* Google Account Sign-In Modal */}
+      <GoogleSignInModal
+        isOpen={showGoogleModal}
+        onClose={() => setShowGoogleModal(false)}
+        onLoginSuccess={(appRole, authData) => onLogin(appRole, authData, activeRoleObj.key === 'employee')}
+      />
     </div>
   )
 }
+

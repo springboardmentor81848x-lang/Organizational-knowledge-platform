@@ -16,16 +16,23 @@ export function groupMembersIntoDomainTeams(profiles = [], departmentName = '') 
   }
 
   const domainMatchers = [
-    { key: 'java', name: 'Java Engineering Team', color: 'emerald', keywords: ['java', 'spring', 'jvm', 'j2ee', 'hibernate', 'microservices'] },
-    { key: 'python', name: 'Python Engineering Team', color: 'amber', keywords: ['python', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'pytorch'] },
-    { key: 'frontend', name: 'Frontend & UI Team', color: 'indigo', keywords: ['react', 'vue', 'angular', 'frontend', 'ui', 'ux', 'figma', 'css', 'tailwind', 'designer'] },
-    { key: 'cloud_devops', name: 'Cloud & DevOps Team', color: 'purple', keywords: ['devops', 'cloud', 'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'k8s', 'infra', 'terraform', 'ci/cd', 'security', 'sre'] },
-    { key: 'data', name: 'Data & Analytics Team', color: 'cyan', keywords: ['data', 'analytics', 'sql', 'bi', 'tableau', 'power bi', 'ml', 'ai', 'database'] },
-    { key: 'qa', name: 'Quality Engineering Team', color: 'rose', keywords: ['qa', 'test', 'automation', 'sdet', 'selenium', 'cypress'] },
-    { key: 'product', name: 'Product & Strategy Team', color: 'blue', keywords: ['product', 'scrum', 'agile', 'owner', 'manager'] },
-    { key: 'hr', name: 'Talent & HR Team', color: 'pink', keywords: ['talent', 'recruiting', 'hr', 'people', 'human'] },
-    { key: 'finance', name: 'Finance & Accounting Team', color: 'teal', keywords: ['finance', 'accountant', 'payroll', 'budget'] },
-    { key: 'sales_marketing', name: 'Sales & Growth Team', color: 'orange', keywords: ['sales', 'marketing', 'growth', 'seo', 'content'] }
+    // Engineering Department Teams
+    { key: 'java', name: 'Java Team', color: 'emerald', keywords: ['java', 'spring', 'jvm', 'j2ee', 'hibernate', 'microservices', 'backend engineer'] },
+    { key: 'python', name: 'Python Team', color: 'amber', keywords: ['python', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'pytorch'] },
+    { key: 'frontend', name: 'Frontend Team', color: 'indigo', keywords: ['react', 'vue', 'angular', 'frontend', 'ui', 'ux', 'figma', 'css', 'tailwind', 'product engineer'] },
+    { key: 'devops', name: 'DevOps Team', color: 'purple', keywords: ['devops', 'cloud', 'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'k8s', 'infra', 'terraform', 'ci/cd', 'security', 'sre', 'junior developer'] },
+    
+    // Finance Department Teams
+    { key: 'accounting', name: 'Accounting Team', color: 'teal', keywords: ['accounting', 'accountant', 'payroll', 'tax', 'audit', 'ledger', 'bookkeeper'] },
+    { key: 'analysis', name: 'Analysis Team', color: 'cyan', keywords: ['financial analyst', 'budget', 'financial modeling', 'valuation', 'planning', 'finance'] },
+    
+    // Marketing Department Teams
+    { key: 'digital_marketing', name: 'Digital Marketing Team', color: 'orange', keywords: ['digital marketing', 'seo', 'growth', 'ads', 'ppc', 'campaign', 'social media', 'sem'] },
+    { key: 'content', name: 'Content Team', color: 'rose', keywords: ['content', 'copywriter', 'copywriting', 'writer', 'brand', 'messaging', 'editorial'] },
+    
+    // Other Fallbacks
+    { key: 'data', name: 'Data Team', color: 'blue', keywords: ['data', 'analytics', 'sql', 'bi', 'tableau', 'power bi', 'ml', 'database'] },
+    { key: 'hr', name: 'Talent Team', color: 'pink', keywords: ['talent', 'recruiting', 'hr', 'people', 'human'] }
   ]
 
   const teamGroups = {}

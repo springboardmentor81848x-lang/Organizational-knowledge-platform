@@ -55,6 +55,9 @@ public class User {
     @JoinColumn(name = "manager_id")
     private User manager;
 
+    @Column(name = "team_name")
+    private String teamName;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 
@@ -146,6 +149,9 @@ public class User {
 
     public User getManager() { return manager; }
     public void setManager(User manager) { this.manager = manager; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
 
     public ZonedDateTime getCreatedAt() { return createdAt; }
     public ZonedDateTime getUpdatedAt() { return updatedAt; }

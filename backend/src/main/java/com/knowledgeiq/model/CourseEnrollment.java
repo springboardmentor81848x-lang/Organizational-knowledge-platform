@@ -1,5 +1,6 @@
 package com.knowledgeiq.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -8,18 +9,21 @@ import java.util.UUID;
 @Table(name = "course_enrollments", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "course_id"})
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class CourseEnrollment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"passwordHash", "roles", "manager", "directReports", "department", "organization", "hibernateLazyInitializer", "handler"})
     private User user;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private TrainingCourse course;
 
     @Column(nullable = false)

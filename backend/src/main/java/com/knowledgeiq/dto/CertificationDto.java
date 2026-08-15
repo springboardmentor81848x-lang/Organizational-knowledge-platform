@@ -43,6 +43,8 @@ public class CertificationDto {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getCertificationName() { return name; }
+    public void setCertificationName(String certificationName) { this.name = certificationName; }
 
     public String getIssuingOrganization() { return issuingOrganization; }
     public void setIssuingOrganization(String issuingOrganization) { this.issuingOrganization = issuingOrganization; }

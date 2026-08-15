@@ -315,20 +315,36 @@ export default function EditProfileModal({ isOpen, onClose, currentUser, onProfi
                   </div>
                 </Field>
 
-                <Field label="Job Title / Role" id="ep-role">
-                  <div className="relative">
-                    <Icon name="badge-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="ep-role"
-                      name="role"
-                      type="text"
-                      value={form.role}
-                      onChange={handleChange}
-                      placeholder="Senior Software Engineer"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                    />
-                  </div>
-                </Field>
+                {(!currentUser?.systemRole || currentUser.systemRole === 'EMPLOYEE' || currentUser.systemRole === 'employee') ? (
+                  <Field label="Job Title / Role" id="ep-role">
+                    <div className="relative">
+                      <Icon name="badge-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="ep-role"
+                        name="role"
+                        type="text"
+                        value={form.role}
+                        onChange={handleChange}
+                        placeholder="e.g. Java Developer"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
+                      />
+                    </div>
+                  </Field>
+                ) : (
+                  <Field label="Role Title (System Role)" id="ep-role">
+                    <div className="relative">
+                      <Icon name="shield-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="ep-role"
+                        name="role"
+                        type="text"
+                        value={form.role || currentUser?.title || currentUser?.role || 'Platform Role'}
+                        disabled
+                        className="w-full bg-white/5 border border-white/5 opacity-70 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-300 cursor-not-allowed"
+                      />
+                    </div>
+                  </Field>
+                )}
               </div>
 
               <Field label="Experience" id="ep-experience">

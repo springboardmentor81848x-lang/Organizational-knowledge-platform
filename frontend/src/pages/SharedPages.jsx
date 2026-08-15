@@ -8,7 +8,7 @@ import api from '../services/api.js'
 const API_BASE = ''
 
 // ── ProfilePage ───────────────────────────────────────────────────────────────
-export function ProfilePage({ role, user: appUser }) {
+export function ProfilePage({ role, user: appUser, onNav }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
@@ -66,6 +66,18 @@ export function ProfilePage({ role, user: appUser }) {
 
   return (
     <div className="fade-in space-y-6">
+      {onNav && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => onNav('dashboard')}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-xl transition-all shadow-sm"
+          >
+            <Icon name="arrow-left" className="w-3.5 h-3.5 text-lime-500 dark:text-lime-400" />
+            <span>Back to Dashboard</span>
+          </button>
+        </div>
+      )}
       {/* ── Hero card ── */}
       <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-6 sm:p-8">
         {loading ? (

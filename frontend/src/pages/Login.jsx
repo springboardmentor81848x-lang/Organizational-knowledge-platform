@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import Icon from '../components/Icon.jsx'
+import GoogleSignInModal from '../components/GoogleSignInModal.jsx'
 import api from '../services/api.js'
 
 export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManager, onSwitchToSignUpHR }) {
@@ -8,6 +9,7 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [showGoogleModal, setShowGoogleModal] = useState(false)
   const [error, setError] = useState(null)
 
   async function handleLogin(e, overrideEmail, overridePassword) {
@@ -56,6 +58,9 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
     }
   }
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  const isRealGoogleId = googleClientId && !googleClientId.includes('example') && !googleClientId.includes('your_google') && !googleClientId.startsWith('1234567890-')
+
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setGoogleLoading(true)
@@ -79,17 +84,29 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
           : 'employee'
         onLogin(appRole, authData)
       } catch (err) {
-        setError(err.message || 'Google sign-in failed. Please try again.')
+        setShowGoogleModal(true)
       } finally {
         setGoogleLoading(false)
       }
     },
     onError: (err) => {
-      console.error('Google Login Error:', err)
-      setError('Google sign-in was cancelled or failed. Please try again.')
+      console.log('Google OAuth popup returned error, opening account chooser:', err)
+      setShowGoogleModal(true)
     },
     flow: 'implicit'
   })
+
+  const handleGoogleClick = () => {
+    if (isRealGoogleId) {
+      try {
+        googleLogin()
+      } catch (e) {
+        setShowGoogleModal(true)
+      }
+    } else {
+      setShowGoogleModal(true)
+    }
+  }
 
   const isLoading = loading || googleLoading
 
@@ -203,7 +220,7 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
             <button
               type="button"
               id="login-google"
-              onClick={() => googleLogin()}
+              onClick={handleGoogleClick}
               className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-200 font-medium rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -339,6 +356,13 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
           </div>
         </form>
       </div>
+
+      {/* Google Account Sign-In Modal */}
+      <GoogleSignInModal
+        isOpen={showGoogleModal}
+        onClose={() => setShowGoogleModal(false)}
+        onLoginSuccess={(appRole, authData) => onLogin(appRole, authData)}
+      />
     </div>
   )
 }
