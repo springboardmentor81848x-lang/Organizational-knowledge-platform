@@ -25,6 +25,12 @@ public class TeamMemberAdapter extends RecyclerView.Adapter<TeamMemberAdapter.Me
         this.listener = listener;
     }
 
+    public void updateList(List<EmployeeResponse> newList) {
+        this.members.clear();
+        this.members.addAll(newList);
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public MemberViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

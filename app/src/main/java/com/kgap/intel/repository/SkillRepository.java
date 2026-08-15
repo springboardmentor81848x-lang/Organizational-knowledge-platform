@@ -41,10 +41,19 @@ public class SkillRepository {
                     public void onResponse(Call<List<EmployeeSkillResponse>> call, Response<List<EmployeeSkillResponse>> response) {
                         List<SkillItem> result = new ArrayList<>();
                         if (response.isSuccessful() && response.body() != null) {
+                            android.util.Log.d("SkillRepository", "Backend returned " + response.body().size() + " employee skills");
                             for (EmployeeSkillResponse es : response.body()) {
                                 SkillItem base = catalogMap.get(es.getSkillId());
                                 if (base != null) {
-                                    int proficiencyPercent = getProficiencyPercent(es.getProficiencyLevel());
+                                    int proficiencyPercent;
+                                    if (es.getProficiencyScore() != null) {
+                                        proficiencyPercent = es.getProficiencyScore().intValue();
+                                        android.util.Log.d("SkillRepository", "Using exact score: " + proficiencyPercent + " for " + base.getName());
+                                    } else {
+                                        proficiencyPercent = getProficiencyPercent(es.getProficiencyLevel());
+                                        android.util.Log.d("SkillRepository", "Score is NULL, using level fallback: " + proficiencyPercent + " for " + base.getName());
+                                    }
+
                                     result.add(new SkillItem(
                                         base.getId(),
                                         base.getName(),
@@ -52,20 +61,18 @@ public class SkillRepository {
                                         proficiencyPercent,
                                         es.getProficiencyLevel(),
                                         base.getExperience(),
-                                        "Updated"
+                                        "Updated",
+                                        es.getId()
                                     ));
                                 }
                             }
                         }
                         
-                        // Add mock skills for employee2
-                        if (result.isEmpty() && employeeId != null && employeeId == 9L) {
-                            result.add(new SkillItem("1", "Product Management", "Product", 85, "EXPERT", "5 years", "Mock"));
-                            result.add(new SkillItem("2", "Agile Methodology", "Management", 90, "EXPERT", "6 years", "Mock"));
-                            result.add(new SkillItem("3", "Data Analytics", "Technical", 60, "INTERMEDIATE", "2 years", "Mock"));
+                        if (!result.isEmpty()) {
+                            data.setValue(result);
+                        } else {
+                            data.setValue(new ArrayList<>());
                         }
-                        
-                        data.setValue(result);
                     }
 
                     @Override
@@ -82,6 +89,36 @@ public class SkillRepository {
         });
 
         return data;
+    }
+
+    public LiveData<List<SkillItem>> getCatalogSkills() {
+        MutableLiveData<List<SkillItem>> data = new MutableLiveData<>();
+        apiService.getAllSkills().enqueue(new Callback<List<SkillItem>>() {
+            @Override
+            public void onResponse(Call<List<SkillItem>> call, Response<List<SkillItem>> response) {
+                if (response.isSuccessful()) data.setValue(response.body());
+                else data.setValue(null);
+            }
+            @Override
+            public void onFailure(Call<List<SkillItem>> call, Throwable t) {
+                data.setValue(null);
+            }
+        });
+        return data;
+    }
+
+    public void addEmployeeSkill(Long employeeId, Long skillId, String proficiency, Callback<EmployeeSkillResponse> callback) {
+        com.kgap.intel.models.EmployeeSkillRequest request = new com.kgap.intel.models.EmployeeSkillRequest(employeeId, skillId, proficiency);
+        apiService.addEmployeeSkill(request).enqueue(callback);
+    }
+
+    public void deleteEmployeeSkill(Long employeeSkillId, Callback<Void> callback) {
+        apiService.deleteEmployeeSkill(employeeSkillId).enqueue(callback);
+    }
+
+    public void updateEmployeeSkill(Long employeeSkillId, Long employeeId, Long skillId, String proficiency, Callback<EmployeeSkillResponse> callback) {
+        com.kgap.intel.models.EmployeeSkillRequest request = new com.kgap.intel.models.EmployeeSkillRequest(employeeId, skillId, proficiency);
+        apiService.updateEmployeeSkill(employeeSkillId, request).enqueue(callback);
     }
 
     private int getProficiencyPercent(String level) {

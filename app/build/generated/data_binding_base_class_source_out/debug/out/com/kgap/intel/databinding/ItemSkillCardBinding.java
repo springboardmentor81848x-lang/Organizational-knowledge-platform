@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.kgap.intel.R;
@@ -25,7 +26,7 @@ public final class ItemSkillCardBinding implements ViewBinding {
   public final ImageButton btnDelete;
 
   @NonNull
-  public final ImageButton btnEdit;
+  public final MaterialButton btnTakeAssessment;
 
   @NonNull
   public final CircularProgressIndicator progressSkill;
@@ -46,13 +47,13 @@ public final class ItemSkillCardBinding implements ViewBinding {
   public final TextView tvSkillName;
 
   private ItemSkillCardBinding(@NonNull MaterialCardView rootView, @NonNull ImageButton btnDelete,
-      @NonNull ImageButton btnEdit, @NonNull CircularProgressIndicator progressSkill,
+      @NonNull MaterialButton btnTakeAssessment, @NonNull CircularProgressIndicator progressSkill,
       @NonNull TextView tvCategoryBadge, @NonNull TextView tvLastUpdated,
       @NonNull TextView tvProficiencyText, @NonNull TextView tvSkillInfo,
       @NonNull TextView tvSkillName) {
     this.rootView = rootView;
     this.btnDelete = btnDelete;
-    this.btnEdit = btnEdit;
+    this.btnTakeAssessment = btnTakeAssessment;
     this.progressSkill = progressSkill;
     this.tvCategoryBadge = tvCategoryBadge;
     this.tvLastUpdated = tvLastUpdated;
@@ -94,9 +95,9 @@ public final class ItemSkillCardBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btn_edit;
-      ImageButton btnEdit = ViewBindings.findChildViewById(rootView, id);
-      if (btnEdit == null) {
+      id = R.id.btn_take_assessment;
+      MaterialButton btnTakeAssessment = ViewBindings.findChildViewById(rootView, id);
+      if (btnTakeAssessment == null) {
         break missingId;
       }
 
@@ -136,7 +137,7 @@ public final class ItemSkillCardBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ItemSkillCardBinding((MaterialCardView) rootView, btnDelete, btnEdit,
+      return new ItemSkillCardBinding((MaterialCardView) rootView, btnDelete, btnTakeAssessment,
           progressSkill, tvCategoryBadge, tvLastUpdated, tvProficiencyText, tvSkillInfo,
           tvSkillName);
     }

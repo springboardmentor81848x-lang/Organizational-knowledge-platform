@@ -5,8 +5,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -20,12 +22,21 @@ public final class FragmentPeerAssessmentBinding implements ViewBinding {
   private final LinearLayout rootView;
 
   @NonNull
+  public final RecyclerView rvPendingRequests;
+
+  @NonNull
   public final MaterialToolbar toolbar;
 
+  @NonNull
+  public final TextView tvEmptyRequests;
+
   private FragmentPeerAssessmentBinding(@NonNull LinearLayout rootView,
-      @NonNull MaterialToolbar toolbar) {
+      @NonNull RecyclerView rvPendingRequests, @NonNull MaterialToolbar toolbar,
+      @NonNull TextView tvEmptyRequests) {
     this.rootView = rootView;
+    this.rvPendingRequests = rvPendingRequests;
     this.toolbar = toolbar;
+    this.tvEmptyRequests = tvEmptyRequests;
   }
 
   @Override
@@ -55,13 +66,26 @@ public final class FragmentPeerAssessmentBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.rv_pending_requests;
+      RecyclerView rvPendingRequests = ViewBindings.findChildViewById(rootView, id);
+      if (rvPendingRequests == null) {
+        break missingId;
+      }
+
       id = R.id.toolbar;
       MaterialToolbar toolbar = ViewBindings.findChildViewById(rootView, id);
       if (toolbar == null) {
         break missingId;
       }
 
-      return new FragmentPeerAssessmentBinding((LinearLayout) rootView, toolbar);
+      id = R.id.tv_empty_requests;
+      TextView tvEmptyRequests = ViewBindings.findChildViewById(rootView, id);
+      if (tvEmptyRequests == null) {
+        break missingId;
+      }
+
+      return new FragmentPeerAssessmentBinding((LinearLayout) rootView, rvPendingRequests, toolbar,
+          tvEmptyRequests);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

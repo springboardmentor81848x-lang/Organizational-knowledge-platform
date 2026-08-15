@@ -10,8 +10,10 @@ import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.kgap.intel.R;
 import java.lang.NullPointerException;
@@ -23,57 +25,97 @@ public final class FragmentAdminDashboardBinding implements ViewBinding {
   private final CoordinatorLayout rootView;
 
   @NonNull
-  public final MaterialButton btnActionAnalytics;
-
-  @NonNull
-  public final MaterialButton btnActionHeatmap;
-
-  @NonNull
-  public final MaterialButton btnActionReports;
-
-  @NonNull
-  public final MaterialButton btnActionUsers;
+  public final ShapeableImageView btnNotifications;
 
   @NonNull
   public final ShapeableImageView btnProfileAvatar;
 
   @NonNull
-  public final ItemStatusBinding statusApi;
+  public final MaterialCardView cardSystemStatus;
 
   @NonNull
-  public final ItemStatusBinding statusAuth;
+  public final MaterialCardView cardTotalUsers;
 
   @NonNull
-  public final ItemStatusBinding statusDb;
+  public final MaterialCardView cardUserSummary;
+
+  @NonNull
+  public final ItemHubButtonBinding hubAccess;
+
+  @NonNull
+  public final ItemHubButtonBinding hubMonitoring;
+
+  @NonNull
+  public final ItemHubButtonBinding hubMore;
+
+  @NonNull
+  public final ItemHubButtonBinding hubUsers;
+
+  @NonNull
+  public final MaterialButton qaAddUser;
+
+  @NonNull
+  public final MaterialButton qaAuditLogs;
+
+  @NonNull
+  public final MaterialButton qaSysSettings;
 
   @NonNull
   public final MaterialToolbar toolbar;
 
   @NonNull
+  public final TextView tvActiveUsers;
+
+  @NonNull
   public final TextView tvGreeting;
 
   @NonNull
-  public final TextView tvSubtitle;
+  public final TextView tvInactiveUsers;
+
+  @NonNull
+  public final TextView tvRoleCount;
+
+  @NonNull
+  public final TextView tvSystemStatus;
+
+  @NonNull
+  public final TextView tvTotalUsers;
+
+  @NonNull
+  public final ViewPager2 viewPagerBanner;
 
   private FragmentAdminDashboardBinding(@NonNull CoordinatorLayout rootView,
-      @NonNull MaterialButton btnActionAnalytics, @NonNull MaterialButton btnActionHeatmap,
-      @NonNull MaterialButton btnActionReports, @NonNull MaterialButton btnActionUsers,
-      @NonNull ShapeableImageView btnProfileAvatar, @NonNull ItemStatusBinding statusApi,
-      @NonNull ItemStatusBinding statusAuth, @NonNull ItemStatusBinding statusDb,
-      @NonNull MaterialToolbar toolbar, @NonNull TextView tvGreeting,
-      @NonNull TextView tvSubtitle) {
+      @NonNull ShapeableImageView btnNotifications, @NonNull ShapeableImageView btnProfileAvatar,
+      @NonNull MaterialCardView cardSystemStatus, @NonNull MaterialCardView cardTotalUsers,
+      @NonNull MaterialCardView cardUserSummary, @NonNull ItemHubButtonBinding hubAccess,
+      @NonNull ItemHubButtonBinding hubMonitoring, @NonNull ItemHubButtonBinding hubMore,
+      @NonNull ItemHubButtonBinding hubUsers, @NonNull MaterialButton qaAddUser,
+      @NonNull MaterialButton qaAuditLogs, @NonNull MaterialButton qaSysSettings,
+      @NonNull MaterialToolbar toolbar, @NonNull TextView tvActiveUsers,
+      @NonNull TextView tvGreeting, @NonNull TextView tvInactiveUsers,
+      @NonNull TextView tvRoleCount, @NonNull TextView tvSystemStatus,
+      @NonNull TextView tvTotalUsers, @NonNull ViewPager2 viewPagerBanner) {
     this.rootView = rootView;
-    this.btnActionAnalytics = btnActionAnalytics;
-    this.btnActionHeatmap = btnActionHeatmap;
-    this.btnActionReports = btnActionReports;
-    this.btnActionUsers = btnActionUsers;
+    this.btnNotifications = btnNotifications;
     this.btnProfileAvatar = btnProfileAvatar;
-    this.statusApi = statusApi;
-    this.statusAuth = statusAuth;
-    this.statusDb = statusDb;
+    this.cardSystemStatus = cardSystemStatus;
+    this.cardTotalUsers = cardTotalUsers;
+    this.cardUserSummary = cardUserSummary;
+    this.hubAccess = hubAccess;
+    this.hubMonitoring = hubMonitoring;
+    this.hubMore = hubMore;
+    this.hubUsers = hubUsers;
+    this.qaAddUser = qaAddUser;
+    this.qaAuditLogs = qaAuditLogs;
+    this.qaSysSettings = qaSysSettings;
     this.toolbar = toolbar;
+    this.tvActiveUsers = tvActiveUsers;
     this.tvGreeting = tvGreeting;
-    this.tvSubtitle = tvSubtitle;
+    this.tvInactiveUsers = tvInactiveUsers;
+    this.tvRoleCount = tvRoleCount;
+    this.tvSystemStatus = tvSystemStatus;
+    this.tvTotalUsers = tvTotalUsers;
+    this.viewPagerBanner = viewPagerBanner;
   }
 
   @Override
@@ -103,27 +145,9 @@ public final class FragmentAdminDashboardBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
-      id = R.id.btn_action_analytics;
-      MaterialButton btnActionAnalytics = ViewBindings.findChildViewById(rootView, id);
-      if (btnActionAnalytics == null) {
-        break missingId;
-      }
-
-      id = R.id.btn_action_heatmap;
-      MaterialButton btnActionHeatmap = ViewBindings.findChildViewById(rootView, id);
-      if (btnActionHeatmap == null) {
-        break missingId;
-      }
-
-      id = R.id.btn_action_reports;
-      MaterialButton btnActionReports = ViewBindings.findChildViewById(rootView, id);
-      if (btnActionReports == null) {
-        break missingId;
-      }
-
-      id = R.id.btn_action_users;
-      MaterialButton btnActionUsers = ViewBindings.findChildViewById(rootView, id);
-      if (btnActionUsers == null) {
+      id = R.id.btn_notifications;
+      ShapeableImageView btnNotifications = ViewBindings.findChildViewById(rootView, id);
+      if (btnNotifications == null) {
         break missingId;
       }
 
@@ -133,30 +157,79 @@ public final class FragmentAdminDashboardBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.status_api;
-      View statusApi = ViewBindings.findChildViewById(rootView, id);
-      if (statusApi == null) {
+      id = R.id.card_system_status;
+      MaterialCardView cardSystemStatus = ViewBindings.findChildViewById(rootView, id);
+      if (cardSystemStatus == null) {
         break missingId;
       }
-      ItemStatusBinding binding_statusApi = ItemStatusBinding.bind(statusApi);
 
-      id = R.id.status_auth;
-      View statusAuth = ViewBindings.findChildViewById(rootView, id);
-      if (statusAuth == null) {
+      id = R.id.card_total_users;
+      MaterialCardView cardTotalUsers = ViewBindings.findChildViewById(rootView, id);
+      if (cardTotalUsers == null) {
         break missingId;
       }
-      ItemStatusBinding binding_statusAuth = ItemStatusBinding.bind(statusAuth);
 
-      id = R.id.status_db;
-      View statusDb = ViewBindings.findChildViewById(rootView, id);
-      if (statusDb == null) {
+      id = R.id.card_user_summary;
+      MaterialCardView cardUserSummary = ViewBindings.findChildViewById(rootView, id);
+      if (cardUserSummary == null) {
         break missingId;
       }
-      ItemStatusBinding binding_statusDb = ItemStatusBinding.bind(statusDb);
+
+      id = R.id.hub_access;
+      View hubAccess = ViewBindings.findChildViewById(rootView, id);
+      if (hubAccess == null) {
+        break missingId;
+      }
+      ItemHubButtonBinding binding_hubAccess = ItemHubButtonBinding.bind(hubAccess);
+
+      id = R.id.hub_monitoring;
+      View hubMonitoring = ViewBindings.findChildViewById(rootView, id);
+      if (hubMonitoring == null) {
+        break missingId;
+      }
+      ItemHubButtonBinding binding_hubMonitoring = ItemHubButtonBinding.bind(hubMonitoring);
+
+      id = R.id.hub_more;
+      View hubMore = ViewBindings.findChildViewById(rootView, id);
+      if (hubMore == null) {
+        break missingId;
+      }
+      ItemHubButtonBinding binding_hubMore = ItemHubButtonBinding.bind(hubMore);
+
+      id = R.id.hub_users;
+      View hubUsers = ViewBindings.findChildViewById(rootView, id);
+      if (hubUsers == null) {
+        break missingId;
+      }
+      ItemHubButtonBinding binding_hubUsers = ItemHubButtonBinding.bind(hubUsers);
+
+      id = R.id.qa_add_user;
+      MaterialButton qaAddUser = ViewBindings.findChildViewById(rootView, id);
+      if (qaAddUser == null) {
+        break missingId;
+      }
+
+      id = R.id.qa_audit_logs;
+      MaterialButton qaAuditLogs = ViewBindings.findChildViewById(rootView, id);
+      if (qaAuditLogs == null) {
+        break missingId;
+      }
+
+      id = R.id.qa_sys_settings;
+      MaterialButton qaSysSettings = ViewBindings.findChildViewById(rootView, id);
+      if (qaSysSettings == null) {
+        break missingId;
+      }
 
       id = R.id.toolbar;
       MaterialToolbar toolbar = ViewBindings.findChildViewById(rootView, id);
       if (toolbar == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_active_users;
+      TextView tvActiveUsers = ViewBindings.findChildViewById(rootView, id);
+      if (tvActiveUsers == null) {
         break missingId;
       }
 
@@ -166,15 +239,41 @@ public final class FragmentAdminDashboardBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tv_subtitle;
-      TextView tvSubtitle = ViewBindings.findChildViewById(rootView, id);
-      if (tvSubtitle == null) {
+      id = R.id.tv_inactive_users;
+      TextView tvInactiveUsers = ViewBindings.findChildViewById(rootView, id);
+      if (tvInactiveUsers == null) {
         break missingId;
       }
 
-      return new FragmentAdminDashboardBinding((CoordinatorLayout) rootView, btnActionAnalytics,
-          btnActionHeatmap, btnActionReports, btnActionUsers, btnProfileAvatar, binding_statusApi,
-          binding_statusAuth, binding_statusDb, toolbar, tvGreeting, tvSubtitle);
+      id = R.id.tv_role_count;
+      TextView tvRoleCount = ViewBindings.findChildViewById(rootView, id);
+      if (tvRoleCount == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_system_status;
+      TextView tvSystemStatus = ViewBindings.findChildViewById(rootView, id);
+      if (tvSystemStatus == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_total_users;
+      TextView tvTotalUsers = ViewBindings.findChildViewById(rootView, id);
+      if (tvTotalUsers == null) {
+        break missingId;
+      }
+
+      id = R.id.viewPagerBanner;
+      ViewPager2 viewPagerBanner = ViewBindings.findChildViewById(rootView, id);
+      if (viewPagerBanner == null) {
+        break missingId;
+      }
+
+      return new FragmentAdminDashboardBinding((CoordinatorLayout) rootView, btnNotifications,
+          btnProfileAvatar, cardSystemStatus, cardTotalUsers, cardUserSummary, binding_hubAccess,
+          binding_hubMonitoring, binding_hubMore, binding_hubUsers, qaAddUser, qaAuditLogs,
+          qaSysSettings, toolbar, tvActiveUsers, tvGreeting, tvInactiveUsers, tvRoleCount,
+          tvSystemStatus, tvTotalUsers, viewPagerBanner);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@android:drawable/ic_menu_today"
+            android:title="Dashboard" />
+        <item
+            android:id="@+id/nav_my_mentors"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="My Mentors" />
+        <item
+            android:id="@+id/nav_my_mentees"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="My Mentees" />
+        <item
+            android:id="@+id/nav_explore"
+            android:icon="@android:drawable/ic_menu_search"
+            android:title="Explore Mentors" />
+        <item
+            android:id="@+id/nav_sessions"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Sessions" />
+    </group>
+
+    <item android:title="Support">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@android:drawable/ic_menu_preferences"
+                android:title="Settings" />
+            <item
+                android:id="@+id/nav_help"
+                android:icon="@android:drawable/ic_menu_help"
+                android:title="Help Center" />
+        </menu>
+    </item>
+
+</menu>

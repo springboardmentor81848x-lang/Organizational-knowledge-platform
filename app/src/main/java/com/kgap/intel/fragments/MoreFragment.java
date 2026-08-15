@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -44,28 +45,27 @@ public class MoreFragment extends Fragment {
     }
 
     private void setupOptions() {
-        ViewProfileRowBinding certs = ViewProfileRowBinding.bind(binding.optCerts.getRoot());
-        certs.tvLabel.setText("Manage Certifications");
-        certs.tvValue.setText("View and add professional certificates");
-        certs.getRoot().setOnClickListener(v -> switchFragment(new CertificationsFragment()));
+        ViewProfileRowBinding settings = ViewProfileRowBinding.bind(binding.optSettings.getRoot());
+        settings.tvLabel.setText("System Settings");
+        settings.tvValue.setText("General platform configuration");
 
-        ViewProfileRowBinding ach = ViewProfileRowBinding.bind(binding.optAchievements.getRoot());
-        ach.tvLabel.setText("My Achievements");
-        ach.tvValue.setText("Track your badges and rewards");
-        ach.getRoot().setOnClickListener(v -> switchFragment(new AchievementsFragment()));
+        ViewProfileRowBinding backup = ViewProfileRowBinding.bind(binding.optBackup.getRoot());
+        backup.tvLabel.setText("Backup & Restore");
+        backup.tvValue.setText("Manage database backups");
+        backup.getRoot().setOnClickListener(v -> Toast.makeText(getContext(), "Backup service active", Toast.LENGTH_SHORT).show());
 
         ViewProfileRowBinding notif = ViewProfileRowBinding.bind(binding.optNotifs.getRoot());
         notif.tvLabel.setText("Notifications");
-        notif.tvValue.setText("View recent app alerts");
+        notif.tvValue.setText("Manage admin alerts");
         notif.getRoot().setOnClickListener(v -> switchFragment(new NotificationsFragment()));
 
-        ViewProfileRowBinding set = ViewProfileRowBinding.bind(binding.optSettings.getRoot());
-        set.tvLabel.setText("Settings");
-        set.tvValue.setText("App preferences and security");
-
         ViewProfileRowBinding help = ViewProfileRowBinding.bind(binding.optHelp.getRoot());
-        help.tvLabel.setText("Help & About");
-        help.tvValue.setText("Contact support and app info");
+        help.tvLabel.setText("Help & Support");
+        help.tvValue.setText("Contact technical support");
+
+        ViewProfileRowBinding about = ViewProfileRowBinding.bind(binding.optAbout.getRoot());
+        about.tvLabel.setText("About KGap");
+        about.tvValue.setText("Version 2.1.0 (Enterprise)");
     }
 
     private void switchFragment(Fragment fragment) {

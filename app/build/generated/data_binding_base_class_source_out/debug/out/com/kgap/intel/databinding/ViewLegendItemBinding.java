@@ -4,7 +4,7 @@ package com.kgap.intel.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,7 +17,7 @@ import java.lang.String;
 
 public final class ViewLegendItemBinding implements ViewBinding {
   @NonNull
-  private final RelativeLayout rootView;
+  private final LinearLayout rootView;
 
   @NonNull
   public final TextView tvLegendCount;
@@ -28,7 +28,7 @@ public final class ViewLegendItemBinding implements ViewBinding {
   @NonNull
   public final View viewDot;
 
-  private ViewLegendItemBinding(@NonNull RelativeLayout rootView, @NonNull TextView tvLegendCount,
+  private ViewLegendItemBinding(@NonNull LinearLayout rootView, @NonNull TextView tvLegendCount,
       @NonNull TextView tvLegendLabel, @NonNull View viewDot) {
     this.rootView = rootView;
     this.tvLegendCount = tvLegendCount;
@@ -38,7 +38,7 @@ public final class ViewLegendItemBinding implements ViewBinding {
 
   @Override
   @NonNull
-  public RelativeLayout getRoot() {
+  public LinearLayout getRoot() {
     return rootView;
   }
 
@@ -81,7 +81,7 @@ public final class ViewLegendItemBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ViewLegendItemBinding((RelativeLayout) rootView, tvLegendCount, tvLegendLabel,
+      return new ViewLegendItemBinding((LinearLayout) rootView, tvLegendCount, tvLegendLabel,
           viewDot);
     }
     String missingId = rootView.getResources().getResourceName(id);

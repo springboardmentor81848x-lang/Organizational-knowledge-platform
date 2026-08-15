@@ -26,19 +26,13 @@ public final class FragmentMoreBinding implements ViewBinding {
   public final MaterialButton btnLogout;
 
   @NonNull
-  public final MaterialCardView cardAchievements;
-
-  @NonNull
-  public final MaterialCardView cardCerts;
-
-  @NonNull
   public final MaterialCardView cardProfile;
 
   @NonNull
-  public final ViewProfileRowBinding optAchievements;
+  public final ViewProfileRowBinding optAbout;
 
   @NonNull
-  public final ViewProfileRowBinding optCerts;
+  public final ViewProfileRowBinding optBackup;
 
   @NonNull
   public final ViewProfileRowBinding optHelp;
@@ -59,19 +53,16 @@ public final class FragmentMoreBinding implements ViewBinding {
   public final TextView tvName;
 
   private FragmentMoreBinding(@NonNull CoordinatorLayout rootView,
-      @NonNull MaterialButton btnLogout, @NonNull MaterialCardView cardAchievements,
-      @NonNull MaterialCardView cardCerts, @NonNull MaterialCardView cardProfile,
-      @NonNull ViewProfileRowBinding optAchievements, @NonNull ViewProfileRowBinding optCerts,
+      @NonNull MaterialButton btnLogout, @NonNull MaterialCardView cardProfile,
+      @NonNull ViewProfileRowBinding optAbout, @NonNull ViewProfileRowBinding optBackup,
       @NonNull ViewProfileRowBinding optHelp, @NonNull ViewProfileRowBinding optNotifs,
       @NonNull ViewProfileRowBinding optSettings, @NonNull MaterialToolbar toolbar,
       @NonNull TextView tvEmail, @NonNull TextView tvName) {
     this.rootView = rootView;
     this.btnLogout = btnLogout;
-    this.cardAchievements = cardAchievements;
-    this.cardCerts = cardCerts;
     this.cardProfile = cardProfile;
-    this.optAchievements = optAchievements;
-    this.optCerts = optCerts;
+    this.optAbout = optAbout;
+    this.optBackup = optBackup;
     this.optHelp = optHelp;
     this.optNotifs = optNotifs;
     this.optSettings = optSettings;
@@ -113,37 +104,25 @@ public final class FragmentMoreBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.card_achievements;
-      MaterialCardView cardAchievements = ViewBindings.findChildViewById(rootView, id);
-      if (cardAchievements == null) {
-        break missingId;
-      }
-
-      id = R.id.card_certs;
-      MaterialCardView cardCerts = ViewBindings.findChildViewById(rootView, id);
-      if (cardCerts == null) {
-        break missingId;
-      }
-
       id = R.id.card_profile;
       MaterialCardView cardProfile = ViewBindings.findChildViewById(rootView, id);
       if (cardProfile == null) {
         break missingId;
       }
 
-      id = R.id.opt_achievements;
-      View optAchievements = ViewBindings.findChildViewById(rootView, id);
-      if (optAchievements == null) {
+      id = R.id.opt_about;
+      View optAbout = ViewBindings.findChildViewById(rootView, id);
+      if (optAbout == null) {
         break missingId;
       }
-      ViewProfileRowBinding binding_optAchievements = ViewProfileRowBinding.bind(optAchievements);
+      ViewProfileRowBinding binding_optAbout = ViewProfileRowBinding.bind(optAbout);
 
-      id = R.id.opt_certs;
-      View optCerts = ViewBindings.findChildViewById(rootView, id);
-      if (optCerts == null) {
+      id = R.id.opt_backup;
+      View optBackup = ViewBindings.findChildViewById(rootView, id);
+      if (optBackup == null) {
         break missingId;
       }
-      ViewProfileRowBinding binding_optCerts = ViewProfileRowBinding.bind(optCerts);
+      ViewProfileRowBinding binding_optBackup = ViewProfileRowBinding.bind(optBackup);
 
       id = R.id.opt_help;
       View optHelp = ViewBindings.findChildViewById(rootView, id);
@@ -184,9 +163,9 @@ public final class FragmentMoreBinding implements ViewBinding {
         break missingId;
       }
 
-      return new FragmentMoreBinding((CoordinatorLayout) rootView, btnLogout, cardAchievements,
-          cardCerts, cardProfile, binding_optAchievements, binding_optCerts, binding_optHelp,
-          binding_optNotifs, binding_optSettings, toolbar, tvEmail, tvName);
+      return new FragmentMoreBinding((CoordinatorLayout) rootView, btnLogout, cardProfile,
+          binding_optAbout, binding_optBackup, binding_optHelp, binding_optNotifs,
+          binding_optSettings, toolbar, tvEmail, tvName);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

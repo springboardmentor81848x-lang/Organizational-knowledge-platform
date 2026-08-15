@@ -1,11 +1,11 @@
 [
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_status.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_status.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentorship_session.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentorship_session.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_skills_hub.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_skills_hub.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentor_card_modern.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentor_card_modern.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\view_profile_row.xml",
@@ -24,20 +24,20 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_role_card.xml"
     },
     {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentor_mentees.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentor_mentees.xml"
+    },
+    {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_learning.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_learning.xml"
     },
     {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_user_details.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_user_details.xml"
+    },
+    {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_skill_card.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_skill_card.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\spinner_item.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\spinner_item.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_manager_learning_hub.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_manager_learning_hub.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_structured_learning_path.xml",
@@ -48,16 +48,236 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_skill_row.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_learning_hub.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_learning_hub.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_skill.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_skill.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship_request.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship_request.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_community_qa.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_community_qa.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_dept_skill_coverage.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_dept_skill_coverage.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_more.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_more.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_skill_assessment.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_skill_assessment.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_knowledge_resource_details.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_knowledge_resource_details.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_heatmap.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_heatmap.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_gap_analysis.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_gap_analysis.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_dept_head_skills.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_dept_head_skills.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_recommendation.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_recommendation.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_gap_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_gap_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_dept_employee.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_dept_employee.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_department_list.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_department_list.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_user_management.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_user_management.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_achievements.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_achievements.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_team_directory.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_team_directory.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\layout_nav_header_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_nav_header_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\view_legend_item.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\view_legend_item.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentorship_activity.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentorship_activity.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_hr_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_hr_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_dept_head_learning.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_dept_head_learning.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship_home.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_notifications.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_notifications.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\list_item_dropdown.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\list_item_dropdown.xml"
+    },
+    {
+        "merged": "com.kgap.intel.app-mergeDebugResources-2:/layout/fragment_home.xml",
+        "source": "com.kgap.intel.app-main-5:/layout/fragment_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_heatmap_cell.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_heatmap_cell.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_manager_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_manager_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship_sessions.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship_sessions.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_knowledge_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_knowledge_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\layout_schedule_session_bottom_sheet.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_schedule_session_bottom_sheet.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_banner_slide.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_banner_slide.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_splash.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\activity_splash.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_department.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_department.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\layout_summary_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_summary_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_gap_area.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_gap_area.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_assessment_result.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_assessment_result.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_team_member.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_team_member.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\layout_summary_card_compact.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_summary_card_compact.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_course.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_course.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_high_risk_gap.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_high_risk_gap.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_certification.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_certification.xml"
+    },
+    {
+        "merged": "com.kgap.intel.app-mergeDebugResources-2:/layout/item_active_goal.xml",
+        "source": "com.kgap.intel.app-main-5:/layout/item_active_goal.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_status.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_status.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_qa_answer_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_qa_answer_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_skills_hub.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_skills_hub.xml"
+    },
+    {
+        "merged": "com.kgap.intel.app-mergeDebugResources-2:/layout/fragment_my_progress.xml",
+        "source": "com.kgap.intel.app-main-5:/layout/fragment_my_progress.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_qa_details.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_qa_details.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentee_summary.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentee_summary.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentor_review.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentor_review.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\spinner_item.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\spinner_item.xml"
+    },
+    {
+        "merged": "com.kgap.intel.app-mergeDebugResources-2:/layout/item_activity_timeline.xml",
+        "source": "com.kgap.intel.app-main-5:/layout/item_activity_timeline.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_manager_learning_hub.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_manager_learning_hub.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_peer_assessment.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_peer_assessment.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_skill.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_skill.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_learning_hub.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_learning_hub.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_analytics_hub.xml",
@@ -68,16 +288,28 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_manager_skills_hub.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_profile.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_profile.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_access_management.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_access_management.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_find_mentor.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_find_mentor.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_knowledge_hub.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_knowledge_hub.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_register.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\activity_register.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_more.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_more.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_profile.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_profile.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_knowledge_comment.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_knowledge_comment.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_login.xml",
@@ -96,24 +328,12 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_add_skill_bottom_sheet.xml"
     },
     {
-        "merged": "com.kgap.intel.app-mergeDebugResources-2:/layout/fragment_profile.xml",
-        "source": "com.kgap.intel.app-main-5:/layout/fragment_profile.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentor_profile.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentor_profile.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_heatmap.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_heatmap.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_gap_analysis.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_gap_analysis.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_recommendation.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_recommendation.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_gap_card.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_gap_card.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_hub_button.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_hub_button.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_ai_recommendations.xml",
@@ -128,36 +348,28 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_admin_dashboard.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_achievements.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_achievements.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_department_detail.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_department_detail.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_team_directory.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_team_directory.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_peer_request.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_peer_request.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_skill_gap.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_skill_gap.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\view_legend_item.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\view_legend_item.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_hr_dashboard.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_hr_dashboard.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentor_card_search.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentor_card_search.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_skills.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_skills.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\list_item_dropdown.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\list_item_dropdown.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_notifications.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_notifications.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_dept_head_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_dept_head_dashboard.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_certifications.xml",
@@ -172,12 +384,12 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_reports.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_heatmap_cell.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_heatmap_cell.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\layout_mentorship_request_bottom_sheet.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\layout_mentorship_request_bottom_sheet.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_manager_dashboard.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_manager_dashboard.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_ld_programs.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_ld_programs.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\view_insight_card.xml",
@@ -192,39 +404,39 @@
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_home.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_banner_slide.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_banner_slide.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_dept_head_employees.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_dept_head_employees.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_splash.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\activity_splash.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_ld_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_ld_dashboard.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_gap_area.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_gap_area.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_qa_question_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_qa_question_card.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_team_member.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_team_member.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_training_program.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_training_program.xml"
+    },
+    {
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_monitoring.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_monitoring.xml"
     },
     {
         "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\view_legend_dot.xml",
         "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\view_legend_dot.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\activity_main.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\activity_main.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_knowledge_resource_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_knowledge_resource_card.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_course.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_course.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentor_dashboard.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentor_dashboard.xml"
     },
     {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\fragment_mentorship.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\fragment_mentorship.xml"
-    },
-    {
-        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_certification.xml",
-        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_certification.xml"
+        "merged": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-mergeDebugResources-2:\\layout\\item_mentorship_session_card.xml",
+        "source": "C:\\Users\\kripa\\.gradle\\daemon\\9.4.1\\com.kgap.intel.app-main-5:\\layout\\item_mentorship_session_card.xml"
     }
 ]

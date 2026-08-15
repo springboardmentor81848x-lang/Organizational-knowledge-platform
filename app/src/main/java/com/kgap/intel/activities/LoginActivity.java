@@ -3,7 +3,7 @@ package com.kgap.intel.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
- import android.util.Log;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -41,16 +41,16 @@ public class LoginActivity extends AppCompatActivity {
             binding.btnSignIn.setEnabled(false);
             binding.pbLoading.setVisibility(View.VISIBLE);
 
-            // Timeout fallback
+            // Timeout fallback - Removed automatic demo mode trigger for "real data only" requirement
             final Handler handler = new Handler();
             final Runnable timeoutTask = () -> {
                 if (binding.pbLoading.getVisibility() == View.VISIBLE) {
                     binding.pbLoading.setVisibility(View.GONE);
                     binding.btnSignIn.setEnabled(true);
-                    showOfflineModeDialog(email);
+                    Toast.makeText(LoginActivity.this, "Connection timeout. Please check your server.", Toast.LENGTH_LONG).show();
                 }
             };
-            handler.postDelayed(timeoutTask, 3000);
+            handler.postDelayed(timeoutTask, 5000);
 
             viewModel.login(email, password).observe(this, response -> {
                 handler.removeCallbacks(timeoutTask);
@@ -61,6 +61,10 @@ public class LoginActivity extends AppCompatActivity {
                     SharedPrefManager prefManager = SharedPrefManager.getInstance(this);
                     prefManager.saveToken(response.getToken());
                     
+                    if (response.getId() != null) {
+                        prefManager.saveUserId(response.getId());
+                    }
+
                     String displayName = (response.getName() != null && !response.getName().isEmpty()) 
                                          ? response.getName() : email.split("@")[0];
                     prefManager.saveUserName(displayName);
@@ -71,11 +75,11 @@ public class LoginActivity extends AppCompatActivity {
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
                 } else {
+                    String errorMsg = "Authentication failed. Please check your credentials.";
                     if (response != null && response.getToken() != null && response.getRole() == null) {
-                        Toast.makeText(this, "Authentication error: Missing user role", Toast.LENGTH_LONG).show();
-                    } else {
-                        showOfflineModeDialog(email);
+                        errorMsg = "Authentication error: Missing user role from server.";
                     }
+                    Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             });
         });
@@ -85,59 +89,5 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         binding.btnBack.setOnClickListener(v -> finish());
-
-        // Secret Demo Trigger: Long click logo if stuck
-        binding.ivLogo.setOnLongClickListener(v -> {
-            showOfflineModeDialog("demo@kgap.com");
-            return true;
-        });
-    }
-
-    private void showOfflineModeDialog(String email) {
-        String[] demoRoles = {"Employee", "Manager", "HR Specialist", "System Administrator"};
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Demo Mode")
-                .setMessage("Unable to reach the server. Select a role to test the application:")
-                .setSingleChoiceItems(demoRoles, 0, (dialog, which) -> {
-                    String selectedRoleText = demoRoles[which];
-                    String demoName = "User";
-                    String demoEmail = "user@kgap.com";
-                    String canonicalRole = "EMPLOYEE";
-                    
-                    switch (selectedRoleText) {
-                        case "Employee": 
-                            demoName = "Sarah Johnson"; 
-                            demoEmail = "employee2@kgap.com";
-                            canonicalRole = "EMPLOYEE";
-                            break;
-                        case "Manager": 
-                            demoName = "Riya Mehta"; 
-                            demoEmail = "manager@kgap.com";
-                            canonicalRole = "MANAGER";
-                            break;
-                        case "HR Specialist": 
-                            demoName = "Neha Patil"; 
-                            demoEmail = "hr@kgap.com";
-                            canonicalRole = "HR";
-                            break;
-                        case "System Administrator": 
-                            demoName = "Admin User"; 
-                            demoEmail = "admin@kgap.com";
-                            canonicalRole = "ADMIN";
-                            break;
-                    }
-                    
-                    SharedPrefManager prefManager = SharedPrefManager.getInstance(this);
-                    prefManager.saveToken("demo_token");
-                    prefManager.saveUserName(demoName);
-                    prefManager.saveUserEmail(demoEmail);
-                    prefManager.saveUserRole(canonicalRole);
-                    prefManager.setIsLoggedIn(true);
-                    
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 }

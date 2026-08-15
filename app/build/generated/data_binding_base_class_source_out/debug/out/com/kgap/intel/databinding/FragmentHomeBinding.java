@@ -40,16 +40,16 @@ public final class FragmentHomeBinding implements ViewBinding {
   public final MaterialCardView cardNotifSummary;
 
   @NonNull
-  public final MaterialCardView hubLearning;
+  public final ItemHubButtonBinding hubLearning;
 
   @NonNull
-  public final MaterialCardView hubMentor;
+  public final ItemHubButtonBinding hubMentor;
 
   @NonNull
-  public final MaterialCardView hubMore;
+  public final ItemHubButtonBinding hubMore;
 
   @NonNull
-  public final MaterialCardView hubSkills;
+  public final ItemHubButtonBinding hubSkills;
 
   @NonNull
   public final MaterialButton qaAssess;
@@ -90,9 +90,9 @@ public final class FragmentHomeBinding implements ViewBinding {
   private FragmentHomeBinding(@NonNull CoordinatorLayout rootView,
       @NonNull ShapeableImageView btnNotifications, @NonNull ShapeableImageView btnProfileAvatar,
       @NonNull MaterialCardView cardContImg, @NonNull MaterialCardView cardContinueLearning,
-      @NonNull MaterialCardView cardNotifSummary, @NonNull MaterialCardView hubLearning,
-      @NonNull MaterialCardView hubMentor, @NonNull MaterialCardView hubMore,
-      @NonNull MaterialCardView hubSkills, @NonNull MaterialButton qaAssess,
+      @NonNull MaterialCardView cardNotifSummary, @NonNull ItemHubButtonBinding hubLearning,
+      @NonNull ItemHubButtonBinding hubMentor, @NonNull ItemHubButtonBinding hubMore,
+      @NonNull ItemHubButtonBinding hubSkills, @NonNull MaterialButton qaAssess,
       @NonNull MaterialButton qaContinue, @NonNull MaterialButton qaGaps,
       @NonNull MaterialToolbar toolbar, @NonNull TextView tvDashboardTitle,
       @NonNull TextView tvGreeting, @NonNull TextView tvGreetingSub, @NonNull TextView tvHighGaps,
@@ -180,28 +180,32 @@ public final class FragmentHomeBinding implements ViewBinding {
       }
 
       id = R.id.hub_learning;
-      MaterialCardView hubLearning = ViewBindings.findChildViewById(rootView, id);
+      View hubLearning = ViewBindings.findChildViewById(rootView, id);
       if (hubLearning == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubLearning = ItemHubButtonBinding.bind(hubLearning);
 
       id = R.id.hub_mentor;
-      MaterialCardView hubMentor = ViewBindings.findChildViewById(rootView, id);
+      View hubMentor = ViewBindings.findChildViewById(rootView, id);
       if (hubMentor == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubMentor = ItemHubButtonBinding.bind(hubMentor);
 
       id = R.id.hub_more;
-      MaterialCardView hubMore = ViewBindings.findChildViewById(rootView, id);
+      View hubMore = ViewBindings.findChildViewById(rootView, id);
       if (hubMore == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubMore = ItemHubButtonBinding.bind(hubMore);
 
       id = R.id.hub_skills;
-      MaterialCardView hubSkills = ViewBindings.findChildViewById(rootView, id);
+      View hubSkills = ViewBindings.findChildViewById(rootView, id);
       if (hubSkills == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubSkills = ItemHubButtonBinding.bind(hubSkills);
 
       id = R.id.qa_assess;
       MaterialButton qaAssess = ViewBindings.findChildViewById(rootView, id);
@@ -276,10 +280,10 @@ public final class FragmentHomeBinding implements ViewBinding {
       }
 
       return new FragmentHomeBinding((CoordinatorLayout) rootView, btnNotifications,
-          btnProfileAvatar, cardContImg, cardContinueLearning, cardNotifSummary, hubLearning,
-          hubMentor, hubMore, hubSkills, qaAssess, qaContinue, qaGaps, toolbar, tvDashboardTitle,
-          tvGreeting, tvGreetingSub, tvHighGaps, tvLowGaps, tvMedGaps, tvViewAchievements,
-          viewPagerBanner);
+          btnProfileAvatar, cardContImg, cardContinueLearning, cardNotifSummary,
+          binding_hubLearning, binding_hubMentor, binding_hubMore, binding_hubSkills, qaAssess,
+          qaContinue, qaGaps, toolbar, tvDashboardTitle, tvGreeting, tvGreetingSub, tvHighGaps,
+          tvLowGaps, tvMedGaps, tvViewAchievements, viewPagerBanner);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

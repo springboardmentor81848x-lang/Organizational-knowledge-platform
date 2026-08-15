@@ -21,4 +21,13 @@ public interface SkillApiService {
 
     @GET("employee-skills/employee/{employeeId}")
     Call<List<EmployeeSkillResponse>> getEmployeeSkills(@Path("employeeId") Long employeeId);
+
+    @POST("employee-skills")
+    Call<EmployeeSkillResponse> addEmployeeSkill(@Body com.kgap.intel.models.EmployeeSkillRequest request);
+
+    @DELETE("employee-skills/{id}")
+    Call<Void> deleteEmployeeSkill(@Path("id") Long id);
+
+    @PUT("employee-skills/{id}")
+    Call<EmployeeSkillResponse> updateEmployeeSkill(@Path("id") Long id, @Body com.kgap.intel.models.EmployeeSkillRequest request);
 }

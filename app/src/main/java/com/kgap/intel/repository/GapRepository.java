@@ -117,47 +117,6 @@ public class GapRepository {
                                     }
                                 }
                                 
-                                // Ensure Sarah Johnson (employee2) is in the list for Demo
-                                boolean hasSarah = false;
-                                for (HeatmapResponse h : heatmap) {
-                                    if (Long.valueOf(102).equals(h.getEmployeeId())) {
-                                        hasSarah = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!hasSarah) {
-                                    HeatmapResponse h2 = new HeatmapResponse();
-                                    h2.setEmployeeId(102L);
-                                    h2.setEmployeeName("Sarah Johnson");
-                                    h2.setSkillId(10L);
-                                    h2.setSkillName("Technical Writing");
-                                    h2.setGapScore(45);
-                                    h2.setGapLevel("HIGH");
-                                    heatmap.add(h2);
-
-                                    HeatmapResponse h3 = new HeatmapResponse();
-                                    h3.setEmployeeId(102L);
-                                    h3.setEmployeeName("Sarah Johnson");
-                                    h3.setSkillId(1L);
-                                    h3.setSkillName("Product Management");
-                                    h3.setGapScore(15);
-                                    h3.setGapLevel("LOW");
-                                    heatmap.add(h3);
-                                }
-                                
-                                // Mock organization heatmap if API empty
-                                if (heatmap.size() <= 2) { // Add more if list is small
-                                    HeatmapResponse h1 = new HeatmapResponse();
-                                    h1.setEmployeeId(1L);
-                                    h1.setEmployeeName("Aarav Sharma");
-                                    h1.setSkillId(1L);
-                                    h1.setSkillName("AI/ML");
-                                    h1.setGapScore(30);
-                                    h1.setGapLevel("MEDIUM");
-                                    heatmap.add(h1);
-                                }
-                                
                                 data.setValue(heatmap);
                             }
 
@@ -211,28 +170,10 @@ public class GapRepository {
                             }
                         }
                         
-                        // Mock heatmap for employee2 or if data empty
-                        if (heatmap.isEmpty()) {
-                            HeatmapResponse h1 = new HeatmapResponse();
-                            h1.setSkillId(1L);
-                            h1.setSkillName("Python Programming");
-                            h1.setGapScore(40);
-                            h1.setGapLevel("HIGH");
-                            heatmap.add(h1);
-
-                            HeatmapResponse h2 = new HeatmapResponse();
-                            h2.setSkillId(2L);
-                            h2.setSkillName("SQL Knowledge");
-                            h2.setGapScore(20);
-                            h2.setGapLevel("MEDIUM");
-                            heatmap.add(h2);
-                        }
-                        
                         if (!heatmap.isEmpty()) {
                             data.setValue(heatmap);
                         } else {
-                            handleError(response.code());
-                            data.setValue(null);
+                            data.setValue(new ArrayList<>());
                         }
                     }
 
@@ -290,28 +231,10 @@ public class GapRepository {
                             }
                         }
                         
-                        // Mock gaps for employee2
-                        if (gaps.isEmpty() && employeeId != null && employeeId == 102L) {
-                            SkillGapResponse gap1 = new SkillGapResponse();
-                            gap1.setSkillId(10L);
-                            gap1.setSkillName("Technical Writing");
-                            gap1.setGapScore(40);
-                            gap1.setGapLevel("HIGH");
-                            gaps.add(gap1);
-
-                            SkillGapResponse gap2 = new SkillGapResponse();
-                            gap2.setSkillId(11L);
-                            gap2.setSkillName("Python Programming");
-                            gap2.setGapScore(25);
-                            gap2.setGapLevel("MEDIUM");
-                            gaps.add(gap2);
-                        }
-                        
                         if (!gaps.isEmpty()) {
                             data.setValue(gaps);
                         } else {
-                            handleError(response.code());
-                            data.setValue(null);
+                            data.setValue(new ArrayList<>());
                         }
                     }
 

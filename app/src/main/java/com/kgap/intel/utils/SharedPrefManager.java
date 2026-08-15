@@ -43,6 +43,14 @@ public class SharedPrefManager {
         return sharedPreferences.getString("email", null);
     }
 
+    public void saveUserId(Long id) {
+        sharedPreferences.edit().putLong("userId", id).apply();
+    }
+
+    public Long getUserId() {
+        return sharedPreferences.getLong("userId", -1L);
+    }
+
     public void saveUserRole(String role) {
         sharedPreferences.edit().putString("role", role).apply();
     }

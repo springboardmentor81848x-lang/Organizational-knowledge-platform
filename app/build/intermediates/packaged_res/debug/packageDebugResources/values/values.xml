@@ -8,7 +8,7 @@
     </string-array>
     <color name="accent_teal">#00CEC9</color>
     <color name="black">#000000</color>
-    <color name="cream_bg">#FDFCF0</color>
+    <color name="cream_bg">#F0FAF5</color>
     <color name="gap_critical">#FF4D4D</color>
     <color name="gap_high">#FFAD33</color>
     <color name="gap_low">#2ECC71</color>
@@ -16,7 +16,7 @@
     <color name="gray_200">#E2E8F0</color>
     <color name="gray_500">#B2BEC3</color>
     <color name="gray_700">#636E72</color>
-    <color name="neutral_bg">#F8F9FA</color>
+    <color name="neutral_bg">#F0FAF5</color>
     <color name="overlay_emerald">#1A00B894</color>
     <color name="primary_emerald">#00B894</color>
     <color name="primary_purple">#6C5CE7</color>

@@ -13,7 +13,6 @@ import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
-import com.google.android.material.textfield.TextInputEditText;
 import com.kgap.intel.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -30,7 +29,7 @@ public final class LayoutAddSkillBottomSheetBinding implements ViewBinding {
   public final MaterialButton btnBsSave;
 
   @NonNull
-  public final TextInputEditText etBsSkillName;
+  public final AutoCompleteTextView etBsSkillName;
 
   @NonNull
   public final Slider sliderProficiency;
@@ -40,7 +39,7 @@ public final class LayoutAddSkillBottomSheetBinding implements ViewBinding {
 
   private LayoutAddSkillBottomSheetBinding(@NonNull LinearLayout rootView,
       @NonNull AutoCompleteTextView actBsCategory, @NonNull MaterialButton btnBsSave,
-      @NonNull TextInputEditText etBsSkillName, @NonNull Slider sliderProficiency,
+      @NonNull AutoCompleteTextView etBsSkillName, @NonNull Slider sliderProficiency,
       @NonNull TextView tvBsTitle) {
     this.rootView = rootView;
     this.actBsCategory = actBsCategory;
@@ -90,7 +89,7 @@ public final class LayoutAddSkillBottomSheetBinding implements ViewBinding {
       }
 
       id = R.id.et_bs_skill_name;
-      TextInputEditText etBsSkillName = ViewBindings.findChildViewById(rootView, id);
+      AutoCompleteTextView etBsSkillName = ViewBindings.findChildViewById(rootView, id);
       if (etBsSkillName == null) {
         break missingId;
       }

@@ -6,9 +6,12 @@ import androidx.fragment.app.Fragment;
 import com.kgap.intel.R;
 import com.kgap.intel.databinding.ActivityMainBinding;
 import com.kgap.intel.fragments.AdminDashboardFragment;
+import com.kgap.intel.fragments.DeptHeadDashboardFragment;
 import com.kgap.intel.fragments.HRDashboardFragment;
 import com.kgap.intel.fragments.HomeFragment;
+import com.kgap.intel.fragments.LDDashboardFragment;
 import com.kgap.intel.fragments.ManagerDashboardFragment;
+import com.kgap.intel.fragments.MentorDashboardFragment;
 import com.kgap.intel.utils.SharedPrefManager;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,13 +37,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Fragment getHomeFragment() {
-        switch (userRole) {
+        if (userRole == null) return new HomeFragment();
+        
+        switch (userRole.toUpperCase()) {
             case "MANAGER":
                 return new ManagerDashboardFragment();
             case "HR":
-                return new HRDashboardFragment();
             case "ADMIN":
-                return new AdminDashboardFragment();
+                return new HRDashboardFragment();
+            case "LD_ADMIN":
+            case "LEARNING_DEVELOPMENT_ADMIN":
+                return new LDDashboardFragment();
+            case "MENTOR":
+                return new MentorDashboardFragment();
+            case "DEPT_HEAD":
+            case "DEPARTMENT_HEAD":
+                return new DeptHeadDashboardFragment();
+            case "SYSTEM_ADMIN":
+                return new AdminDashboardFragment(); // Using AdminDashboard for System Admin
+            case "EMPLOYEE":
             default:
                 return new HomeFragment();
         }

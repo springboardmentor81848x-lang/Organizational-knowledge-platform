@@ -13,8 +13,13 @@ public class SkillItem {
     private String level; // Beginner, Intermediate, Advanced
     private String experience;
     private String lastUpdated;
+    private Long employeeSkillId;
 
     public SkillItem(String id, String name, String category, int proficiency, String level, String experience, String lastUpdated) {
+        this(id, name, category, proficiency, level, experience, lastUpdated, null);
+    }
+
+    public SkillItem(String id, String name, String category, int proficiency, String level, String experience, String lastUpdated, Long employeeSkillId) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -22,6 +27,7 @@ public class SkillItem {
         this.level = level;
         this.experience = experience;
         this.lastUpdated = lastUpdated;
+        this.employeeSkillId = employeeSkillId;
     }
 
     public String getId() { return id; }
@@ -31,4 +37,5 @@ public class SkillItem {
     public String getLevel() { return level; }
     public String getExperience() { return experience; }
     public String getLastUpdated() { return lastUpdated; }
+    public Long getEmployeeSkillId() { return employeeSkillId; }
 }

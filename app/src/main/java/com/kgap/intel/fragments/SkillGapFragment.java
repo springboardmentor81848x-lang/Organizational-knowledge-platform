@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -39,7 +38,7 @@ public class SkillGapFragment extends Fragment {
         setupRoleSpecificUI();
         observeViewModel();
         
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().getOnBackPressedDispatcher().onBackPressed());
         
         binding.btnViewFull.setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()

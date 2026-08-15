@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -31,16 +32,28 @@ public final class FragmentManagerDashboardBinding implements ViewBinding {
   public final ShapeableImageView btnProfileAvatar;
 
   @NonNull
-  public final MaterialCardView hubLearningTeam;
+  public final MaterialCardView cardDirectReports;
 
   @NonNull
-  public final MaterialCardView hubMoreManager;
+  public final MaterialCardView cardHighRisk;
 
   @NonNull
-  public final MaterialCardView hubTeamMembers;
+  public final MaterialCardView cardTeamGaps;
 
   @NonNull
-  public final MaterialCardView hubTeamSkills;
+  public final MaterialCardView cardTrainingAdoption;
+
+  @NonNull
+  public final ItemHubButtonBinding hubLearningTeam;
+
+  @NonNull
+  public final ItemHubButtonBinding hubMoreManager;
+
+  @NonNull
+  public final ItemHubButtonBinding hubTeamMembers;
+
+  @NonNull
+  public final ItemHubButtonBinding hubTeamSkills;
 
   @NonNull
   public final LinearLayout layoutNotifications;
@@ -78,20 +91,29 @@ public final class FragmentManagerDashboardBinding implements ViewBinding {
   @NonNull
   public final TextView tvTotalMembers;
 
+  @NonNull
+  public final ViewPager2 viewPagerBanner;
+
   private FragmentManagerDashboardBinding(@NonNull CoordinatorLayout rootView,
       @NonNull ShapeableImageView btnNotifications, @NonNull ShapeableImageView btnProfileAvatar,
-      @NonNull MaterialCardView hubLearningTeam, @NonNull MaterialCardView hubMoreManager,
-      @NonNull MaterialCardView hubTeamMembers, @NonNull MaterialCardView hubTeamSkills,
+      @NonNull MaterialCardView cardDirectReports, @NonNull MaterialCardView cardHighRisk,
+      @NonNull MaterialCardView cardTeamGaps, @NonNull MaterialCardView cardTrainingAdoption,
+      @NonNull ItemHubButtonBinding hubLearningTeam, @NonNull ItemHubButtonBinding hubMoreManager,
+      @NonNull ItemHubButtonBinding hubTeamMembers, @NonNull ItemHubButtonBinding hubTeamSkills,
       @NonNull LinearLayout layoutNotifications,
       @NonNull LinearProgressIndicator pbLearningProgress,
       @NonNull LinearProgressIndicator pbTeamCoverage, @NonNull MaterialToolbar toolbar,
       @NonNull TextView tvAdoption, @NonNull TextView tvDashboardTitle,
       @NonNull TextView tvGreeting, @NonNull TextView tvHighRisk, @NonNull TextView tvProgressLabel,
       @NonNull TextView tvTeamCoverage, @NonNull TextView tvTotalGaps,
-      @NonNull TextView tvTotalMembers) {
+      @NonNull TextView tvTotalMembers, @NonNull ViewPager2 viewPagerBanner) {
     this.rootView = rootView;
     this.btnNotifications = btnNotifications;
     this.btnProfileAvatar = btnProfileAvatar;
+    this.cardDirectReports = cardDirectReports;
+    this.cardHighRisk = cardHighRisk;
+    this.cardTeamGaps = cardTeamGaps;
+    this.cardTrainingAdoption = cardTrainingAdoption;
     this.hubLearningTeam = hubLearningTeam;
     this.hubMoreManager = hubMoreManager;
     this.hubTeamMembers = hubTeamMembers;
@@ -108,6 +130,7 @@ public final class FragmentManagerDashboardBinding implements ViewBinding {
     this.tvTeamCoverage = tvTeamCoverage;
     this.tvTotalGaps = tvTotalGaps;
     this.tvTotalMembers = tvTotalMembers;
+    this.viewPagerBanner = viewPagerBanner;
   }
 
   @Override
@@ -149,29 +172,57 @@ public final class FragmentManagerDashboardBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.card_direct_reports;
+      MaterialCardView cardDirectReports = ViewBindings.findChildViewById(rootView, id);
+      if (cardDirectReports == null) {
+        break missingId;
+      }
+
+      id = R.id.card_high_risk;
+      MaterialCardView cardHighRisk = ViewBindings.findChildViewById(rootView, id);
+      if (cardHighRisk == null) {
+        break missingId;
+      }
+
+      id = R.id.card_team_gaps;
+      MaterialCardView cardTeamGaps = ViewBindings.findChildViewById(rootView, id);
+      if (cardTeamGaps == null) {
+        break missingId;
+      }
+
+      id = R.id.card_training_adoption;
+      MaterialCardView cardTrainingAdoption = ViewBindings.findChildViewById(rootView, id);
+      if (cardTrainingAdoption == null) {
+        break missingId;
+      }
+
       id = R.id.hub_learning_team;
-      MaterialCardView hubLearningTeam = ViewBindings.findChildViewById(rootView, id);
+      View hubLearningTeam = ViewBindings.findChildViewById(rootView, id);
       if (hubLearningTeam == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubLearningTeam = ItemHubButtonBinding.bind(hubLearningTeam);
 
       id = R.id.hub_more_manager;
-      MaterialCardView hubMoreManager = ViewBindings.findChildViewById(rootView, id);
+      View hubMoreManager = ViewBindings.findChildViewById(rootView, id);
       if (hubMoreManager == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubMoreManager = ItemHubButtonBinding.bind(hubMoreManager);
 
       id = R.id.hub_team_members;
-      MaterialCardView hubTeamMembers = ViewBindings.findChildViewById(rootView, id);
+      View hubTeamMembers = ViewBindings.findChildViewById(rootView, id);
       if (hubTeamMembers == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubTeamMembers = ItemHubButtonBinding.bind(hubTeamMembers);
 
       id = R.id.hub_team_skills;
-      MaterialCardView hubTeamSkills = ViewBindings.findChildViewById(rootView, id);
+      View hubTeamSkills = ViewBindings.findChildViewById(rootView, id);
       if (hubTeamSkills == null) {
         break missingId;
       }
+      ItemHubButtonBinding binding_hubTeamSkills = ItemHubButtonBinding.bind(hubTeamSkills);
 
       id = R.id.layout_notifications;
       LinearLayout layoutNotifications = ViewBindings.findChildViewById(rootView, id);
@@ -245,11 +296,18 @@ public final class FragmentManagerDashboardBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.viewPagerBanner;
+      ViewPager2 viewPagerBanner = ViewBindings.findChildViewById(rootView, id);
+      if (viewPagerBanner == null) {
+        break missingId;
+      }
+
       return new FragmentManagerDashboardBinding((CoordinatorLayout) rootView, btnNotifications,
-          btnProfileAvatar, hubLearningTeam, hubMoreManager, hubTeamMembers, hubTeamSkills,
-          layoutNotifications, pbLearningProgress, pbTeamCoverage, toolbar, tvAdoption,
-          tvDashboardTitle, tvGreeting, tvHighRisk, tvProgressLabel, tvTeamCoverage, tvTotalGaps,
-          tvTotalMembers);
+          btnProfileAvatar, cardDirectReports, cardHighRisk, cardTeamGaps, cardTrainingAdoption,
+          binding_hubLearningTeam, binding_hubMoreManager, binding_hubTeamMembers,
+          binding_hubTeamSkills, layoutNotifications, pbLearningProgress, pbTeamCoverage, toolbar,
+          tvAdoption, tvDashboardTitle, tvGreeting, tvHighRisk, tvProgressLabel, tvTeamCoverage,
+          tvTotalGaps, tvTotalMembers, viewPagerBanner);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

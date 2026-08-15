@@ -20,6 +20,7 @@ import com.kgap.intel.databinding.FragmentSkillsBinding;
 import com.kgap.intel.databinding.LayoutAddSkillBottomSheetBinding;
 import com.kgap.intel.models.SkillItem;
 import com.kgap.intel.viewmodel.SkillsViewModel;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SkillsFragment extends Fragment {
@@ -48,13 +49,56 @@ public class SkillsFragment extends Fragment {
 
     private void setupRecyclerView() {
         adapter = new SkillsAdapter();
+        adapter.setOnSkillActionListener(new SkillsAdapter.OnSkillActionListener() {
+            @Override
+            public void onDelete(SkillItem item) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Skill")
+                    .setMessage("Are you sure you want to remove " + item.getName() + " from your inventory?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        viewModel.deleteSkill(item);
+                        Toast.makeText(getContext(), item.getName() + " removed", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            }
+
+            @Override
+            public void onTakeAssessment(SkillItem item) {
+                getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, SkillAssessmentFragment.newInstance(item.getId(), item.getName()))
+                    .addToBackStack(null)
+                    .commit();
+            }
+        });
         binding.rvSkillsInventory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.rvSkillsInventory.setAdapter(adapter);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) {
+            // Small delay to ensure backend has finished processing the submission
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (isAdded()) {
+                    viewModel.loadData();
+                }
+            }, 500);
+        }
+    }
+
     private void observeViewModel() {
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), loading -> {
+            // Optional: Show a loading state in the UI if needed
+        });
+
         viewModel.getSkills().observe(getViewLifecycleOwner(), skills -> {
             if (skills != null && !skills.isEmpty()) {
+                android.util.Log.d("SkillsFragment", "UI Update: Received " + skills.size() + " skills");
+                for (SkillItem s : skills) {
+                    android.util.Log.d("SkillsFragment", "UI Skill: " + s.getName() + " -> " + s.getProficiency() + "% (" + s.getLevel() + ")");
+                }
                 adapter.submitList(skills);
                 binding.layoutEmptySkills.setVisibility(View.GONE);
                 binding.rvSkillsInventory.setVisibility(View.VISIBLE);
@@ -71,8 +115,10 @@ public class SkillsFragment extends Fragment {
     private void updateHeaderStats(List<SkillItem> skills) {
         if (skills != null && !skills.isEmpty()) {
             binding.tvTotalSkills.setText(String.valueOf(skills.size()));
-            int totalProf = 0;
-            for (SkillItem s : skills) totalProf += s.getProficiency();
+            long totalProf = 0;
+            for (SkillItem s : skills) {
+                totalProf += s.getProficiency();
+            }
             binding.tvAvgLevel.setText((totalProf / skills.size()) + "%");
         } else {
             binding.tvTotalSkills.setText("0");
@@ -81,10 +127,14 @@ public class SkillsFragment extends Fragment {
     }
 
     private void setupListeners() {
-        // FAB Listener
+        binding.toolbar.setNavigationOnClickListener(v -> {
+            if (getParentFragmentManager().getBackStackEntryCount() > 0) {
+                getParentFragmentManager().popBackStack();
+            }
+        });
+
         binding.fabAddNewSkill.setOnClickListener(v -> showAddSkillBottomSheet());
 
-        // Search Listener
         binding.etSearchSkills.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -96,14 +146,8 @@ public class SkillsFragment extends Fragment {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Category Filter Listener
         binding.chipGroupCategories.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if (checkedIds.isEmpty()) {
-                viewModel.setCategoryFilter("All");
-                return;
-            }
-            
-            int id = checkedIds.get(0);
+            int id = checkedIds.isEmpty() ? -1 : checkedIds.get(0);
             String category = "All";
             
             if (id == R.id.chip_all) category = "All";
@@ -118,34 +162,44 @@ public class SkillsFragment extends Fragment {
     }
 
     private void showAddSkillBottomSheet() {
+        if (getContext() == null) return;
+        
         BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
         LayoutAddSkillBottomSheetBinding bsBinding = LayoutAddSkillBottomSheetBinding.inflate(getLayoutInflater());
         dialog.setContentView(bsBinding.getRoot());
+
+        // Setup Skill Name autocomplete from catalog
+        List<SkillItem> catalog = viewModel.getCatalog();
+        if (catalog != null && !catalog.isEmpty()) {
+            List<String> skillNames = new ArrayList<>();
+            for (SkillItem s : catalog) skillNames.add(s.getName());
+            ArrayAdapter<String> skillAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, skillNames);
+            bsBinding.etBsSkillName.setAdapter(skillAdapter);
+        }
 
         String[] categories = {"Technical", "Soft Skill", "Tools", "Language", "Others"};
         ArrayAdapter<String> catAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         bsBinding.actBsCategory.setAdapter(catAdapter);
         
-        // Ensure dropdown opens on click
         bsBinding.actBsCategory.setOnClickListener(v -> bsBinding.actBsCategory.showDropDown());
 
         bsBinding.btnBsSave.setOnClickListener(v -> {
             String name = bsBinding.etBsSkillName.getText() != null ? bsBinding.etBsSkillName.getText().toString().trim() : "";
             String category = bsBinding.actBsCategory.getText().toString();
-            int proficiency = (int) bsBinding.sliderProficiency.getValue();
+            int proficiency = 0; // Fixed: Always 0 until assessment
 
             if (name.isEmpty()) {
                 bsBinding.etBsSkillName.setError("Skill name required");
                 return;
             }
             
-            if (category.isEmpty() || category.equals("Category")) {
+            if (category.isEmpty() || "Category".equals(category)) {
                 Toast.makeText(getContext(), "Please select a category", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             viewModel.addSkill(name, category, proficiency);
-            Toast.makeText(getContext(), name + " added to inventory!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), name + " added! Please take the assessment to set proficiency.", Toast.LENGTH_LONG).show();
             dialog.dismiss();
         });
 

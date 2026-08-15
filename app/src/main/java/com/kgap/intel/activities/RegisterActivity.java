@@ -62,6 +62,9 @@ public class RegisterActivity extends AppCompatActivity {
                 case "Manager": canonicalRole = "MANAGER"; break;
                 case "HR Specialist": canonicalRole = "HR"; break;
                 case "System Administrator": canonicalRole = "ADMIN"; break;
+                case "Department Head": canonicalRole = "DEPARTMENT_HEAD"; break;
+                case "L&D Admin": canonicalRole = "LEARNING_DEVELOPMENT_ADMIN"; break;
+                case "Mentor": canonicalRole = "MENTOR"; break;
             }
 
             // Timeout fallback
@@ -70,10 +73,10 @@ public class RegisterActivity extends AppCompatActivity {
                 if (binding.pbLoading.getVisibility() == View.VISIBLE) {
                     binding.pbLoading.setVisibility(View.GONE);
                     binding.btnCreateAccount.setEnabled(true);
-                    showOfflineModeDialog(name);
+                    Toast.makeText(RegisterActivity.this, "Network error. Please check your connection.", Toast.LENGTH_LONG).show();
                 }
             };
-            handler.postDelayed(timeoutTask, 3000);
+            handler.postDelayed(timeoutTask, 5000);
 
             viewModel.register(name, email, password, canonicalRole).observe(this, response -> {
                 handler.removeCallbacks(timeoutTask);
@@ -83,19 +86,13 @@ public class RegisterActivity extends AppCompatActivity {
                 if (response != null && response.isSuccess()) {
                     showSuccessDialog();
                 } else {
-                    showOfflineModeDialog(name);
+                    Toast.makeText(this, "Registration failed. Email might already exist.", Toast.LENGTH_LONG).show();
                 }
             });
         });
 
         binding.tvSignIn.setOnClickListener(v -> finish());
         binding.btnBack.setOnClickListener(v -> finish());
-
-        // Secret Shortcut: Long click logo to skip
-        binding.ivLogo.setOnLongClickListener(v -> {
-            showOfflineModeDialog("Demo User");
-            return true;
-        });
     }
 
     private void setupRoleSelection() {
@@ -103,8 +100,11 @@ public class RegisterActivity extends AppCompatActivity {
         int profileIcon = R.drawable.ic_user_profile_circle;
         roles.add(new Role("Employee", profileIcon));
         roles.add(new Role("Manager", profileIcon));
+        roles.add(new Role("Department Head", profileIcon));
         roles.add(new Role("HR Specialist", profileIcon));
         roles.add(new Role("System Administrator", profileIcon));
+        roles.add(new Role("L&D Admin", profileIcon));
+        roles.add(new Role("Mentor", profileIcon));
 
         roleAdapter = new RoleAdapter(roles, roleTitle -> selectedRole = roleTitle);
         binding.rvRoles.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));

@@ -8,10 +8,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.kgap.intel.R;
 import java.lang.NullPointerException;
@@ -41,13 +44,19 @@ public final class FragmentHrDashboardBinding implements ViewBinding {
   public final MaterialButton btnViewOrgHeatmap;
 
   @NonNull
-  public final ItemGapOverviewBinding deptDs;
+  public final MaterialCardView cardCriticalGaps;
 
   @NonNull
-  public final ItemGapOverviewBinding deptEng;
+  public final MaterialCardView cardTotalDepartments;
 
   @NonNull
-  public final ItemGapOverviewBinding deptMkt;
+  public final MaterialCardView cardTotalEmployees;
+
+  @NonNull
+  public final MaterialCardView cardTrainingNeeds;
+
+  @NonNull
+  public final RecyclerView rvDeptHealth;
 
   @NonNull
   public final MaterialToolbar toolbar;
@@ -58,13 +67,32 @@ public final class FragmentHrDashboardBinding implements ViewBinding {
   @NonNull
   public final TextView tvSubtitle;
 
+  @NonNull
+  public final TextView tvTotalCriticalGaps;
+
+  @NonNull
+  public final TextView tvTotalDepartments;
+
+  @NonNull
+  public final TextView tvTotalEmployees;
+
+  @NonNull
+  public final TextView tvTotalTrainingNeeds;
+
+  @NonNull
+  public final ViewPager2 viewPagerBanner;
+
   private FragmentHrDashboardBinding(@NonNull CoordinatorLayout rootView,
       @NonNull MaterialButton btnActionEmployees, @NonNull MaterialButton btnActionGaps,
       @NonNull MaterialButton btnActionRecommend, @NonNull MaterialButton btnActionReports,
       @NonNull ShapeableImageView btnProfileAvatar, @NonNull MaterialButton btnViewOrgHeatmap,
-      @NonNull ItemGapOverviewBinding deptDs, @NonNull ItemGapOverviewBinding deptEng,
-      @NonNull ItemGapOverviewBinding deptMkt, @NonNull MaterialToolbar toolbar,
-      @NonNull TextView tvGreeting, @NonNull TextView tvSubtitle) {
+      @NonNull MaterialCardView cardCriticalGaps, @NonNull MaterialCardView cardTotalDepartments,
+      @NonNull MaterialCardView cardTotalEmployees, @NonNull MaterialCardView cardTrainingNeeds,
+      @NonNull RecyclerView rvDeptHealth, @NonNull MaterialToolbar toolbar,
+      @NonNull TextView tvGreeting, @NonNull TextView tvSubtitle,
+      @NonNull TextView tvTotalCriticalGaps, @NonNull TextView tvTotalDepartments,
+      @NonNull TextView tvTotalEmployees, @NonNull TextView tvTotalTrainingNeeds,
+      @NonNull ViewPager2 viewPagerBanner) {
     this.rootView = rootView;
     this.btnActionEmployees = btnActionEmployees;
     this.btnActionGaps = btnActionGaps;
@@ -72,12 +100,19 @@ public final class FragmentHrDashboardBinding implements ViewBinding {
     this.btnActionReports = btnActionReports;
     this.btnProfileAvatar = btnProfileAvatar;
     this.btnViewOrgHeatmap = btnViewOrgHeatmap;
-    this.deptDs = deptDs;
-    this.deptEng = deptEng;
-    this.deptMkt = deptMkt;
+    this.cardCriticalGaps = cardCriticalGaps;
+    this.cardTotalDepartments = cardTotalDepartments;
+    this.cardTotalEmployees = cardTotalEmployees;
+    this.cardTrainingNeeds = cardTrainingNeeds;
+    this.rvDeptHealth = rvDeptHealth;
     this.toolbar = toolbar;
     this.tvGreeting = tvGreeting;
     this.tvSubtitle = tvSubtitle;
+    this.tvTotalCriticalGaps = tvTotalCriticalGaps;
+    this.tvTotalDepartments = tvTotalDepartments;
+    this.tvTotalEmployees = tvTotalEmployees;
+    this.tvTotalTrainingNeeds = tvTotalTrainingNeeds;
+    this.viewPagerBanner = viewPagerBanner;
   }
 
   @Override
@@ -143,26 +178,35 @@ public final class FragmentHrDashboardBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.dept_ds;
-      View deptDs = ViewBindings.findChildViewById(rootView, id);
-      if (deptDs == null) {
+      id = R.id.card_critical_gaps;
+      MaterialCardView cardCriticalGaps = ViewBindings.findChildViewById(rootView, id);
+      if (cardCriticalGaps == null) {
         break missingId;
       }
-      ItemGapOverviewBinding binding_deptDs = ItemGapOverviewBinding.bind(deptDs);
 
-      id = R.id.dept_eng;
-      View deptEng = ViewBindings.findChildViewById(rootView, id);
-      if (deptEng == null) {
+      id = R.id.card_total_departments;
+      MaterialCardView cardTotalDepartments = ViewBindings.findChildViewById(rootView, id);
+      if (cardTotalDepartments == null) {
         break missingId;
       }
-      ItemGapOverviewBinding binding_deptEng = ItemGapOverviewBinding.bind(deptEng);
 
-      id = R.id.dept_mkt;
-      View deptMkt = ViewBindings.findChildViewById(rootView, id);
-      if (deptMkt == null) {
+      id = R.id.card_total_employees;
+      MaterialCardView cardTotalEmployees = ViewBindings.findChildViewById(rootView, id);
+      if (cardTotalEmployees == null) {
         break missingId;
       }
-      ItemGapOverviewBinding binding_deptMkt = ItemGapOverviewBinding.bind(deptMkt);
+
+      id = R.id.card_training_needs;
+      MaterialCardView cardTrainingNeeds = ViewBindings.findChildViewById(rootView, id);
+      if (cardTrainingNeeds == null) {
+        break missingId;
+      }
+
+      id = R.id.rv_dept_health;
+      RecyclerView rvDeptHealth = ViewBindings.findChildViewById(rootView, id);
+      if (rvDeptHealth == null) {
+        break missingId;
+      }
 
       id = R.id.toolbar;
       MaterialToolbar toolbar = ViewBindings.findChildViewById(rootView, id);
@@ -182,9 +226,41 @@ public final class FragmentHrDashboardBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tv_total_critical_gaps;
+      TextView tvTotalCriticalGaps = ViewBindings.findChildViewById(rootView, id);
+      if (tvTotalCriticalGaps == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_total_departments;
+      TextView tvTotalDepartments = ViewBindings.findChildViewById(rootView, id);
+      if (tvTotalDepartments == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_total_employees;
+      TextView tvTotalEmployees = ViewBindings.findChildViewById(rootView, id);
+      if (tvTotalEmployees == null) {
+        break missingId;
+      }
+
+      id = R.id.tv_total_training_needs;
+      TextView tvTotalTrainingNeeds = ViewBindings.findChildViewById(rootView, id);
+      if (tvTotalTrainingNeeds == null) {
+        break missingId;
+      }
+
+      id = R.id.viewPagerBanner;
+      ViewPager2 viewPagerBanner = ViewBindings.findChildViewById(rootView, id);
+      if (viewPagerBanner == null) {
+        break missingId;
+      }
+
       return new FragmentHrDashboardBinding((CoordinatorLayout) rootView, btnActionEmployees,
           btnActionGaps, btnActionRecommend, btnActionReports, btnProfileAvatar, btnViewOrgHeatmap,
-          binding_deptDs, binding_deptEng, binding_deptMkt, toolbar, tvGreeting, tvSubtitle);
+          cardCriticalGaps, cardTotalDepartments, cardTotalEmployees, cardTrainingNeeds,
+          rvDeptHealth, toolbar, tvGreeting, tvSubtitle, tvTotalCriticalGaps, tvTotalDepartments,
+          tvTotalEmployees, tvTotalTrainingNeeds, viewPagerBanner);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

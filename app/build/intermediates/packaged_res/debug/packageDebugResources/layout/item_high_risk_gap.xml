@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/RoundedCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_skill_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Skill Name"
+                android:textStyle="bold"
+                android:textColor="@color/text_dark" />
+
+            <TextView
+                android:id="@+id/tv_coverage_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Coverage: 30/95%"
+                android:textSize="12sp"
+                android:textColor="@color/gray_700" />
+        </LinearLayout>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_risk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CRITICAL"
+            app:chipBackgroundColor="@color/gap_critical"
+            android:textColor="@color/white"
+            app:chipStrokeWidth="0dp" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

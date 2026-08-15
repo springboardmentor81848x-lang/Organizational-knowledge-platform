@@ -75,4 +75,20 @@ public class ApiClient {
     public static LearningPathApiService getLearningPathApiService(android.content.Context context) {
         return getRetrofit(context).create(LearningPathApiService.class);
     }
+
+    public static OrgApiService getOrgApiService(android.content.Context context) {
+        return getRetrofit(context).create(OrgApiService.class);
+    }
+
+    public static LDApiService getLDApiService(android.content.Context context) {
+        return getRetrofit(context).create(LDApiService.class);
+    }
+
+    public static MentorApiService getMentorApiService(android.content.Context context) {
+        return getRetrofit(context).create(MentorApiService.class);
+    }
+
+    public static AssessmentApiService getAssessmentApiService(android.content.Context context) {
+        return getRetrofit(context).create(AssessmentApiService.class);
+    }
 }
