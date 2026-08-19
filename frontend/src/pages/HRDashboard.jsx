@@ -22,27 +22,34 @@ function HRDashboard() {
   const [dashboard, setDashboard] = useState({
     totalEmployees: 0,
     employeesWithGaps: 0,
-    averageGap: 0,
     criticalGaps: 0,
+
+    employeesInTraining: 0,
+    trainingCompletionRate: 0,
+    averageLearningProgress: 0,
+    averageSkillImprovement: 0,
+    activeMentorships: 0,
+
+    averageGap: 0,
     totalKnowledgeGaps: 0,
 
     performance: {
-      excellent: 0,
-      good: 0,
-      needsAttention: 0,
-      critical: 0,
+        excellent: 0,
+        good: 0,
+        needsAttention: 0,
+        critical: 0,
     },
 
     gapDistribution: {
-      low: 0,
-      medium: 0,
-      high: 0,
-      critical: 0,
+        low: 0,
+        medium: 0,
+        high: 0,
+        critical: 0,
     },
 
     topSkillGaps: [],
     employees: [],
-  });
+});
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -170,69 +177,71 @@ function HRDashboard() {
           {/* =================================================
               SUMMARY CARDS
           ================================================= */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+              <SummaryCard
+                  title="Total Employees"
+                  value={dashboard.totalEmployees}
+                  description="Employees in organization"
+                  icon={<Users size={24} />}
+                  iconClass="bg-indigo-100 text-indigo-600"
+              />
 
-            <SummaryCard
-              title="Total Employees"
-              value={dashboard.totalEmployees}
-              description="Employees in organization"
-              icon={<Users size={24} />}
-              iconClass="bg-indigo-100 text-indigo-600"
-            />
+              <SummaryCard
+                  title="Employees With Skill Gaps"
+                  value={dashboard.employeesWithGaps}
+                  description="Employees requiring attention"
+                  icon={<UserCheck size={24} />}
+                  iconClass="bg-orange-100 text-orange-600"
+              />
 
-            <SummaryCard
-              title="Employees With Gaps"
-              value={dashboard.employeesWithGaps}
-              description="Employees requiring attention"
-              icon={<UserCheck size={24} />}
-              iconClass="bg-orange-100 text-orange-600"
-            />
+              <SummaryCard
+                  title="Critical Skill Gaps"
+                  value={dashboard.criticalGaps}
+                  description="Critical gaps requiring immediate action"
+                  icon={<AlertCircle size={24} />}
+                  iconClass="bg-red-100 text-red-600"
+              />
 
-            <SummaryCard
-              title="Average Knowledge Gap"
-              value={dashboard.averageGap}
-              description="Average organization gap"
-              icon={<TrendingUp size={24} />}
-              iconClass="bg-blue-100 text-blue-600"
-            />
+              <SummaryCard
+                  title="Employees in Training"
+                  value={dashboard.employeesInTraining ?? 0}
+                  description="Employees currently in training"
+                  icon={<Target size={24} />}
+                  iconClass="bg-blue-100 text-blue-600"
+              />
 
-            <SummaryCard
-              title="Critical Employees"
-              value={dashboard.performance.critical}
-              description="Immediate attention required"
-              icon={<AlertCircle size={24} />}
-              iconClass="bg-red-100 text-red-600"
-            />
+              <SummaryCard
+                  title="Training Completion Rate"
+                  value={`${dashboard.trainingCompletionRate ?? 0}%`}
+                  description="Overall training completion"
+                  icon={<CheckCircle size={24} />}
+                  iconClass="bg-green-100 text-green-600"
+              />
 
-          </div>
+              <SummaryCard
+                  title="Average Learning Progress"
+                  value={`${dashboard.averageLearningProgress ?? 0}%`}
+                  description="Average employee learning progress"
+                  icon={<TrendingUp size={24} />}
+                  iconClass="bg-purple-100 text-purple-600"
+              />
 
-          {/* =================================================
-              HR INSIGHTS
-          ================================================= */}
+              <SummaryCard
+                  title="Average Skill Improvement"
+                  value={`${dashboard.averageSkillImprovement ?? 0}%`}
+                  description="Average improvement after training"
+                  icon={<BarChart3 size={24} />}
+                  iconClass="bg-cyan-100 text-cyan-600"
+              />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-
-            <InsightCard
-              icon={<Brain size={22} />}
-              title="Knowledge Gaps"
-              value={dashboard.totalKnowledgeGaps}
-              description="Total identified knowledge gaps"
-            />
-
-            <InsightCard
-              icon={<Target size={22} />}
-              title="Employees Requiring Training"
-              value={dashboard.employeesWithGaps}
-              description="Employees with identified gaps"
-            />
-
-            <InsightCard
-              icon={<BarChart3 size={22} />}
-              title="Skills Requiring Attention"
-              value={dashboard.topSkillGaps.length}
-              description="Skills appearing in gap analysis"
-            />
+              <SummaryCard
+                  title="Active Mentorships"
+                  value={dashboard.activeMentorships ?? 0}
+                  description="Currently active mentorships"
+                  icon={<Users size={24} />}
+                  iconClass="bg-pink-100 text-pink-600"
+              />
 
           </div>
 

@@ -37,6 +37,7 @@ import Mentorship from "../pages/Mentorship";
 import HRDashboard from "../pages/HRDashboard";
 import GapIntelligence from "../pages/GapIntelligence";
 import CompetencyFramework from "../pages/CompetencyFramework";
+import WorkforceSkillInventory from "../pages/WorkforceSkillInventory";
 
 // ==================================================
 // MANAGER
@@ -63,20 +64,90 @@ import MentorDashboard from "../pages/MentorDashboard";
 import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
 
 // ==================================================
-// ROLE HELPER
+// GET ROLE FROM JWT
+// ==================================================
+
+const getRoleFromToken = () => {
+  try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return "";
+    }
+
+    const parts = token.split(".");
+
+    if (parts.length !== 3) {
+      return "";
+    }
+
+    const payload = JSON.parse(
+      atob(
+        parts[1]
+          .replace(/-/g, "+")
+          .replace(/_/g, "/")
+      )
+    );
+
+    console.log("JWT payload:", payload);
+
+    return payload.role || "";
+  } catch (error) {
+    console.error("Unable to read role from JWT:", error);
+    return "";
+  }
+};
+
+// ==================================================
+// NORMALIZE ROLE
+// ==================================================
+
+const normalizeRole = (role) => {
+  if (!role) {
+    return "";
+  }
+
+  return String(role)
+    .toUpperCase()
+    .replace("ROLE_", "")
+    .replace(/_/g, " ")
+    .trim();
+};
+
+// ==================================================
+// GET CURRENT USER ROLE
 // ==================================================
 
 const getRole = () => {
 
-  const role =
+  // First try localStorage
+  let role =
     localStorage.getItem("role") ||
     localStorage.getItem("userRole") ||
     "";
 
-  return role
-    .toUpperCase()
-    .replace("ROLE_", "")
-    .trim();
+  console.log("Role from localStorage:", role);
+
+  // If localStorage role is empty/null,
+  // read it directly from JWT
+  if (!role || role === "null" || role === "undefined") {
+
+    role = getRoleFromToken();
+
+    console.log(
+      "Role extracted from JWT:",
+      role
+    );
+  }
+
+  const normalizedRole = normalizeRole(role);
+
+  console.log(
+    "Final normalized role:",
+    normalizedRole
+  );
+
+  return normalizedRole;
 };
 
 // ==================================================
@@ -91,42 +162,68 @@ function ProtectedRoute({
   const token = localStorage.getItem("token");
   const role = getRole();
 
-  // --------------------------------------------------
+  console.log("--------------------------------");
+  console.log("PROTECTED ROUTE");
+  console.log("Token exists:", !!token);
+  console.log("Current role:", role);
+  console.log("Allowed roles:", allowedRoles);
+  console.log("--------------------------------");
+
+  // ==================================================
   // NOT LOGGED IN
-  // --------------------------------------------------
+  // ==================================================
 
   if (!token) {
-
     return (
       <Navigate
         to="/login"
         replace
       />
     );
-
   }
 
-  // --------------------------------------------------
-  // WRONG ROLE
-  // --------------------------------------------------
+  // ==================================================
+  // ROLE CHECK
+  // ==================================================
 
   if (
     allowedRoles &&
-    !allowedRoles.some(
-      (allowedRole) =>
-        allowedRole
-          .toUpperCase()
-          .trim() === role
-    )
+    allowedRoles.length > 0
   ) {
 
-    return (
-      <Navigate
-        to="/unauthorized"
-        replace
-      />
+    const normalizedAllowedRoles =
+      allowedRoles.map(normalizeRole);
+
+    console.log(
+      "Normalized allowed roles:",
+      normalizedAllowedRoles
     );
 
+    if (
+      !normalizedAllowedRoles.includes(role)
+    ) {
+
+      console.error(
+        "ACCESS DENIED"
+      );
+
+      console.error(
+        "Current role:",
+        role
+      );
+
+      console.error(
+        "Allowed roles:",
+        normalizedAllowedRoles
+      );
+
+      return (
+        <Navigate
+          to="/unauthorized"
+          replace
+        />
+      );
+    }
   }
 
   return children;
@@ -143,7 +240,7 @@ function AppRoutes() {
     <Routes>
 
       {/* ==================================================
-          PUBLIC ROUTES
+          PUBLIC
       ================================================== */}
 
       <Route
@@ -157,7 +254,7 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          COMMON ROUTES
+          COMMON
       ================================================== */}
 
       <Route
@@ -213,10 +310,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          SKILL INVENTORY
-      ================================================== */}
-
       <Route
         path="/skills"
         element={
@@ -227,10 +320,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-      {/* ==================================================
-          EMPLOYEE SKILL ASSESSMENT
-      ================================================== */}
 
       <Route
         path="/employee-assessment"
@@ -265,10 +354,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          ACTUAL ASSESSMENT QUESTIONS
-      ================================================== */}
-
       <Route
         path="/employee/assessment"
         element={
@@ -279,10 +364,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-      {/* ==================================================
-          ASSESSMENT RESULT
-      ================================================== */}
 
       <Route
         path="/employee/assessment/result"
@@ -295,10 +376,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          KNOWLEDGE GAP
-      ================================================== */}
-
       <Route
         path="/knowledge-gap"
         element={
@@ -310,10 +387,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          LEARNING PATH
-      ================================================== */}
-
       <Route
         path="/learning-path"
         element={
@@ -324,10 +397,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-      {/* ==================================================
-          TRAINING & LEARNING
-      ================================================== */}
 
       <Route
         path="/training-learning"
@@ -351,10 +420,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          KNOWLEDGE SHARING
-      ================================================== */}
-
       <Route
         path="/knowledge-sharing"
         element={
@@ -365,16 +430,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-      {/* ==================================================
-          EMPLOYEE MENTORSHIP
-          
-          Employee uses this page to:
-          - View skill-gap based recommendations
-          - Select a mentor
-          - Send mentorship request
-          - View own mentorship requests
-      ================================================== */}
 
       <Route
         path="/mentorship"
@@ -431,6 +486,27 @@ function AppRoutes() {
             allowedRoles={["HR"]}
           >
             <GapIntelligence />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          HR - WORKFORCE SKILLS
+          
+          URL:
+          /hr/workforce-skills
+          
+          Page component:
+          WorkforceSkillInventory
+      ================================================== */}
+
+      <Route
+        path="/hr/workforce-skills"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <WorkforceSkillInventory />
           </ProtectedRoute>
         }
       />
@@ -506,23 +582,6 @@ function AppRoutes() {
 
       {/* ==================================================
           MENTOR
-          
-          IMPORTANT:
-          This is a SEPARATE system role.
-
-          Mentor should NOT see the Employee Mentorship
-          recommendation page.
-
-          MentorDashboard should show:
-          - Incoming mentorship requests
-          - Requesting employee
-          - Skill they need help with
-          - Their current proficiency
-          - Goal
-          - Accept
-          - Reject
-          - Active mentorships
-          - Completed mentorships
       ================================================== */}
 
       <Route
@@ -588,7 +647,6 @@ function AppRoutes() {
       <Route
         path="/unauthorized"
         element={
-
           <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center max-w-md w-full">
@@ -613,7 +671,6 @@ function AppRoutes() {
             </div>
 
           </div>
-
         }
       />
 
@@ -630,10 +687,6 @@ function AppRoutes() {
           />
         }
       />
-
-      {/* ==================================================
-          UNKNOWN URL
-      ================================================== */}
 
       <Route
         path="*"
