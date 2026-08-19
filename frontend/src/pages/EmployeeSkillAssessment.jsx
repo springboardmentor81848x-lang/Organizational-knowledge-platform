@@ -29,14 +29,12 @@ function EmployeeSkillAssessment() {
 
   const [selectedRole, setSelectedRole] = useState(null);
   const [assessment, setAssessment] = useState(null);
-
-  const [loading, setLoading] = useState(false);
-  const [loadingExistingRole, setLoadingExistingRole] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // =========================================================
   // TARGET ROLES
-  // IMPORTANT: IDs MUST MATCH DATABASE ROLE IDs
+  // These IDs MUST match assessment_role_id in database
   // =========================================================
 
   const targetRoles = [
@@ -99,36 +97,81 @@ function EmployeeSkillAssessment() {
   ];
 
   // =========================================================
-  // LOAD PREVIOUSLY SELECTED ROLE
+  // LOAD EMPLOYEE'S SAVED TARGET ROLE
   // =========================================================
 
   useEffect(() => {
-    const storedRoleId = localStorage.getItem("targetRoleId");
+    loadEmployeeTargetRole();
+  }, []);
 
-    console.log(
-      "Stored target role ID:",
-      storedRoleId
-    );
+  const loadEmployeeTargetRole = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    if (storedRoleId) {
-      const roleId = Number(storedRoleId);
+      const employeeId = localStorage.getItem("employeeId");
+
+      console.log("Logged-in employee ID:", employeeId);
+
+      if (!employeeId) {
+        setError("Employee information is not available. Please login again.");
+        return;
+      }
+
+      /*
+       * TEMPORARY:
+       * We first try localStorage because your Signup currently
+       * stores targetRoleId there.
+       *
+       * After we update the backend Signup flow, this will come
+       * directly from employee.target_role_id in the database.
+       */
+
+      const storedTargetRoleId =
+        localStorage.getItem("targetRoleId");
+
+      if (!storedTargetRoleId) {
+        setError(
+          "No target role has been selected for this employee."
+        );
+        return;
+      }
+
+      const targetRoleId = Number(storedTargetRoleId);
 
       const role = targetRoles.find(
-        (item) => item.id === roleId
+        (item) => item.id === targetRoleId
       );
 
-      if (role) {
-        setSelectedRole(role);
-        loadAssessment(roleId);
-      } else {
-        localStorage.removeItem("targetRoleId");
-        localStorage.removeItem("targetRole");
-        setLoadingExistingRole(false);
+      if (!role) {
+        setError("Invalid target role.");
+        return;
       }
-    } else {
-      setLoadingExistingRole(false);
+
+      console.log(
+        "Employee target role:",
+        role.name,
+        "ID:",
+        role.id
+      );
+
+      setSelectedRole(role);
+
+      await loadAssessment(role.id);
+    } catch (err) {
+      console.error(
+        "Error loading employee target role:",
+        err
+      );
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load target role."
+      );
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   // =========================================================
   // LOAD ROLE-SPECIFIC ASSESSMENT
@@ -137,7 +180,6 @@ function EmployeeSkillAssessment() {
   const loadAssessment = async (roleId) => {
     try {
       setLoading(true);
-      setLoadingExistingRole(true);
       setError("");
       setAssessment(null);
 
@@ -151,41 +193,36 @@ function EmployeeSkillAssessment() {
       );
 
       console.log(
-        "Role-specific assessment response:",
+        "Assessment response:",
         response.data
       );
 
       if (!response.data) {
         setError(
-          "No assessment is available for this role."
+          "No assessment is available for this target role."
         );
         return;
       }
 
-      // Backend should return one assessment.
-      // This also handles an array response safely.
-      const roleAssessment = Array.isArray(
-        response.data
-      )
+      const roleAssessment = Array.isArray(response.data)
         ? response.data[0]
         : response.data;
 
       if (!roleAssessment) {
         setError(
-          "No assessment is available for the selected role."
+          "No assessment is available for this target role."
         );
         return;
       }
 
       console.log(
-        "Selected role assessment:",
+        "Selected assessment:",
         roleAssessment
       );
 
       setAssessment(roleAssessment);
 
-      // Store assessment ID so Assessment.jsx can
-      // identify the same assessment if needed.
+      // Save assessment ID for Assessment.jsx
       if (roleAssessment.id) {
         localStorage.setItem(
           "targetAssessmentId",
@@ -194,7 +231,7 @@ function EmployeeSkillAssessment() {
       }
     } catch (err) {
       console.error(
-        "Error loading role-specific assessment:",
+        "Error loading assessment:",
         err
       );
 
@@ -205,68 +242,17 @@ function EmployeeSkillAssessment() {
 
       if (err.response?.status === 404) {
         setError(
-          "No assessment is available for the selected role."
+          "No assessment is available for this target role."
         );
       } else {
         setError(
           err.response?.data?.message ||
-            `Unable to load assessment. Status: ${
-              err.response?.status || "Unknown"
-            }`
+            "Unable to load assessment."
         );
       }
     } finally {
       setLoading(false);
-      setLoadingExistingRole(false);
     }
-  };
-
-  // =========================================================
-  // SELECT TARGET ROLE
-  // =========================================================
-
-  const handleRoleSelect = (role) => {
-    console.log(
-      "Selected target role:",
-      role.name,
-      "ID:",
-      role.id
-    );
-
-    // Store target role
-    localStorage.setItem(
-      "targetRoleId",
-      role.id.toString()
-    );
-
-    localStorage.setItem(
-      "targetRole",
-      role.name
-    );
-
-    // Remove previous assessment ID
-    localStorage.removeItem(
-      "targetAssessmentId"
-    );
-
-    setSelectedRole(role);
-
-    // Load assessment for THIS role only
-    loadAssessment(role.id);
-  };
-
-  // =========================================================
-  // CHANGE ROLE
-  // =========================================================
-
-  const changeRole = () => {
-    localStorage.removeItem("targetRoleId");
-    localStorage.removeItem("targetRole");
-    localStorage.removeItem("targetAssessmentId");
-
-    setSelectedRole(null);
-    setAssessment(null);
-    setError("");
   };
 
   // =========================================================
@@ -275,29 +261,28 @@ function EmployeeSkillAssessment() {
 
   const startAssessment = () => {
     if (!selectedRole) {
-      setError(
-        "Please select a target role first."
-      );
+      setError("Target role is not available.");
       return;
     }
 
     if (!assessment) {
       setError(
-        "Assessment is not available for the selected role."
+        "Assessment is not available for this target role."
       );
       return;
     }
 
     console.log(
       "Starting assessment:",
-      assessment.id,
-      "for role:",
+      assessment.id
+    );
+
+    console.log(
+      "Target role:",
       selectedRole.name,
-      "role ID:",
       selectedRole.id
     );
 
-    // Ensure these values are available to Assessment.jsx
     localStorage.setItem(
       "targetRoleId",
       selectedRole.id.toString()
@@ -317,10 +302,18 @@ function EmployeeSkillAssessment() {
   };
 
   // =========================================================
-  // LOADING EXISTING ROLE
+  // RETRY
   // =========================================================
 
-  if (loadingExistingRole && !selectedRole) {
+  const retry = () => {
+    loadEmployeeTargetRole();
+  };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading && !selectedRole) {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[80vh]">
@@ -360,7 +353,7 @@ function EmployeeSkillAssessment() {
               </p>
 
               <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-                Select Your Target Role
+                Role-Specific Assessment
               </h1>
 
             </div>
@@ -368,386 +361,303 @@ function EmployeeSkillAssessment() {
           </div>
 
           <p className="text-slate-500 max-w-3xl">
-            Select the role you want to be assessed for.
-            Your assessment will be customized according to
-            the skills and competencies required for that role.
+            Your assessment is automatically selected based
+            on your target role.
           </p>
 
         </div>
 
         {/* ===================================================
-            TARGET ROLE CARDS
+            ERROR
         =================================================== */}
 
-        {!selectedRole && (
-          <div>
+        {!loading && error && (
 
-            <div className="mb-5">
+          <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8 text-center">
 
-              <h2 className="text-lg font-bold text-slate-800">
-                Choose a Target Role
-              </h2>
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
 
-              <p className="text-sm text-slate-500 mt-1">
-                Select one role to continue with the
-                role-specific skill assessment.
-              </p>
+              <AlertCircle
+                size={34}
+                className="text-red-500"
+              />
 
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <h2 className="text-xl font-bold text-slate-800">
+              Assessment Unavailable
+            </h2>
 
-              {targetRoles.map((role) => {
+            <p className="text-slate-500 mt-2">
+              {error}
+            </p>
 
-                const Icon = role.icon;
+            <button
+              onClick={retry}
+              className="mt-6 flex items-center gap-2 mx-auto px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
 
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() =>
-                      handleRoleSelect(role)
-                    }
-                    className="text-left bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-300 hover:-translate-y-1 transition-all duration-200 group"
-                  >
+              <RefreshCw size={18} />
 
-                    <div className="flex items-center justify-between mb-5">
+              Try Again
 
-                      <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition">
-
-                        <Icon
-                          size={25}
-                          className="text-indigo-600"
-                        />
-
-                      </div>
-
-                      <ArrowRight
-                        size={20}
-                        className="text-slate-300 group-hover:text-indigo-600 transition"
-                      />
-
-                    </div>
-
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">
-                      {role.name}
-                    </h3>
-
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      {role.description}
-                    </p>
-
-                    <div className="mt-5 pt-4 border-t border-slate-100">
-
-                      <span className="text-sm font-semibold text-indigo-600">
-                        Select Role →
-                      </span>
-
-                    </div>
-
-                  </button>
-                );
-              })}
-
-            </div>
+            </button>
 
           </div>
+
         )}
 
         {/* ===================================================
             SELECTED ROLE
         =================================================== */}
 
-        {selectedRole && (
+        {!error && selectedRole && (
+
           <>
 
-            {/* SELECTED ROLE HEADER */}
+            {/* TARGET ROLE */}
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+              <div className="flex items-center gap-4">
 
-                <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-indigo-100 flex items-center justify-center">
 
-                  <div className="w-14 h-14 rounded-xl bg-indigo-100 flex items-center justify-center">
+                  {(() => {
 
-                    {(() => {
-                      const Icon = selectedRole.icon;
+                    const Icon = selectedRole.icon;
 
-                      return (
-                        <Icon
-                          size={28}
-                          className="text-indigo-600"
-                        />
-                      );
-                    })()}
+                    return (
+                      <Icon
+                        size={28}
+                        className="text-indigo-600"
+                      />
+                    );
 
-                  </div>
-
-                  <div>
-
-                    <p className="text-sm text-indigo-600 font-semibold">
-                      Selected Target Role
-                    </p>
-
-                    <h2 className="text-2xl font-bold text-slate-800">
-                      {selectedRole.name}
-                    </h2>
-
-                  </div>
+                  })()}
 
                 </div>
 
-                <button
-                  type="button"
-                  onClick={changeRole}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
-                >
-                  <RefreshCw size={17} />
-                  Change Role
-                </button>
+                <div>
+
+                  <p className="text-sm text-indigo-600 font-semibold">
+                    Your Target Role
+                  </p>
+
+                  <h2 className="text-2xl font-bold text-slate-800">
+                    {selectedRole.name}
+                  </h2>
+
+                </div>
 
               </div>
 
             </div>
 
-            {/* LOADING */}
+            {/* LOADING ASSESSMENT */}
 
             {loading && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10">
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 mb-6">
+
                 <LoadingState />
+
               </div>
+
             )}
 
-            {/* ERROR */}
+            {/* ASSESSMENT */}
 
-            {!loading && error && (
-              <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8 text-center">
+            {!loading && assessment && (
 
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
+              <>
 
-                  <AlertCircle
-                    size={34}
-                    className="text-red-500"
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 mb-6">
+
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+                    <div>
+
+                      <div className="flex items-center gap-3 mb-3">
+
+                        <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+                          Role-Specific Assessment
+                        </span>
+
+                      </div>
+
+                      <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+                        {assessment.title}
+                      </h1>
+
+                      <p className="text-slate-500 mt-3 leading-relaxed max-w-3xl">
+                        {assessment.description}
+                      </p>
+
+                    </div>
+
+                    <button
+                      onClick={startAssessment}
+                      className="shrink-0 flex items-center justify-center gap-2 px-7 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition shadow-sm"
+                    >
+
+                      <PlayCircle size={21} />
+
+                      Start Assessment
+
+                      <ArrowRight size={18} />
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* ASSESSMENT INFO */}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+
+                  <InfoCard
+                    icon={HelpCircle}
+                    iconBg="bg-blue-100"
+                    iconColor="text-blue-600"
+                    label="Total Questions"
+                    value={
+                      assessment.questions?.length || 0
+                    }
+                  />
+
+                  <InfoCard
+                    icon={Clock}
+                    iconBg="bg-orange-100"
+                    iconColor="text-orange-600"
+                    label="Duration"
+                    value={`${
+                      assessment.durationMinutes || 30
+                    } min`}
+                  />
+
+                  <InfoCard
+                    icon={CheckCircle}
+                    iconBg="bg-green-100"
+                    iconColor="text-green-600"
+                    label="Assessment Type"
+                    value="Technical Skills"
                   />
 
                 </div>
 
-                <h2 className="text-xl font-bold text-slate-800">
-                  Assessment Unavailable
-                </h2>
+                {/* ROLE DESCRIPTION */}
 
-                <p className="text-slate-500 mt-2">
-                  {error}
-                </p>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
 
-                <button
-                  onClick={() =>
-                    loadAssessment(
-                      selectedRole.id
-                    )
-                  }
-                  className="mt-6 flex items-center gap-2 mx-auto px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  <RefreshCw size={18} />
-                  Try Again
-                </button>
+                  <div className="flex items-center gap-3 mb-5">
 
-              </div>
-            )}
+                    <div className="p-2.5 rounded-lg bg-indigo-100 text-indigo-600">
 
-            {/* ASSESSMENT DETAILS */}
-
-            {!loading &&
-              !error &&
-              assessment && (
-                <>
-
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 mb-6">
-
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-                      <div>
-
-                        <div className="flex items-center gap-3 mb-3">
-
-                          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
-                            Role-Specific Assessment
-                          </span>
-
-                        </div>
-
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-                          {assessment.title}
-                        </h1>
-
-                        <p className="text-slate-500 mt-3 leading-relaxed max-w-3xl">
-                          {assessment.description}
-                        </p>
-
-                      </div>
-
-                      <button
-                        onClick={startAssessment}
-                        className="shrink-0 flex items-center justify-center gap-2 px-7 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition shadow-sm"
-                      >
-
-                        <PlayCircle size={21} />
-
-                        Start Assessment
-
-                        <ArrowRight size={18} />
-
-                      </button>
+                      <BookOpen size={21} />
 
                     </div>
 
-                  </div>
+                    <div>
 
-                  {/* ASSESSMENT INFO */}
+                      <h2 className="text-lg font-bold text-slate-800">
+                        Assessment for{" "}
+                        {selectedRole.name}
+                      </h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-
-                    <InfoCard
-                      icon={HelpCircle}
-                      iconBg="bg-blue-100"
-                      iconColor="text-blue-600"
-                      label="Total Questions"
-                      value={
-                        assessment.questions?.length ||
-                        0
-                      }
-                    />
-
-                    <InfoCard
-                      icon={Clock}
-                      iconBg="bg-orange-100"
-                      iconColor="text-orange-600"
-                      label="Duration"
-                      value={`${
-                        assessment.durationMinutes ||
-                        30
-                      } min`}
-                    />
-
-                    <InfoCard
-                      icon={CheckCircle}
-                      iconBg="bg-green-100"
-                      iconColor="text-green-600"
-                      label="Assessment Type"
-                      value="Technical Skills"
-                    />
-
-                  </div>
-
-                  {/* ROLE DESCRIPTION */}
-
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-
-                    <div className="flex items-center gap-3 mb-5">
-
-                      <div className="p-2.5 rounded-lg bg-indigo-100 text-indigo-600">
-                        <BookOpen size={21} />
-                      </div>
-
-                      <div>
-
-                        <h2 className="text-lg font-bold text-slate-800">
-                          Assessment for{" "}
-                          {selectedRole.name}
-                        </h2>
-
-                        <p className="text-sm text-slate-500">
-                          This assessment is designed according
-                          to the selected target role.
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
-
-                      <p className="text-indigo-800 leading-relaxed">
-
-                        You are about to take the{" "}
-                        <strong>
-                          {selectedRole.name}
-                        </strong>{" "}
-                        skill assessment. Your performance
-                        will be evaluated against the skills
-                        expected for this role.
-
+                      <p className="text-sm text-slate-500">
+                        This assessment is based on your
+                        selected target role.
                       </p>
 
                     </div>
 
                   </div>
 
-                  {/* INSTRUCTIONS */}
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
 
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <p className="text-indigo-800 leading-relaxed">
 
-                    <h2 className="text-lg font-bold text-slate-800 mb-5">
-                      Before You Start
-                    </h2>
+                      You are about to take the{" "}
+                      <strong>
+                        {selectedRole.name}
+                      </strong>{" "}
+                      skill assessment. Your performance
+                      will be evaluated against the skills
+                      expected for this role.
 
-                    <div className="space-y-4">
-
-                      <Instruction
-                        text="The assessment contains multiple-choice questions."
-                      />
-
-                      <Instruction
-                        text={`You have ${
-                          assessment.durationMinutes ||
-                          30
-                        } minutes to complete the assessment.`}
-                      />
-
-                      <Instruction
-                        text="Each question has one correct answer."
-                      />
-
-                      <Instruction
-                        text="You can move between questions using Previous, Next, or the question navigator."
-                      />
-
-                      <Instruction
-                        text="Your skill-wise performance will be calculated after submission."
-                      />
-
-                      <Instruction
-                        text={`The assessment is specific to the ${selectedRole.name} role.`}
-                      />
-
-                    </div>
-
-                    <div className="mt-7 pt-6 border-t border-slate-200">
-
-                      <button
-                        onClick={startAssessment}
-                        className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
-                      >
-
-                        <PlayCircle size={20} />
-
-                        Start{" "}
-                        {selectedRole.name}{" "}
-                        Assessment
-
-                        <ArrowRight size={18} />
-
-                      </button>
-
-                    </div>
+                    </p>
 
                   </div>
 
-                </>
-              )}
+                </div>
+
+                {/* INSTRUCTIONS */}
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+
+                  <h2 className="text-lg font-bold text-slate-800 mb-5">
+                    Before You Start
+                  </h2>
+
+                  <div className="space-y-4">
+
+                    <Instruction
+                      text="The assessment contains multiple-choice questions."
+                    />
+
+                    <Instruction
+                      text={`You have ${
+                        assessment.durationMinutes || 30
+                      } minutes to complete the assessment.`}
+                    />
+
+                    <Instruction
+                      text="Each question has one correct answer."
+                    />
+
+                    <Instruction
+                      text="You can move between questions using Previous, Next, or the question navigator."
+                    />
+
+                    <Instruction
+                      text="Your skill-wise performance will be calculated after submission."
+                    />
+
+                    <Instruction
+                      text={`This assessment is specifically designed for the ${selectedRole.name} target role.`}
+                    />
+
+                  </div>
+
+                  <div className="mt-7 pt-6 border-t border-slate-200">
+
+                    <button
+                      onClick={startAssessment}
+                      className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
+                    >
+
+                      <PlayCircle size={20} />
+
+                      Start{" "}
+                      {selectedRole.name}{" "}
+                      Assessment
+
+                      <ArrowRight size={18} />
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+              </>
+
+            )}
 
           </>
+
         )}
 
       </main>

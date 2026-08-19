@@ -1,24 +1,38 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import Login from "../pages/Login";
+import Signup from "../pages/Signup";
 
-import EmployeeDashboard from "./pages/EmployeeDashboard";
-import HRDashboard from "./pages/HRDashboard";
-import ManagerDashboard from "./pages/ManagerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import EmployeeDashboard from "../pages/EmployeeDashboard";
+import HRDashboard from "../pages/HRDashboard";
+import ManagerDashboard from "../pages/ManagerDashboard";
+import AdminDashboard from "../pages/AdminDashboard";
 
-import EmployeeAssessment from "./pages/EmployeeAssessment";
+import EmployeeAssessment from "../pages/EmployeeAssessment";
+import MentorDashboard from "../pages/MentorDashboard";
 
 const AppRoutes = () => {
   return (
     <Routes>
 
-      {/* Authentication */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      {/* =====================================================
+          AUTHENTICATION
+      ===================================================== */}
 
-      {/* ================= EMPLOYEE ================= */}
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
+      <Route
+        path="/signup"
+        element={<Signup />}
+      />
+
+
+      {/* =====================================================
+          EMPLOYEE
+      ===================================================== */}
 
       <Route
         path="/employee"
@@ -30,37 +44,64 @@ const AppRoutes = () => {
         element={<EmployeeAssessment />}
       />
 
-      {/* ================= HR ================= */}
+
+      {/* =====================================================
+          HR
+      ===================================================== */}
 
       <Route
         path="/hr"
         element={<HRDashboard />}
       />
 
-      {/* ================= MANAGER ================= */}
+
+      {/* =====================================================
+          MANAGER
+      ===================================================== */}
 
       <Route
         path="/manager"
         element={<ManagerDashboard />}
       />
 
-      {/* ================= ADMIN / MENTOR ================= */}
+
+      {/* =====================================================
+          MENTORSHIP
+      ===================================================== */}
 
       <Route
-        path="/admin"
-        element={<AdminDashboard />}
+        path="/mentorship"
+        element={<MentorDashboard />}
       />
 
-      {/* Default */}
+
+      {/* =====================================================
+          DEFAULT
+      ===================================================== */}
+
       <Route
         path="/"
-        element={<Navigate to="/login" replace />}
+        element={
+          <Navigate
+            to="/login"
+            replace
+          />
+        }
       />
 
-      {/* Invalid route */}
+
+      {/* =====================================================
+          INVALID ROUTE
+      ===================================================== */}
+
       <Route
         path="*"
-        element={<Navigate to="/login" replace />}
+        element={
+          <Navigate
+            to="/login"
+            replace
+          />
+        }
       />
 
     </Routes>

@@ -12,16 +12,14 @@ import com.knowledgegap.entity.Skill;
 public interface EmployeeSkillRepository
         extends JpaRepository<EmployeeSkill, Long> {
 
-    List<EmployeeSkill> findByEmployee(
-            Employee employee
-    );
+    List<EmployeeSkill> findByEmployee(Employee employee);
 
     Optional<EmployeeSkill> findByEmployeeAndSkill(
             Employee employee,
             Skill skill
     );
 
-    void deleteByEmployee(
-            Employee employee
-    );
+    List<EmployeeSkill> findBySkill(Skill skill);
+
+    void deleteByEmployee(Employee employee);
 }

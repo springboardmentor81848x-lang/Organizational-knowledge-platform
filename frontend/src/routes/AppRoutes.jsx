@@ -28,6 +28,7 @@ import KnowledgeGap from "../pages/KnowledgeGap";
 import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
 import KnowledgeSharing from "../pages/KnowledgeSharing";
+import Mentorship from "../pages/Mentorship";
 
 // ==================================================
 // HR PAGES
@@ -66,6 +67,7 @@ import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard"
 // ==================================================
 
 const getRole = () => {
+
   const role =
     localStorage.getItem("role") ||
     localStorage.getItem("userRole") ||
@@ -85,6 +87,7 @@ function ProtectedRoute({
   children,
   allowedRoles,
 }) {
+
   const token = localStorage.getItem("token");
   const role = getRole();
 
@@ -93,12 +96,14 @@ function ProtectedRoute({
   // --------------------------------------------------
 
   if (!token) {
+
     return (
       <Navigate
         to="/login"
         replace
       />
     );
+
   }
 
   // --------------------------------------------------
@@ -114,12 +119,14 @@ function ProtectedRoute({
           .trim() === role
     )
   ) {
+
     return (
       <Navigate
         to="/unauthorized"
         replace
       />
     );
+
   }
 
   return children;
@@ -130,7 +137,9 @@ function ProtectedRoute({
 // ==================================================
 
 function AppRoutes() {
+
   return (
+
     <Routes>
 
       {/* ==================================================
@@ -192,10 +201,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-      {/* --------------------------------------------------
-          OLD DASHBOARD ALIAS
-      -------------------------------------------------- */}
 
       <Route
         path="/employee-dashboard"
@@ -335,8 +340,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Optional employee-specific alias */}
-
       <Route
         path="/employee/training-learning"
         element={
@@ -359,6 +362,38 @@ function AppRoutes() {
             allowedRoles={["EMPLOYEE"]}
           >
             <KnowledgeSharing />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          EMPLOYEE MENTORSHIP
+          
+          Employee uses this page to:
+          - View skill-gap based recommendations
+          - Select a mentor
+          - Send mentorship request
+          - View own mentorship requests
+      ================================================== */}
+
+      <Route
+        path="/mentorship"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/mentorship"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Mentorship />
           </ProtectedRoute>
         }
       />
@@ -471,6 +506,23 @@ function AppRoutes() {
 
       {/* ==================================================
           MENTOR
+          
+          IMPORTANT:
+          This is a SEPARATE system role.
+
+          Mentor should NOT see the Employee Mentorship
+          recommendation page.
+
+          MentorDashboard should show:
+          - Incoming mentorship requests
+          - Requesting employee
+          - Skill they need help with
+          - Their current proficiency
+          - Goal
+          - Accept
+          - Reject
+          - Active mentorships
+          - Completed mentorships
       ================================================== */}
 
       <Route
@@ -536,6 +588,7 @@ function AppRoutes() {
       <Route
         path="/unauthorized"
         element={
+
           <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center max-w-md w-full">
@@ -560,6 +613,7 @@ function AppRoutes() {
             </div>
 
           </div>
+
         }
       />
 

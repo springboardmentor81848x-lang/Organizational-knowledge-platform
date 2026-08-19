@@ -253,7 +253,7 @@ public class AssessmentService {
 
 
         // =====================================================
-        // CREATE ANSWER MAP
+        // CREATE SUBMITTED ANSWER MAP
         // =====================================================
 
         Map<Long, String> submittedAnswers =
@@ -327,9 +327,27 @@ public class AssessmentService {
             // -------------------------------------------------
             // CORRECT ANSWER
             // -------------------------------------------------
+            //
+            // IMPORTANT:
+            //
+            // Your database contains two formats:
+            //
+            // 1. Full answer text:
+            //    extends
+            //    main()
+            //    Set
+            //
+            // 2. Option letter:
+            //    A
+            //    B
+            //    C
+            //    D
+            //
+            // This method supports BOTH formats.
+            // -------------------------------------------------
 
             String correctAnswer =
-                    question.getCorrectAnswer();
+                    getCorrectAnswerText(question);
 
 
             // -------------------------------------------------
@@ -594,17 +612,7 @@ public class AssessmentService {
 
 
         // =====================================================
-        // IMPORTANT:
-        // REPLACE EMPLOYEE SKILL INVENTORY
-        // =====================================================
-        //
-        // Old skills are deleted.
-        //
-        // Only skills from the latest assessment are stored.
-        //
-        // Therefore, if this assessment contains 5 skills,
-        // EmployeeSkill will contain exactly those 5 skills.
-        //
+        // UPDATE EMPLOYEE SKILL INVENTORY
         // =====================================================
 
         employeeSkillService
@@ -650,6 +658,65 @@ public class AssessmentService {
 
         return assessmentGapResultRepository
                 .findByAttempt(attempt);
+    }
+
+
+    // =========================================================
+    // GET CORRECT ANSWER TEXT
+    // =========================================================
+    //
+    // Supports BOTH formats in your database:
+    //
+    // FORMAT 1:
+    // correct_answer = "extends"
+    //
+    // FORMAT 2:
+    // correct_answer = "B"
+    //
+    // If A/B/C/D is stored, the corresponding option
+    // text is returned.
+    //
+    // If actual answer text is stored, it is returned
+    // directly.
+    // =========================================================
+
+    private String getCorrectAnswerText(
+            AssessmentQuestion question) {
+
+        String answer =
+                question.getCorrectAnswer();
+
+        if (
+                answer == null ||
+                answer.isBlank()
+        ) {
+
+            return null;
+        }
+
+        answer =
+                answer.trim();
+
+
+        switch (answer.toUpperCase()) {
+
+            case "A":
+                return question.getOptionA();
+
+            case "B":
+                return question.getOptionB();
+
+            case "C":
+                return question.getOptionC();
+
+            case "D":
+                return question.getOptionD();
+
+            default:
+                // The database already contains
+                // the complete correct answer.
+                return answer;
+        }
     }
 
 

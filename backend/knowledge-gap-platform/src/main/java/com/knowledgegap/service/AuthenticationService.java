@@ -8,17 +8,19 @@ import com.knowledgegap.dto.LoginRequest;
 import com.knowledgegap.dto.SignupRequest;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.Role;
-import com.knowledgegap.repository.EmployeeRepository;
-import com.knowledgegap.repository.RoleRepository;
 import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.Skill;
+
+import com.knowledgegap.repository.EmployeeRepository;
+import com.knowledgegap.repository.RoleRepository;
 import com.knowledgegap.repository.CompetencyRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
 import com.knowledgegap.repository.SkillRepository;
 
-import java.util.List;
 import com.knowledgegap.security.JWTService;
+
+import java.util.List;
 
 @Service
 public class AuthenticationService {
@@ -31,64 +33,88 @@ public class AuthenticationService {
     private final SkillRepository skillRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
 
-    public AuthenticationService(EmployeeRepository employeeRepository,
-                             RoleRepository roleRepository,
-                             PasswordEncoder passwordEncoder,
-                             JWTService jwtService,
-                             CompetencyRepository competencyRepository,
-                             SkillRepository skillRepository,
-                             EmployeeSkillRepository employeeSkillRepository) {
+    public AuthenticationService(
+            EmployeeRepository employeeRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder,
+            JWTService jwtService,
+            CompetencyRepository competencyRepository,
+            SkillRepository skillRepository,
+            EmployeeSkillRepository employeeSkillRepository) {
 
-    this.employeeRepository = employeeRepository;
-    this.roleRepository = roleRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.jwtService = jwtService;
-
-    this.competencyRepository = competencyRepository;
-    this.skillRepository = skillRepository;
-    this.employeeSkillRepository = employeeSkillRepository;
-}
-
-    // LOGIN
-    // LOGIN
-public AuthResponse login(LoginRequest request) {
-
-    System.out.println("========== LOGIN REQUEST ==========");
-    System.out.println("Email Entered: " + request.getEmail());
-    System.out.println("Password Entered: " + request.getPassword());
-
-    Employee employee = employeeRepository
-            .findByEmail(request.getEmail())
-            .orElseThrow(() -> {
-                System.out.println("Employee not found!");
-                return new RuntimeException("Employee not found");
-            });
-
-    System.out.println("Employee Found: " + employee.getFirstName());
-    System.out.println("Stored Password: " + employee.getPassword());
-
-    boolean passwordMatches = passwordEncoder.matches(
-            request.getPassword(),
-            employee.getPassword()
-    );
-
-    System.out.println("Password Match: " + passwordMatches);
-
-    if (!passwordMatches) {
-        throw new RuntimeException("Invalid password");
+        this.employeeRepository = employeeRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.competencyRepository = competencyRepository;
+        this.skillRepository = skillRepository;
+        this.employeeSkillRepository = employeeSkillRepository;
     }
 
-    String role = employee.getRole().getRoleName();
+    // ============================================================
+    // LOGIN
+    // ============================================================
 
-    System.out.println("Role: " + role);
+    public AuthResponse login(LoginRequest request) {
 
-    String token = jwtService.generateToken(
-            employee.getEmail(),
-            role
-    );
+        System.out.println("========== LOGIN REQUEST ==========");
+        System.out.println("Email Entered: " + request.getEmail());
 
-    System.out.println("Login Successful!");
-    System.out.println("==============================");
+        Employee employee = employeeRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("Employee not found"));
+
+        System.out.println(
+                "Employee Found: " + employee.getFirstName()
+        );
+
+        boolean passwordMatches = passwordEncoder.matches(
+                request.getPassword(),
+                employee.getPassword()
+        );
+
+        System.out.println(
+                "Password Match: " + passwordMatches
+        );
+
+        if (!passwordMatches) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        // --------------------------------------------------------
+        // SYSTEM ROLE
+        // --------------------------------------------------------
+
+        String role = employee.getRole().getRoleName();
+
+        System.out.println("System Role: " + role);
+
+        // --------------------------------------------------------
+        // TARGET ROLE
+        // --------------------------------------------------------
+
+        Long targetRoleId = employee.getTargetRoleId();
+
+        System.out.println(
+                "Employee Target Role ID: " + targetRoleId
+        );
+
+        // --------------------------------------------------------
+        // JWT
+        // --------------------------------------------------------
+
+        String token = jwtService.generateToken(
+                employee.getEmail(),
+                role
+        );
+
+        System.out.println("Login Successful!");
+        System.out.println("==============================");
+
+        // --------------------------------------------------------
+        // RETURN EMPLOYEE DATA + TARGET ROLE
+        // --------------------------------------------------------
 
         return new AuthResponse(
                 token,
@@ -96,26 +122,53 @@ public AuthResponse login(LoginRequest request) {
                 employee.getFirstName(),
                 employee.getLastName(),
                 employee.getEmployeeId(),
-                employee.getDesignation()
+                employee.getDesignation(),
+                targetRoleId
         );
     }
 
+    // ============================================================
     // SIGNUP
+    // ============================================================
+
     public AuthResponse signup(SignupRequest request) {
 
-        if (employeeRepository.findByEmail(request.getEmail()).isPresent()) {
+        // --------------------------------------------------------
+        // 1. CHECK EMAIL
+        // --------------------------------------------------------
+
+        if (employeeRepository
+                .findByEmail(request.getEmail())
+                .isPresent()) {
+
             throw new RuntimeException("Email already exists");
         }
 
-        String normalizedRoleName = normalizeRoleName(request.getRole());
+        // --------------------------------------------------------
+        // 2. NORMALIZE SYSTEM ROLE
+        // --------------------------------------------------------
 
-        Role role = roleRepository.findByRoleName(normalizedRoleName)
-                .orElseGet(() -> {
-                    Role newRole = new Role();
-                    newRole.setRoleName(normalizedRoleName);
-                    newRole.setDescription("Auto-created role for signup");
-                    return roleRepository.save(newRole);
-                });
+        String normalizedRoleName =
+                normalizeRoleName(request.getRole());
+
+        System.out.println(
+                "Signup Role: " + request.getRole()
+        );
+
+        System.out.println(
+                "Normalized Role: " + normalizedRoleName
+        );
+
+        // --------------------------------------------------------
+        // 3. FIND EXISTING SYSTEM ROLE
+        // --------------------------------------------------------
+
+        Role role =
+                findExistingSystemRole(normalizedRoleName);
+
+        // --------------------------------------------------------
+        // 4. CREATE EMPLOYEE
+        // --------------------------------------------------------
 
         Employee employee = new Employee();
 
@@ -123,40 +176,119 @@ public AuthResponse login(LoginRequest request) {
         employee.setFirstName(request.getFirstName());
         employee.setLastName(request.getLastName());
         employee.setEmail(request.getEmail());
-        employee.setPassword(passwordEncoder.encode(request.getPassword()));
-        employee.setDesignation(request.getDesignation());
+
+        employee.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
+
+        employee.setDesignation(
+                request.getDesignation()
+        );
+
         employee.setRole(role);
 
+        // --------------------------------------------------------
+        // 5. SET TARGET ROLE
+        // --------------------------------------------------------
+
+        Long targetRoleId = null;
+
+        if ("EMPLOYEE".equals(normalizedRoleName)) {
+
+            if (request.getTargetRole() == null
+                    || request.getTargetRole().isBlank()) {
+
+                throw new RuntimeException(
+                        "Target Role is required for Employee"
+                );
+            }
+
+            targetRoleId =
+                    getTargetRoleId(
+                            request.getTargetRole()
+                    );
+
+            employee.setTargetRoleId(targetRoleId);
+
+            System.out.println(
+                    "Selected Target Role: "
+                            + request.getTargetRole()
+            );
+
+            System.out.println(
+                    "Target Role ID: "
+                            + targetRoleId
+            );
+        }
+
+        // --------------------------------------------------------
+        // 6. SAVE EMPLOYEE
+        // --------------------------------------------------------
+
         employeeRepository.save(employee);
-        // Get all competencies for the employee's designation
-List<Competency> competencies =
-        competencyRepository.findByDesignation(employee.getDesignation());
 
-// Assign default skills
-for (Competency competency : competencies) {
+        // --------------------------------------------------------
+        // 7. DEFAULT SKILLS
+        // --------------------------------------------------------
 
-    Skill skill = skillRepository
-            .findBySkillName(competency.getDescription())
-            .orElse(null);
+        /*
+         * Keep your existing designation-based default
+         * skill logic.
+         *
+         * Assessment results will later update these
+         * EmployeeSkill records.
+         */
 
-    if (skill != null) {
+        if (employee.getDesignation() != null
+                && !employee.getDesignation().isBlank()) {
 
-        EmployeeSkill employeeSkill = new EmployeeSkill();
+            List<Competency> competencies =
+                    competencyRepository.findByDesignation(
+                            employee.getDesignation()
+                    );
 
-        employeeSkill.setEmployee(employee);
-        employeeSkill.setSkill(skill);
+            for (Competency competency : competencies) {
 
-        // Every new employee starts as Beginner
-        employeeSkill.setCurrentLevel(1);
+                Skill skill =
+                        skillRepository
+                                .findBySkillName(
+                                        competency.getDescription()
+                                )
+                                .orElse(null);
 
-        employeeSkillRepository.save(employeeSkill);
-    }
-}
+                if (skill != null) {
 
-        String token = jwtService.generateToken(
-                employee.getEmail(),
-                role.getRoleName()
-        );
+                    EmployeeSkill employeeSkill =
+                            new EmployeeSkill();
+
+                    employeeSkill.setEmployee(employee);
+                    employeeSkill.setSkill(skill);
+
+                    // New employee starts at Beginner
+                    employeeSkill.setCurrentLevel(1);
+
+                    employeeSkillRepository.save(
+                            employeeSkill
+                    );
+                }
+            }
+        }
+
+        // --------------------------------------------------------
+        // 8. GENERATE JWT
+        // --------------------------------------------------------
+
+        String token =
+                jwtService.generateToken(
+                        employee.getEmail(),
+                        role.getRoleName()
+                );
+
+        // --------------------------------------------------------
+        // 9. RETURN RESPONSE INCLUDING TARGET ROLE
+        // --------------------------------------------------------
 
         return new AuthResponse(
                 token,
@@ -164,14 +296,126 @@ for (Competency competency : competencies) {
                 employee.getFirstName(),
                 employee.getLastName(),
                 employee.getEmployeeId(),
-                employee.getDesignation()
+                employee.getDesignation(),
+                employee.getTargetRoleId()
         );
     }
 
+    // ============================================================
+    // FIND EXISTING SYSTEM ROLE
+    // ============================================================
+
+    private Role findExistingSystemRole(
+            String normalizedRoleName) {
+
+        String databaseRoleName;
+
+        switch (normalizedRoleName) {
+
+            case "EMPLOYEE":
+                databaseRoleName = "EMPLOYEE";
+                break;
+
+            case "HR":
+                databaseRoleName = "HR";
+                break;
+
+            case "MANAGER":
+                databaseRoleName = "MANAGER";
+                break;
+
+            case "DEPARTMENT_HEAD":
+                databaseRoleName = "DEPARTMENT_HEAD";
+                break;
+
+            case "MENTOR":
+                databaseRoleName = "MENTOR";
+                break;
+
+            case "SYSTEM_ADMINISTRATOR":
+                databaseRoleName = "SYSTEM_ADMINISTRATOR";
+                break;
+
+            default:
+                throw new RuntimeException(
+                        "Invalid system role: "
+                                + normalizedRoleName
+                );
+        }
+
+        return roleRepository
+                .findByRoleName(databaseRoleName)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "System role not found in database: "
+                                        + databaseRoleName
+                        )
+                );
+    }
+
+    // ============================================================
+    // TARGET ROLE ID MAPPING
+    // ============================================================
+
+    private Long getTargetRoleId(String targetRole) {
+
+        if (targetRole == null
+                || targetRole.isBlank()) {
+
+            throw new RuntimeException(
+                    "Target Role cannot be empty"
+            );
+        }
+
+        String normalizedTargetRole =
+                targetRole.trim().toLowerCase();
+
+        switch (normalizedTargetRole) {
+
+            case "software developer":
+                return 1L;
+
+            case "software tester":
+                return 2L;
+
+            case "data analyst":
+                return 3L;
+
+            case "data scientist":
+                return 4L;
+
+            case "devops engineer":
+                return 5L;
+
+            case "ui/ux designer":
+                return 6L;
+
+            case "cybersecurity analyst":
+                return 7L;
+
+            case "database administrator":
+                return 8L;
+
+            default:
+                throw new RuntimeException(
+                        "Invalid Target Role: "
+                                + targetRole
+                );
+        }
+    }
+
+    // ============================================================
+    // NORMALIZE SYSTEM ROLE
+    // ============================================================
+
     private String normalizeRoleName(String roleName) {
-        if (roleName == null || roleName.isBlank()) {
+
+        if (roleName == null
+                || roleName.isBlank()) {
+
             return "EMPLOYEE";
         }
+
         return roleName.trim().toUpperCase();
     }
 }

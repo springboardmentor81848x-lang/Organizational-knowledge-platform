@@ -1,0 +1,104 @@
+package com.knowledgegap.service;
+
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.Notification;
+import com.knowledgegap.repository.NotificationRepository;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@Transactional
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
+
+    public NotificationService(
+            NotificationRepository notificationRepository) {
+
+        this.notificationRepository = notificationRepository;
+    }
+
+    // =========================================================
+    // CREATE NOTIFICATION
+    // =========================================================
+
+    public Notification createNotification(
+            Employee recipient,
+            String type,
+            String message) {
+
+        if (recipient == null) {
+            throw new RuntimeException(
+                    "Notification recipient is required."
+            );
+        }
+
+        if (message == null || message.trim().isEmpty()) {
+            throw new RuntimeException(
+                    "Notification message is required."
+            );
+        }
+
+        Notification notification = new Notification();
+
+        notification.setRecipient(recipient);
+        notification.setType(type);
+        notification.setMessage(message);
+        notification.setReadStatus(false);
+        notification.setCreatedDate(LocalDateTime.now());
+
+        return notificationRepository.save(notification);
+    }
+
+    // =========================================================
+    // GET ALL NOTIFICATIONS FOR EMPLOYEE
+    // =========================================================
+
+    public List<Notification> getNotifications(
+            Employee employee) {
+
+        return notificationRepository
+                .findByRecipientOrderByCreatedDateDesc(
+                        employee
+                );
+    }
+
+    // =========================================================
+    // GET UNREAD NOTIFICATIONS
+    // =========================================================
+
+    public List<Notification> getUnreadNotifications(
+            Employee employee) {
+
+        return notificationRepository
+                .findByRecipientAndReadStatusFalseOrderByCreatedDateDesc(
+                        employee
+                );
+    }
+
+    // =========================================================
+    // MARK NOTIFICATION AS READ
+    // =========================================================
+
+    public Notification markAsRead(Long notificationId) {
+
+        Notification notification =
+                notificationRepository
+                        .findById(notificationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Notification not found."
+                                )
+                        );
+
+        notification.setReadStatus(true);
+
+        return notificationRepository.save(
+                notification
+        );
+    }
+}
