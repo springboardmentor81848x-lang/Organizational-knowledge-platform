@@ -157,14 +157,17 @@ export const LoginForm: React.FC = () => {
          → sessionStorage
       --------------------------------------------------- */
 
-      if (data.rememberMe) {
-        localStorage.setItem("okip_token", token);
-        localStorage.setItem("okip_role", data.role);
+      // Store JWT using the centralized auth storage
+storeToken(token, data.rememberMe);
 
-        console.log("Authentication stored in localStorage.");
-      } else {
-        sessionStorage.setItem("okip_token", token);
-        sessionStorage.setItem("okip_role", data.role);
+// Store selected role
+if (data.rememberMe) {
+  localStorage.setItem("okip_role", data.role);
+  sessionStorage.removeItem("okip_role");
+} else {
+  sessionStorage.setItem("okip_role", data.role);
+  localStorage.removeItem("okip_role");
+}
 
         console.log("Authentication stored in sessionStorage.");
       }

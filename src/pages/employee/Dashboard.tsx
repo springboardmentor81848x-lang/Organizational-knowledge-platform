@@ -1,21 +1,17 @@
 import React from "react";
+import { useState, useEffect } from "react";
 import {
   Activity,
   Award,
   Bell,
   BookOpen,
-  BriefcaseBusiness,
-  CheckCircle2,
   ChevronRight,
   CircleHelp,
-  Clock3,
   FileCheck2,
   GraduationCap,
   LayoutDashboard,
   LogOut,
-  MessageCircle,
   Moon,
-  PlayCircle,
   Search,
   Settings,
   ShieldCheck,
@@ -26,9 +22,37 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 import "@/styles/employee-dashboard.css";
+import gapAnalysisService from "@/services/gapAnalysisService";
 
+interface KnowledgeGap {
+  knowledgeGapId: number;
+  employeeCode: string;
+  employeeName: string;
+  jobRoleName: string;
+  skillName: string;
+  currentProficiency: string | null;
+  requiredProficiency: string;
+  currentExperience: number;
+  requiredExperience: number;
+  gapType: string;
+  gapScore: number;
+  gapPercentage: number;
+  status: string;
+}
+
+interface GapAnalysisResponse {
+  employeeCode: string;
+  employeeName: string;
+  jobRoleName: string;
+  totalSkills: number;
+  completedSkills: number;
+  gapSkills: number;
+  overallGapPercentage: number;
+  readinessPercentage: number;
+  knowledgeGaps: KnowledgeGap[];
+}
 const stats = [
   {
     title: "Overall Proficiency",
@@ -283,6 +307,76 @@ const notifications = [
 ];
 
 export const EmployeeDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [gapAnalysis, setGapAnalysis] =
+    useState<GapAnalysisResponse | null>(null);
+
+  const [gapLoading, setGapLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadGapAnalysis = async () => {
+      try {
+        setGapLoading(true);
+        const data = await gapAnalysisService.getMyGapAnalysis();
+
+        if (isMounted) {
+          console.log("Gap Analysis Response:", data);
+          setGapAnalysis(data as GapAnalysisResponse);
+        }
+      } catch (error) {
+        console.error("Gap Analysis API Error:", error);
+        // Keep the dashboard usable even if the API returns 401/403.
+        if (isMounted) {
+          setGapAnalysis(null);
+        }
+      } finally {
+        if (isMounted) {
+          setGapLoading(false);
+        }
+      }
+    };
+
+    loadGapAnalysis();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const dashboardStats = stats.map((stat) => {
+    if (stat.title === "Skills" && gapAnalysis) {
+      return { ...stat, value: String(gapAnalysis.totalSkills), subtitle: "Total Skills" };
+    }
+
+    if (stat.title === "Skill Gaps" && gapAnalysis) {
+      return { ...stat, value: String(gapAnalysis.gapSkills), subtitle: "Needs Attention" };
+    }
+
+    if (stat.title === "Overall Proficiency" && gapAnalysis) {
+      const proficiency = Math.max(0, Math.min(100, gapAnalysis.readinessPercentage));
+      return { ...stat, value: `${proficiency.toFixed(1)}%`, subtitle: "Readiness" };
+    }
+
+    return stat;
+  });
+
+  const dashboardSkillGaps = gapAnalysis?.knowledgeGaps?.length
+    ? gapAnalysis.knowledgeGaps
+        .filter((gap) => gap.gapPercentage > 0)
+        .sort((a, b) => b.gapPercentage - a.gapPercentage)
+        .slice(0, 5)
+        .map((gap, index) => ({
+          name: gap.skillName,
+          level: gap.requiredProficiency || "Required",
+          gap: `${Math.round(gap.gapPercentage)}%`,
+          width: `${Math.max(0, Math.min(100, gap.gapPercentage))}%`,
+          type: index === 0 ? "red" : index === 1 ? "orange" : index < 4 ? "yellow" : "green",
+        }))
+    : skillGaps;
+
   return (
     <div className="employee-dashboard">
       {/* ================= SIDEBAR ================= */}
@@ -303,8 +397,7 @@ export const EmployeeDashboard: React.FC = () => {
           <NavItem icon={FileCheck2} label="Self Assessment" />
           <NavItem icon={Users} label="Peer Assessment" />
           <NavItem icon={Target} label="My Proficiency" />
-          <NavItem icon={TrendingUp} label="Skill Gaps" />
-          <NavItem icon={BookOpen} label="Learning Paths" />
+          <NavItem icon={TrendingUp} label="Skill Gaps" onClick={() => navigate("/employee/skill-gaps")} />          <NavItem icon={BookOpen} label="Learning Paths" />
           <NavItem icon={GraduationCap} label="Training" />
           <NavItem icon={Activity} label="My Progress" />
           <NavItem icon={Award} label="Achievements" />
@@ -406,7 +499,7 @@ export const EmployeeDashboard: React.FC = () => {
           {/* ================= STATS ================= */}
 
           <div className="employee-stats">
-            {stats.map((stat) => {
+            {dashboardStats.map((stat) => {
               const Icon = stat.icon;
 
               return (
@@ -521,11 +614,11 @@ export const EmployeeDashboard: React.FC = () => {
             <section className="employee-card gaps-card">
               <CardHeader
                 title="Top Skill Gaps"
-                subtitle="Skills that need your attention"
+                subtitle={gapLoading ? "Loading your latest skill gaps..." : "Skills that need your attention"}
               />
 
               <div className="skill-gap-list">
-                {skillGaps.map((gap) => (
+                {dashboardSkillGaps.map((gap) => (
                   <div className="skill-gap-item" key={gap.name}>
                     <div className="skill-gap-heading">
                       <strong>{gap.name}</strong>
@@ -969,13 +1062,19 @@ function NavItem({
   icon: Icon,
   label,
   active = false,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className={`employee-nav-item ${active ? "active" : ""}`}>
+    <div
+      className={`employee-nav-item ${active ? "active" : ""}`}
+      onClick={onClick}
+      style={{ cursor: onClick ? "pointer" : "default" }}
+    >
       <Icon size={15} />
       <span>{label}</span>
     </div>

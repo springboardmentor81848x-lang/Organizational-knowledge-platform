@@ -8,7 +8,7 @@ import HRDashboard  from "@/pages/hr/Dashboard";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import EmployeeDashboard from "@/pages/employee/Dashboard";
 import ManagerDashboard from "@/pages/manager/Dashboard"; 
-
+import SkillGapsPage from "@/pages/employee/SkillGapsPage";
 export function App() {
   return (
     <Routes>
@@ -24,7 +24,7 @@ export function App() {
       <Route path="/hr" element={<HRDashboard />} />
       <Route path="/manager" element={<ManagerDashboard />} />
       <Route path="/admin" element={<AdminDashboard />} />
-     
+     <Route path="/employee/skill-gaps" element={<SkillGapsPage />} />
       {/* Unknown route */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
