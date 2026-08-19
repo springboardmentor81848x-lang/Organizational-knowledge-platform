@@ -4,26 +4,12 @@ import api from "./api";
 // KNOWLEDGE GAP
 // =========================================================
 
-// ---------------------------------------------------------
-// Detect and SAVE knowledge gaps
-// Use this when assessment/gap analysis needs to generate
-// new gaps.
-// ---------------------------------------------------------
 export const detectGaps = async (employeeIdentifier) => {
   return await api.post(
     `/knowledge-gaps/detect/${employeeIdentifier}`
   );
 };
 
-
-// ---------------------------------------------------------
-// Get ALREADY STORED knowledge gaps for employee
-//
-// IMPORTANT:
-// Employee Dashboard should use this API.
-// It should NOT call detectGaps() every time the dashboard
-// loads.
-// ---------------------------------------------------------
 export const getKnowledgeGapsByEmployee = async (
   employeeIdentifier
 ) => {
@@ -32,10 +18,6 @@ export const getKnowledgeGapsByEmployee = async (
   );
 };
 
-
-// ---------------------------------------------------------
-// Get target role from latest assessment
-// ---------------------------------------------------------
 export const getTargetRole = async (
   employeeIdentifier
 ) => {
@@ -68,7 +50,6 @@ export const getCompetenciesByDesignation = async (
 // EMPLOYEE SKILLS
 // =========================================================
 
-// Get current skill inventory of employee
 export const getEmployeeSkills = async (
   employeeId
 ) => {
@@ -99,7 +80,10 @@ export const getAIRecommendation = (
 };
 
 
-// Ask AI using generated learning path
+// =========================================================
+// ASK AI
+// =========================================================
+
 export const askAIQuestion = async (
   question,
   learningPath

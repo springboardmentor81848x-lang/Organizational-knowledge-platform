@@ -10,8 +10,6 @@ import {
   Bell,
   LogOut,
   User,
-  Trophy,
-  Award,
   Brain,
   AlertTriangle,
   TrendingUp,
@@ -21,14 +19,14 @@ import {
   UserCog,
   PieChart,
   Activity,
+  CalendarDays,
 } from "lucide-react";
 
 function Sidebar({ role }) {
-  // Supports:
-  // EMPLOYEE
-  // ROLE_EMPLOYEE
-  // employee
-  // role_employee
+
+  // ==================================================
+  // NORMALIZE ROLE
+  // ==================================================
 
   const normalizedRole = (role || "")
     .toUpperCase()
@@ -56,12 +54,8 @@ function Sidebar({ role }) {
       <div className="p-6 border-b border-slate-700">
 
         <h1 className="text-2xl font-bold">
-          OKIP
+          ORGANIZATIONAL KNOWLEDGE GAP INTELLIGENCE PLATFORM
         </h1>
-
-        <p className="text-sm text-slate-300">
-          Knowledge Platform
-        </p>
 
       </div>
 
@@ -77,6 +71,7 @@ function Sidebar({ role }) {
 
         {normalizedRole === "HR" && (
           <>
+
             <NavLink
               to="/hr"
               className={navLinkClass}
@@ -148,6 +143,7 @@ function Sidebar({ role }) {
               <Bell size={20} />
               Notifications
             </NavLink>
+
           </>
         )}
 
@@ -157,6 +153,7 @@ function Sidebar({ role }) {
 
         {normalizedRole === "MANAGER" && (
           <>
+
             <NavLink
               to="/manager"
               className={navLinkClass}
@@ -220,6 +217,7 @@ function Sidebar({ role }) {
               <Bell size={20} />
               Notifications
             </NavLink>
+
           </>
         )}
 
@@ -229,6 +227,7 @@ function Sidebar({ role }) {
 
         {normalizedRole === "DEPARTMENT_HEAD" && (
           <>
+
             <NavLink
               to="/department-head"
               className={navLinkClass}
@@ -292,16 +291,20 @@ function Sidebar({ role }) {
               <Bell size={20} />
               Notifications
             </NavLink>
+
           </>
         )}
 
         {/* ==================================================
-            MENTOR / ADMIN SIDEBAR
+            MENTOR SIDEBAR
+            ONLY 7 SECTIONS
         ================================================== */}
 
-        {(normalizedRole === "ADMIN" ||
-          normalizedRole === "MENTOR") && (
+        {normalizedRole === "MENTOR" && (
           <>
+
+            {/* 1. Mentor Dashboard */}
+
             <NavLink
               to="/mentor"
               className={navLinkClass}
@@ -310,61 +313,66 @@ function Sidebar({ role }) {
               Mentor Dashboard
             </NavLink>
 
+            {/* 2. Training Management */}
+
             <NavLink
-              to="/learning-path"
+              to="/training-management"
               className={navLinkClass}
             >
               <GraduationCap size={20} />
-              Learning Paths
+              Training Management
             </NavLink>
 
-            <NavLink
-              to="/training-recommendations"
-              className={navLinkClass}
-            >
-              <Lightbulb size={20} />
-              Training Recommendations
-            </NavLink>
+            {/* 3. Course Catalog */}
 
             <NavLink
               to="/training-catalog"
               className={navLinkClass}
             >
               <Library size={20} />
-              Training Catalog
+              Course Catalog
             </NavLink>
 
+            {/* 4. Learning Paths */}
+
             <NavLink
-              to="/external-resources"
+              to="/learning-path"
               className={navLinkClass}
             >
-              <ExternalLink size={20} />
-              External Resources
+              <BookOpen size={20} />
+              Learning Paths
             </NavLink>
 
+            {/* 5. Mentor Management */}
+
             <NavLink
-              to="/recommendation-analytics"
+              to="/mentor-management"
+              className={navLinkClass}
+            >
+              <Users size={20} />
+              Mentor Management
+            </NavLink>
+
+            {/* 6. Knowledge Sessions */}
+
+            <NavLink
+              to="/knowledge-sessions"
+              className={navLinkClass}
+            >
+              <CalendarDays size={20} />
+              Knowledge Sessions
+            </NavLink>
+
+            {/* 7. Learning Analytics */}
+
+            <NavLink
+              to="/learning-analytics"
               className={navLinkClass}
             >
               <PieChart size={20} />
-              Recommendation Analytics
+              Learning Analytics
             </NavLink>
 
-            <NavLink
-              to="/reports"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              Reports
-            </NavLink>
-
-            <NavLink
-              to="/notifications"
-              className={navLinkClass}
-            >
-              <Bell size={20} />
-              Notifications
-            </NavLink>
           </>
         )}
 
@@ -374,6 +382,7 @@ function Sidebar({ role }) {
 
         {normalizedRole === "EMPLOYEE" && (
           <>
+
             {/* Dashboard */}
 
             <NavLink
@@ -434,10 +443,7 @@ function Sidebar({ role }) {
               AI Learning Path
             </NavLink>
 
-            {/* ==================================================
-                TRAINING & LEARNING
-                IMPORTANT: MATCHES APP ROUTES
-            ================================================== */}
+            {/* Training & Learning */}
 
             <NavLink
               to="/training-learning"
@@ -447,34 +453,64 @@ function Sidebar({ role }) {
               Training & Learning
             </NavLink>
 
-            {/* Achievements */}
+            {/* Mentorship */}
 
             <NavLink
-              to="/achievements"
+              to="/mentorship"
               className={navLinkClass}
             >
-              <Trophy size={20} />
-              Achievements
+              <Users size={20} />
+              Mentorship
             </NavLink>
 
-            {/* Certifications */}
+            {/* Knowledge Sessions */}
 
             <NavLink
-              to="/certifications"
+              to="/knowledge-sessions"
               className={navLinkClass}
             >
-              <Award size={20} />
-              Certifications
+              <CalendarDays size={20} />
+              Knowledge Sessions
             </NavLink>
 
-            {/* Knowledge Sharing */}
+            {/* My Trainings */}
 
             <NavLink
-              to="/knowledge-sharing"
+              to="/my-trainings"
+              className={navLinkClass}
+            >
+              <GraduationCap size={20} />
+              My Trainings
+            </NavLink>
+
+            {/* Training Details */}
+
+            <NavLink
+              to="/training-details"
               className={navLinkClass}
             >
               <BookOpen size={20} />
-              Knowledge Sharing
+              Training Details
+            </NavLink>
+
+            {/* Learning Progress */}
+
+            <NavLink
+              to="/learning-progress"
+              className={navLinkClass}
+            >
+              <TrendingUp size={20} />
+              Learning Progress
+            </NavLink>
+
+            {/* Expert Directory */}
+
+            <NavLink
+              to="/expert-directory"
+              className={navLinkClass}
+            >
+              <Users size={20} />
+              Expert Directory
             </NavLink>
 
             {/* Notifications */}
@@ -486,6 +522,7 @@ function Sidebar({ role }) {
               <Bell size={20} />
               Notifications
             </NavLink>
+
           </>
         )}
 
@@ -513,9 +550,7 @@ function Sidebar({ role }) {
           }}
         >
           <LogOut size={18} />
-
           Logout
-
         </button>
 
       </div>

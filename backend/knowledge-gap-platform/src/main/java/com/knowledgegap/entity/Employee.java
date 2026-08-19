@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
 
 @Entity
 public class Employee {
@@ -20,13 +21,29 @@ public class Employee {
     private String email;
     private String password;
     private String designation;
+
     @ManyToOne
     @JoinColumn(name = "department_id")
     private Department department;
 
+    // System/Application Role
+    // Example: EMPLOYEE, HR, MANAGER, etc.
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
+    // Target Role selected by Employee during signup
+    // This matches Assessment.assessmentRoleId
+    // 1 = Software Developer
+    // 2 = Software Tester
+    // 3 = Data Analyst
+    // 4 = Data Scientist
+    // 5 = DevOps Engineer
+    // 6 = UI/UX Designer
+    // 7 = Cybersecurity Analyst
+    // 8 = Database Administrator
+    @Column(name = "target_role_id")
+    private Long targetRoleId;
 
     public Employee() {
     }
@@ -82,6 +99,7 @@ public class Employee {
     public void setDesignation(String designation) {
         this.designation = designation;
     }
+
     public Department getDepartment() {
         return department;
     }
@@ -90,11 +108,21 @@ public class Employee {
         this.department = department;
     }
 
+    // System/Application Role
     public Role getRole() {
         return role;
     }
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    // Target Role ID
+    public Long getTargetRoleId() {
+        return targetRoleId;
+    }
+
+    public void setTargetRoleId(Long targetRoleId) {
+        this.targetRoleId = targetRoleId;
     }
 }

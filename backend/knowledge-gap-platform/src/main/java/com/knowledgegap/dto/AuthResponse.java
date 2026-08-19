@@ -7,17 +7,27 @@ public class AuthResponse {
     private String firstName;
     private String lastName;
     private String employeeId;
-    private String designation;   // NEW
+    private String designation;
 
-    public AuthResponse(String token, String role, String firstName,
-                        String lastName, String employeeId,
-                        String designation) {
+    // Target role selected by employee
+    private Long targetRoleId;
+
+    public AuthResponse(
+            String token,
+            String role,
+            String firstName,
+            String lastName,
+            String employeeId,
+            String designation,
+            Long targetRoleId) {
+
         this.token = token;
         this.role = role;
         this.firstName = firstName;
         this.lastName = lastName;
         this.employeeId = employeeId;
         this.designation = designation;
+        this.targetRoleId = targetRoleId;
     }
 
     public String getToken() {
@@ -66,5 +76,13 @@ public class AuthResponse {
 
     public void setDesignation(String designation) {
         this.designation = designation;
+    }
+
+    public Long getTargetRoleId() {
+        return targetRoleId;
+    }
+
+    public void setTargetRoleId(Long targetRoleId) {
+        this.targetRoleId = targetRoleId;
     }
 }

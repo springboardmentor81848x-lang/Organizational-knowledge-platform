@@ -37,16 +37,33 @@ function Login() {
 
       console.log("Login Success:", response.data);
 
-      // ==============================
+      // =====================================================
+      // CLEAR OLD TARGET ROLE DATA
+      // =====================================================
+      // This is important.
+      // It prevents an old employee's targetRoleId from being
+      // reused for the current employee.
+      // =====================================================
+
+      localStorage.removeItem("targetRoleId");
+      localStorage.removeItem("targetRole");
+      localStorage.removeItem("targetAssessmentId");
+
+      // =====================================================
       // SAVE TOKEN
-      // ==============================
+      // =====================================================
+
       if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+        localStorage.setItem(
+          "token",
+          response.data.token
+        );
       }
 
-      // ==============================
+      // =====================================================
       // SAVE USER DETAILS
-      // ==============================
+      // =====================================================
+
       if (response.data.designation) {
         localStorage.setItem(
           "designation",
@@ -75,30 +92,114 @@ function Login() {
         );
       }
 
-      // ==============================
+      // =====================================================
+      // SAVE TARGET ROLE ID
+      // =====================================================
+      // IMPORTANT FIX
+      //
+      // Backend AuthResponse contains:
+      //
+      // targetRoleId
+      //
+      // Example:
+      // Software Developer = 1
+      // Software Tester = 2
+      // Data Analyst = 3
+      // Data Scientist = 4
+      // DevOps Engineer = 5
+      // UI/UX Designer = 6
+      // Cybersecurity Analyst = 7
+      // Database Administrator = 8
+      // =====================================================
+
+      if (response.data.targetRoleId != null) {
+        const targetRoleId = Number(
+          response.data.targetRoleId
+        );
+
+        localStorage.setItem(
+          "targetRoleId",
+          targetRoleId.toString()
+        );
+
+        console.log(
+          "Saved Target Role ID:",
+          targetRoleId
+        );
+
+        // =================================================
+        // SAVE TARGET ROLE NAME
+        // =================================================
+
+        const targetRoles = {
+          1: "Software Developer",
+          2: "Software Tester",
+          3: "Data Analyst",
+          4: "Data Scientist",
+          5: "DevOps Engineer",
+          6: "UI/UX Designer",
+          7: "Cybersecurity Analyst",
+          8: "Database Administrator",
+        };
+
+        const targetRoleName =
+          targetRoles[targetRoleId];
+
+        if (targetRoleName) {
+          localStorage.setItem(
+            "targetRole",
+            targetRoleName
+          );
+
+          console.log(
+            "Saved Target Role:",
+            targetRoleName
+          );
+        }
+      } else {
+        console.log(
+          "No targetRoleId received from backend."
+        );
+      }
+
+      // =====================================================
       // GET ROLE FROM RESPONSE
-      // ==============================
+      // =====================================================
+
       let role = response.data.role;
 
-      // If backend returns:
+      // Backend may return:
+      //
       // role: { roleName: "Mentor" }
-      if (role && typeof role === "object") {
+      //
+      if (
+        role &&
+        typeof role === "object"
+      ) {
         role = role.roleName;
       }
 
-      // ==============================
+      // =====================================================
       // GET ROLE FROM JWT IF NEEDED
-      // ==============================
-      if (!role && response.data.token) {
+      // =====================================================
+
+      if (
+        !role &&
+        response.data.token
+      ) {
         try {
-          const tokenParts = response.data.token.split(".");
+          const tokenParts =
+            response.data.token.split(".");
 
           if (tokenParts.length === 3) {
             const payload = JSON.parse(
               atob(tokenParts[1])
             );
 
-            console.log("JWT Payload:", payload);
+            console.log(
+              "JWT Payload:",
+              payload
+            );
 
             role =
               payload.role ||
@@ -114,18 +215,23 @@ function Login() {
         }
       }
 
-      // ==============================
+      // =====================================================
       // IF ROLE IS ARRAY
-      // ==============================
+      // =====================================================
+
       if (Array.isArray(role)) {
         role = role[0];
       }
 
-      console.log("Role received from backend:", role);
+      console.log(
+        "Role received from backend:",
+        role
+      );
 
-      // ==============================
+      // =====================================================
       // NORMALIZE ROLE
-      // ==============================
+      // =====================================================
+
       const normalizedRole = role
         ?.toString()
         .trim()
@@ -137,9 +243,10 @@ function Login() {
         normalizedRole
       );
 
-      // ==============================
-      // SAVE ROLE
-      // ==============================
+      // =====================================================
+      // SAVE SYSTEM ROLE
+      // =====================================================
+
       if (normalizedRole) {
         localStorage.setItem(
           "role",
@@ -147,9 +254,42 @@ function Login() {
         );
       }
 
-      // ==============================
+      // =====================================================
+      // FINAL DEBUG INFORMATION
+      // =====================================================
+
+      console.log(
+        "========== LOGIN STORAGE =========="
+      );
+
+      console.log(
+        "Employee ID:",
+        localStorage.getItem("employeeId")
+      );
+
+      console.log(
+        "System Role:",
+        localStorage.getItem("role")
+      );
+
+      console.log(
+        "Target Role ID:",
+        localStorage.getItem("targetRoleId")
+      );
+
+      console.log(
+        "Target Role:",
+        localStorage.getItem("targetRole")
+      );
+
+      console.log(
+        "===================================="
+      );
+
+      // =====================================================
       // ROLE BASED NAVIGATION
-      // ==============================
+      // =====================================================
+
       switch (normalizedRole) {
         case "EMPLOYEE":
           navigate("/employee");
@@ -188,10 +328,14 @@ function Login() {
               role || "No role received"
             }`
           );
+
           break;
       }
     } catch (error) {
-      console.error("Login Error:", error);
+      console.error(
+        "Login Error:",
+        error
+      );
 
       if (error.response) {
         alert(
@@ -199,7 +343,9 @@ function Login() {
             "Invalid email or password"
         );
       } else {
-        alert("Cannot connect to server");
+        alert(
+          "Cannot connect to server"
+        );
       }
     }
   };
@@ -208,8 +354,12 @@ function Login() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
 
-        {/* LEFT SIDE */}
+        {/* =====================================================
+            LEFT SIDE
+        ====================================================== */}
+
         <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
+
           <h1 className="text-4xl font-bold text-center">
             Organizational Knowledge
           </h1>
@@ -222,10 +372,15 @@ function Login() {
             Empowering organizations through knowledge sharing,
             skill management and intelligent insights.
           </p>
+
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* =====================================================
+            RIGHT SIDE
+        ====================================================== */}
+
         <div className="p-10">
+
           <h2 className="text-3xl font-bold mb-2">
             Welcome Back
           </h2>
@@ -238,7 +393,9 @@ function Login() {
             className="space-y-5"
             onSubmit={handleLogin}
           >
+
             {/* EMAIL */}
+
             <InputField
               label="Email"
               type="email"
@@ -250,12 +407,15 @@ function Login() {
             />
 
             {/* PASSWORD */}
+
             <div>
+
               <label className="block mb-2 font-medium">
                 Password
               </label>
 
               <div className="flex border rounded-lg overflow-hidden">
+
                 <input
                   type={
                     showPassword
@@ -265,7 +425,9 @@ function Login() {
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) =>
-                    setPassword(e.target.value)
+                    setPassword(
+                      e.target.value
+                    )
                   }
                   className="flex-1 px-4 py-3 outline-none"
                 />
@@ -285,14 +447,23 @@ function Login() {
                     <Eye size={20} />
                   )}
                 </button>
+
               </div>
+
             </div>
 
             {/* REMEMBER ME */}
+
             <div className="flex justify-between items-center text-sm">
+
               <label className="flex items-center gap-2">
-                <input type="checkbox" />
+
+                <input
+                  type="checkbox"
+                />
+
                 Remember Me
+
               </label>
 
               <a
@@ -301,26 +472,35 @@ function Login() {
               >
                 Forgot Password?
               </a>
+
             </div>
 
             {/* LOGIN */}
+
             <Button
               text="Login"
               type="submit"
             />
+
           </form>
 
           {/* SIGN UP */}
+
           <p className="text-center mt-6">
+
             Don't have an account?{" "}
+
             <Link
               to="/signup"
               className="text-indigo-700 font-semibold hover:underline"
             >
               Sign Up
             </Link>
+
           </p>
+
         </div>
+
       </div>
     </div>
   );

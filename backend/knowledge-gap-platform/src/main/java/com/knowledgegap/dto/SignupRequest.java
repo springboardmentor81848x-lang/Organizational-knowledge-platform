@@ -10,6 +10,9 @@ public class SignupRequest {
     private String designation;
     private String role;
 
+    // NEW
+    private String targetRole;
+
     public SignupRequest() {}
 
     public String getEmployeeId() {
@@ -66,5 +69,14 @@ public class SignupRequest {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    // NEW
+    public String getTargetRole() {
+        return targetRole;
+    }
+
+    public void setTargetRole(String targetRole) {
+        this.targetRole = targetRole;
     }
 }
