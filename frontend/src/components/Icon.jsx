@@ -8,7 +8,8 @@ import {
   Briefcase, Trophy, Medal, AlertTriangle, Flame, Download, FileText,
   FileSpreadsheet, Coins, Server, Activity, UserCheck, UserPlus,
   MoreHorizontal, History, Square, Calendar, Pencil, Plus,
-  SlidersHorizontal, Circle, Cloud, Shield, Database, Palette, User, Check
+  SlidersHorizontal, Circle, Cloud, Shield, Database, Palette, User, Check,
+  Eye, EyeOff
 } from 'lucide-react'
 
 const MAP = {
@@ -28,7 +29,8 @@ const MAP = {
   'user-plus': UserPlus, 'more-horizontal': MoreHorizontal, 'history': History,
   'square': Square, 'calendar': Calendar, 'pencil': Pencil, 'plus': Plus,
   'sliders': SlidersHorizontal, 'circle': Circle, 'cloud': Cloud, 'shield': Shield,
-  'database': Database, 'palette': Palette, 'user': User, 'check': Check
+  'database': Database, 'palette': Palette, 'user': User, 'check': Check,
+  'eye': Eye, 'eye-off': EyeOff
 }
 
 export default function Icon({ name, className }) {

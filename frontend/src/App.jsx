@@ -15,7 +15,7 @@ import {
   AdminDashboard, AdminUsers, AdminRoles, AdminSkills, AdminAudit, AdminSettings
 } from './pages/AdminPages.jsx'
 import {
-  ManagerDashboard, TeamSkillGapHeatmap, TeamProfilesOverview, ActionableInterventionsPanel
+  ManagerDashboard, TeamSkillGapHeatmap, TeamProfilesOverview, ActionableInterventionsPanel, EmployeeProgressTracker
 } from './pages/ManagerPages.jsx'
 import { EmployeeSkills as SkillsShared } from './pages/EmployeePages.jsx'
 import { ProfilePage, NotificationsPage } from './pages/SharedPages.jsx'
@@ -127,6 +127,7 @@ export default function App() {
           company: liveUser.company || storedUser.company || '',
           bio: liveUser.bio || storedUser.bio || '',
           department: liveUser.department || storedUser.department || '',
+          manager: liveUser.manager || storedUser.manager || null,
         })
         setAuthed(true)
 
@@ -168,6 +169,7 @@ export default function App() {
       company: authData.company || authData.organization || '',
       bio: authData.bio || '',
       department: authData.department || '',
+      manager: authData.manager || null,
     })
     setPage('dashboard')
     setAuthed(true)
@@ -302,7 +304,7 @@ function PageRouter({ role, page, onNav, user }) {
       case 'skills': return <EmployeeSkills onNav={onNav} />
       case 'ai': return <EmployeeAI user={user} onNav={onNav} />
       case 'training': return <EmployeeTraining user={user} onNav={onNav} />
-      case 'assessments': return <EmployeeAssessments onNav={onNav} />
+      case 'assessments': return <EmployeeAssessments onNav={onNav} initialTab="ai" />
       default: return <NotFound onNav={onNav} />
     }
   }
@@ -310,10 +312,10 @@ function PageRouter({ role, page, onNav, user }) {
   if (role === 'manager') {
     switch (page) {
       case 'dashboard': return <ManagerDashboard onNav={onNav} user={user} />
-      case 'heatmap': return <TeamSkillGapHeatmap onNav={onNav} user={user} />
+      case 'heatmap': return <ManagerDashboard initialTab="heatmap" onNav={onNav} user={user} />
       case 'gaps': return <ManagerDashboard onNav={onNav} user={user} />
-      case 'progress': return <TeamProfilesOverview onNav={onNav} user={user} />
-      case 'interventions': return <ActionableInterventionsPanel onNav={onNav} user={user} />
+      case 'progress': return <EmployeeProgressTracker user={user} onNav={onNav} />
+      case 'interventions': return <ManagerDashboard initialTab="interventions" onNav={onNav} user={user} />
       default: return <NotFound onNav={onNav} />
     }
   }

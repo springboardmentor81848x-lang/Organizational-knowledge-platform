@@ -257,8 +257,20 @@ public class AuthService {
             if (rawTeam == null) {
                 throw new RuntimeException("Team / Domain is required for Employee registration.");
             }
-            if (rawTitle == null) {
-                throw new RuntimeException("Job / Domain Title is required for Employee registration.");
+            if (rawTitle == null || rawTitle.isBlank()) {
+                if (rawTeam.equalsIgnoreCase("DevOps") || rawTeam.equalsIgnoreCase("Cloud & DevOps")) {
+                    rawTitle = "DevOps Engineer";
+                } else if (rawTeam.equalsIgnoreCase("Frontend") || rawTeam.equalsIgnoreCase("UI")) {
+                    rawTitle = "Frontend Developer";
+                } else if (rawTeam.equalsIgnoreCase("Full Stack")) {
+                    rawTitle = "Full Stack Engineer";
+                } else if (rawTeam.equalsIgnoreCase("QA")) {
+                    rawTitle = "QA Automation Engineer";
+                } else if (rawTeam.contains("Developer") || rawTeam.contains("Engineer") || rawTeam.contains("Specialist")) {
+                    rawTitle = rawTeam;
+                } else {
+                    rawTitle = rawTeam + " Developer";
+                }
             }
             if (!validateTeamForDepartment(rawDept, rawTeam)) {
                 throw new RuntimeException("Team '" + rawTeam + "' is not a valid team within the '" + rawDept + "' department.");
@@ -281,9 +293,17 @@ public class AuthService {
             user.setRole(role);
 
             // Auto-assign to manager in this department
-            userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
+            final String targetDeptName = rawDept;
+            User assignedMgr = userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
                     SystemRole.MANAGER, organization.getId(), dept.getId()
-            ).ifPresent(user::setManager);
+            ).orElseGet(() -> {
+                return userRepository.findAll().stream()
+                        .filter(u -> u.getSystemRole() == SystemRole.MANAGER && u.getDepartment() != null && targetDeptName.equalsIgnoreCase(u.getDepartment().getName()))
+                        .findFirst().orElse(null);
+            });
+            if (assignedMgr != null) {
+                user.setManager(assignedMgr);
+            }
 
         } else if (systemRole == SystemRole.MANAGER) {
             if (rawDept == null) {
@@ -581,24 +601,31 @@ public class AuthService {
         }
 
         boolean companyOrDeptChanged = profileData.containsKey("company") || profileData.containsKey("departmentName") || profileData.containsKey("department");
-        if (companyOrDeptChanged && user.getOrganization() != null && user.getDepartment() != null) {
-            if (user.getSystemRole() == SystemRole.EMPLOYEE) {
-                java.util.Optional<User> mgrOpt = userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
-                        SystemRole.MANAGER, user.getOrganization().getId(), user.getDepartment().getId()
-                );
-                if (mgrOpt.isPresent()) {
-                    user.setManager(mgrOpt.get());
-                } else {
-                    user.setManager(null);
+        if (user.getSystemRole() == SystemRole.EMPLOYEE && user.getDepartment() != null) {
+            if (user.getManager() == null || companyOrDeptChanged) {
+                User assignedMgr = null;
+                if (user.getOrganization() != null) {
+                    assignedMgr = userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
+                            SystemRole.MANAGER, user.getOrganization().getId(), user.getDepartment().getId()
+                    ).orElse(null);
                 }
-            } else if (user.getSystemRole() == SystemRole.MANAGER) {
-                java.util.List<User> unmanaged = userRepository.findBySystemRoleAndOrganizationIdAndDepartmentIdAndManagerIsNull(
-                        SystemRole.EMPLOYEE, user.getOrganization().getId(), user.getDepartment().getId()
-                );
-                for (User emp : unmanaged) {
-                    emp.setManager(user);
-                    userRepository.save(emp);
+                if (assignedMgr == null) {
+                    final String targetDept = user.getDepartment().getName();
+                    assignedMgr = userRepository.findAll().stream()
+                            .filter(u -> u.getSystemRole() == SystemRole.MANAGER && u.getDepartment() != null && targetDept.equalsIgnoreCase(u.getDepartment().getName()))
+                            .findFirst().orElse(null);
                 }
+                if (assignedMgr != null) {
+                    user.setManager(assignedMgr);
+                }
+            }
+        } else if (user.getSystemRole() == SystemRole.MANAGER && user.getOrganization() != null && user.getDepartment() != null) {
+            java.util.List<User> unmanaged = userRepository.findBySystemRoleAndOrganizationIdAndDepartmentIdAndManagerIsNull(
+                    SystemRole.EMPLOYEE, user.getOrganization().getId(), user.getDepartment().getId()
+            );
+            for (User emp : unmanaged) {
+                emp.setManager(user);
+                userRepository.save(emp);
             }
         }
 

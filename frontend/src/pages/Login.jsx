@@ -7,18 +7,51 @@ import api from '../services/api.js'
 export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManager, onSwitchToSignUpHR }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showGoogleModal, setShowGoogleModal] = useState(false)
-  const [error, setError] = useState(null)
+  const [selectedRole, setSelectedRole] = useState('')
 
-  async function handleLogin(e, overrideEmail, overridePassword) {
+  const DEMO_ACCOUNTS = {
+    employee: { email: 'employee@northwind.io', pass: 'password123', label: 'Employee' },
+    manager: { email: 'manager@northwind.io', pass: 'password123', label: 'Manager' },
+    hr: { email: 'hr@northwind.io', pass: 'password123', label: 'HR Specialist' },
+    depthead: { email: 'depthead@northwind.io', pass: 'password123', label: 'Department Head' },
+    ldadmin: { email: 'ldadmin@northwind.io', pass: 'password123', label: 'L&D Admin' },
+    admin: { email: 'admin@northwind.io', pass: 'password123', label: 'System Admin' },
+  }
+
+  function handleSelectRole(roleKey) {
+    setSelectedRole(roleKey)
+    if (DEMO_ACCOUNTS[roleKey]) {
+      setEmail(DEMO_ACCOUNTS[roleKey].email)
+      setPassword(DEMO_ACCOUNTS[roleKey].pass)
+    }
+  }
+
+  async function handleLogin(e, overrideEmail, overridePassword, forcedRole) {
     if (e) e.preventDefault()
     setLoading(true)
     setError(null)
     try {
       const loginEmail = overrideEmail ?? email.trim()
       const loginPassword = overridePassword ?? password
+      const activeSelectedRole = forcedRole ?? selectedRole
+
+      if (!activeSelectedRole) {
+        setError('Please select a role to continue.')
+        setLoading(false)
+        return
+      }
+
+      if (!loginEmail || !loginPassword) {
+        setError('Please enter both email address and password.')
+        setLoading(false)
+        return
+      }
+
       const authData = await api.login(loginEmail, loginPassword)
       const sysRole = (authData.systemRole || '').toUpperCase()
       const appRole = sysRole.includes('MANAGER') ? 'manager'
@@ -27,6 +60,14 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
         : sysRole.includes('L_AND_D') || sysRole.includes('LD') ? 'ldadmin'
         : sysRole.includes('ADMIN') ? 'admin'
         : 'employee'
+
+      // Role Validation Check
+      if (activeSelectedRole && activeSelectedRole !== appRole) {
+        setError('Invalid email or password.')
+        setLoading(false)
+        return
+      }
+
       onLogin(appRole, authData)
     } catch (err) {
       setError(err.message || 'Incorrect email or password. Please try again.')
@@ -35,27 +76,11 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
     }
   }
 
-  async function handleDemoLogin(demoEmail, demoPassword) {
-    // Directly call login with the credentials — don't rely on async state updates
+  async function handleDemoLogin(demoEmail, demoPassword, roleKey) {
     setEmail(demoEmail)
     setPassword(demoPassword)
-    setLoading(true)
-    setError(null)
-    try {
-      const authData = await api.login(demoEmail, demoPassword)
-      const sysRole = (authData.systemRole || '').toUpperCase()
-      const appRole = sysRole.includes('MANAGER') ? 'manager'
-        : sysRole.includes('HR') ? 'hr'
-        : sysRole.includes('HEAD') || sysRole.includes('DEPT') ? 'depthead'
-        : sysRole.includes('L_AND_D') || sysRole.includes('LD') ? 'ldadmin'
-        : sysRole.includes('ADMIN') ? 'admin'
-        : 'employee'
-      onLogin(appRole, authData)
-    } catch (err) {
-      setError(err.message || 'Demo login failed. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    if (roleKey) setSelectedRole(roleKey)
+    handleLogin(null, demoEmail, demoPassword, roleKey)
   }
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
@@ -184,6 +209,40 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
                 {error}
               </div>
             )}
+
+
+            {/* Account Role Selection Box with Active Validation */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label htmlFor="login-role-select" className="font-semibold text-lime-300 flex items-center gap-1.5 cursor-pointer">
+                  <Icon name="shield-check" className="w-4 h-4 text-lime-400" /> Select Account Role
+                </label>
+                <span className="text-[11px] text-lime-400 font-semibold bg-lime-400/10 px-2.5 py-0.5 rounded-full border border-lime-400/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-ping inline-block"></span> Validation Active
+                </span>
+              </div>
+
+              <div className="relative">
+                <select
+                  id="login-role-select"
+                  value={selectedRole}
+                  onChange={(e) => {
+                    setSelectedRole(e.target.value)
+                    setError(null)
+                  }}
+                  className="w-full bg-[#0B0F1A]/90 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 cursor-pointer"
+                >
+                  <option value="" className="bg-[#0B0F1A] text-slate-400">-- Select Role (Enforced Role Validation) --</option>
+                  <option value="employee" className="bg-[#0B0F1A] text-white">👤 Employee</option>
+                  <option value="manager" className="bg-[#0B0F1A] text-white">👔 Manager / Team Lead</option>
+                  <option value="hr" className="bg-[#0B0F1A] text-white">👥 HR Specialist</option>
+                  <option value="depthead" className="bg-[#0B0F1A] text-white">🏛️ Department Head</option>
+                  <option value="ldadmin" className="bg-[#0B0F1A] text-white">🎓 L&D Administrator</option>
+                  <option value="admin" className="bg-[#0B0F1A] text-white">🛡️ System Administrator</option>
+                </select>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-medium text-slate-300 mb-1.5 block">Email address</label>
               <div className="relative">
@@ -197,9 +256,24 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
               <label className="text-xs font-medium text-slate-300 mb-1.5 block">Password</label>
               <div className="relative">
                 <Icon name="lock" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="Your password"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50" />
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50"
+                />
+                <button
+                  type="button"
+                  id="toggle-login-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 rounded-lg focus:outline-none"
+                >
+                  <Icon name={showPassword ? 'eye-off' : 'eye'} className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -232,62 +306,6 @@ export default function Login({ onLogin, onSwitchToSignUp, onSwitchToSignUpManag
               Continue with Google
             </button>
 
-            <div className="flex items-center gap-3 py-1">
-              <div className="h-px bg-white/10 flex-1"></div>
-              <span className="text-xs text-slate-500">quick demo login</span>
-              <div className="h-px bg-white/10 flex-1"></div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                id="demo-employee"
-                onClick={() => handleDemoLogin('employee@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                👤 Employee
-              </button>
-              <button
-                type="button"
-                id="demo-manager"
-                onClick={() => handleDemoLogin('manager@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                👔 Manager
-              </button>
-              <button
-                type="button"
-                id="demo-hr"
-                onClick={() => handleDemoLogin('hr@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                👥 HR Lead
-              </button>
-              <button
-                type="button"
-                id="demo-depthead"
-                onClick={() => handleDemoLogin('depthead@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                🏛️ Dept Head
-              </button>
-              <button
-                type="button"
-                id="demo-ldadmin"
-                onClick={() => handleDemoLogin('ldadmin@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                🎓 L&D Admin
-              </button>
-              <button
-                type="button"
-                id="demo-admin"
-                onClick={() => handleDemoLogin('admin@northwind.io', 'password123')}
-                className="bg-white/5 hover:bg-lime-400/10 hover:border-lime-400/30 border border-white/10 rounded-xl py-2 text-xs font-medium text-slate-300 hover:text-lime-300 transition-all text-center"
-              >
-                🛡️ Admin
-              </button>
-            </div>
 
             {onSwitchToSignUp && (
               <>

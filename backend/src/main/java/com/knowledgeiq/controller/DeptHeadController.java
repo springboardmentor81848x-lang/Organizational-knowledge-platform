@@ -75,13 +75,25 @@ public class DeptHeadController {
 
         data.put("totalEmployees", employees.size());
 
+        Map<UUID, List<SkillGapDto>> userGapsCache = new HashMap<>();
+        for (User emp : employees) {
+            if (emp == null || emp.getId() == null) continue;
+            try {
+                List<SkillGapDto> gList = gapAnalysisService.calculateUserGaps(emp.getId());
+                userGapsCache.put(emp.getId(), gList != null ? gList : Collections.emptyList());
+            } catch (Exception ignored) {
+                userGapsCache.put(emp.getId(), Collections.emptyList());
+            }
+        }
+
         // Dynamic metrics
         long criticalGaps = 0;
         double totalCompletion = 0;
         int enrollmentCount = 0;
 
         for (User emp : employees) {
-            List<SkillGapDto> gaps = gapAnalysisService.calculateUserGaps(emp.getId());
+            if (emp == null || emp.getId() == null) continue;
+            List<SkillGapDto> gaps = userGapsCache.getOrDefault(emp.getId(), Collections.emptyList());
             criticalGaps += gaps.stream().filter(g -> g.getIsCritical() != null && g.getIsCritical()).count();
 
             List<CourseEnrollment> enrollments = enrollmentRepository.findByUserId(emp.getId());
@@ -112,8 +124,9 @@ public class DeptHeadController {
         List<List<Integer>> values = new ArrayList<>();
 
         for (User emp : employees) {
+            if (emp == null || emp.getId() == null) continue;
             List<Integer> empValues = new ArrayList<>();
-            List<SkillGapDto> gaps = gapAnalysisService.calculateUserGaps(emp.getId());
+            List<SkillGapDto> gaps = userGapsCache.getOrDefault(emp.getId(), Collections.emptyList());
             Map<String, Integer> gapMap = gaps.stream().collect(Collectors.toMap(
                     SkillGapDto::getSkillName,
                     SkillGapDto::getCurrentLevel,
@@ -121,7 +134,6 @@ public class DeptHeadController {
             ));
 
             for (String col : cols) {
-                // Return level between 1 and 5 if found, default to 3 if no gap entry
                 empValues.add(gapMap.getOrDefault(col, 3));
             }
             values.add(empValues);

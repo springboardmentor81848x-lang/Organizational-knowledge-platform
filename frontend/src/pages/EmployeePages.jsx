@@ -33,6 +33,21 @@ const EMPTY_EMPLOYEE_DATA = {
 export function EmployeeDashboard({ onNav, user }) {
   const [data, setData] = useState(EMPTY_EMPLOYEE_DATA)
   const [loading, setLoading] = useState(true)
+  const [connectModal, setConnectModal] = useState(null)
+  const [messageText, setMessageText] = useState('')
+  const [toastMsg, setToastMsg] = useState(null)
+
+  function handleOpenConnectModal(targetName, targetEmail) {
+    setConnectModal({ targetName, targetEmail })
+    setMessageText('')
+  }
+
+  function handleSendMessage() {
+    if (!messageText.trim()) return
+    setConnectModal(null)
+    setToastMsg(`✓ Message successfully sent to ${connectModal.targetName}!`)
+    setTimeout(() => setToastMsg(null), 4000)
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -205,7 +220,7 @@ export function EmployeeDashboard({ onNav, user }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6">
           <SectionHead title="Upcoming Assessments" />
           <div className="space-y-2">
@@ -226,6 +241,7 @@ export function EmployeeDashboard({ onNav, user }) {
             )}
           </div>
         </div>
+
         <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6">
           <SectionHead title="Quick Actions" />
           <div className="grid grid-cols-2 gap-3">
@@ -235,7 +251,116 @@ export function EmployeeDashboard({ onNav, user }) {
             <QuickAction icon="user-circle" label="Edit Profile" onClick={() => onNav('profile')} />
           </div>
         </div>
+
+        {/* ── CONNECT & SUPPORT CARD ──────────────────────────── */}
+        <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <SectionHead title="Connect & Support" sub="Direct channel to manager and L&D admin" />
+            <div className="space-y-3 mt-4">
+              {/* Manager Connection */}
+              {(() => {
+                const deptName = user?.department || 'Engineering'
+                const managerName = user?.manager?.fullName || (deptName.toLowerCase().includes('market') || deptName.toLowerCase().includes('finance') ? 'Victor' : 'Marcus Lee')
+                const managerEmail = user?.manager?.email || (deptName.toLowerCase().includes('market') || deptName.toLowerCase().includes('finance') ? 'doom@gmail.com' : 'manager@northwind.io')
+                const managerTitle = user?.manager?.roleTitle || 'Department Manager'
+
+                return (
+                  <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-lime-400 text-[#0B0F1A] font-bold text-xs flex items-center justify-center shrink-0">
+                        {managerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{managerName}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{managerTitle}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenConnectModal(managerName, managerEmail)}
+                      className="px-2.5 py-1 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                    >
+                      <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                    </button>
+                  </div>
+                )
+              })()}
+
+              {/* L&D Admin Connection */}
+              <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    NN
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Nobita Nobi</div>
+                    <div className="text-[10px] text-slate-400 truncate">L&D Administrator</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenConnectModal('Nobita Nobi (L&D Admin)', 'ldadmin@northwind.io')}
+                  className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                >
+                  <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Connect Modal */}
+      {connectModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-scale">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Icon name="message-square" className="w-4 h-4 text-lime-400" />
+                Message to {connectModal.targetName}
+              </h3>
+              <button onClick={() => setConnectModal(null)} className="text-slate-400 hover:text-white">
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Your Message</label>
+              <textarea
+                rows={3}
+                placeholder="Type your message here..."
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                className="w-full text-xs p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-lime-400"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConnectModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSendMessage}
+                className="px-5 py-2 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] rounded-xl text-xs font-bold transition-all shadow-md"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-5 right-5 z-50 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl p-3.5 shadow-xl text-xs font-bold flex items-center gap-2 animate-slide-in">
+          <Icon name="check-circle" className="w-4 h-4" /> {toastMsg}
+        </div>
+      )}
     </div>
   )
 }
@@ -1807,28 +1932,83 @@ function getProficiencyLabel(level) {
 export function EmployeeTraining({ user }) {
   const [learningPathData, setLearningPathData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [assignedCourses, setAssignedCourses] = useState([])
+  const [assignedStatus, setAssignedStatus] = useState({}) // courseId -> status
 
   useEffect(() => {
-    loadLearningPath()
+    loadAll()
   }, [])
 
-  function loadLearningPath() {
+  function loadAll() {
     setLoading(true)
-    api.getPersonalizedLearningPath()
-      .then(res => {
-        if (res) setLearningPathData(res)
+    // Load learning path + backend enrollments in parallel
+    Promise.allSettled([
+      api.getPersonalizedLearningPath(),
+      api.getUserEnrollments()
+    ]).then(([pathResult, enrollResult]) => {
+      if (pathResult.status === 'fulfilled' && pathResult.value) {
+        setLearningPathData(pathResult.value)
+      }
+
+      // Merge backend enrollments + localStorage assigned courses
+      const backendAssigned = (enrollResult.status === 'fulfilled' && Array.isArray(enrollResult.value))
+        ? enrollResult.value.map(e => ({
+            courseId: e.course?.id || e.courseId,
+            title: e.course?.title || 'Assigned Course',
+            assignedBy: 'Your Manager',
+            assignedAt: e.enrolledAt || new Date().toISOString(),
+            status: e.status || 'IN_PROGRESS',
+            notes: '',
+            provider: e.course?.provider || '',
+            enrollmentId: e.id
+          }))
+        : []
+
+      // Read from localStorage (demo mode / offline)
+      const userEmail = user?.email || 'employee@northwind.io'
+      const storageKey = `assigned_courses_${userEmail}`
+      const localAssigned = JSON.parse(localStorage.getItem(storageKey) || '[]')
+
+      // Merge: backend wins for duplicates
+      const merged = [...backendAssigned]
+      localAssigned.forEach(lc => {
+        if (!merged.find(b => b.courseId === lc.courseId)) {
+          merged.push(lc)
+        }
       })
-      .catch(err => console.error("Failed to load learning path:", err))
-      .finally(() => setLoading(false))
+
+      setAssignedCourses(merged)
+
+      // Build status map from backend enrollments
+      const statusMap = {}
+      backendAssigned.forEach(e => { if (e.courseId) statusMap[e.courseId] = e.status })
+      setAssignedStatus(statusMap)
+    }).finally(() => setLoading(false))
   }
 
   function handleEnroll(courseId) {
     if (!courseId) return
     api.enrollCourse(courseId)
-      .then(() => {
-        loadLearningPath()
-      })
-      .catch(err => console.error("Enrollment failed:", err))
+      .then(() => loadAll())
+      .catch(err => console.error('Enrollment failed:', err))
+  }
+
+  function markAssignedCourseStatus(course, newStatus) {
+    // Update backend if we have enrollmentId
+    if (course.enrollmentId) {
+      api.updateEnrollmentStatus(course.enrollmentId, newStatus).catch(() => {})
+    }
+    // Update localStorage
+    const userEmail = user?.email || 'employee@northwind.io'
+    const storageKey = `assigned_courses_${userEmail}`
+    const existing = JSON.parse(localStorage.getItem(storageKey) || '[]')
+    const updated = existing.map(c =>
+      c.courseId === course.courseId ? { ...c, status: newStatus } : c
+    )
+    localStorage.setItem(storageKey, JSON.stringify(updated))
+    setAssignedCourses(prev =>
+      prev.map(c => c.courseId === course.courseId ? { ...c, status: newStatus } : c)
+    )
   }
 
   if (loading) {
@@ -1855,6 +2035,125 @@ export function EmployeeTraining({ user }) {
         </p>
       </div>
 
+      {/* ── ASSIGNED BY MANAGER SECTION ──────────────────────────── */}
+      {assignedCourses.length > 0 && (
+        <div className="space-y-3">
+          {/* Section header */}
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 bg-indigo-500 rounded-full" />
+            <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
+              Assigned by Manager
+            </h2>
+            <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 text-[11px] font-bold border border-indigo-500/30">
+              {assignedCourses.length} course{assignedCourses.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Course cards */}
+          {assignedCourses.map((course, idx) => {
+            const isCompleted  = course.status === 'COMPLETED'
+            const isInProgress = course.status === 'IN_PROGRESS'
+            const assignedDate = course.assignedAt
+              ? new Date(course.assignedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : 'Recently'
+
+            return (
+              <div
+                key={course.courseId || idx}
+                className="bg-white dark:bg-[#0F1420] border border-indigo-500/20 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm"
+              >
+                {/* Icon */}
+                <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                  <Icon name="graduation-cap" className="w-5 h-5 text-indigo-400" />
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm text-slate-900 dark:text-white leading-tight truncate">
+                    {course.title}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <Icon name="user-check" className="w-3 h-3" />
+                      {course.assignedBy || 'Your Manager'}
+                    </span>
+                    <span className="text-[10px] text-slate-500">·</span>
+                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <Icon name="calendar" className="w-3 h-3" />
+                      {assignedDate}
+                    </span>
+                    {course.provider && (
+                      <>
+                        <span className="text-[10px] text-slate-500">·</span>
+                        <span className="text-[11px] text-slate-400">{course.provider}</span>
+                      </>
+                    )}
+                  </div>
+                  {course.notes && (
+                    <div className="mt-1.5 text-[11px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-2.5 py-1 inline-block">
+                      💬 {course.notes}
+                    </div>
+                  )}
+                </div>
+
+                {/* Status badge + action */}
+                <div className="flex items-center gap-2 shrink-0 font-medium">
+                  {isInProgress ? (
+                    <a
+                      href={course.courseUrl || `https://www.google.com/search?q=${encodeURIComponent(course.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open course website to complete"
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25 cursor-pointer flex items-center gap-1 transition-all"
+                    >
+                      ▶ In Progress <Icon name="external-link" className="w-2.5 h-2.5 inline" />
+                    </a>
+                  ) : (
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${
+                      isCompleted  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
+                                     'bg-slate-500/15 text-slate-400 border-slate-500/30'
+                    }`}>
+                      {isCompleted ? '✓ Completed' : '○ Not Started'}
+                    </span>
+                  )}
+
+                  {!isCompleted && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isInProgress) {
+                          markAssignedCourseStatus(course, 'COMPLETED')
+                        } else {
+                          markAssignedCourseStatus(course, 'IN_PROGRESS')
+                          const url = course.courseUrl || `https://www.google.com/search?q=${encodeURIComponent(course.title)}`
+                          window.open(url, '_blank')
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                        isInProgress
+                          ? 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                          : 'bg-indigo-500 hover:bg-indigo-400 text-white'
+                      }`}
+                    >
+                      {isInProgress ? 'Mark Complete' : 'Start Course'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Divider between assigned and AI sections (only if both exist) */}
+      {assignedCourses.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
+          <span className="text-[11px] text-slate-400 uppercase tracking-wider font-medium">AI Skill Roadmap</span>
+          <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
+        </div>
+      )}
+
       {/* NEW USER / NO GAP STATES */}
       {learningPathData?.isNewUser && (
         <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-8 text-center">
@@ -1871,6 +2170,7 @@ export function EmployeeTraining({ user }) {
           <p className="text-xs text-slate-400 mt-1">You are currently meeting or exceeding required benchmarks for {roleTitle}.</p>
         </div>
       )}
+
 
       {/* SKILL-BY-SKILL ROADMAP CARDS */}
       {!learningPathData?.isNewUser && !learningPathData?.hasNoGaps && steps.map((step, idx) => {
@@ -2094,7 +2394,7 @@ export function EmployeeTraining({ user }) {
   )
 }
 
-export function EmployeeAssessments({ onNav }) {
+export function EmployeeAssessments({ onNav, initialTab = 'ai' }) {
   const [assessments, setAssessments] = useState([])
   const [pendingEvaluations, setPendingEvaluations] = useState([])
   const [customQuestionnaires, setCustomQuestionnaires] = useState([])
@@ -2103,7 +2403,7 @@ export function EmployeeAssessments({ onNav }) {
   const [toast, setToast] = useState(null)
   
   // Navigation Tabs: 'self', 'queue', 'scheduling', 'compare'
-  const [activeTab, setActiveTab] = useState('self')
+  const [activeTab, setActiveTab] = useState(initialTab)
 
   // Questionnaire modal state
   const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false)

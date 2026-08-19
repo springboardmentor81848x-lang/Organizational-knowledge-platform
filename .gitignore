@@ -34,6 +34,13 @@ bin/
 *.war
 *.ear
 
+# Database files & local storage
+*.db
+*.mv.db
+*.trace.db
+backend/data/
+data/
+
 # Logs, Diagnostics & Temp Data
 *.log
 logs/
@@ -44,6 +51,7 @@ scratch/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.timestamp-*.mjs
 
 # IDE & Editor Configurations
 .vscode/

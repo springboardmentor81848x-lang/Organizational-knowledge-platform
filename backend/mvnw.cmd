@@ -58,6 +58,10 @@ set ERROR_CODE=0
 
 @REM ==== START VALIDATION ====
 if exist "%JAVA_HOME%\bin\java.exe" goto init
+if exist "C:\Program Files\Java\latest\jdk-21\bin\java.exe" (
+  set "JAVA_HOME=C:\Program Files\Java\latest\jdk-21"
+  goto init
+)
 if exist "C:\Program Files\Java\jdk-17\bin\java.exe" (
   set "JAVA_HOME=C:\Program Files\Java\jdk-17"
   goto init

@@ -34,6 +34,9 @@ public class AuthController {
     @Autowired
     private DepartmentRepository departmentRepository;
 
+    @Autowired
+    private com.knowledgeiq.repository.UserRepository userRepository;
+
     @GetMapping("/health")
     public ResponseEntity<?> healthCheck() {
         Map<String, Object> health = new HashMap<>();
@@ -105,6 +108,24 @@ public class AuthController {
         userData.put("bio", user.getBio());
         userData.put("experience", user.getExperience());
         userData.put("education", user.getEducation());
+
+        // Resolve Manager
+        User manager = user.getManager();
+        if (manager == null && user.getDepartment() != null && user.getOrganization() != null) {
+            manager = userRepository.findFirstBySystemRoleAndOrganizationIdAndDepartmentId(
+                    com.knowledgeiq.model.SystemRole.MANAGER, user.getOrganization().getId(), user.getDepartment().getId()
+            ).orElse(null);
+        }
+
+        if (manager != null) {
+            Map<String, Object> managerData = new HashMap<>();
+            managerData.put("fullName", manager.getFullName());
+            managerData.put("email", manager.getEmail());
+            managerData.put("roleTitle", manager.getRoleTitle());
+            userData.put("manager", managerData);
+        } else {
+            userData.put("manager", null);
+        }
 
         return ResponseEntity.ok(userData);
     }

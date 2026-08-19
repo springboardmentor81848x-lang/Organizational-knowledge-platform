@@ -190,7 +190,20 @@ export const TEAMS_DATA = {
 export const ALL_MEMBERS = [
   ...TEAMS_DATA.team1.members,
   ...TEAMS_DATA.team2.members,
-  ...TEAMS_DATA.team3.members
+  ...TEAMS_DATA.team3.members,
+  {
+    id: 'aliya',
+    fullName: 'Aliya',
+    email: 'aliya@gmail.com',
+    roleTitle: 'Software Engineer',
+    departmentName: 'Engineering',
+    currentSkillLevel: 70,
+    targetSkillLevel: 100,
+    gapPercentage: 30,
+    criticalGapsCount: 0,
+    riskStatus: 'On Track',
+    activeTrainingStatus: 'No Active Courses'
+  }
 ]
 
 export const COMBINED_HEATMAP = {
@@ -260,6 +273,21 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
   const [loading, setLoading] = useState(true)
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('ALL')
+  const [connectModal, setConnectModal] = useState(null)
+  const [messageText, setMessageText] = useState('')
+  const [toastMsg, setToastMsg] = useState(null)
+
+  const handleOpenConnectModal = (targetName, targetEmail) => {
+    setConnectModal({ targetName, targetEmail })
+    setMessageText('')
+  }
+
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return
+    setConnectModal(null)
+    setToastMsg(`✓ Message successfully sent to ${connectModal.targetName}!`)
+    setTimeout(() => setToastMsg(null), 4000)
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -687,6 +715,141 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
           </div>
         </div>
       )}
+      {/* ── ESCALATION & TEAM COMMUNICATIONS CARD ──────────────────────────── */}
+      {(() => {
+        const employeesList = (teamProfiles && teamProfiles.length > 0)
+          ? teamProfiles
+          : rows.map(r => ({ fullName: r, roleTitle: 'Direct Report', email: 'employee@northwind.io' }))
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Connect with Employees */}
+            <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-3">
+              <SectionHead title="Team Communications" sub="Send direct guidance or sync with your reports" />
+              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                {employeesList.map((emp, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-lime-400 text-[#0B0F1A] font-bold text-xs flex items-center justify-center shrink-0">
+                        {emp.fullName ? emp.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'EM'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{emp.fullName}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{emp.roleTitle || 'Team Member'}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenConnectModal(emp.fullName, emp.email || 'employee@northwind.io')}
+                      className="px-2.5 py-1 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                    >
+                      <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Connect with Support Escalations */}
+            <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-3">
+              <SectionHead title="Support & Escalations" sub="Sync with human resources and department head" />
+              <div className="space-y-3 mt-4">
+                {/* HR Contact */}
+                <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      V
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Vijay</div>
+                      <div className="text-[10px] text-slate-400 truncate">HR Specialist</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenConnectModal('Vijay (HR Specialist)', 'hr@northwind.io')}
+                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                  </button>
+                </div>
+
+                {/* Department Head Contact */}
+                <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-violet-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      K
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Krrish</div>
+                      <div className="text-[10px] text-slate-400 truncate">Head of Department</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenConnectModal('Krrish (Department Head)', 'depthead@northwind.io')}
+                    className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Connect Modal */}
+      {connectModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-scale">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Icon name="message-square" className="w-4 h-4 text-lime-400" />
+                Message to {connectModal.targetName}
+              </h3>
+              <button onClick={() => setConnectModal(null)} className="text-slate-400 hover:text-white">
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Your Message</label>
+              <textarea
+                rows={3}
+                placeholder="Type your message here..."
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                className="w-full text-xs p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-lime-400"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConnectModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSendMessage}
+                className="px-5 py-2 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] rounded-xl text-xs font-bold transition-all shadow-md"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-5 right-5 z-50 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl p-3.5 shadow-xl text-xs font-bold flex items-center gap-2 animate-slide-in">
+          <Icon name="check-circle" className="w-4 h-4" /> {toastMsg}
+        </div>
+      )}
     </div>
   )
 }
@@ -700,8 +863,8 @@ export function TeamProfilesOverview({ profiles = [], onSelectMember, onNav, use
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedUser, setExpandedUser] = useState(null)
 
-  const list = profiles || []
-  const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee')
+  const list = (profiles && profiles.length > 0) ? profiles : ALL_MEMBERS
+  const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee') || (!profiles || profiles.length === 0)
   const domainTeams = groupMembersIntoDomainTeams(list, user?.department)
   const domainKeys = Object.keys(domainTeams)
 
@@ -992,16 +1155,32 @@ export function ActionableInterventionsPanel({ teamProfiles = [], initialSelecte
     )
   }
 
-  const handleAssignCourse = async (courseId, courseTitle) => {
+  const handleAssignCourse = async (courseId, courseTitle, courseUrl = '', provider = '') => {
     setAssigningId(courseId)
     const member = profiles.find(p => p.id === selectedMemberId) || profiles[0]
     try {
       await api.assignCourseToEmployee(selectedMemberId, courseId, customNote)
-      setToastMessage(`Course "${courseTitle}" assigned to ${member.fullName}! Notification dispatched.`)
     } catch (err) {
-      console.log('Assign course handled:', err)
-      setToastMessage(`Course "${courseTitle}" assigned to ${member.fullName}! Notification dispatched.`)
+      console.log('Assign course fallback (demo mode):', err)
     } finally {
+      // ── Persist to localStorage so employee Training Portal sees it ──
+      const storageKey = `assigned_courses_${member?.email || selectedMemberId}`
+      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]')
+      if (!existing.find(c => c.courseId === courseId)) {
+        existing.push({
+          courseId,
+          title: courseTitle,
+          assignedBy: 'Your Manager',
+          assignedAt: new Date().toISOString(),
+          status: 'IN_PROGRESS',
+          notes: customNote || '',
+          courseUrl: courseUrl || '',
+          provider: provider || ''
+        })
+        localStorage.setItem(storageKey, JSON.stringify(existing))
+      }
+
+      setToastMessage(`✅ Course "${courseTitle}" assigned to ${member?.fullName || 'employee'}! It now appears in their Training Portal.`)
       setAssigningId(null)
       setTimeout(() => setToastMessage(null), 4000)
     }
@@ -1122,7 +1301,7 @@ export function ActionableInterventionsPanel({ teamProfiles = [], initialSelecte
                     </div>
 
                     <button
-                      onClick={() => handleAssignCourse(rec.courseId, rec.title)}
+                      onClick={() => handleAssignCourse(rec.courseId, rec.title, rec.courseUrl || rec.url || '', rec.provider || '')}
                       disabled={assigningId === rec.courseId}
                       className="px-4 py-2 rounded-xl bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-[#0B0F1A] font-bold text-xs flex items-center gap-2 shrink-0"
                     >
@@ -1140,9 +1319,9 @@ export function ActionableInterventionsPanel({ teamProfiles = [], initialSelecte
               /* Fallback catalog recommendation list */
               <div className="space-y-4">
                 {[
-                  { id: 'd1111111-1111-1111-1111-111111111111', title: 'Advanced AWS Cloud Solutions Architect', category: 'Cloud & Architecture', priority: 'CRITICAL', hours: 16, provider: 'Coursera', why: 'Targeted to close AWS architecture gap (42% discrepancy).' },
-                  { id: 'd3333333-3333-3333-3333-333333333333', title: 'Enterprise Spring Boot Microservices Security', category: 'Security & Compliance', priority: 'CRITICAL', hours: 10, provider: 'Udemy', why: 'Addresses OAuth2 and cybersecurity gap (47% discrepancy).' },
-                  { id: 'd2222222-2222-2222-2222-222222222222', title: 'React 18 & Micro-Frontend Mastery', category: 'Cloud & Architecture', priority: 'HIGH', hours: 12, provider: 'KnowledgeIQ Academy', why: 'Elevates frontend architecture proficiency to Senior benchmark level.' }
+                  { id: 'd1111111-1111-1111-1111-111111111111', title: 'Advanced AWS Cloud Solutions Architect', category: 'Cloud & Architecture', priority: 'CRITICAL', hours: 16, provider: 'Coursera', why: 'Targeted to close AWS architecture gap (42% discrepancy).', courseUrl: 'https://www.coursera.org/search?query=AWS+Cloud+Solutions+Architect' },
+                  { id: 'd3333333-3333-3333-3333-333333333333', title: 'Enterprise Spring Boot Microservices Security', category: 'Security & Compliance', priority: 'CRITICAL', hours: 10, provider: 'Udemy', why: 'Addresses OAuth2 and cybersecurity gap (47% discrepancy).', courseUrl: 'https://www.udemy.com/courses/search/?q=Spring+Boot+Microservices+Security' },
+                  { id: 'd2222222-2222-2222-2222-222222222222', title: 'React 18 & Micro-Frontend Mastery', category: 'Cloud & Architecture', priority: 'HIGH', hours: 12, provider: 'KnowledgeIQ Academy', why: 'Elevates frontend architecture proficiency to Senior benchmark level.', courseUrl: 'https://www.coursera.org/search?query=React+18+Micro+Frontend' }
                 ].map((rec, idx) => (
                   <div key={idx} className="p-4 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/10 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -1154,7 +1333,7 @@ export function ActionableInterventionsPanel({ teamProfiles = [], initialSelecte
                       <div className="text-xs text-slate-400 max-w-xl">{rec.why}</div>
                     </div>
                     <button
-                      onClick={() => handleAssignCourse(rec.id, rec.title)}
+                      onClick={() => handleAssignCourse(rec.id, rec.title, rec.courseUrl, rec.provider)}
                       disabled={assigningId === rec.id}
                       className="px-4 py-2 rounded-xl bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-[#0B0F1A] font-bold text-xs flex items-center gap-2 shrink-0"
                     >
@@ -1175,12 +1354,12 @@ export function ActionableInterventionsPanel({ teamProfiles = [], initialSelecte
 // ----------------------------------------------------------------------
 // 4. Executive Manager Dashboard Component
 // ----------------------------------------------------------------------
-export function ManagerDashboard({ onNav, user }) {
+export function ManagerDashboard({ onNav, user, initialTab = 'overview' }) {
   const [teamGaps, setTeamGaps] = useState(null)
   const [teamProfiles, setTeamProfiles] = useState([])
   const [heatmapData, setHeatmapData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'heatmap' | 'profiles' | 'interventions'
+  const [activeTab, setActiveTab] = useState(initialTab) // 'overview' | 'heatmap' | 'profiles' | 'interventions'
   const [selectedTeamKey, setSelectedTeamKey] = useState('team1')
   const [selectedMemberForIntervention, setSelectedMemberForIntervention] = useState(null)
 
@@ -1530,18 +1709,196 @@ export function ManagerDashboardPage({ onNav, user }) {
   return <ManagerDashboard onNav={onNav} user={user} />
 }
 
-export function ManagerHeatmapPage({ onNav }) {
-  return <TeamSkillGapHeatmap onNav={onNav} />
+export function ManagerHeatmapPage({ onNav, user }) {
+  return <ManagerDashboard initialTab="heatmap" onNav={onNav} user={user} />
 }
 
 export function ManagerTeamGapsPage({ onNav, user }) {
-  return <ManagerDashboard onNav={onNav} user={user} />
+  return <ManagerDashboard initialTab="overview" onNav={onNav} user={user} />
 }
 
-export function ManagerProgressPage({ onNav }) {
-  return <TeamProfilesOverview onNav={onNav} />
+export function ManagerProgressPage({ onNav, user }) {
+  return <ManagerDashboard initialTab="profiles" onNav={onNav} user={user} />
 }
 
-export function ManagerInterventionsPage({ onNav }) {
-  return <ActionableInterventionsPanel onNav={onNav} />
+export function ManagerInterventionsPage({ onNav, user }) {
+  return <ManagerDashboard initialTab="interventions" onNav={onNav} user={user} />
+}
+
+// ----------------------------------------------------------------------
+// Dedicated Employee Progress Tracker (manager 'progress' route)
+// Shows ONLY employees with names + progress — no extra panels
+// ----------------------------------------------------------------------
+export function EmployeeProgressTracker({ user }) {
+  const [search, setSearch] = useState('')
+  const [filterRisk, setFilterRisk] = useState('ALL')
+  const [liveProfiles, setLiveProfiles] = useState([])
+
+  // Try to load real profiles from backend; fall back to static demo data
+  useEffect(() => {
+    api.getManagerTeamProfiles()
+      .then(res => { if (Array.isArray(res) && res.length > 0) setLiveProfiles(res) })
+      .catch(() => {})
+  }, [])
+
+  const employees = liveProfiles.length > 0 ? liveProfiles : ALL_MEMBERS
+
+  const filtered = employees.filter(p => {
+    const matchesSearch =
+      (p.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.roleTitle || '').toLowerCase().includes(search.toLowerCase())
+    const matchesRisk =
+      filterRisk === 'ALL' ||
+      (p.riskStatus || '').toLowerCase().includes(filterRisk.toLowerCase())
+    return matchesSearch && matchesRisk
+  })
+
+  const getRiskStyle = s => {
+    if (s === 'Critical Risk') return 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+    if (s === 'At Risk')       return 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+    return                            'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+  }
+
+  const avatarColors = [
+    'bg-indigo-500', 'bg-emerald-500', 'bg-amber-500',
+    'bg-rose-500',   'bg-violet-500',  'bg-cyan-500',
+    'bg-lime-500',   'bg-pink-500'
+  ]
+
+  return (
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Icon name="trending-up" className="w-5 h-5 text-lime-400" />
+            Employee Progress Tracking
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {filtered.length} employee{filtered.length !== 1 ? 's' : ''} · skill benchmark vs. target
+          </p>
+        </div>
+
+        {/* Search + Risk filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Icon name="search" className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name or role…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-lime-400 w-48"
+            />
+          </div>
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+            {['ALL', 'On Track', 'At Risk', 'Critical Risk'].map(r => (
+              <button
+                key={r}
+                onClick={() => setFilterRisk(r)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
+                  filterRisk === r
+                    ? 'bg-lime-400 text-[#0B0F1A] shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Employee Cards */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-slate-400 text-sm">
+          No employees match your search.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((p, idx) => {
+            const current = p.currentSkillLevel ?? 15
+            const target  = p.targetSkillLevel  ?? 20
+            const pct     = Math.min(100, Math.round((current / target) * 100))
+            const gap     = p.gapPercentage ?? 20
+            const risk    = p.riskStatus || 'On Track'
+            const training = p.activeTrainingStatus || 'No Active Courses'
+            const initials = (p.fullName || 'EM')
+              .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+            const avatarBg = avatarColors[idx % avatarColors.length]
+
+            return (
+              <div
+                key={p.id || p.fullName}
+                className="bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-lime-400/30 transition-colors"
+              >
+                {/* Avatar + Name */}
+                <div className="flex items-center gap-3 min-w-[180px]">
+                  <div className={`w-10 h-10 rounded-full ${avatarBg} text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-sm`}>
+                    {initials}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm text-slate-900 dark:text-white leading-tight">
+                      {p.fullName || 'Unknown'}
+                    </div>
+                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                      {p.roleTitle || 'Employee'}
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      {p.departmentName || p.department || 'Engineering'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Skill Score</span>
+                    <span className="font-bold text-slate-800 dark:text-white">
+                      {current}
+                      <span className="text-slate-400 font-normal"> / {target}</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        pct >= 80 ? 'bg-emerald-400' : pct >= 60 ? 'bg-lime-400' : pct >= 40 ? 'bg-amber-400' : 'bg-rose-400'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-slate-400">{pct}% of target reached</div>
+                </div>
+
+                {/* Gap % */}
+                <div className="text-center min-w-[64px]">
+                  <div className="text-[10px] text-slate-400 mb-1">Gap</div>
+                  <span className={`px-2 py-0.5 rounded font-bold text-[11px] ${
+                    gap >= 40 ? 'bg-rose-500/20 text-rose-300' :
+                    gap >= 25 ? 'bg-amber-500/20 text-amber-300' :
+                                'bg-emerald-500/20 text-emerald-300'
+                  }`}>
+                    {gap}%
+                  </span>
+                </div>
+
+                {/* Training */}
+                <div className="min-w-[140px] text-[11px] text-slate-500 dark:text-slate-300 flex items-center gap-1.5">
+                  <Icon name="book-open" className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  {training}
+                </div>
+
+                {/* Risk Badge */}
+                <div className="min-w-[100px] flex justify-center sm:justify-end">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${getRiskStyle(risk)}`}>
+                    {risk}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }

@@ -73,24 +73,49 @@ const DEFAULT_HR_DATA = {
 export function HRDashboard({ onNav, user }) {
   const [data, setData] = useState(DEFAULT_HR_DATA)
   const [loading, setLoading] = useState(true)
+  const [connectModal, setConnectModal] = useState(null)
+  const [messageText, setMessageText] = useState('')
+  const [toastMsg, setToastMsg] = useState(null)
+  const [employees, setEmployees] = useState([])
+
+  const handleOpenConnectModal = (targetName, targetEmail) => {
+    setConnectModal({ targetName, targetEmail })
+    setMessageText('')
+  }
+
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return
+    setConnectModal(null)
+    setToastMsg(`✓ Message successfully sent to ${connectModal.targetName}!`)
+    setTimeout(() => setToastMsg(null), 4000)
+  }
 
   useEffect(() => {
     let isMounted = true
     setLoading(true)
-    api.getHrDashboard()
-      .then(res => {
-        if (isMounted && res) {
-          setData(prev => {
-            const merged = { ...prev, ...res }
-            // Ensure array fallbacks
-            if (!res.departments || res.departments.length === 0) merged.departments = prev.departments
-            if (!res.heatmap || !res.heatmap.rows || res.heatmap.rows.length === 0) merged.heatmap = prev.heatmap
-            if (!res.alerts || res.alerts.length === 0) merged.alerts = prev.alerts
-            if (!res.certStatus || res.certStatus.length === 0) merged.certStatus = prev.certStatus
-            if (!res.training || res.training.length === 0) merged.training = prev.training
-            if (!res.severityMix || res.severityMix.length === 0) merged.severityMix = prev.severityMix
-            return merged
-          })
+    Promise.all([
+      api.getHrDashboard(),
+      api.getHrUsers().catch(() => [])
+    ])
+      .then(([res, usersRes]) => {
+        if (isMounted) {
+          if (res) {
+            setData(prev => {
+              const merged = { ...prev, ...res }
+              // Ensure array fallbacks
+              if (!res.departments || res.departments.length === 0) merged.departments = prev.departments
+              if (!res.heatmap || !res.heatmap.rows || res.heatmap.rows.length === 0) merged.heatmap = prev.heatmap
+              if (!res.alerts || res.alerts.length === 0) merged.alerts = prev.alerts
+              if (!res.certStatus || res.certStatus.length === 0) merged.certStatus = prev.certStatus
+              if (!res.training || res.training.length === 0) merged.training = prev.training
+              if (!res.severityMix || res.severityMix.length === 0) merged.severityMix = prev.severityMix
+              return merged
+            })
+          }
+          if (Array.isArray(usersRes)) {
+            const emps = usersRes.filter(u => u.systemRole === 'EMPLOYEE' || u.systemRole === 'User')
+            setEmployees(emps)
+          }
         }
       })
       .catch(err => console.log('Using default HR state:', err))
@@ -239,6 +264,178 @@ export function HRDashboard({ onNav, user }) {
           </div>
         </div>
       </div>
+
+      {/* ── ESCALATION & WORKFORCE COMMUNICATIONS CARD ──────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Connect with Employees */}
+        <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-3">
+          <SectionHead title="Workforce Communications" sub="Send direct messages or sync with employees" />
+          <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+            {employees.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 text-xs">No registered employees in the organization</div>
+            ) : (
+              employees.map((emp, idx) => (
+                <div key={idx} className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3 animate-fade-in">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      {emp.fullName ? emp.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'EM'}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{emp.fullName}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{emp.roleTitle || 'Employee'}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenConnectModal(emp.fullName, emp.email)}
+                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Connect with Managers & Admins */}
+        <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-3">
+          <SectionHead title="Support & Management Escalations" sub="Sync with department heads, managers and administrators" />
+          <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+            {/* Manager Marcus King */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-lime-400 text-[#0B0F1A] font-bold text-xs flex items-center justify-center shrink-0">
+                  MK
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Marcus King</div>
+                  <div className="text-[10px] text-slate-400 truncate">Engineering Manager</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenConnectModal('Marcus King (Engineering Manager)', 'manager@northwind.io')}
+                className="px-2.5 py-1 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+              >
+                <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+              </button>
+            </div>
+
+            {/* Manager Victor */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-lime-400 text-[#0B0F1A] font-bold text-xs flex items-center justify-center shrink-0">
+                  VI
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Victor</div>
+                  <div className="text-[10px] text-slate-400 truncate">Marketing Manager</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenConnectModal('Victor (Marketing Manager)', 'doom@gmail.com')}
+                className="px-2.5 py-1 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+              >
+                <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+              </button>
+            </div>
+
+            {/* L&D Admin Nobita */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  NN
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Nobita Nobi</div>
+                  <div className="text-[10px] text-slate-400 truncate">L&D Administrator</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenConnectModal('Nobita Nobi (L&D Admin)', 'ldadmin@northwind.io')}
+                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+              >
+                <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+              </button>
+            </div>
+
+            {/* Department Head Krrish */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-violet-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  KR
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Krrish</div>
+                  <div className="text-[10px] text-slate-400 truncate">Head of Department</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenConnectModal('Krrish (Department Head)', 'depthead@northwind.io')}
+                className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 shrink-0"
+              >
+                <Icon name="message-square" className="w-3.5 h-3.5" /> Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Connect Modal */}
+      {connectModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-scale">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Icon name="message-square" className="w-4 h-4 text-lime-400" />
+                Message to {connectModal.targetName}
+              </h3>
+              <button onClick={() => setConnectModal(null)} className="text-slate-400 hover:text-white">
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Your Message</label>
+              <textarea
+                rows={3}
+                placeholder="Type your message here..."
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                className="w-full text-xs p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F1A] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-lime-400"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConnectModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSendMessage}
+                className="px-5 py-2 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] rounded-xl text-xs font-bold transition-all shadow-md"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-5 right-5 z-50 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl p-3.5 shadow-xl text-xs font-bold flex items-center gap-2 animate-slide-in">
+          <Icon name="check-circle" className="w-4 h-4" /> {toastMsg}
+        </div>
+      )}
     </div>
   )
 }

@@ -17,17 +17,29 @@ export function SectionHead({ title, sub, right }) {
   )
 }
 
-export function StatCard({ icon, label, value, delta, positive, tint, onClick, tooltip }) {
+export function StatCard({ icon, label, title, value, delta, positive, tint, color, onClick, tooltip }) {
+  const displayLabel = label || title || ''
+  
+  let iconTint = tint
+  if (!iconTint && color) {
+    if (color === 'lime') iconTint = 'bg-lime-50 text-lime-600 dark:bg-lime-400/10 dark:text-lime-300'
+    else if (color === 'rose') iconTint = 'bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300'
+    else if (color === 'indigo') iconTint = 'bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10 dark:text-indigo-300'
+    else if (color === 'emerald') iconTint = 'bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-300'
+    else if (color === 'amber') iconTint = 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300'
+  }
+  if (!iconTint) iconTint = 'bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10 dark:text-indigo-300'
+
   return (
     <div
       onClick={onClick}
       className={`card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 transition-all duration-300 ${
         onClick ? 'cursor-pointer hover:border-lime-400/60 hover:shadow-lg hover:shadow-lime-400/10 hover:-translate-y-1 group relative' : ''
       }`}
-      title={tooltip || (onClick ? `Click to view ${label}` : label)}
+      title={tooltip || (onClick ? `Click to view ${displayLabel}` : displayLabel)}
     >
       <div className="flex items-center justify-between mb-4">
-        <div className={`w-10 h-10 rounded-xl ${tint} flex items-center justify-center transition-transform group-hover:scale-110`}>
+        <div className={`w-10 h-10 rounded-xl ${iconTint} flex items-center justify-center transition-transform group-hover:scale-110`}>
           <Icon name={icon} className="w-5 h-5" />
         </div>
         {delta && (
@@ -37,7 +49,7 @@ export function StatCard({ icon, label, value, delta, positive, tint, onClick, t
         )}
       </div>
       <div className="text-slate-500 dark:text-slate-400 text-sm mb-1 group-hover:text-lime-400 transition-colors flex items-center justify-between">
-        <span>{label}</span>
+        <span>{displayLabel}</span>
         {onClick && <Icon name="arrow-up-right" className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-lime-400" />}
       </div>
       <div className="text-2xl font-bold font-display text-slate-900 dark:text-white">{value}</div>

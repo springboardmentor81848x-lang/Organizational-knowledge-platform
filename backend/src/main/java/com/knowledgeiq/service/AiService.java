@@ -449,52 +449,73 @@ public class AiService {
         List<Map<String, Object>> skills = new ArrayList<>();
         List<Map<String, Object>> courses = new ArrayList<>();
 
-        if (cleanDomain.contains("devops") || cleanDomain.contains("infrastructure") || cleanDomain.contains("site reliability")) {
+        if (cleanDomain.contains("devops") || cleanDomain.contains("infrastructure") || cleanDomain.contains("site reliability") || cleanDomain.contains("cloud")) {
             skills = Arrays.asList(
-                createSkillMap("Docker", 4), createSkillMap("Kubernetes", 4), createSkillMap("Cloud / AWS", 4),
+                createSkillMap("Docker", 5), createSkillMap("Kubernetes", 5), createSkillMap("Cloud / AWS", 5),
                 createSkillMap("Linux", 4), createSkillMap("CI/CD", 4)
             );
             courses = Arrays.asList(
-                createCourseMap("Docker Containerization & Compose", "Docker", "https://docs.docker.com/get-started/", "Docker", 4, 6, "Learn container fundamentals, multi-stage builds, and Compose orchestration."),
-                createCourseMap("Kubernetes Production Cluster Orchestration", "Kubernetes", "https://kubernetes.io/docs/tutorials/", "Kubernetes", 4, 8, "Deploy, scale, and manage microservices on production Kubernetes."),
-                createCourseMap("AWS Cloud Practitioner & Architecture", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 4, 10, "Design scalable, resilient cloud architectures using core AWS services.")
+                createCourseMap("Docker Containerization & Compose", "Docker", "https://docs.docker.com/get-started/", "Docker", 5, 6, "Learn container fundamentals, multi-stage builds, and Compose orchestration."),
+                createCourseMap("Kubernetes Production Cluster Orchestration", "Kubernetes", "https://kubernetes.io/docs/tutorials/", "Kubernetes", 5, 8, "Deploy, scale, and manage microservices on production Kubernetes."),
+                createCourseMap("AWS Cloud Practitioner & Architecture", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 5, 10, "Design scalable, resilient cloud architectures using core AWS services.")
             );
-        } else if (cleanDomain.contains("design") || cleanDomain.contains("ux") || cleanDomain.contains("ui") || cleanDomain.contains("product designer")) {
+        } else if (cleanDomain.contains("frontend") || cleanDomain.contains("react") || cleanDomain.contains("ui") || cleanDomain.contains("web")) {
             skills = Arrays.asList(
-                createSkillMap("Figma", 4), createSkillMap("UI/UX Design", 4), createSkillMap("Wireframing", 3),
-                createSkillMap("User Research", 3), createSkillMap("Interaction Design", 3)
+                createSkillMap("React", 5), createSkillMap("UI/UX Design", 4), createSkillMap("SQL", 3),
+                createSkillMap("Cloud / AWS", 3), createSkillMap("Communication & Stakeholder Management", 4)
             );
             courses = Arrays.asList(
-                createCourseMap("Figma Design Systems & Interactive Prototyping", "Figma", "https://help.figma.com/hc/en-us/categories/360002051613-Get-started", "Figma", 4, 6, "Build scalable UI component libraries, variants, and high-fidelity prototypes."),
-                createCourseMap("Interaction Design & Usability Testing", "Interaction Design Foundation", "https://www.interaction-design.org/literature", "UI/UX Design", 4, 8, "Master user research methodologies and usability evaluation heuristics.")
+                createCourseMap("Modern React Architecture & Component Design", "React / Meta", "https://react.dev/learn", "React", 5, 6, "Learn modern React 18/19 hooks, component trees, state management, and modern component patterns."),
+                createCourseMap("Figma Design Systems & Interactive Prototyping", "Figma", "https://help.figma.com/hc/en-us/categories/360002051613-Get-started", "UI/UX Design", 4, 6, "Build scalable UI component libraries, variants, and high-fidelity prototypes."),
+                createCourseMap("Executive Communication & Stakeholder Alignment", "Coursera", "https://www.coursera.org/learn/executive-presence", "Communication & Stakeholder Management", 4, 4, "Structured communication frameworks for technical leadership and cross-functional collaboration.")
             );
-        } else if (cleanDomain.contains("data") || cleanDomain.contains("sql") || cleanDomain.contains("analytics") || cleanDomain.contains("python")) {
+        } else if (cleanDomain.contains("design") || cleanDomain.contains("ux") || cleanDomain.contains("product designer")) {
             skills = Arrays.asList(
-                createSkillMap("SQL", 4), createSkillMap("Python", 4), createSkillMap("Data Analytics", 4),
-                createSkillMap("Cloud / AWS", 3), createSkillMap("Communication & Stakeholder Management", 3)
+                createSkillMap("Figma", 5), createSkillMap("UI/UX Design", 5), createSkillMap("Wireframing", 4),
+                createSkillMap("User Research", 4), createSkillMap("Interaction Design", 4)
             );
             courses = Arrays.asList(
+                createCourseMap("Figma Design Systems & Interactive Prototyping", "Figma", "https://help.figma.com/hc/en-us/categories/360002051613-Get-started", "Figma", 5, 6, "Build scalable UI component libraries, variants, and high-fidelity prototypes."),
+                createCourseMap("Interaction Design & Usability Testing", "Interaction Design Foundation", "https://www.interaction-design.org/literature", "UI/UX Design", 5, 8, "Master user research methodologies and usability evaluation heuristics.")
+            );
+        } else if (cleanDomain.contains("python") || cleanDomain.contains("data") || cleanDomain.contains("analytics") || cleanDomain.contains("ml")) {
+            skills = Arrays.asList(
+                createSkillMap("Python", 5), createSkillMap("SQL", 4), createSkillMap("Data Analytics", 4),
+                createSkillMap("Cloud / AWS", 4), createSkillMap("Communication & Stakeholder Management", 4)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Python for Data Analysis & Engineering", "Python Software Foundation", "https://docs.python.org/3/tutorial/", "Python", 5, 8, "Data manipulation, Pandas dataframes, and automated analytical pipelines."),
                 createCourseMap("Advanced SQL Query Optimization & Modeling", "PostgreSQL", "https://www.postgresql.org/docs/current/tutorial.html", "SQL", 4, 5, "Write performant SQL queries, understand execution plans, and design relational schemas."),
-                createCourseMap("Python for Data Analysis & Engineering", "Python Software Foundation", "https://docs.python.org/3/tutorial/", "Python", 4, 8, "Data manipulation, Pandas dataframes, and automated analytical pipelines.")
+                createCourseMap("AWS Cloud Practitioner & Architecture", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 4, 10, "Design scalable, resilient cloud architectures using core AWS services.")
             );
         } else if (cleanDomain.contains("java") || cleanDomain.contains("backend") || cleanDomain.contains("spring")) {
             skills = Arrays.asList(
                 createSkillMap("Java Spring Boot", 5), createSkillMap("SQL", 4), createSkillMap("Cloud / AWS", 4),
-                createSkillMap("Security", 3), createSkillMap("Communication & Stakeholder Management", 4)
+                createSkillMap("Security", 4), createSkillMap("Communication & Stakeholder Management", 4)
             );
             courses = Arrays.asList(
                 createCourseMap("Spring Boot & Microservices Development", "Spring / VMware", "https://spring.io/guides/gs/spring-boot", "Java Spring Boot", 5, 8, "Build production-grade REST APIs, dependency injection, and cloud-native microservices."),
                 createCourseMap("Advanced SQL Query Optimization & Relational Modeling", "PostgreSQL", "https://www.postgresql.org/docs/current/tutorial.html", "SQL", 4, 5, "Database schema design, indexing strategies, and transaction isolation."),
                 createCourseMap("AWS Cloud Solutions Architect Foundations", "Amazon Web Services", "https://aws.amazon.com/getting-started/", "Cloud / AWS", 4, 10, "Architecting resilient backend services on Amazon Web Services infrastructure.")
             );
-        } else {
+        } else if (cleanDomain.contains("marketing") || cleanDomain.contains("content") || cleanDomain.contains("seo")) {
             skills = Arrays.asList(
-                createSkillMap("React", 4), createSkillMap("Java Spring Boot", 4), createSkillMap("SQL", 4),
-                createSkillMap("Cloud / AWS", 3), createSkillMap("Communication & Stakeholder Management", 4)
+                createSkillMap("Content Strategy & Copywriting", 5), createSkillMap("SEO & Digital Advertising", 5),
+                createSkillMap("Social Media Analytics & Growth", 4), createSkillMap("Campaign Management & ROI", 4),
+                createSkillMap("Brand Strategy", 4)
             );
             courses = Arrays.asList(
+                createCourseMap("Modern Content Marketing Strategy", "HubSpot Academy", "https://academy.hubspot.com/", "Content Strategy & Copywriting", 5, 6, "Develop impactful brand storytelling and strategic content workflows."),
+                createCourseMap("SEO & Digital Growth Foundations", "Google Digital Garage", "https://learndigital.withgoogle.com/", "SEO & Digital Advertising", 5, 6, "Search engine optimization, keyword targeting, and analytics conversion tracking.")
+            );
+        } else {
+            skills = Arrays.asList(
+                createSkillMap("React", 4), createSkillMap("Java Spring Boot", 5), createSkillMap("SQL", 4),
+                createSkillMap("Cloud / AWS", 4), createSkillMap("Communication & Stakeholder Management", 4)
+            );
+            courses = Arrays.asList(
+                createCourseMap("Spring Boot & Microservices Development", "Spring / VMware", "https://spring.io/guides/gs/spring-boot", "Java Spring Boot", 5, 8, "Enterprise application development using Java Spring Boot."),
                 createCourseMap("Modern React Architecture & Component Design", "React / Meta", "https://react.dev/learn", "React", 4, 6, "Learn modern React 18/19 hooks, component trees, and state management."),
-                createCourseMap("Spring Boot & Microservices Development", "Spring / VMware", "https://spring.io/guides/gs/spring-boot", "Java Spring Boot", 4, 8, "Enterprise application development using Java Spring Boot."),
                 createCourseMap("Executive Communication & Stakeholder Alignment", "Coursera", "https://www.coursera.org/learn/executive-presence", "Communication & Stakeholder Management", 4, 4, "Technical leadership and executive communication strategies.")
             );
         }

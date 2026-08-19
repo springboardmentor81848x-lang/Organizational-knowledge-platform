@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // --- 1. Engineering Department ---
-        User manager = ensureUserExists("manager@northwind.io", "Marcus Lee", SystemRole.MANAGER, "Engineering", null, "Engineering Manager");
+        User manager = ensureUserExists("manager@northwind.io", "Marcus King", SystemRole.MANAGER, "Engineering", null, "Engineering Manager");
         User employee = ensureUserExists("employee@northwind.io", "Ava Chen", SystemRole.EMPLOYEE, "Engineering", "Java", "Senior Product Engineer");
         User softwareEngineer = ensureUserExists("swe@northwind.io", "Liam Harper", SystemRole.EMPLOYEE, "Engineering", "Java", "Software Engineer");
         User juniorDeveloper = ensureUserExists("juniordev@northwind.io", "Chloe Adams", SystemRole.EMPLOYEE, "Engineering", "Java", "Junior Developer");
@@ -62,14 +62,15 @@ public class DataInitializer implements CommandLineRunner {
         User sofiaRuiz = ensureUserExists("sofia.ruiz@knowledgeiq.com", "Sofia Ruiz", SystemRole.EMPLOYEE, "Engineering", "Frontend", "Lead UI/UX Engineer");
         User danielOsei = ensureUserExists("daniel.osei@knowledgeiq.com", "Daniel Osei", SystemRole.EMPLOYEE, "Engineering", "DevOps", "Cloud Infrastructure Engineer");
         User alexRivera = ensureUserExists("alex.rivera@knowledgeiq.com", "Alex Rivera", SystemRole.EMPLOYEE, "Engineering", "Python", "Python Developer");
-        User depthead = ensureUserExists("depthead@northwind.io", "David Vance", SystemRole.DEPARTMENT_HEAD, "Engineering", null, "Head of Department");
+        User depthead = ensureUserExists("depthead@northwind.io", "Krrish", SystemRole.DEPARTMENT_HEAD, "Engineering", null, "Head of Department");
+        User deptheadMkt = ensureUserExists("strange@northwind.io", "Stephen Strange", SystemRole.DEPARTMENT_HEAD, "Marketing", null, "Head of Department");
 
-        // --- 2. Finance Department ---
-        User financeMgr = ensureUserExists("finance.mgr@northwind.io", "Elena Vance", SystemRole.MANAGER, "Finance", null, "Finance Manager");
-        User thomasCole = ensureUserExists("thomas.cole@knowledgeiq.com", "Thomas Cole", SystemRole.EMPLOYEE, "Finance", "Accounting", "Senior Accountant");
-        User mayaPatel = ensureUserExists("maya.patel@knowledgeiq.com", "Maya Patel", SystemRole.EMPLOYEE, "Finance", "Accounting", "Payroll Specialist");
-        User lucasScott = ensureUserExists("lucas.scott@knowledgeiq.com", "Lucas Scott", SystemRole.EMPLOYEE, "Finance", "Analysis", "Financial Analyst");
-        User sarahJenkins = ensureUserExists("sarah.jenkins@knowledgeiq.com", "Sarah Jenkins", SystemRole.EMPLOYEE, "Finance", "Analysis", "Budget & Planning Analyst");
+        // --- 2. Marketing Department ---
+        User financeMgr = ensureUserExists("finance.mgr@northwind.io", "Elena Vance", SystemRole.MANAGER, "Marketing", null, "Marketing Manager");
+        User thomasCole = ensureUserExists("thomas.cole@knowledgeiq.com", "Thomas Cole", SystemRole.EMPLOYEE, "Marketing", "Accounting", "Senior Accountant");
+        User mayaPatel = ensureUserExists("maya.patel@knowledgeiq.com", "Maya Patel", SystemRole.EMPLOYEE, "Marketing", "Accounting", "Payroll Specialist");
+        User lucasScott = ensureUserExists("lucas.scott@knowledgeiq.com", "Lucas Scott", SystemRole.EMPLOYEE, "Marketing", "Analysis", "Financial Analyst");
+        User sarahJenkins = ensureUserExists("sarah.jenkins@knowledgeiq.com", "Sarah Jenkins", SystemRole.EMPLOYEE, "Marketing", "Analysis", "Budget & Planning Analyst");
 
         // --- 3. Marketing Department ---
         User marketingMgr = ensureUserExists("marketing.mgr@northwind.io", "Rachel Green", SystemRole.MANAGER, "Marketing", null, "Marketing Manager");
@@ -79,9 +80,9 @@ public class DataInitializer implements CommandLineRunner {
         User oliverReed = ensureUserExists("oliver.reed@knowledgeiq.com", "Oliver Reed", SystemRole.EMPLOYEE, "Marketing", "Content", "Brand Copywriter");
 
         // --- 4. Organization-wide Roles ---
-        User hr = ensureUserExists("hr@northwind.io", "Priya Nair", SystemRole.HR_SPECIALIST, null, null, "HR Specialist");
-        User ldadmin = ensureUserExists("ldadmin@northwind.io", "Elena Rostova", SystemRole.L_AND_D_ADMIN, null, null, "L&D Admin");
-        User admin = ensureUserExists("admin@northwind.io", "Noah Bennett", SystemRole.SYSTEM_ADMIN, null, null, "System Administrator");
+        User hr = ensureUserExists("hr@northwind.io", "Vijay", SystemRole.HR_SPECIALIST, null, null, "HR Specialist");
+        User ldadmin = ensureUserExists("ldadmin@northwind.io", "Nobita Nobi", SystemRole.L_AND_D_ADMIN, null, null, "L&D Admin");
+        User admin = ensureUserExists("admin@northwind.io", "Krishna", SystemRole.SYSTEM_ADMIN, null, null, "System Administrator");
         
         SkillCategory techCategory = ensureCategory("Technical", "Engineering and software development skills");
         SkillCategory mktCategory = ensureCategory("Marketing", "Digital marketing, SEO, content, and analytics");
@@ -204,6 +205,146 @@ public class DataInitializer implements CommandLineRunner {
                 System.err.println("Initial notifications seeding skipped: " + e.getMessage());
             }
         }
+
+        // Custom Data Correction: Update Victor and change Finance to Marketing
+        try {
+            Organization defaultOrg = organizationRepository.findByNameIgnoreCase("KnowledgeIQ Enterprise")
+                    .orElseGet(() -> organizationRepository.save(new Organization("KnowledgeIQ Enterprise", "Default organization")));
+
+            // Find or create Marketing department safely
+            Department mktDept = departmentRepository.findAll().stream()
+                    .filter(d -> "Marketing".equalsIgnoreCase(d.getName()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Department d = new Department("Marketing", "Marketing Department");
+                        d.setOrganization(defaultOrg);
+                        return departmentRepository.save(d);
+                    });
+
+            // Find or create Marketing Manager role safely
+            Role mktRole = roleRepository.findAll().stream()
+                    .filter(r -> "Marketing Manager".equalsIgnoreCase(r.getTitle()))
+                    .findFirst()
+                    .orElseGet(() -> roleRepository.save(new Role("Marketing Manager", mktDept, "Marketing Manager")));
+
+            // Rename existing Finance department to Marketing if it exists
+            departmentRepository.findAll().forEach(dept -> {
+                if ("Finance".equalsIgnoreCase(dept.getName()) || "Markating".equalsIgnoreCase(dept.getName())) {
+                    dept.setName("Marketing");
+                    dept.setDescription("Marketing Department");
+                    departmentRepository.save(dept);
+                }
+            });
+
+            // Rename Finance Manager role to Marketing Manager
+            roleRepository.findAll().forEach(role -> {
+                String title = role.getTitle();
+                if (title != null) {
+                    if (title.equalsIgnoreCase("Finance Manager")) {
+                        role.setTitle("Marketing Manager");
+                        role.setDepartment(mktDept);
+                        roleRepository.save(role);
+                    } else if (title.toLowerCase().contains("finance")) {
+                        role.setTitle(title.replaceAll("(?i)finance", "Marketing"));
+                        role.setDepartment(mktDept);
+                        roleRepository.save(role);
+                    }
+                }
+            });
+
+            // Update Victor and any other users referencing Finance
+            userRepository.findAll().forEach(u -> {
+                boolean updated = false;
+                
+                // If it is Victor
+                if ("doom@gmail.com".equalsIgnoreCase(u.getEmail()) || "Victor".equalsIgnoreCase(u.getFullName())) {
+                    u.setDepartment(mktDept);
+                    u.setRole(mktRole);
+                    u.setBio(u.getBio() != null ? u.getBio().replaceAll("(?i)finance", "Marketing") : null);
+                    updated = true;
+                }
+                
+                // Move anyone in Finance department to Marketing
+                if (u.getDepartment() != null && ("Finance".equalsIgnoreCase(u.getDepartment().getName()) || "Markating".equalsIgnoreCase(u.getDepartment().getName()))) {
+                    u.setDepartment(mktDept);
+                    updated = true;
+                }
+
+                // If their role is Finance Manager, change it to Marketing Manager
+                if (u.getRole() != null && "Finance Manager".equalsIgnoreCase(u.getRole().getTitle())) {
+                    u.setRole(mktRole);
+                    updated = true;
+                }
+
+                if (updated) {
+                    userRepository.save(u);
+                }
+            });
+
+            // Update L&D Admin name to Nobita Nobi
+            userRepository.findByEmail("ldadmin@northwind.io").ifPresent(u -> {
+                if (!"Nobita Nobi".equalsIgnoreCase(u.getFullName())) {
+                    u.setFullName("Nobita Nobi");
+                    userRepository.save(u);
+                }
+            });
+
+            // Update Engineering Manager name to Marcus King
+            userRepository.findByEmail("manager@northwind.io").ifPresent(u -> {
+                if (!"Marcus King".equalsIgnoreCase(u.getFullName())) {
+                    u.setFullName("Marcus King");
+                    userRepository.save(u);
+                }
+            });
+
+            // Update HR Specialist name to Vijay
+            userRepository.findByEmail("hr@northwind.io").ifPresent(u -> {
+                if (!"Vijay".equalsIgnoreCase(u.getFullName())) {
+                    u.setFullName("Vijay");
+                    userRepository.save(u);
+                }
+            });
+
+            // Update Department Head name to Krrish
+            userRepository.findByEmail("depthead@northwind.io").ifPresent(u -> {
+                if (!"Krrish".equalsIgnoreCase(u.getFullName())) {
+                    u.setFullName("Krrish");
+                    userRepository.save(u);
+                }
+            });
+
+            // Ensure Department Head Stephen Strange exists dynamically
+            if (!userRepository.findByEmail("strange@northwind.io").isPresent()) {
+                User strange = new User();
+                strange.setEmail("strange@northwind.io");
+                strange.setFullName("Stephen Strange");
+                strange.setSystemRole(com.knowledgeiq.model.SystemRole.DEPARTMENT_HEAD);
+                strange.setDepartment(mktDept);
+                strange.setOrganization(defaultOrg);
+                // Try to find Head of Department role
+                strange.setRole(roleRepository.findAll().stream()
+                        .filter(r -> "Head of Department".equalsIgnoreCase(r.getTitle()))
+                        .findFirst().orElse(null));
+                userRepository.save(strange);
+            } else {
+                userRepository.findByEmail("strange@northwind.io").ifPresent(u -> {
+                    if (!"Stephen Strange".equalsIgnoreCase(u.getFullName())) {
+                        u.setFullName("Stephen Strange");
+                        userRepository.save(u);
+                    }
+                });
+            }
+
+            // Update System Administrator name to Krishna
+            userRepository.findByEmail("admin@northwind.io").ifPresent(u -> {
+                if (!"Krishna".equalsIgnoreCase(u.getFullName())) {
+                    u.setFullName("Krishna");
+                    userRepository.save(u);
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error updating Finance to Marketing & Nobita/Vijay/Krrish/Strange/Krishna: " + e.getMessage());
+        }
     }
 
     private User ensureUserExists(String email, String fullName, SystemRole systemRole, String deptName, String teamName, String roleTitle) {
@@ -222,9 +363,12 @@ public class DataInitializer implements CommandLineRunner {
 
             Department dept = null;
             if (deptName != null && !deptName.isBlank()) {
-                dept = departmentRepository.findByNameAndOrganizationId(deptName, defaultOrg.getId())
+                final String targetDeptName = deptName;
+                dept = departmentRepository.findAll().stream()
+                        .filter(d -> targetDeptName.equalsIgnoreCase(d.getName()))
+                        .findFirst()
                         .orElseGet(() -> {
-                            Department d = new Department(deptName, deptName + " Department");
+                            Department d = new Department(targetDeptName, targetDeptName + " Department");
                             d.setOrganization(defaultOrg);
                             return departmentRepository.save(d);
                         });

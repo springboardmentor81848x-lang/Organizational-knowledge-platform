@@ -304,11 +304,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
         return
       }
       if (!team) {
-        setError('Please select a Team / Domain for your Employee role.')
-        return
-      }
-      if (!jobTitle.trim()) {
-        setError('Please specify your Job / Domain Title.')
+        setError('Please select a Team / Domain Specialization for your Employee role.')
         return
       }
     } else if (selectedRoleKey === 'manager' || selectedRoleKey === 'depthead') {
@@ -329,6 +325,10 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
     const isEmployee = selectedRoleKey === 'employee'
     const isDeptScoped = selectedRoleKey === 'employee' || selectedRoleKey === 'manager' || selectedRoleKey === 'depthead'
 
+    const derivedRoleTitle = isEmployee
+      ? (team === 'DevOps' ? 'DevOps Engineer' : team === 'Frontend' ? 'Frontend Developer' : team === 'Full Stack' ? 'Full Stack Engineer' : `${team} Developer`)
+      : null
+
     const payload = {
       fullName: fullName.trim(),
       email: email.trim().toLowerCase(),
@@ -337,7 +337,7 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
       company: company.trim(),
       departmentName: isDeptScoped ? department : null,
       teamName: isEmployee ? team : null,
-      roleTitle: isEmployee ? jobTitle.trim() : null,
+      roleTitle: derivedRoleTitle,
       bio: bio.trim() || `${activeRoleObj.label} at ${company.trim()}.`
     }
 
@@ -739,50 +739,6 @@ export default function SignUp({ onSwitchToLogin, onSwitchToSignUpManager, onLog
                       <Icon name="chevron-down" className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
-                </div>
-
-                {/* Job / Domain Title */}
-                <div>
-                  <label htmlFor="signup-jobtitle" className="text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
-                    <span>Job / Domain Title</span>
-                    <span className="text-[10px] text-slate-400">e.g. for {department} → {team}</span>
-                  </label>
-                  <div className="relative">
-                    <Icon name="user-check" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="signup-jobtitle"
-                      type="text"
-                      value={jobTitle}
-                      onChange={e => setJobTitle(e.target.value)}
-                      placeholder="e.g. Java Developer"
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 transition-all"
-                    />
-                  </div>
-
-                  {/* AI Suggestions strictly for Employee Department + Team */}
-                  {availableJobSuggestions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-                      <span className="text-[10px] text-slate-400 font-medium mr-1">
-                        <Icon name="sparkles" className="w-3 h-3 inline text-lime-400 mr-1" />
-                        AI Suggestions for {department} ({team}):
-                      </span>
-                      {availableJobSuggestions.map(sug => (
-                        <button
-                          type="button"
-                          key={sug}
-                          onClick={() => setJobTitle(sug)}
-                          className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
-                            jobTitle === sug
-                              ? 'bg-lime-400/20 text-lime-300 border-lime-400/40 font-semibold'
-                              : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-white'
-                          }`}
-                        >
-                          {sug}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             )}

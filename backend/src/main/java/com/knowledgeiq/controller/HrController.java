@@ -365,6 +365,24 @@ public class HrController {
         List<Department> orgDepts = departmentRepository.findByOrganizationId(org.getId());
         List<User> employees = userRepository.findByOrganizationIdAndSystemRole(org.getId(), SystemRole.EMPLOYEE);
         
+        Map<UUID, List<SkillGapDto>> userGapsCache = new HashMap<>();
+        Map<UUID, List<CourseEnrollment>> userEnrollmentsCache = new HashMap<>();
+        for (User emp : employees) {
+            if (emp == null || emp.getId() == null) continue;
+            try {
+                List<SkillGapDto> gList = gapAnalysisService.calculateUserGaps(emp.getId());
+                userGapsCache.put(emp.getId(), gList != null ? gList : Collections.emptyList());
+            } catch (Exception ignored) {
+                userGapsCache.put(emp.getId(), Collections.emptyList());
+            }
+            try {
+                List<CourseEnrollment> eList = enrollmentRepository.findByUserId(emp.getId());
+                userEnrollmentsCache.put(emp.getId(), eList != null ? eList : Collections.emptyList());
+            } catch (Exception ignored) {
+                userEnrollmentsCache.put(emp.getId(), Collections.emptyList());
+            }
+        }
+
         List<Map<String, Object>> result = new ArrayList<>();
         for (Department d : orgDepts) {
             if (d == null) continue;
@@ -384,19 +402,12 @@ public class HrController {
             double totalCompletion = 0;
             int enrollmentCount = 0;
             for (User de : deptEmps) {
-                if (de == null) continue;
-                List<SkillGapDto> gaps = Collections.emptyList();
-                try {
-                    gaps = gapAnalysisService.calculateUserGaps(de.getId());
-                } catch (Exception ignored) {}
-                if (gaps != null) {
-                    criticalGaps += gaps.stream().filter(g -> g != null && g.getIsCritical() != null && g.getIsCritical()).count();
-                }
-                List<CourseEnrollment> enrollments = Collections.emptyList();
-                try {
-                    enrollments = enrollmentRepository.findByUserId(de.getId());
-                } catch (Exception ignored) {}
-                if (enrollments != null && !enrollments.isEmpty()) {
+                if (de == null || de.getId() == null) continue;
+                List<SkillGapDto> gaps = userGapsCache.getOrDefault(de.getId(), Collections.emptyList());
+                criticalGaps += gaps.stream().filter(g -> g != null && g.getIsCritical() != null && g.getIsCritical()).count();
+
+                List<CourseEnrollment> enrollments = userEnrollmentsCache.getOrDefault(de.getId(), Collections.emptyList());
+                if (!enrollments.isEmpty()) {
                     long completed = enrollments.stream().filter(e -> e != null && "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
                     totalCompletion += (double) completed / enrollments.size() * 100.0;
                     enrollmentCount++;
@@ -459,8 +470,8 @@ public class HrController {
         Map<String, Integer> gapWeights = new HashMap<>();
         Map<String, Integer> criticalGaps = new HashMap<>();
         for (User emp : employees) {
-            if (emp == null) continue;
-            List<SkillGapDto> gaps = Collections.emptyList();
+            if (emp == null || emp.getId() == null) continue;
+            List<SkillGapDto> gaps = null;
             try {
                 gaps = gapAnalysisService.calculateUserGaps(emp.getId());
             } catch (Exception ignored) {}

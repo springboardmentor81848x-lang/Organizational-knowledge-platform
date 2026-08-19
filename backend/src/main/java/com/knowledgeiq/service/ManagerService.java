@@ -45,24 +45,25 @@ public class ManagerService {
             return Collections.emptyList();
         }
         
-        // 1. Search by direct manager ID mapping
-        List<User> members = userRepository.findByManagerId(manager.getId());
+        Set<User> members = new LinkedHashSet<>();
+        // 1. Direct reports assigned to this manager
+        members.addAll(userRepository.findByManagerId(manager.getId()));
         
-        // Fallback: If no direct reports, match by organization and department
-        if (members.isEmpty() && manager.getDepartment() != null && manager.getOrganization() != null) {
-            members = userRepository.findByDepartmentIdAndOrganizationIdAndSystemRole(
+        // 2. Department members within the manager's organization
+        if (manager.getDepartment() != null && manager.getOrganization() != null) {
+            members.addAll(userRepository.findByDepartmentIdAndOrganizationIdAndSystemRole(
                     manager.getDepartment().getId(),
                     manager.getOrganization().getId(),
                     SystemRole.EMPLOYEE
-            );
+            ));
         }
         
-        // 3. Fallback: department members only if department is set
-        if (members.isEmpty() && manager.getDepartment() != null) {
-            members = userRepository.findByDepartmentId(manager.getDepartment().getId());
+        // 3. Department members matching manager's department
+        if (manager.getDepartment() != null) {
+            members.addAll(userRepository.findByDepartmentId(manager.getDepartment().getId()));
         }
 
-        // Return direct report employees only: exclude managers and department heads
+        // Return employee members only: exclude managers and self
         return members.stream()
                 .filter(u -> u.getSystemRole() == SystemRole.EMPLOYEE)
                 .filter(u -> !u.getId().equals(manager.getId()))
@@ -79,16 +80,22 @@ public class ManagerService {
         Map<UUID, SkillGapAccumulator> skillMap = new LinkedHashMap<>();
 
         for (User member : teamMembers) {
-            List<SkillGapDto> memberGaps = gapAnalysisService.calculateUserGaps(member.getId());
+            if (member == null || member.getId() == null) continue;
+            List<SkillGapDto> memberGaps = Collections.emptyList();
+            try {
+                memberGaps = gapAnalysisService.calculateUserGaps(member.getId());
+            } catch (Exception ignored) {}
+            if (memberGaps == null) continue;
             for (SkillGapDto gap : memberGaps) {
+                if (gap == null || gap.getSkillId() == null) continue;
                 SkillGapAccumulator acc = skillMap.computeIfAbsent(gap.getSkillId(),
                         id -> new SkillGapAccumulator(gap.getSkillId(), gap.getSkillName(), gap.getCategoryName(), gap.getIsCritical()));
 
-                acc.totalCurrent += gap.getCurrentLevel();
-                acc.totalRequired += gap.getRequiredLevel();
+                acc.totalCurrent += gap.getCurrentLevel() != null ? gap.getCurrentLevel() : 0;
+                acc.totalRequired += gap.getRequiredLevel() != null ? gap.getRequiredLevel() : 0;
                 acc.userCount++;
 
-                if (gap.getCurrentLevel() < gap.getRequiredLevel()) {
+                if (gap.getCurrentLevel() != null && gap.getRequiredLevel() != null && gap.getCurrentLevel() < gap.getRequiredLevel()) {
                     acc.affectedEmployeeCount++;
                     if (gap.getIsCritical() != null && gap.getIsCritical()) {
                         acc.hasCriticalShortage = true;
