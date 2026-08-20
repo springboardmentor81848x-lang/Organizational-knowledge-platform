@@ -6,6 +6,8 @@ public class AssessmentResultResponse {
     private Long employeeId;
     private Long skillId;
 
+    private String assessmentType;
+
     private Integer correctAnswers;
     private Integer totalQuestions;
     private Double scorePercentage;
@@ -37,6 +39,14 @@ public class AssessmentResultResponse {
 
     public void setSkillId(Long skillId) {
         this.skillId = skillId;
+    }
+
+    public String getAssessmentType() {
+        return assessmentType;
+    }
+
+    public void setAssessmentType(String assessmentType) {
+        this.assessmentType = assessmentType;
     }
 
     public Integer getCorrectAnswers() {

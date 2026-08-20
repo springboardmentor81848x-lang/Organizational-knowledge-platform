@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.team7.knowledge_gap_platform.dto.AssessmentComparisonResponse;
 import com.team7.knowledge_gap_platform.dto.AssessmentResultResponse;
 import com.team7.knowledge_gap_platform.dto.AssessmentSubmitRequest;
 import com.team7.knowledge_gap_platform.entity.Assessment;
@@ -24,7 +25,9 @@ public class AssessmentController {
 
     public AssessmentController(
             AssessmentService assessmentService) {
-        this.assessmentService = assessmentService;
+
+        this.assessmentService =
+                assessmentService;
     }
 
     @PostMapping
@@ -32,37 +35,130 @@ public class AssessmentController {
             @RequestBody Assessment assessment) {
 
         return ResponseEntity.ok(
-                assessmentService.createAssessment(assessment)
+                assessmentService
+                        .createAssessment(
+                                assessment)
+        );
+    }
+
+    @GetMapping("/skill/{skillId}")
+    public ResponseEntity<Assessment> getAssessmentBySkill(
+            @PathVariable Long skillId) {
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getAssessmentBySkillId(
+                                skillId)
+        );
+    }
+
+    @GetMapping(
+            "/skill/{skillId}/type/{assessmentType}")
+    public ResponseEntity<Assessment>
+    getAssessmentBySkillAndType(
+            @PathVariable Long skillId,
+            @PathVariable String assessmentType) {
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getAssessmentBySkillIdAndType(
+                                skillId,
+                                assessmentType)
+        );
+    }
+
+    @GetMapping(
+            "/by-skill/{skillId}/questions")
+    public ResponseEntity<List<AssessmentQuestion>>
+    getQuestionsBySkill(
+            @PathVariable Long skillId) {
+
+        Assessment assessment =
+                assessmentService
+                        .getAssessmentBySkillId(
+                                skillId);
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getQuestions(
+                                assessment.getId())
+        );
+    }
+
+    @GetMapping(
+            "/skill/{skillId}/type/{assessmentType}/questions")
+    public ResponseEntity<List<AssessmentQuestion>>
+    getQuestionsBySkillAndType(
+            @PathVariable Long skillId,
+            @PathVariable String assessmentType) {
+
+        Assessment assessment =
+                assessmentService
+                        .getAssessmentBySkillIdAndType(
+                                skillId,
+                                assessmentType);
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getQuestions(
+                                assessment.getId())
         );
     }
 
     @PostMapping("/questions")
-    public ResponseEntity<AssessmentQuestion> addQuestion(
+    public ResponseEntity<AssessmentQuestion>
+    addQuestion(
             @RequestBody AssessmentQuestion question) {
 
         return ResponseEntity.ok(
-                assessmentService.addQuestion(question)
+                assessmentService
+                        .addQuestion(
+                                question)
         );
     }
 
     @GetMapping("/{assessmentId}/questions")
-    public ResponseEntity<List<AssessmentQuestion>> getQuestions(
+    public ResponseEntity<List<AssessmentQuestion>>
+    getQuestions(
             @PathVariable Long assessmentId) {
 
         return ResponseEntity.ok(
-                assessmentService.getQuestions(assessmentId)
+                assessmentService
+                        .getQuestions(
+                                assessmentId)
         );
     }
 
     @PostMapping("/{assessmentId}/submit")
-    public ResponseEntity<AssessmentResultResponse> submitAssessment(
+    public ResponseEntity<AssessmentResultResponse>
+    submitAssessment(
             @PathVariable Long assessmentId,
             @RequestBody AssessmentSubmitRequest request) {
 
         return ResponseEntity.ok(
-                assessmentService.submitAssessment(
-                        assessmentId,
-                        request)
+                assessmentService
+                        .submitAssessment(
+                                assessmentId,
+                                request)
+        );
+    }
+
+    // ========================================
+    // SELF + PEER + MANAGER comparison endpoint
+    // ========================================
+
+    @GetMapping(
+            "/results/employee/{employeeId}/skill/{skillId}/comparison")
+    public ResponseEntity<AssessmentComparisonResponse>
+    getAssessmentComparison(
+            @PathVariable Long employeeId,
+            @PathVariable Long skillId) {
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getAssessmentComparison(
+                                employeeId,
+                                skillId)
         );
     }
 }

@@ -20,6 +20,8 @@ public class EmployeeSkill {
 
     private String proficiencyLevel;
 
+    private Double proficiencyScore;
+
     public EmployeeSkill() {
     }
 
@@ -53,5 +55,13 @@ public class EmployeeSkill {
 
     public void setProficiencyLevel(String proficiencyLevel) {
         this.proficiencyLevel = proficiencyLevel;
+    }
+
+    public Double getProficiencyScore() {
+        return proficiencyScore;
+    }
+
+    public void setProficiencyScore(Double proficiencyScore) {
+        this.proficiencyScore = proficiencyScore;
     }
 }

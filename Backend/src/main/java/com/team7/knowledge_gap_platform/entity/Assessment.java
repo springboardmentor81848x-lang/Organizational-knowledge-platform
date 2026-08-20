@@ -20,6 +20,8 @@ public class Assessment {
 
     private Integer totalQuestions;
 
+    private String assessmentType;
+
     public Assessment() {
     }
 
@@ -53,5 +55,13 @@ public class Assessment {
 
     public void setTotalQuestions(Integer totalQuestions) {
         this.totalQuestions = totalQuestions;
+    }
+
+    public String getAssessmentType() {
+        return assessmentType;
+    }
+
+    public void setAssessmentType(String assessmentType) {
+        this.assessmentType = assessmentType;
     }
 }

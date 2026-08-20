@@ -2,6 +2,7 @@ package com.team7.knowledge_gap_platform.dto;
 
 public class AuthResponse {
 
+    private Long id;
     private String token;
     private String role;
     private String name;
@@ -14,11 +15,20 @@ public class AuthResponse {
         this.token = token;
     }
 
-    public AuthResponse(String token, String role, String name, String email) {
+    public AuthResponse(Long id, String token, String role, String name, String email) {
+        this.id = id;
         this.token = token;
         this.role = role;
         this.name = name;
         this.email = email;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getToken() {

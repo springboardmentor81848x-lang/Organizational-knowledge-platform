@@ -54,31 +54,30 @@ public class  AuthService {
         User savedUser = userRepository.save(user);
 
         // Ensure a corresponding Employee profile exists for all roles
-        if (employeeRepository.findByEmail(savedUser.getEmail()).isEmpty()) {
-            Employee employee = new Employee();
-            
-            String fullName = request.getFullName();
-            if (fullName != null && fullName.contains(" ")) {
-                int lastSpaceIndex = fullName.lastIndexOf(" ");
-                employee.setFirstName(fullName.substring(0, lastSpaceIndex));
-                employee.setLastName(fullName.substring(lastSpaceIndex + 1));
-            } else {
-                employee.setFirstName(fullName != null ? fullName : "User");
-                employee.setLastName("");
-            }
-            
-            employee.setEmail(savedUser.getEmail());
-            employee.setRole(normalizedRole);
-            employee.setJobRoleId(1L); // Default job role
-            employee.setDepartment("Software Engineering");
-            employeeRepository.save(employee);
-        }
+        Employee employee = employeeRepository.findByEmail(savedUser.getEmail())
+                .orElseGet(() -> {
+                    Employee newEmp = new Employee();
+                    String fullName = request.getFullName();
+                    if (fullName != null && fullName.contains(" ")) {
+                        int lastSpaceIndex = fullName.lastIndexOf(" ");
+                        newEmp.setFirstName(fullName.substring(0, lastSpaceIndex));
+                        newEmp.setLastName(fullName.substring(lastSpaceIndex + 1));
+                    } else {
+                        newEmp.setFirstName(fullName != null ? fullName : "User");
+                        newEmp.setLastName("");
+                    }
+                    newEmp.setEmail(savedUser.getEmail());
+                    newEmp.setRole(normalizedRole);
+                    newEmp.setJobRoleId(1L);
+                    newEmp.setDepartment("Software Engineering");
+                    return employeeRepository.save(newEmp);
+                });
 
         String token = jwtService.generateToken(
                 savedUser.getEmail(),
                 savedUser.getRole());
 
-        return new AuthResponse(token, savedUser.getRole(), savedUser.getFullName(), savedUser.getEmail());
+        return new AuthResponse(employee.getId(), token, savedUser.getRole(), savedUser.getFullName(), savedUser.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -93,29 +92,30 @@ public class  AuthService {
                         new RuntimeException("User not found"));
 
         // Ensure Employee record exists for logging in user
-        if (employeeRepository.findByEmail(user.getEmail()).isEmpty()) {
-            Employee employee = new Employee();
-            String fullName = user.getFullName();
-            if (fullName != null && fullName.contains(" ")) {
-                int lastSpaceIndex = fullName.lastIndexOf(" ");
-                employee.setFirstName(fullName.substring(0, lastSpaceIndex));
-                employee.setLastName(fullName.substring(lastSpaceIndex + 1));
-            } else {
-                employee.setFirstName(fullName != null ? fullName : "User");
-                employee.setLastName("");
-            }
-            employee.setEmail(user.getEmail());
-            employee.setRole(user.getRole());
-            employee.setJobRoleId(1L);
-            employee.setDepartment("Software Engineering");
-            employeeRepository.save(employee);
-        }
+        Employee employee = employeeRepository.findByEmail(user.getEmail())
+                .orElseGet(() -> {
+                    Employee newEmp = new Employee();
+                    String fullName = user.getFullName();
+                    if (fullName != null && fullName.contains(" ")) {
+                        int lastSpaceIndex = fullName.lastIndexOf(" ");
+                        newEmp.setFirstName(fullName.substring(0, lastSpaceIndex));
+                        newEmp.setLastName(fullName.substring(lastSpaceIndex + 1));
+                    } else {
+                        newEmp.setFirstName(fullName != null ? fullName : "User");
+                        newEmp.setLastName("");
+                    }
+                    newEmp.setEmail(user.getEmail());
+                    newEmp.setRole(user.getRole());
+                    newEmp.setJobRoleId(1L);
+                    newEmp.setDepartment("Software Engineering");
+                    return employeeRepository.save(newEmp);
+                });
 
         String token = jwtService.generateToken(
                 user.getEmail(),
                 user.getRole());
 
-        return new AuthResponse(token, user.getRole(), user.getFullName(), user.getEmail());
+        return new AuthResponse(employee.getId(), token, user.getRole(), user.getFullName(), user.getEmail());
     }
 
     private String normalizeRole(String role) {
