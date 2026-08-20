@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip,
   RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend
@@ -3907,6 +3908,7 @@ export function EmployeeMentorship({ user, onNav }) {
   const [sessionForm, setSessionForm] = useState({ title: '', description: '', skillId: '', scheduledAt: '', durationMinutes: 60, capacity: 20, meetingLink: '' })
   const [feedbackModal, setFeedbackModal] = useState(null) // SessionDto
   const [feedbackForm, setFeedbackForm] = useState({ rating: 5, comment: '' })
+  const [confirmRegisterModal, setConfirmRegisterModal] = useState(null) // SessionDto to confirm
 
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -3942,6 +3944,19 @@ export function EmployeeMentorship({ user, onNav }) {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Prevent page scroll/jump when modal opens; keep viewport locked at click location
+  useEffect(() => {
+    const hasModal = Boolean(requestModal || hostSessionModal || feedbackModal || showResourceModal || viewingExpert || confirmRegisterModal)
+    if (hasModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [requestModal, hostSessionModal, feedbackModal, showResourceModal, viewingExpert, confirmRegisterModal])
 
   // Poll chat messages when chat drawer is open
   useEffect(() => {
@@ -4075,12 +4090,16 @@ export function EmployeeMentorship({ user, onNav }) {
   }
 
   const handleRegisterSession = async (sessionId) => {
+    setSubmitting(true)
     try {
       await api.registerKnowledgeSession(sessionId)
-      showToast('✓ Registered for Knowledge Session!')
+      showToast('✓ Successfully registered for Knowledge Sharing Session!')
+      setConfirmRegisterModal(null)
       loadData()
     } catch (err) {
       showToast(`❌ Registration failed: ${err.message}`)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -4109,7 +4128,21 @@ export function EmployeeMentorship({ user, onNav }) {
       if (!matchName && !matchSkill) return false
     }
     if (deptFilter !== 'ALL') {
-      if (!r.departmentName || !r.departmentName.equalsIgnoreCase(deptFilter)) return false
+      if (!r.departmentName || r.departmentName.toLowerCase() !== deptFilter.toLowerCase()) return false
+    }
+    return true
+  })
+
+  const filteredExperts = experts.filter(exp => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      const matchName = exp.fullName && exp.fullName.toLowerCase().includes(q)
+      const matchTitle = exp.roleTitle && exp.roleTitle.toLowerCase().includes(q)
+      const matchSkill = exp.expertSkills && exp.expertSkills.some(s => (s.skillName || s.name || '').toLowerCase().includes(q))
+      if (!matchName && !matchTitle && !matchSkill) return false
+    }
+    if (deptFilter !== 'ALL') {
+      if (!exp.departmentName || exp.departmentName.toLowerCase() !== deptFilter.toLowerCase()) return false
     }
     return true
   })
@@ -4517,7 +4550,7 @@ export function EmployeeMentorship({ user, onNav }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {experts.map(exp => (
+              {filteredExperts.map(exp => (
                 <div key={exp.id} className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-3 mb-4">
@@ -4871,10 +4904,11 @@ export function EmployeeMentorship({ user, onNav }) {
                     </div>
                   ) : (
                     <button
-                      onClick={() => handleRegisterSession(s.id)}
+                      onClick={() => setConfirmRegisterModal(s)}
                       disabled={s.registeredCount >= s.capacity}
-                      className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-[#0B0F1A] font-bold text-xs py-2.5 rounded-xl shadow-md"
+                      className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-[#0B0F1A] font-bold text-xs py-2.5 rounded-xl shadow-md flex items-center justify-center gap-1.5"
                     >
+                      <Icon name="check-circle" className="w-3.5 h-3.5" />
                       {s.registeredCount >= s.capacity ? 'Session Full' : 'Register for Session'}
                     </button>
                   )}
@@ -4885,290 +4919,353 @@ export function EmployeeMentorship({ user, onNav }) {
         </div>
       )}
 
-      {/* VIEW EXPERT PROFILE MODAL */}
-      {viewingExpert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-lime-400/20 text-lime-400 font-bold text-base flex items-center justify-center">
-                  {viewingExpert.fullName ? viewingExpert.fullName[0] : 'E'}
+      {/* CONFIRM SESSION REGISTRATION MODAL */}
+      {confirmRegisterModal && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setConfirmRegisterModal(null)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-md my-8 p-6 z-10 animate-scale space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <div className="flex items-center gap-2 text-lime-400 font-bold text-sm">
+                  <Icon name="video" className="w-5 h-5" />
+                  <span>Confirm Session Registration</span>
                 </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">{viewingExpert.fullName}</h3>
-                  <div className="text-xs text-slate-400">{viewingExpert.roleTitle} · {viewingExpert.departmentName}</div>
+                <button onClick={() => setConfirmRegisterModal(null)} className="p-1 text-slate-400 hover:text-white rounded-lg">
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">{confirmRegisterModal.title}</h3>
+                <p className="text-xs text-slate-400 mt-1">Hosted by <span className="text-lime-300 font-medium">{confirmRegisterModal.mentorName}</span></p>
+                <div className="mt-3 bg-slate-50 dark:bg-white/5 p-3 rounded-2xl space-y-1.5 text-xs text-slate-300">
+                  <div>📅 Topic / Skill: <span className="text-white font-semibold">{confirmRegisterModal.skillName || 'Engineering'}</span></div>
+                  <div>⏱ Duration: {confirmRegisterModal.durationMinutes || 60} Minutes</div>
+                  <div>👥 Capacity: {confirmRegisterModal.registeredCount}/{confirmRegisterModal.capacity} Registered</div>
                 </div>
               </div>
-              <button onClick={() => setViewingExpert(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-xs font-semibold text-slate-400">Match Reason & Skill Delta</div>
-              <p className="text-xs text-slate-300 bg-slate-50 dark:bg-white/5 p-3 rounded-2xl leading-relaxed italic">
-                "{viewingExpert.reason}"
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Would you like to register for this live knowledge sharing session? Your mentor will be notified, and meeting details will be saved to your dashboard.
               </p>
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-3">
-              <button onClick={() => setViewingExpert(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Close</button>
-              <button
-                onClick={() => { const exp = viewingExpert; setViewingExpert(null); handleOpenRequestModal(exp); }}
-                className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5"
-              >
-                Send Request Now
-              </button>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button onClick={() => setConfirmRegisterModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
+                <button
+                  onClick={() => handleRegisterSession(confirmRegisterModal.id)}
+                  disabled={submitting}
+                  className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md"
+                >
+                  {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="check-circle" className="w-4 h-4" />} Confirm Registration
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* VIEW EXPERT PROFILE MODAL */}
+      {viewingExpert && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setViewingExpert(null)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-lg my-8 p-6 z-10 animate-scale space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-lime-400/20 text-lime-400 font-bold text-base flex items-center justify-center">
+                    {viewingExpert.fullName ? viewingExpert.fullName[0] : 'E'}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">{viewingExpert.fullName}</h3>
+                    <div className="text-xs text-slate-400">{viewingExpert.roleTitle} · {viewingExpert.departmentName}</div>
+                  </div>
+                </div>
+                <button onClick={() => setViewingExpert(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-slate-400">Match Reason & Skill Delta</div>
+                <p className="text-xs text-slate-300 bg-slate-50 dark:bg-white/5 p-3 rounded-2xl leading-relaxed italic">
+                  "{viewingExpert.reason}"
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button onClick={() => setViewingExpert(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Close</button>
+                <button
+                  onClick={() => { const exp = viewingExpert; setViewingExpert(null); handleOpenRequestModal(exp); }}
+                  className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5"
+                >
+                  Send Request Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* MENTORSHIP REQUEST MODAL */}
-      {requestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-              <div>
-                <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Request Mentorship</h2>
-                <p className="text-xs text-slate-400">Send a mentorship request to {requestModal.fullName}.</p>
-              </div>
-              <button onClick={() => setRequestModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSendMentorshipRequest} className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Target Skill Gap *</label>
-                <input
-                  type="text"
-                  disabled
-                  value={requestModal.skillName || 'Domain Skill'}
-                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-400 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Mentorship Goal *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Master Spring Boot microservices and REST security"
-                  value={requestForm.goal}
-                  onChange={e => setRequestForm({ ...requestForm, goal: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Message to Mentor</label>
-                <textarea
-                  rows={3}
-                  placeholder="Introduce yourself and share what specific guidance you are seeking..."
-                  value={requestForm.message}
-                  onChange={e => setRequestForm({ ...requestForm, message: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button type="button" onClick={() => setRequestModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
-                  {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="send" className="w-4 h-4" />} Submit Request
+      {requestModal && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setRequestModal(null)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-lg my-8 z-10 animate-scale">
+              <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                <div>
+                  <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Request Mentorship</h2>
+                  <p className="text-xs text-slate-400">Send a mentorship request to {requestModal.fullName}.</p>
+                </div>
+                <button onClick={() => setRequestModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSendMentorshipRequest} className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Target Skill Gap *</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={requestModal.skillName || 'Domain Skill'}
+                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-400 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Mentorship Goal *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Master Spring Boot microservices and REST security"
+                    value={requestForm.goal}
+                    onChange={e => setRequestForm({ ...requestForm, goal: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Message to Mentor</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Introduce yourself and share what specific guidance you are seeking..."
+                    value={requestForm.message}
+                    onChange={e => setRequestForm({ ...requestForm, message: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button type="button" onClick={() => setRequestModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                  <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
+                    {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="send" className="w-4 h-4" />} Submit Request
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* HOST KNOWLEDGE SESSION MODAL */}
-      {hostSessionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-              <div>
-                <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Host Knowledge Sharing Session</h2>
-                <p className="text-xs text-slate-400">Schedule a live technical workshop or peer learning session.</p>
-              </div>
-              <button onClick={() => setHostSessionModal(false)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateSession} className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Session Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Production Spring Boot Microservices Patterns"
-                  value={sessionForm.title}
-                  onChange={e => setSessionForm({ ...sessionForm, title: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Description *</label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Summary of topics covered, prerequisites, and learning objectives..."
-                  value={sessionForm.description}
-                  onChange={e => setSessionForm({ ...sessionForm, description: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+      {hostSessionModal && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setHostSessionModal(false)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-lg my-8 z-10 animate-scale">
+              <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Capacity</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={sessionForm.capacity}
-                    onChange={e => setSessionForm({ ...sessionForm, capacity: parseInt(e.target.value) || 20 })}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                  />
+                  <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Host Knowledge Sharing Session</h2>
+                  <p className="text-xs text-slate-400">Schedule a live technical workshop or peer learning session.</p>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Duration (Minutes)</label>
-                  <input
-                    type="number"
-                    value={sessionForm.durationMinutes}
-                    onChange={e => setSessionForm({ ...sessionForm, durationMinutes: parseInt(e.target.value) || 60 })}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-1.5">Google Meet Link</label>
-                <input
-                  type="url"
-                  placeholder="https://meet.google.com/..."
-                  value={sessionForm.meetingLink}
-                  onChange={e => setSessionForm({ ...sessionForm, meetingLink: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button type="button" onClick={() => setHostSessionModal(false)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
-                  {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="check" className="w-4 h-4" />} Create Session
+                <button onClick={() => setHostSessionModal(false)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleCreateSession} className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Session Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Production Spring Boot Microservices Patterns"
+                    value={sessionForm.title}
+                    onChange={e => setSessionForm({ ...sessionForm, title: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Description *</label>
+                  <textarea
+                    rows={2}
+                    required
+                    placeholder="Summary of topics covered, prerequisites, and learning objectives..."
+                    value={sessionForm.description}
+                    onChange={e => setSessionForm({ ...sessionForm, description: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 block mb-1.5">Capacity</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={sessionForm.capacity}
+                      onChange={e => setSessionForm({ ...sessionForm, capacity: parseInt(e.target.value) || 20 })}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 block mb-1.5">Duration (Minutes)</label>
+                    <input
+                      type="number"
+                      value={sessionForm.durationMinutes}
+                      onChange={e => setSessionForm({ ...sessionForm, durationMinutes: parseInt(e.target.value) || 60 })}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Google Meet Link</label>
+                  <input
+                    type="url"
+                    placeholder="https://meet.google.com/..."
+                    value={sessionForm.meetingLink}
+                    onChange={e => setSessionForm({ ...sessionForm, meetingLink: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button type="button" onClick={() => setHostSessionModal(false)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                  <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
+                    {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="check" className="w-4 h-4" />} Create Session
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* FEEDBACK RATING MODAL */}
-      {feedbackModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
-              <div>
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">Session Feedback</h3>
-                <div className="text-xs text-slate-400">{feedbackModal.title}</div>
-              </div>
-              <button onClick={() => setFeedbackModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitFeedback} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-2">Rate Session Quality (1 - 5 Stars)</label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setFeedbackForm({ ...feedbackForm, rating: star })}
-                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                        feedbackForm.rating >= star
-                          ? 'bg-amber-400 text-slate-900 shadow-md scale-105'
-                          : 'bg-white/5 text-slate-500 hover:text-white'
-                      }`}
-                    >
-                      ★ {star}
-                    </button>
-                  ))}
+      {feedbackModal && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setFeedbackModal(null)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-md my-8 p-6 z-10 animate-scale space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">Session Feedback</h3>
+                  <div className="text-xs text-slate-400">{feedbackModal.title}</div>
                 </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">Comments & Effectiveness Feedback</label>
-                <textarea
-                  rows={3}
-                  placeholder="Share what you learned and feedback for the mentor..."
-                  value={feedbackForm.comment}
-                  onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button type="button" onClick={() => setFeedbackModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5">
-                  Submit Rating
+                <button onClick={() => setFeedbackModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSubmitFeedback} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-2">Rate Session Quality (1 - 5 Stars)</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFeedbackForm({ ...feedbackForm, rating: star })}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                          feedbackForm.rating >= star
+                            ? 'bg-amber-400 text-slate-900 shadow-md scale-105'
+                            : 'bg-white/5 text-slate-500 hover:text-white'
+                        }`}
+                      >
+                        ★ {star}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-1.5">Comments & Effectiveness Feedback</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Share what you learned and feedback for the mentor..."
+                    value={feedbackForm.comment}
+                    onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button type="button" onClick={() => setFeedbackModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                  <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5">
+                    Submit Rating
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* SHARE RESOURCE MODAL */}
-      {showResourceModal && activeChat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">Share Learning Resource</h3>
-              <button onClick={() => setShowResourceModal(false)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleShareResource} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">Resource Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Spring Security JWT Documentation"
-                  value={resourceForm.title}
-                  onChange={e => setResourceForm({ ...resourceForm, title: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">URL / Link *</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://docs.spring.io/..."
-                  value={resourceForm.url}
-                  onChange={e => setResourceForm({ ...resourceForm, url: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button type="button" onClick={() => setShowResourceModal(false)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="submit" className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5">
-                  Share Resource
+      {showResourceModal && activeChat && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setShowResourceModal(false)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-md my-8 p-6 z-10 animate-scale space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Share Learning Resource</h3>
+                <button onClick={() => setShowResourceModal(false)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleShareResource} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-1.5">Resource Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Spring Security JWT Documentation"
+                    value={resourceForm.title}
+                    onChange={e => setResourceForm({ ...resourceForm, title: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-1.5">URL / Link *</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://docs.spring.io/..."
+                    value={resourceForm.url}
+                    onChange={e => setResourceForm({ ...resourceForm, url: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button type="button" onClick={() => setShowResourceModal(false)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                  <button type="submit" className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5">
+                    Share Resource
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
