@@ -296,86 +296,94 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            MENTOR SIDEBAR
-            ONLY 7 SECTIONS
-        ================================================== */}
+    MENTOR SIDEBAR
+    ================================================== */}
 
-        {normalizedRole === "MENTOR" && (
-          <>
+{normalizedRole === "MENTOR" && (
+  <>
 
-            {/* 1. Mentor Dashboard */}
+    {/* 1. Mentor Dashboard */}
 
-            <NavLink
-              to="/mentor"
-              className={navLinkClass}
-            >
-              <LayoutDashboard size={20} />
-              Mentor Dashboard
-            </NavLink>
+    <NavLink
+      to="/mentor"
+      className={navLinkClass}
+    >
+      <LayoutDashboard size={20} />
+      Mentor Dashboard
+    </NavLink>
 
-            {/* 2. Training Management */}
+    {/* 2. Training Management */}
 
-            <NavLink
-              to="/training-management"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training Management
-            </NavLink>
+    <NavLink
+      to="/training-management"
+      className={navLinkClass}
+    >
+      <GraduationCap size={20} />
+      Training Management
+    </NavLink>
 
-            {/* 3. Course Catalog */}
+    {/* 3. Course Catalog */}
 
-            <NavLink
-              to="/training-catalog"
-              className={navLinkClass}
-            >
-              <Library size={20} />
-              Course Catalog
-            </NavLink>
+    <NavLink
+      to="/training-catalog"
+      className={navLinkClass}
+    >
+      <Library size={20} />
+      Course Catalog
+    </NavLink>
 
-            {/* 4. Learning Paths */}
+    {/* 4. Learning Paths */}
 
-            <NavLink
-              to="/learning-path"
-              className={navLinkClass}
-            >
-              <BookOpen size={20} />
-              Learning Paths
-            </NavLink>
+    <NavLink
+      to="/learning-path"
+      className={navLinkClass}
+    >
+      <BookOpen size={20} />
+      Learning Paths
+    </NavLink>
 
-            {/* 5. Mentor Management */}
+    {/* 5. Mentor Management */}
 
-            <NavLink
-              to="/mentor-management"
-              className={navLinkClass}
-            >
-              <Users size={20} />
-              Mentor Management
-            </NavLink>
+    <NavLink
+      to="/mentor-management"
+      className={navLinkClass}
+    >
+      <Users size={20} />
+      Mentor Management
+    </NavLink>
 
-            {/* 6. Knowledge Sessions */}
+    {/* 6. Knowledge Sessions */}
 
-            <NavLink
-              to="/knowledge-sessions"
-              className={navLinkClass}
-            >
-              <CalendarDays size={20} />
-              Knowledge Sessions
-            </NavLink>
+    <NavLink
+      to="/knowledge-sessions"
+      className={navLinkClass}
+    >
+      <CalendarDays size={20} />
+      Knowledge Sessions
+    </NavLink>
 
-            {/* 7. Learning Analytics */}
+    {/* 7. Learning Analytics */}
 
-            <NavLink
-              to="/learning-analytics"
-              className={navLinkClass}
-            >
-              <PieChart size={20} />
-              Learning Analytics
-            </NavLink>
+    <NavLink
+      to="/learning-analytics"
+      className={navLinkClass}
+    >
+      <PieChart size={20} />
+      Learning Analytics
+    </NavLink>
 
-          </>
-        )}
+    {/* 8. Notifications */}
 
+    <NavLink
+      to="/notifications"
+      className={navLinkClass}
+    >
+      <Bell size={20} />
+      Notifications
+    </NavLink>
+
+  </>
+)}
         {/* ==================================================
             EMPLOYEE SIDEBAR
         ================================================== */}

@@ -27,7 +27,7 @@ import AssessmentResult from "../pages/AssessmentResult";
 import KnowledgeGap from "../pages/KnowledgeGap";
 import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
-import KnowledgeSharing from "../pages/KnowledgeSharing";
+import KnowledgeSession from "../pages/KnowledgeSession";
 import Mentorship from "../pages/Mentorship";
 
 // ==================================================
@@ -55,6 +55,9 @@ import DepartmentHeadDashboard from "../pages/DepartmentHeadDashboard";
 // ==================================================
 
 import MentorDashboard from "../pages/MentorDashboard";
+import LearningAnalytics from "../pages/LearningAnalytics";
+import TrainingManagement from "../pages/TrainingManagement";
+import MentorManagement from "../pages/MentorManagement";
 
 // ==================================================
 // SYSTEM ADMINISTRATOR
@@ -352,16 +355,16 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          KNOWLEDGE SHARING
+          KNOWLEDGE SESSION
       ================================================== */}
 
       <Route
-        path="/knowledge-sharing"
+        path="/knowledge-sessions"
         element={
           <ProtectedRoute
-            allowedRoles={["EMPLOYEE"]}
+            allowedRoles={["EMPLOYEE", "MENTOR"]}
           >
-            <KnowledgeSharing />
+            <KnowledgeSession />
           </ProtectedRoute>
         }
       />
@@ -546,6 +549,22 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/learning-analytics"
+        element={<LearningAnalytics />}
+      />
+      <Route
+        path="/training-management"
+        element={
+          <ProtectedRoute allowedRoles={["MENTOR"]}>
+            <TrainingManagement />
+          </ProtectedRoute>
+        }
+/>
+<Route
+  path="/mentor-management"
+  element={<MentorManagement />}
+/>
 
       {/* ==================================================
           SYSTEM ADMINISTRATOR

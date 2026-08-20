@@ -8,9 +8,11 @@ import {
   Bell,
   CheckCircle,
   Clock,
-  MessageSquare,
   UserRound,
   RefreshCw,
+  CalendarCheck,
+  CalendarX,
+  CalendarClock,
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8080/api";
@@ -18,7 +20,7 @@ const API_BASE_URL = "http://localhost:8080/api";
 function Notifications() {
 
   // =========================================================
-  // LOGGED-IN EMPLOYEE
+  // LOGGED-IN USER
   // =========================================================
 
   const employeeId =
@@ -33,7 +35,6 @@ function Notifications() {
       .toUpperCase()
       .replace("ROLE_", "")
       .trim();
-
 
   // =========================================================
   // STATE
@@ -50,7 +51,6 @@ function Notifications() {
 
   const [markingRead, setMarkingRead] =
     useState(null);
-
 
   // =========================================================
   // HEADERS
@@ -69,7 +69,6 @@ function Notifications() {
       },
     };
   };
-
 
   // =========================================================
   // LOAD NOTIFICATIONS
@@ -118,8 +117,9 @@ function Notifications() {
       );
 
       setError(
-        err.response?.data ||
-        "Unable to load notifications."
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : "Unable to load notifications."
       );
 
     } finally {
@@ -128,7 +128,6 @@ function Notifications() {
 
     }
   };
-
 
   // =========================================================
   // INITIAL LOAD
@@ -139,7 +138,6 @@ function Notifications() {
     loadNotifications();
 
   }, []);
-
 
   // =========================================================
   // MARK AS READ
@@ -177,8 +175,9 @@ function Notifications() {
       );
 
       setError(
-        err.response?.data ||
-        "Unable to mark notification as read."
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : "Unable to mark notification as read."
       );
 
     } finally {
@@ -187,7 +186,6 @@ function Notifications() {
 
     }
   };
-
 
   // =========================================================
   // FORMAT DATE
@@ -216,6 +214,43 @@ function Notifications() {
     }
   };
 
+  // =========================================================
+  // NOTIFICATION TITLE
+  // =========================================================
+
+  const getNotificationTitle = (type) => {
+
+    switch (type?.toUpperCase()) {
+
+      case "MENTORSHIP_REQUEST":
+        return "Mentorship Request";
+
+      case "MENTORSHIP_ACCEPTED":
+        return "Mentorship Accepted";
+
+      case "SESSION_REGISTRATION":
+        return "Session Registration";
+
+      case "SESSION_REGISTRATION_CANCELLED":
+        return "Registration Cancelled";
+
+      // =====================================================
+      // MENTOR NOTIFICATION
+      // =====================================================
+
+      case "SESSION_REGISTRATION_CANCELLED_BY_EMPLOYEE":
+        return "Employee Registration Cancelled";
+
+      case "SESSION_UPDATED":
+        return "Session Updated";
+
+      case "SESSION_CANCELLED":
+        return "Session Cancelled";
+
+      default:
+        return "Notification";
+    }
+  };
 
   // =========================================================
   // NOTIFICATION ICON
@@ -223,9 +258,7 @@ function Notifications() {
 
   const getNotificationIcon = (type) => {
 
-    switch (
-      type?.toUpperCase()
-    ) {
+    switch (type?.toUpperCase()) {
 
       case "MENTORSHIP_REQUEST":
 
@@ -240,6 +273,87 @@ function Notifications() {
           </div>
         );
 
+      case "MENTORSHIP_ACCEPTED":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+
+            <CheckCircle
+              size={24}
+              className="text-green-600"
+            />
+
+          </div>
+        );
+
+      case "SESSION_REGISTRATION":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+
+            <CalendarCheck
+              size={24}
+              className="text-green-600"
+            />
+
+          </div>
+        );
+
+      case "SESSION_REGISTRATION_CANCELLED":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+
+            <CalendarX
+              size={24}
+              className="text-red-600"
+            />
+
+          </div>
+        );
+
+      // =====================================================
+      // MENTOR: EMPLOYEE CANCELLED REGISTRATION
+      // =====================================================
+
+      case "SESSION_REGISTRATION_CANCELLED_BY_EMPLOYEE":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+
+            <CalendarX
+              size={24}
+              className="text-orange-600"
+            />
+
+          </div>
+        );
+
+      case "SESSION_UPDATED":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100">
+
+            <CalendarClock
+              size={24}
+              className="text-yellow-600"
+            />
+
+          </div>
+        );
+
+      case "SESSION_CANCELLED":
+
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+
+            <CalendarX
+              size={24}
+              className="text-red-600"
+            />
+
+          </div>
+        );
 
       default:
 
@@ -253,10 +367,8 @@ function Notifications() {
 
           </div>
         );
-
     }
   };
-
 
   // =========================================================
   // UNREAD COUNT
@@ -267,7 +379,6 @@ function Notifications() {
       notification =>
         !notification.readStatus
     ).length;
-
 
   // =========================================================
   // LOADING
@@ -304,7 +415,6 @@ function Notifications() {
     );
   }
 
-
   // =========================================================
   // MAIN UI
   // =========================================================
@@ -313,21 +423,11 @@ function Notifications() {
 
     <div className="flex min-h-screen bg-gray-50">
 
-      {/* =====================================================
-          SIDEBAR
-      ====================================================== */}
-
       <Sidebar role={role} />
-
-
-      {/* =====================================================
-          CONTENT
-      ====================================================== */}
 
       <div className="flex-1">
 
         <Navbar title="Notifications" />
-
 
         <main className="p-8">
 
@@ -347,24 +447,20 @@ function Notifications() {
                 />
 
                 <h1 className="text-3xl font-bold text-gray-800">
-
                   Notifications
-
                 </h1>
 
               </div>
 
               <p className="mt-2 text-gray-600">
 
-                View your latest notifications and
-                mentorship requests.
+                View your latest notifications,
+                session updates, registration changes,
+                and mentorship activities.
 
               </p>
 
             </div>
-
-
-            {/* UNREAD COUNT */}
 
             <div className="rounded-xl bg-white px-5 py-3 shadow">
 
@@ -380,7 +476,6 @@ function Notifications() {
 
           </div>
 
-
           {/* =================================================
               ERROR
           ================================================= */}
@@ -394,7 +489,6 @@ function Notifications() {
             </div>
 
           )}
-
 
           {/* =================================================
               REFRESH
@@ -415,7 +509,6 @@ function Notifications() {
             </button>
 
           </div>
-
 
           {/* =================================================
               NO NOTIFICATIONS
@@ -446,10 +539,6 @@ function Notifications() {
 
           ) : (
 
-            /* =================================================
-               NOTIFICATION LIST
-            ================================================= */
-
             <div className="space-y-4">
 
               {notifications.map(
@@ -466,14 +555,9 @@ function Notifications() {
 
                     <div className="flex gap-4">
 
-                      {/* ICON */}
-
                       {getNotificationIcon(
                         notification.type
                       )}
-
-
-                      {/* CONTENT */}
 
                       <div className="flex-1">
 
@@ -485,13 +569,11 @@ function Notifications() {
 
                               <h3 className="font-semibold text-gray-800">
 
-                                {notification.type ===
-                                "MENTORSHIP_REQUEST"
-                                  ? "Mentorship Request"
-                                  : "Notification"}
+                                {getNotificationTitle(
+                                  notification.type
+                                )}
 
                               </h3>
-
 
                               {!notification.readStatus && (
 
@@ -505,17 +587,11 @@ function Notifications() {
 
                             </div>
 
-
-                            {/* MESSAGE */}
-
                             <p className="mt-2 text-gray-700">
 
                               {notification.message}
 
                             </p>
-
-
-                            {/* DATE */}
 
                             <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
 
@@ -528,9 +604,6 @@ function Notifications() {
                             </div>
 
                           </div>
-
-
-                          {/* MARK READ */}
 
                           {!notification.readStatus && (
 
