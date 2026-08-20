@@ -15,6 +15,7 @@ export const NAV = {
     ]},
     { section: 'Learning', items: [
       { id: 'ai', label: 'AI Recommendations', icon: 'sparkles' },
+      { id: 'mentorship', label: 'Mentorship & Sharing', icon: 'users' },
       { id: 'training', label: 'Training Portal', icon: 'graduation-cap' },
       { id: 'assessments', label: 'Assessment Portal', icon: 'clipboard-check' }
     ]},

@@ -608,6 +608,107 @@ export const api = {
 
   getDepartments: async (orgName) => {
     return request(`/auth/departments?orgName=${encodeURIComponent(orgName || '')}`)
+  },
+
+  // MODULE 1: MENTORSHIP & KNOWLEDGE SHARING APIs
+  getMentorRecommendations: async () => {
+    return request('/mentorship/recommendations')
+  },
+
+  requestMentorship: async (payload) => {
+    return request('/mentorship/request', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  getMyMentors: async () => {
+    return request('/mentorship/my-mentors')
+  },
+
+  getMyMentees: async () => {
+    return request('/mentorship/my-mentees')
+  },
+
+  acceptMentorship: async (id) => {
+    return request(`/mentorship/${id}/accept`, {
+      method: 'PUT'
+    })
+  },
+
+  rejectMentorship: async (id) => {
+    return request(`/mentorship/${id}/reject`, {
+      method: 'PUT'
+    })
+  },
+
+  cancelMentorship: async (id) => {
+    return request(`/mentorship/${id}/cancel`, {
+      method: 'PUT'
+    })
+  },
+
+  completeMentorship: async (id) => {
+    return request(`/mentorship/${id}/complete`, {
+      method: 'PUT'
+    })
+  },
+
+  getMentorshipMessages: async (id) => {
+    return request(`/mentorship/${id}/messages`)
+  },
+
+  sendMentorshipMessage: async (id, payload) => {
+    return request(`/mentorship/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  updateMeetingLink: async (id, meetingLink) => {
+    return request(`/mentorship/${id}/meeting-link`, {
+      method: 'POST',
+      body: JSON.stringify({ meetingLink })
+    })
+  },
+
+  getExpertDirectory: async (params = {}) => {
+    const queryStr = new URLSearchParams()
+    if (params.query) queryStr.append('query', params.query)
+    if (params.department) queryStr.append('department', params.department)
+    if (params.skill) queryStr.append('skill', params.skill)
+    return request(`/mentorship/experts?${queryStr.toString()}`)
+  },
+
+  getKnowledgeSessions: async () => {
+    return request('/sessions')
+  },
+
+  createKnowledgeSession: async (payload) => {
+    return request('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  registerKnowledgeSession: async (id) => {
+    return request(`/sessions/${id}/register`, {
+      method: 'POST'
+    })
+  },
+
+  submitSessionFeedback: async (id, payload) => {
+    return request(`/sessions/${id}/feedback`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  updateSessionAttendance: async (id, status) => {
+    return request(`/sessions/${id}/attendance`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    })
   }
 }
 

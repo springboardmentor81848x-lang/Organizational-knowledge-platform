@@ -6,7 +6,7 @@ import ProfileSetup from './pages/ProfileSetup.jsx'
 import Sidebar, { MobileNav } from './components/Sidebar.jsx'
 import { Topbar, CommandPalette } from './components/Topbar.jsx'
 import {
-  EmployeeDashboard, EmployeeSkills, EmployeeAI, EmployeeTraining, EmployeeAssessments
+  EmployeeDashboard, EmployeeSkills, EmployeeAI, EmployeeTraining, EmployeeAssessments, EmployeeMentorship
 } from './pages/EmployeePages.jsx'
 import {
   HRDashboard, HRDirectory, HRMatrix, HRReports, GapAnalysis, HRForecasting, HRDepartments
@@ -303,6 +303,7 @@ function PageRouter({ role, page, onNav, user }) {
       case 'dashboard': return <EmployeeDashboard onNav={onNav} user={user} />
       case 'skills': return <EmployeeSkills onNav={onNav} />
       case 'ai': return <EmployeeAI user={user} onNav={onNav} />
+      case 'mentorship': return <EmployeeMentorship user={user} onNav={onNav} />
       case 'training': return <EmployeeTraining user={user} onNav={onNav} />
       case 'assessments': return <EmployeeAssessments onNav={onNav} initialTab="ai" />
       default: return <NotFound onNav={onNav} />

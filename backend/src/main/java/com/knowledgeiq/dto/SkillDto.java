@@ -9,8 +9,17 @@ public class SkillDto {
     private String currentProficiency;
     private String requiredProficiency;
     private Boolean isCritical;
+    private Integer proficiencyLevel;
 
     public SkillDto() {}
+
+    public SkillDto(UUID id, String skillName, String categoryName, Integer proficiencyLevel) {
+        this.id = id;
+        this.skillName = skillName;
+        this.categoryName = categoryName;
+        this.proficiencyLevel = proficiencyLevel;
+        this.currentProficiency = proficiencyLevel != null ? proficiencyLevel.toString() : "1";
+    }
 
     public SkillDto(UUID id, String skillName, String categoryName, String currentProficiency, String requiredProficiency, Boolean isCritical) {
         this.id = id;
@@ -27,4 +36,5 @@ public class SkillDto {
     public String getCurrentProficiency() { return currentProficiency; }
     public String getRequiredProficiency() { return requiredProficiency; }
     public Boolean getIsCritical() { return isCritical; }
+    public Integer getProficiencyLevel() { return proficiencyLevel; }
 }

@@ -47,6 +47,9 @@ public class DataInitializer implements CommandLineRunner {
     private com.knowledgeiq.service.NotificationService notificationService;
 
     @Autowired
+    private KnowledgeSessionRepository sessionRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -342,6 +345,40 @@ public class DataInitializer implements CommandLineRunner {
                     userRepository.save(u);
                 }
             });
+            // Ensure sample knowledge sharing sessions exist if empty
+            if (sessionRepository.count() == 0) {
+                User mentorLiam = userRepository.findByEmail("swe@northwind.io").orElse(null);
+                User mentorAva = userRepository.findByEmail("employee@northwind.io").orElse(null);
+                Skill targetSkillForSession = skillRepository.findAll().stream().filter(s -> s.getName().toLowerCase().contains("spring") || s.getName().toLowerCase().contains("java")).findFirst().orElse(null);
+
+                if (mentorLiam != null) {
+                    KnowledgeSession session1 = new KnowledgeSession(
+                            "Advanced Spring Boot Microservices Architecture",
+                            "Deep dive into reactive Java Spring Boot microservices, REST API design, resilience patterns, and production deployment.",
+                            mentorLiam,
+                            targetSkillForSession,
+                            java.time.ZonedDateTime.now().plusDays(2).withHour(14).withMinute(0),
+                            60,
+                            20,
+                            "https://meet.google.com/abc-defg-hij"
+                    );
+                    sessionRepository.save(session1);
+                }
+
+                if (mentorAva != null) {
+                    KnowledgeSession session2 = new KnowledgeSession(
+                            "Frontend State Management & Micro-Frontends",
+                            "Best practices for building scalable React SPA micro-frontends, global state performance tuning, and design system integration.",
+                            mentorAva,
+                            targetSkillForSession,
+                            java.time.ZonedDateTime.now().plusDays(4).withHour(11).withMinute(0),
+                            45,
+                            15,
+                            "https://meet.google.com/xyz-uvwx-rst"
+                    );
+                    sessionRepository.save(session2);
+                }
+            }
         } catch (Exception e) {
             System.err.println("Error updating Finance to Marketing & Nobita/Vijay/Krrish/Strange/Krishna: " + e.getMessage());
         }

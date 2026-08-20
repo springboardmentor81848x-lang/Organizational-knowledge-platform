@@ -118,4 +118,88 @@ public class NotificationService {
     public Notification createRecommendationNotification(User user, String title, String message, String actionUrl) {
         return createNotification(user, "RECOMMENDATION", title, message, "MEDIUM", "RECOMMENDATION", null, actionUrl != null ? actionUrl : "/learning");
     }
+
+    public void notifyMentorshipRequest(User mentor, String menteeName, String skillName, UUID mentorshipId) {
+        if (mentor == null) return;
+        createNotification(
+                mentor,
+                "MENTORSHIP_REQUEST",
+                "New Mentorship Request",
+                menteeName + " requested your mentorship for " + skillName + ".",
+                "MEDIUM",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifyMentorshipAccepted(User mentee, String mentorName, String skillName, UUID mentorshipId) {
+        if (mentee == null) return;
+        createNotification(
+                mentee,
+                "MENTORSHIP_ACCEPTED",
+                "Mentorship Request Accepted",
+                mentorName + " accepted your " + skillName + " mentorship request.",
+                "HIGH",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifyMentorshipRejected(User mentee, String mentorName, String skillName, UUID mentorshipId) {
+        if (mentee == null) return;
+        createNotification(
+                mentee,
+                "MENTORSHIP_REJECTED",
+                "Mentorship Request Declined",
+                "Your mentorship request to " + mentorName + " for " + skillName + " was declined.",
+                "LOW",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifyMentorshipMessage(User recipient, String senderName, String textSnippet, UUID mentorshipId) {
+        if (recipient == null) return;
+        createNotification(
+                recipient,
+                "MENTORSHIP_MESSAGE",
+                "New Mentorship Message",
+                senderName + ": " + (textSnippet.length() > 60 ? textSnippet.substring(0, 57) + "..." : textSnippet),
+                "LOW",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifySessionCreated(User recipient, String mentorName, String sessionTitle, UUID sessionId) {
+        if (recipient == null) return;
+        createNotification(
+                recipient,
+                "SESSION_CREATED",
+                "New Knowledge Sharing Session",
+                mentorName + " scheduled a new session: " + sessionTitle + ".",
+                "MEDIUM",
+                "KNOWLEDGE_SESSION",
+                sessionId != null ? sessionId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifySessionRegistered(User recipient, String sessionTitle, UUID sessionId) {
+        if (recipient == null) return;
+        createNotification(
+                recipient,
+                "SESSION_REGISTERED",
+                "Session Registration Confirmed",
+                "You successfully registered for '" + sessionTitle + "'.",
+                "MEDIUM",
+                "KNOWLEDGE_SESSION",
+                sessionId != null ? sessionId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
 }
