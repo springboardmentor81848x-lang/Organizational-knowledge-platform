@@ -39,10 +39,11 @@ public class EnrollmentController {
         if (e.getStatus() == null) e.setStatus("enrolled");
         if (e.getProgressPercent() == null) e.setProgressPercent(0);
 
-        if (e.getProgramId() != null) {
-            trainingProgramRepository.findById(e.getProgramId()).ifPresent(p -> {
+        if (e.getProgram() != null && e.getProgram().getId() != null) {
+            trainingProgramRepository.findById(e.getProgram().getId()).ifPresent(p -> {
                 e.setProgramTitle(p.getTitle());
                 e.setProvider(p.getProvider());
+                e.setProgram(p);
             });
         }
 

@@ -3,6 +3,8 @@ package com.infosys.knowledgeplatform.controller;
 import com.infosys.knowledgeplatform.model.UserSkill;
 import com.infosys.knowledgeplatform.repository.UserSkillRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,11 +28,21 @@ public class UserSkillController {
     }
 
     @PostMapping
+    @Caching(evict = {
+        @CacheEvict(value = "analytics:team_gap_heatmap", allEntries = true),
+        @CacheEvict(value = "analytics:department_coverage", allEntries = true),
+        @CacheEvict(value = "analytics:organization_gap", allEntries = true)
+    })
     public UserSkill createUserSkill(@RequestBody UserSkill userSkill) {
         return userSkillRepository.save(userSkill);
     }
 
     @PutMapping("/{id}")
+    @Caching(evict = {
+        @CacheEvict(value = "analytics:team_gap_heatmap", allEntries = true),
+        @CacheEvict(value = "analytics:department_coverage", allEntries = true),
+        @CacheEvict(value = "analytics:organization_gap", allEntries = true)
+    })
     public UserSkill updateUserSkill(@PathVariable Long id, @RequestBody UserSkill userSkillDetails) {
         UserSkill userSkill = userSkillRepository.findById(id).orElse(null);
         if (userSkill != null) {
@@ -44,6 +56,11 @@ public class UserSkillController {
     }
 
     @DeleteMapping("/{id}")
+    @Caching(evict = {
+        @CacheEvict(value = "analytics:team_gap_heatmap", allEntries = true),
+        @CacheEvict(value = "analytics:department_coverage", allEntries = true),
+        @CacheEvict(value = "analytics:organization_gap", allEntries = true)
+    })
     public void deleteUserSkill(@PathVariable Long id) {
         userSkillRepository.deleteById(id);
     }

@@ -413,7 +413,8 @@ public class LearningPathService {
         );
     }
 
-    private List<Map<String, Object>> buildOrganizationGapIntelligence() {
+    @org.springframework.cache.annotation.Cacheable("analytics:organization_gap")
+    public List<Map<String, Object>> buildOrganizationGapIntelligence() {
         return List.of(
                 Map.of("domain", "Digital Skills", "gap", 27),
                 Map.of("domain", "Leadership", "gap", 19),
@@ -501,7 +502,8 @@ public class LearningPathService {
         );
     }
 
-    private List<Map<String, Object>> buildGapHeatmap() {
+    @org.springframework.cache.annotation.Cacheable("analytics:team_gap_heatmap")
+    public List<Map<String, Object>> buildGapHeatmap() {
         return List.of(
                 Map.of("department", "Engineering", "React", 4, "Spring Boot", 2, "AWS", 1, "Kafka", 3),
                 Map.of("department", "Marketing", "SEO", 2, "Analytics", 4, "Copywriting", 1, "Design", 2),
@@ -509,7 +511,8 @@ public class LearningPathService {
         );
     }
 
-    private List<Map<String, Object>> buildDepartmentSkillCoverage() {
+    @org.springframework.cache.annotation.Cacheable("analytics:department_coverage")
+    public List<Map<String, Object>> buildDepartmentSkillCoverage() {
         return List.of(
                 Map.of("department", "Engineering", "coverage", 78),
                 Map.of("department", "HR", "coverage", 68),

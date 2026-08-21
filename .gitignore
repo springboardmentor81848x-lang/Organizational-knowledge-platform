@@ -2,13 +2,3 @@
 /.idea/
 *.iml
 /.vscode/
-
-# Secrets and credentials
-.env
-.env.local
-.env.*
-*.key
-*.pem
-*service-account*.json
-application-secret.properties
-credentials.json

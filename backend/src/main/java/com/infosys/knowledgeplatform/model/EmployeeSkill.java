@@ -8,6 +8,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "employee_skills")
 @Data
+@Deprecated // Deprecated in favor of UserSkill for Milestone 3 consolidation
 public class EmployeeSkill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByEmployeeEmail(String email);
+    List<Enrollment> findByUserId(Long userId);
 }
