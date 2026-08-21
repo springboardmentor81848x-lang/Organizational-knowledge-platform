@@ -91,4 +91,16 @@ public class ApiClient {
     public static AssessmentApiService getAssessmentApiService(android.content.Context context) {
         return getRetrofit(context).create(AssessmentApiService.class);
     }
+
+    public static KnowledgeSessionApiService getKnowledgeSessionApiService(android.content.Context context) {
+        return getRetrofit(context).create(KnowledgeSessionApiService.class);
+    }
+
+    public static MentorshipRequestApiService getMentorshipRequestApiService(android.content.Context context) {
+        return getRetrofit(context).create(MentorshipRequestApiService.class);
+    }
+
+    public static TrainingApiService getTrainingApiService(android.content.Context context) {
+        return getRetrofit(context).create(TrainingApiService.class);
+    }
 }

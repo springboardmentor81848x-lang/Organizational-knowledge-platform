@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -31,19 +31,20 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Hero Level Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/primary_emerald"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/primary_emerald">
+                app:cardElevation="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="20dp"
+                    android:gravity="center"
                     android:orientation="vertical"
-                    android:gravity="center">
+                    android:padding="20dp">
 
                     <ImageView
                         android:layout_width="64dp"
@@ -52,23 +53,26 @@
                         app:tint="@color/white" />
 
                     <TextView
+                        android:id="@+id/tv_hero_rank"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Top Performer"
+                        android:text="Loading Level..."
                         android:textColor="@color/white"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tv_hero_level"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Level 5 Knowledge Guru"
+                        android:text="Analyzing real learning progress..."
                         android:textColor="#CCFFFFFF"
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Badges Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -82,84 +86,185 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:columnCount="3"
                 android:alignmentMode="alignMargins"
+                android:columnCount="2"
                 android:columnOrderPreserved="false">
 
-                <!-- Badge 1 -->
+                <!-- Badge 1: First Step -->
                 <LinearLayout
+                    android:id="@+id/layout_badge_1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:orientation="vertical"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/glass_card"
                     android:gravity="center"
-                    android:padding="8dp">
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
                     <com.google.android.material.imageview.ShapeableImageView
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
-                        android:padding="12dp"
-                        android:src="@android:drawable/ic_menu_edit"
+                        android:id="@+id/iv_badge_1"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
                         android:background="#E8F5E9"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Fast Learner"
-                        android:textSize="12sp"
-                        android:textAlignment="center" />
-                </LinearLayout>
-
-                <!-- Badge 2 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp">
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
                         android:padding="12dp"
-                        android:src="@android:drawable/ic_menu_share"
-                        android:background="#E3F2FD"
+                        android:src="@android:drawable/ic_menu_directions"
                         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
                     <TextView
+                        android:id="@+id/tv_badge_1_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Team Player"
-                        android:textSize="12sp"
-                        android:textAlignment="center" />
+                        android:layout_marginTop="6dp"
+                        android:text="First Step"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_dark"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_1_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Start 1 Course"
+                        android:textAlignment="center"
+                        android:textColor="@color/gray_700"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Badge 3 -->
+                <!-- Badge 2: Skill Master -->
                 <LinearLayout
+                    android:id="@+id/layout_badge_2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:orientation="vertical"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/glass_card"
                     android:gravity="center"
-                    android:padding="8dp">
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
                     <com.google.android.material.imageview.ShapeableImageView
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
+                        android:id="@+id/iv_badge_2"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:background="#E3F2FD"
+                        android:padding="12dp"
+                        android:src="@android:drawable/btn_star_big_on"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_2_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Skill Master"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_dark"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_2_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Complete 1 Course"
+                        android:textAlignment="center"
+                        android:textColor="@color/gray_700"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Badge 3: Learning Explorer -->
+                <LinearLayout
+                    android:id="@+id/layout_badge_3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/glass_card"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/iv_badge_3"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:background="#FFF3E0"
                         android:padding="12dp"
                         android:src="@android:drawable/ic_menu_search"
-                        android:background="#FFF3E0"
                         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
                     <TextView
+                        android:id="@+id/tv_badge_3_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Knowledge Seeker"
-                        android:textSize="12sp"
-                        android:textAlignment="center" />
+                        android:layout_marginTop="6dp"
+                        android:text="Learning Explorer"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_dark"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_3_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Start 3 Courses"
+                        android:textAlignment="center"
+                        android:textColor="@color/gray_700"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Badge 4: Completion Champion -->
+                <LinearLayout
+                    android:id="@+id/layout_badge_4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/glass_card"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/iv_badge_4"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:background="#F3E5F5"
+                        android:padding="12dp"
+                        android:src="@android:drawable/ic_menu_agenda"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_4_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Champion"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_dark"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_badge_4_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Complete 3 Courses"
+                        android:textAlignment="center"
+                        android:textColor="@color/gray_700"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
             </GridLayout>
 
+            <!-- Recent Milestones Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -169,31 +274,62 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <com.google.android.material.card.MaterialCardView
+            <ProgressBar
+                android:id="@+id/pb_loading_milestones"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:indeterminateTint="@color/primary_emerald"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layout_empty_milestones"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/gray_200">
-                <LinearLayout
-                    android:layout_width="match_parent"
+                android:background="@drawable/glass_card"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_empty_milestones"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Completed 10 Courses"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Achieved on Feb 15, 2024"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_700" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    android:text="No learning milestones yet"
+                    android:textColor="@color/gray_700"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Start or complete training courses to unlock milestones!"
+                    android:textAlignment="center"
+                    android:textColor="@color/gray_500"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_error_milestones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="Failed to load achievements."
+                android:textColor="@color/gray_700"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_milestones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

@@ -90,26 +90,54 @@ public class MentorshipDashboardFragment extends Fragment {
 
     private void setupRecommendedMentors() {
         binding.rvRecommendedMentors.setLayoutManager(new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
-        List<MentorDummy> list = new ArrayList<>();
-        list.add(new MentorDummy("Dr. Sarah Jenkins", "Senior AI Researcher", "12+ Years", "4.9", "Available", Color.parseColor("#E8F5E9"), Color.parseColor("#2E7D32")));
-        list.add(new MentorDummy("Michael Chen", "Backend Architect", "15+ Years", "4.8", "Busy", Color.parseColor("#FFF3E0"), Color.parseColor("#E65100")));
-        list.add(new MentorDummy("Emily Rod", "UI/UX Lead", "8 Years", "5.0", "Available", Color.parseColor("#E8F5E9"), Color.parseColor("#2E7D32")));
+        List<com.kgap.intel.models.MentorProfileResponse> list = new ArrayList<>();
 
-        binding.rvRecommendedMentors.setAdapter(new GenericAdapter<MentorDummy>(list) {
+        GenericAdapter<com.kgap.intel.models.MentorProfileResponse> adapter = new GenericAdapter<com.kgap.intel.models.MentorProfileResponse>(list) {
             @Override
-            public void onBind(View view, MentorDummy item) {
+            public void onBind(View view, com.kgap.intel.models.MentorProfileResponse item) {
                 ItemMentorCardModernBinding b = ItemMentorCardModernBinding.bind(view);
-                b.tvMentorName.setText(item.name);
-                b.tvMentorExpertise.setText(item.expertise);
-                b.tvMentorExperience.setText(item.experience + " Experience");
-                b.tvMentorRating.setText(item.rating + " (80+ reviews)");
-                b.tvAvailabilityBadge.setText(item.availability);
-                b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(item.badgeBg));
-                b.tvAvailabilityBadge.setTextColor(item.badgeText);
+                b.tvMentorName.setText(item.getDisplayName());
+                b.tvMentorExpertise.setText(item.getExpertise());
+                b.tvMentorExperience.setText(item.getExperienceYears() + " Years Experience");
+                b.tvMentorRating.setText(item.getRatingFormatted() + " (80+ reviews)");
+                b.tvAvailabilityBadge.setText(item.getAvailability());
+
+                if ("Busy".equalsIgnoreCase(item.getAvailability())) {
+                    b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF3E0")));
+                    b.tvAvailabilityBadge.setTextColor(Color.parseColor("#E65100"));
+                } else {
+                    b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
+                    b.tvAvailabilityBadge.setTextColor(Color.parseColor("#2E7D32"));
+                }
+
+                b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
+                b.btnRequestMentorship.setOnClickListener(v -> openMentorshipRequest(item.getDisplayName(), item.getEffectiveMentorId()));
+                view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
             }
             @Override
             public int getLayout() { return R.layout.item_mentor_card_modern; }
+        };
+        binding.rvRecommendedMentors.setAdapter(adapter);
+
+        new com.kgap.intel.repository.RealMentorRepository(requireContext()).getMentors().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && !response.isEmpty()) {
+                list.clear();
+                list.addAll(response);
+                adapter.notifyDataSetChanged();
+            }
         });
+    }
+
+    private void openMentorProfile(String mentorName, Long mentorId) {
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, MentorProfileFragment.newInstance(mentorName, mentorId))
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void openMentorshipRequest(String mentorName, Long mentorId) {
+        MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(mentorName, mentorId);
+        bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
     }
 
     private void setupUpcomingSessions() {
@@ -147,14 +175,6 @@ public class MentorshipDashboardFragment extends Fragment {
             @Override
             public int getLayout() { return R.layout.item_mentorship_activity; }
         });
-    }
-
-    private static class MentorDummy {
-        String name, expertise, experience, rating, availability;
-        int badgeBg, badgeText;
-        MentorDummy(String n, String ex, String e, String r, String a, int bb, int bt) {
-            name = n; expertise = ex; experience = e; rating = r; availability = a; badgeBg = bb; badgeText = bt;
-        }
     }
 
     private static class SessionDummy {

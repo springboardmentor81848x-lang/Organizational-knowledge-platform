@@ -81,6 +81,8 @@
                 <include android:id="@+id/hub_my_mentors" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_sessions" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_resources" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_requests_received" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_requests_sent" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
             </GridLayout>
 
             <!-- Summary Cards Row (Horizontal scroll) -->

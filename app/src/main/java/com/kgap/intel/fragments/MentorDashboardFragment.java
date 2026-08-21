@@ -96,7 +96,31 @@ public class MentorDashboardFragment extends Fragment {
         progress.tvLabel.setText("Progress");
         progress.getRoot().setOnClickListener(v -> navigateToFragment(new MentorMenteesFragment()));
 
-        // 4. Profile - Purple Theme
+        // 4. Knowledge Sessions - Blue Theme
+        ItemHubButtonBinding knowledge = ItemHubButtonBinding.bind(binding.hubKnowledgeSession.getRoot());
+        knowledge.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
+        knowledge.ivIcon.setColorFilter(Color.parseColor("#1976D2"));
+        knowledge.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+        knowledge.tvLabel.setText("New Session");
+        knowledge.getRoot().setOnClickListener(v -> navigateToFragment(new KnowledgeSessionCreateFragment()));
+
+        // 5. Requests Received - Pink Theme
+        ItemHubButtonBinding received = ItemHubButtonBinding.bind(binding.hubRequests.getRoot());
+        received.ivIcon.setImageResource(android.R.drawable.ic_menu_info_details);
+        received.ivIcon.setColorFilter(Color.parseColor("#E91E63"));
+        received.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FCE4EC"));
+        received.tvLabel.setText("Incoming");
+        received.getRoot().setOnClickListener(v -> navigateToFragment(MentorshipRequestsListFragment.newInstance(true)));
+
+        // 6. Requests Sent - Blue Theme
+        ItemHubButtonBinding sent = ItemHubButtonBinding.bind(binding.hubRequestsSent.getRoot());
+        sent.ivIcon.setImageResource(android.R.drawable.ic_menu_send);
+        sent.ivIcon.setColorFilter(Color.parseColor("#1976D2"));
+        sent.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+        sent.tvLabel.setText("Sent");
+        sent.getRoot().setOnClickListener(v -> navigateToFragment(MentorshipRequestsListFragment.newInstance(false)));
+
+        // 7. Profile - Purple Theme
         ItemHubButtonBinding profile = ItemHubButtonBinding.bind(binding.hubMentorProfile.getRoot());
         profile.ivIcon.setImageResource(android.R.drawable.ic_menu_manage);
         profile.ivIcon.setColorFilter(Color.parseColor("#6200EA"));

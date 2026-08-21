@@ -128,4 +128,24 @@ public class EmployeeRepository {
         });
         return data;
     }
+
+    public LiveData<List<EmployeeResponse>> getAllEmployees() {
+        MutableLiveData<List<EmployeeResponse>> data = new MutableLiveData<>();
+        employeeApiService.getAllEmployees().enqueue(new Callback<List<EmployeeResponse>>() {
+            @Override
+            public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    data.setValue(response.body());
+                } else {
+                    data.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<EmployeeResponse>> call, Throwable t) {
+                data.setValue(null);
+            }
+        });
+        return data;
+    }
 }

@@ -55,6 +55,17 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView android:id="@+id/card_expert_directory" style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:gravity="center_vertical">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@android:drawable/ic_menu_search" app:tint="@color/primary_emerald" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="16dp" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Expert Directory" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Find internal subject matter experts" android:textSize="12sp" android:textColor="@color/gray_700" />
+                    </LinearLayout>
+                    <ImageButton android:id="@+id/btn_open_expert_directory" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_media_play" android:background="?attr/selectableItemBackgroundBorderless" app:tint="@color/primary_emerald" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Section 2: Analysis & Gap -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Insights &amp; Gaps" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="16sp" />
 

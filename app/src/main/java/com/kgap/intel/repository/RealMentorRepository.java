@@ -7,6 +7,7 @@ import com.kgap.intel.api.ApiClient;
 import com.kgap.intel.api.MentorApiService;
 import com.kgap.intel.models.MentorDashboardStats;
 import com.kgap.intel.models.MenteeProgress;
+import com.kgap.intel.models.MentorProfileResponse;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -46,4 +47,25 @@ public class RealMentorRepository implements MentorRepository {
         });
         return data;
     }
+
+    @Override
+    public LiveData<List<MentorProfileResponse>> getMentors() {
+        MutableLiveData<List<MentorProfileResponse>> data = new MutableLiveData<>();
+        apiService.getAllMentors().enqueue(new Callback<List<MentorProfileResponse>>() {
+            @Override
+            public void onResponse(Call<List<MentorProfileResponse>> call, Response<List<MentorProfileResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    data.setValue(response.body());
+                } else {
+                    data.setValue(null);
+                }
+            }
+            @Override
+            public void onFailure(Call<List<MentorProfileResponse>> call, Throwable t) {
+                data.setValue(null);
+            }
+        });
+        return data;
+    }
 }
+

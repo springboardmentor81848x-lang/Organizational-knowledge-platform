@@ -89,6 +89,7 @@
                 <include android:id="@+id/hub_paths" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_recommendations" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_certifications" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_knowledge_session" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_more" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
             </GridLayout>
 

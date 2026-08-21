@@ -97,11 +97,20 @@ public class HomeFragment extends Fragment {
 
         // 4. More - Purple Theme
         ItemHubButtonBinding more = ItemHubButtonBinding.bind(binding.hubMore.getRoot());
-        more.ivIcon.setImageResource(android.R.drawable.ic_menu_more);
-        more.ivIcon.setColorFilter(Color.parseColor("#6200EA"));
-        more.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
-        more.tvLabel.setText("Account");
-        more.getRoot().setOnClickListener(v -> navigateToFragment(new MoreFragment()));
+        String role = SharedPrefManager.getInstance(requireContext()).getUserRole();
+        if ("MENTOR".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role) || "LD_ADMIN".equalsIgnoreCase(role) || "LEARNING_DEVELOPMENT_ADMIN".equalsIgnoreCase(role)) {
+            more.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
+            more.tvLabel.setText("New Session");
+            more.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+            more.ivIcon.setColorFilter(Color.parseColor("#1976D2"));
+            more.getRoot().setOnClickListener(v -> navigateToFragment(new KnowledgeSessionCreateFragment()));
+        } else {
+            more.ivIcon.setImageResource(android.R.drawable.ic_menu_more);
+            more.ivIcon.setColorFilter(Color.parseColor("#6200EA"));
+            more.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
+            more.tvLabel.setText("Account");
+            more.getRoot().setOnClickListener(v -> navigateToFragment(new MoreFragment()));
+        }
     }
 
     private void setupBanner() {

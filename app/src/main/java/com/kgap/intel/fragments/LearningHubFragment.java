@@ -28,8 +28,8 @@ public class LearningHubFragment extends Fragment {
         binding.cardRecommended.setOnClickListener(v -> switchFragment(new StructuredLearningPathFragment()));
         binding.btnOpenPath.setOnClickListener(v -> switchFragment(new StructuredLearningPathFragment()));
 
-        binding.cardBrowse.setOnClickListener(v -> switchFragment(new AIRecommendationFragment()));
-        binding.btnOpenBrowse.setOnClickListener(v -> switchFragment(new AIRecommendationFragment()));
+        binding.cardBrowse.setOnClickListener(v -> switchFragment(new CourseCatalogFragment()));
+        binding.btnOpenBrowse.setOnClickListener(v -> switchFragment(new CourseCatalogFragment()));
 
         binding.cardEnrolled.setOnClickListener(v -> switchFragment(new LearningFragment()));
         binding.btnOpenEnrolled.setOnClickListener(v -> switchFragment(new LearningFragment()));

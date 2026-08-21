@@ -19,6 +19,9 @@ public interface SkillApiService {
     @DELETE("skills/{id}")
     Call<Void> deleteSkill(@Path("id") String id);
 
+    @GET("employee-skills")
+    Call<List<EmployeeSkillResponse>> getAllEmployeeSkills();
+
     @GET("employee-skills/employee/{employeeId}")
     Call<List<EmployeeSkillResponse>> getEmployeeSkills(@Path("employeeId") Long employeeId);
 

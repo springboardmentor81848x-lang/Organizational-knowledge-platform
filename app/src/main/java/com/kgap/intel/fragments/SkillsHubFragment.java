@@ -32,6 +32,9 @@ public class SkillsHubFragment extends Fragment {
         binding.cardPeer.setOnClickListener(v -> switchFragment(new PeerAssessmentFragment()));
         binding.btnOpenPeer.setOnClickListener(v -> switchFragment(new PeerAssessmentFragment()));
 
+        binding.cardExpertDirectory.setOnClickListener(v -> switchFragment(new ExpertDirectoryFragment()));
+        binding.btnOpenExpertDirectory.setOnClickListener(v -> switchFragment(new ExpertDirectoryFragment()));
+
         binding.cardGaps.setOnClickListener(v -> switchFragment(new SkillGapFragment()));
         binding.btnOpenGaps.setOnClickListener(v -> switchFragment(new SkillGapFragment()));
 

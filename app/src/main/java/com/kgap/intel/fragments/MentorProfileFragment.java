@@ -21,12 +21,20 @@ import java.util.List;
 
 public class MentorProfileFragment extends Fragment {
     private static final String ARG_MENTOR_NAME = "mentor_name";
+    private static final String ARG_MENTOR_ID = "mentor_id";
     private FragmentMentorProfileBinding binding;
 
     public static MentorProfileFragment newInstance(String mentorName) {
+        return newInstance(mentorName, null);
+    }
+
+    public static MentorProfileFragment newInstance(String mentorName, Long mentorId) {
         MentorProfileFragment fragment = new MentorProfileFragment();
         Bundle args = new Bundle();
         args.putString(ARG_MENTOR_NAME, mentorName);
+        if (mentorId != null) {
+            args.putLong(ARG_MENTOR_ID, mentorId);
+        }
         fragment.setArguments(args);
         return fragment;
     }
@@ -42,8 +50,17 @@ public class MentorProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        String mentorName = getArguments() != null ? getArguments().getString(ARG_MENTOR_NAME) : "Michael Chen";
-        binding.tvMentorName.setText(mentorName);
+        String mentorName = "Michael Chen";
+        Long mentorId = 16L;
+        if (getArguments() != null) {
+            mentorName = getArguments().getString(ARG_MENTOR_NAME, "Michael Chen");
+            if (getArguments().containsKey(ARG_MENTOR_ID)) {
+                mentorId = getArguments().getLong(ARG_MENTOR_ID);
+            }
+        }
+        final String finalMentorName = mentorName;
+        final Long finalMentorId = mentorId;
+        binding.tvMentorName.setText(finalMentorName);
         binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         setupExpertise();
@@ -51,9 +68,9 @@ public class MentorProfileFragment extends Fragment {
         setupPreviousSessions();
         setupReviews();
 
-        binding.btnMessage.setOnClickListener(v -> Toast.makeText(getContext(), "Chat with " + mentorName + " opening...", Toast.LENGTH_SHORT).show());
+        binding.btnMessage.setOnClickListener(v -> Toast.makeText(getContext(), "Chat with " + finalMentorName + " opening...", Toast.LENGTH_SHORT).show());
         binding.btnRequestMentorship.setOnClickListener(v -> {
-            MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(mentorName);
+            MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(finalMentorName, finalMentorId);
             bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
         });
     }

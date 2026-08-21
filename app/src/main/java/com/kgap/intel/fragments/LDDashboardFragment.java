@@ -104,7 +104,15 @@ public class LDDashboardFragment extends Fragment {
         certifications.tvLabel.setText("Certifications");
         certifications.getRoot().setOnClickListener(v -> navigateToFragment(new LDProgramsFragment())); // Reusing for demo
 
-        // 5. More - Grey Theme
+        // 5. Knowledge Sessions - Emerald Theme
+        ItemHubButtonBinding knowledge = ItemHubButtonBinding.bind(binding.hubKnowledgeSession.getRoot());
+        knowledge.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
+        knowledge.ivIcon.setColorFilter(Color.parseColor("#00C853"));
+        knowledge.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
+        knowledge.tvLabel.setText("New Session");
+        knowledge.getRoot().setOnClickListener(v -> navigateToFragment(new KnowledgeSessionCreateFragment()));
+
+        // 6. More - Grey Theme
         ItemHubButtonBinding more = ItemHubButtonBinding.bind(binding.hubMore.getRoot());
         more.ivIcon.setImageResource(android.R.drawable.ic_menu_more);
         more.ivIcon.setColorFilter(Color.parseColor("#607D8B"));

@@ -18,6 +18,7 @@ import com.kgap.intel.databinding.ItemKnowledgeCardBinding;
 import com.kgap.intel.databinding.ItemMentorCardModernBinding;
 import com.kgap.intel.databinding.ItemMentorshipSessionBinding;
 import com.kgap.intel.databinding.LayoutSummaryCardCompactBinding;
+import com.kgap.intel.utils.SharedPrefManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,12 +71,42 @@ public class MentorshipHomeFragment extends Fragment {
 
         // 4. Resources
         ItemHubButtonBinding resources = binding.hubResources;
-        resources.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
-        resources.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
-        resources.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
-        resources.tvLabel.setText("Resources");
-        resources.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeHubFragment()));
-        
+        String role = SharedPrefManager.getInstance(requireContext()).getUserRole();
+        if ("MENTOR".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role) || "LD_ADMIN".equalsIgnoreCase(role)) {
+            resources.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
+            resources.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
+            resources.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
+            resources.tvLabel.setText("Host Session");
+            resources.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeSessionCreateFragment()));
+        } else {
+            resources.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
+            resources.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
+            resources.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
+            resources.tvLabel.setText("Resources");
+            resources.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeHubFragment()));
+        }
+
+        // 5. Received Requests
+        ItemHubButtonBinding received = binding.hubRequestsReceived;
+        received.ivIcon.setImageResource(android.R.drawable.ic_menu_info_details);
+        received.ivIcon.setColorFilter(Color.parseColor("#E91E63"));
+        received.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FCE4EC"));
+        received.tvLabel.setText("Incoming");
+        received.getRoot().setOnClickListener(v -> navigateTo(MentorshipRequestsListFragment.newInstance(true)));
+
+        // 6. Sent Requests
+        ItemHubButtonBinding sent = binding.hubRequestsSent;
+        sent.ivIcon.setImageResource(android.R.drawable.ic_menu_send);
+        sent.ivIcon.setColorFilter(Color.parseColor("#1976D2"));
+        sent.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+        sent.tvLabel.setText("Sent");
+        sent.getRoot().setOnClickListener(v -> navigateTo(MentorshipRequestsListFragment.newInstance(false)));
+
+        if ("LD_ADMIN".equalsIgnoreCase(role) || "LEARNING_DEVELOPMENT_ADMIN".equalsIgnoreCase(role)) {
+            received.getRoot().setVisibility(View.GONE);
+            sent.getRoot().setVisibility(View.GONE);
+        }
+
         binding.tvSeeAllMentors.setOnClickListener(v -> navigateTo(new FindMentorFragment()));
     }
 
@@ -123,6 +154,9 @@ public class MentorshipHomeFragment extends Fragment {
         b.tvAvailabilityBadge.setText("Connected");
         b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
         b.btnRequestMentorship.setText("Message");
+
+        b.btnViewProfile.setOnClickListener(v -> openMentorProfile("Michael Chen", 16L));
+        b.btnRequestMentorship.setOnClickListener(v -> Toast.makeText(getContext(), "Opening chat with Michael Chen...", Toast.LENGTH_SHORT).show());
     }
 
     private void setupUpcomingSessions() {
@@ -146,29 +180,47 @@ public class MentorshipHomeFragment extends Fragment {
 
     private void setupRecommendedMentors() {
         binding.rvRecommendedMentors.setLayoutManager(new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
-        List<String> mentors = new ArrayList<>();
-        mentors.add("Jane Cooper");
-        mentors.add("Guy Hawkins");
-        mentors.add("Kristin Watson");
-
-        binding.rvRecommendedMentors.setAdapter(new GenericAdapter<String>(mentors) {
+        List<com.kgap.intel.models.MentorProfileResponse> mentorsList = new ArrayList<>();
+        
+        GenericAdapter<com.kgap.intel.models.MentorProfileResponse> adapter = new GenericAdapter<com.kgap.intel.models.MentorProfileResponse>(mentorsList) {
             @Override
-            public void onBind(View view, String item) {
+            public void onBind(View view, com.kgap.intel.models.MentorProfileResponse item) {
                 ItemMentorCardModernBinding b = ItemMentorCardModernBinding.bind(view);
-                b.tvMentorName.setText(item);
-                b.tvMentorExpertise.setText("Lead Product Designer");
-                b.tvMentorExperience.setText("8 Years Experience");
-                
-                view.setOnClickListener(v -> {
-                    getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new FindMentorFragment())
-                        .addToBackStack(null)
-                        .commit();
-                });
+                b.tvMentorName.setText(item.getDisplayName());
+                b.tvMentorExpertise.setText(item.getExpertise());
+                b.tvMentorExperience.setText(item.getExperienceYears() + " Years Experience");
+                b.tvMentorRating.setText(item.getRatingFormatted());
+                b.tvAvailabilityBadge.setText(item.getAvailability());
+
+                b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
+                b.btnRequestMentorship.setOnClickListener(v -> openMentorshipRequest(item.getDisplayName(), item.getEffectiveMentorId()));
+                view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
             }
             @Override
             public int getLayout() { return R.layout.item_mentor_card_modern; }
+        };
+        binding.rvRecommendedMentors.setAdapter(adapter);
+
+        new com.kgap.intel.repository.RealMentorRepository(requireContext()).getMentors().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && !response.isEmpty()) {
+                mentorsList.clear();
+                mentorsList.addAll(response);
+                adapter.notifyDataSetChanged();
+            }
         });
+    }
+
+    private void openMentorProfile(String mentorName) {
+        openMentorProfile(mentorName, null);
+    }
+
+    private void openMentorProfile(String mentorName, Long mentorId) {
+        navigateTo(MentorProfileFragment.newInstance(mentorName, mentorId));
+    }
+
+    private void openMentorshipRequest(String mentorName, Long mentorId) {
+        MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(mentorName, mentorId);
+        bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
     }
 
     private void setupRecentKnowledge() {
