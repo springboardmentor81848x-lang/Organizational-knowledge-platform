@@ -1,15 +1,22 @@
 package com.knowledgegap.service;
 
-import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.EmployeeSkill;
-import com.knowledgegap.entity.KnowledgeGap;
-import com.knowledgegap.repository.EmployeeRepository;
-import com.knowledgegap.repository.EmployeeSkillRepository;
-import com.knowledgegap.repository.KnowledgeGapRepository;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import com.knowledgegap.entity.AssessmentAttempt;
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.KnowledgeGap;
+import com.knowledgegap.repository.AssessmentAttemptRepository;
+import com.knowledgegap.repository.EmployeeRepository;
+import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.KnowledgeGapRepository;
 
 @Service
 public class HRDashboardService {
@@ -17,15 +24,18 @@ public class HRDashboardService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final KnowledgeGapRepository knowledgeGapRepository;
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
 
     public HRDashboardService(
             EmployeeRepository employeeRepository,
             EmployeeSkillRepository employeeSkillRepository,
-            KnowledgeGapRepository knowledgeGapRepository) {
+            KnowledgeGapRepository knowledgeGapRepository,
+            AssessmentAttemptRepository assessmentAttemptRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.knowledgeGapRepository = knowledgeGapRepository;
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
     }
 
     public Map<String, Object> getDashboardSummary() {
@@ -36,8 +46,8 @@ public class HRDashboardService {
          */
         List<Employee> employees =
                 employeeRepository.findByRoleRoleNameIn(
-                Arrays.asList("EMPLOYEE", "MANAGER")
-            );
+                        Arrays.asList("EMPLOYEE", "MANAGER")
+                );
 
         int totalEmployees = employees.size();
 
@@ -48,6 +58,15 @@ public class HRDashboardService {
 
         int criticalGaps = 0;
 
+        /*
+         * Average skill improvement
+         */
+        double totalSkillImprovement = 0;
+        int employeesWithImprovement = 0;
+
+        /*
+         * Performance distribution
+         */
         Map<String, Integer> performance =
                 new LinkedHashMap<>();
 
@@ -56,6 +75,9 @@ public class HRDashboardService {
         performance.put("needsAttention", 0);
         performance.put("critical", 0);
 
+        /*
+         * Knowledge gap distribution
+         */
         Map<String, Integer> gapDistribution =
                 new LinkedHashMap<>();
 
@@ -73,14 +95,24 @@ public class HRDashboardService {
         Map<String, Integer> skillEmployeeCount =
                 new HashMap<>();
 
+        /*
+         * Employee overview
+         */
         List<Map<String, Object>> employeeOverview =
                 new ArrayList<>();
 
 
+        /*
+         * =====================================================
+         * PROCESS EACH EMPLOYEE
+         * =====================================================
+         */
         for (Employee employee : employees) {
 
             /*
-             * Employee skills
+             * -------------------------------------------------
+             * Employee Skills
+             * -------------------------------------------------
              */
             List<EmployeeSkill> employeeSkills =
                     employeeSkillRepository.findByEmployee(employee);
@@ -94,6 +126,7 @@ public class HRDashboardService {
                 for (EmployeeSkill employeeSkill : employeeSkills) {
 
                     if (employeeSkill.getCurrentLevel() != null) {
+
                         totalSkillLevel +=
                                 employeeSkill.getCurrentLevel();
                     }
@@ -112,7 +145,9 @@ public class HRDashboardService {
 
 
             /*
-             * Knowledge gaps
+             * -------------------------------------------------
+             * Knowledge Gaps
+             * -------------------------------------------------
              */
             List<KnowledgeGap> gaps =
                     knowledgeGapRepository.findByEmployee(employee);
@@ -131,14 +166,15 @@ public class HRDashboardService {
                                 : 0;
 
                 totalKnowledgeGaps++;
+
                 totalGapValue += gapValue;
+
                 employeeTotalGap += gapValue;
 
 
                 /*
-                 * Gap distribution
+                 * Gap Distribution
                  */
-
                 if (gapValue == 1) {
 
                     gapDistribution.put(
@@ -172,9 +208,8 @@ public class HRDashboardService {
 
 
                 /*
-                 * Top skill gaps
+                 * Top Skill Gaps
                  */
-
                 if (gap.getSkill() != null) {
 
                     String skillName =
@@ -199,14 +234,53 @@ public class HRDashboardService {
 
 
             /*
-             * Employee performance
+             * -------------------------------------------------
+             * Average Skill Improvement
+             * -------------------------------------------------
+             *
+             * Compare the employee's first assessment
+             * with their latest assessment.
+             */
+            List<AssessmentAttempt> attempts =
+                    assessmentAttemptRepository
+                            .findByEmployeeOrderByCompletedAtAsc(
+                                    employee
+                            );
+
+            if (attempts.size() >= 2) {
+
+                AssessmentAttempt firstAttempt =
+                        attempts.get(0);
+
+                AssessmentAttempt latestAttempt =
+                        attempts.get(
+                                attempts.size() - 1
+                        );
+
+                if (firstAttempt.getOverallScore() != null &&
+                        latestAttempt.getOverallScore() != null) {
+
+                    double improvement =
+                            latestAttempt.getOverallScore()
+                            - firstAttempt.getOverallScore();
+
+                    totalSkillImprovement += improvement;
+
+                    employeesWithImprovement++;
+                }
+            }
+
+
+            /*
+             * -------------------------------------------------
+             * Employee Performance
+             * -------------------------------------------------
              *
              * 80%+  = Excellent
              * 60-79 = Good
              * 40-59 = Needs Attention
              * <40   = Critical
              */
-
             if (averageSkill >= 80) {
 
                 performance.put(
@@ -238,9 +312,10 @@ public class HRDashboardService {
 
 
             /*
-             * Employee gap status
+             * -------------------------------------------------
+             * Employee Gap Status
+             * -------------------------------------------------
              */
-
             String gapStatus;
 
             if (employeeTotalGap == 0) {
@@ -262,9 +337,10 @@ public class HRDashboardService {
 
 
             /*
-             * Employee overview object
+             * -------------------------------------------------
+             * Employee Overview
+             * -------------------------------------------------
              */
-
             Map<String, Object> employeeData =
                     new LinkedHashMap<>();
 
@@ -275,9 +351,9 @@ public class HRDashboardService {
 
             employeeData.put(
                     "employee",
-                    employee.getFirstName() +
-                    " " +
-                    employee.getLastName()
+                    employee.getFirstName()
+                    + " "
+                    + employee.getLastName()
             );
 
             employeeData.put(
@@ -300,9 +376,10 @@ public class HRDashboardService {
 
 
         /*
-         * Average knowledge gap
+         * =====================================================
+         * AVERAGE KNOWLEDGE GAP
+         * =====================================================
          */
-
         double averageGap = 0;
 
         if (totalKnowledgeGaps > 0) {
@@ -317,9 +394,30 @@ public class HRDashboardService {
 
 
         /*
-         * Top skills with knowledge gaps
+         * =====================================================
+         * AVERAGE SKILL IMPROVEMENT
+         * =====================================================
          */
+        double averageSkillImprovement = 0;
 
+        if (employeesWithImprovement > 0) {
+
+            averageSkillImprovement =
+                    totalSkillImprovement /
+                    employeesWithImprovement;
+        }
+
+        averageSkillImprovement =
+                Math.round(
+                        averageSkillImprovement * 100.0
+                ) / 100.0;
+
+
+        /*
+         * =====================================================
+         * TOP SKILLS WITH KNOWLEDGE GAPS
+         * =====================================================
+         */
         List<Map<String, Object>> topSkillGaps =
                 new ArrayList<>();
 
@@ -365,67 +463,151 @@ public class HRDashboardService {
         /*
          * Sort skills by number of affected employees
          */
-
         topSkillGaps.sort(
                 (a, b) ->
                         Integer.compare(
-                                (Integer) b.get("employeesAffected"),
-                                (Integer) a.get("employeesAffected")
+                                (Integer) b.get(
+                                        "employeesAffected"
+                                ),
+                                (Integer) a.get(
+                                        "employeesAffected"
+                                )
                         )
         );
 
 
         /*
-         * Final dashboard response
+         * =====================================================
+         * FINAL DASHBOARD RESPONSE
+         * =====================================================
          */
-
         Map<String, Object> dashboard =
                 new LinkedHashMap<>();
 
+        /*
+         * KPI 1
+         */
         dashboard.put(
                 "totalEmployees",
                 totalEmployees
         );
 
+        /*
+         * KPI 2
+         */
         dashboard.put(
                 "employeesWithGaps",
                 employeesWithGaps
         );
 
+        /*
+         * Average gap
+         */
         dashboard.put(
                 "averageGap",
                 averageGap
         );
 
+        /*
+         * KPI 3
+         */
         dashboard.put(
                 "criticalGaps",
                 criticalGaps
         );
 
+        /*
+         * Total knowledge gaps
+         */
         dashboard.put(
                 "totalKnowledgeGaps",
                 totalKnowledgeGaps
         );
 
+        /*
+         * Performance
+         */
         dashboard.put(
                 "performance",
                 performance
         );
 
+        /*
+         * Gap distribution
+         */
         dashboard.put(
                 "gapDistribution",
                 gapDistribution
         );
 
+        /*
+         * Top skill gaps
+         */
         dashboard.put(
                 "topSkillGaps",
                 topSkillGaps
         );
 
+        /*
+         * Employee overview
+         */
         dashboard.put(
                 "employees",
                 employeeOverview
         );
+
+
+        /*
+         * =====================================================
+         * TRAINING KPIs
+         * =====================================================
+         *
+         * Your imported database currently has no status
+         * values in learning_path or learning_path_course.
+         *
+         * Therefore we leave these as 0 rather than inventing
+         * training data.
+         */
+
+        dashboard.put(
+                "employeesInTraining",
+                0
+        );
+
+        dashboard.put(
+                "trainingCompletionRate",
+                0
+        );
+
+        dashboard.put(
+                "averageLearningProgress",
+                0
+        );
+
+
+        /*
+         * =====================================================
+         * KPI 7 - AVERAGE SKILL IMPROVEMENT
+         * =====================================================
+         */
+        dashboard.put(
+                "averageSkillImprovement",
+                averageSkillImprovement
+        );
+
+
+        /*
+         * =====================================================
+         * KPI 8 - ACTIVE MENTORSHIPS
+         * =====================================================
+         *
+         * No mentorship entity/table currently exists.
+         */
+        dashboard.put(
+                "activeMentorships",
+                0
+        );
+
 
         return dashboard;
     }

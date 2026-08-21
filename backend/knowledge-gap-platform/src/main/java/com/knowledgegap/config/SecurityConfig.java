@@ -26,8 +26,11 @@ public class SecurityConfig {
 
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    public SecurityConfig(
+            JWTAuthenticationFilter jwtAuthenticationFilter) {
+
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
     }
 
     @Bean
@@ -38,74 +41,157 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "OPTIONS"
-        ));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedOrigins(
+                List.of(
+                        "http://localhost:5173",
+                        "http://localhost:5174"
+                )
+        );
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
+
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http)
+            throws Exception {
 
         http
                 .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .csrf(
+                        AbstractHttpConfigurer::disable
                 )
 
-                .authorizeHttpRequests(auth -> auth
+                .sessionManagement(
+                        session ->
+                                session.sessionCreationPolicy(
+                                        SessionCreationPolicy.STATELESS
+                                )
+                )
 
-                        // Allow OPTIONS requests (required for CORS)
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .authorizeHttpRequests(
+                        auth -> auth
 
-                        // Public authentication endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
+                                // CORS
+                                .requestMatchers(
+                                        HttpMethod.OPTIONS,
+                                        "/**"
+                                )
+                                .permitAll()
 
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/ai/**", 
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+                                // Authentication
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/auth/login"
+                                )
+                                .permitAll()
 
-                        // HR only
-                        .requestMatchers("/api/hr/**").hasRole("HR")
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/auth/signup"
+                                )
+                                .permitAll()
 
-                        // Manager only
-                        .requestMatchers("/api/manager/**").hasRole("MANAGER")
+                                .requestMatchers(
+                                        "/api/auth/**"
+                                )
+                                .permitAll()
 
-                        // Department Head only
-                        .requestMatchers("/api/department-head/**")
-                        .hasRole("DEPARTMENT_HEAD")
+                                // AI
+                                .requestMatchers(
+                                        "/api/ai/**"
+                                )
+                                .permitAll()
 
-                        // System Administrator only
-                        .requestMatchers("/api/system-admin/**")
-                        .hasRole("SYSTEM_ADMINISTRATOR")
+                                // Swagger
+                                .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                )
+                                .permitAll()
 
-                        // Employee only
-                        .requestMatchers("/api/employee/**").hasRole("EMPLOYEE")
+                                // =========================
+                                // HR
+                                // =========================
 
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
+                                .requestMatchers(
+                                        "/api/hr/**"
+                                )
+                                .hasRole("HR")
+
+                                // =========================
+                                // MANAGER
+                                // =========================
+
+                                .requestMatchers(
+                                        "/api/manager/**"
+                                )
+                                .hasRole("MANAGER")
+
+                                // =========================
+                                // DEPARTMENT HEAD
+                                // =========================
+
+                                .requestMatchers(
+                                        "/api/department-head/**"
+                                )
+                                .hasRole("DEPARTMENT_HEAD")
+
+                                // =========================
+                                // SYSTEM ADMIN
+                                // =========================
+
+                                .requestMatchers(
+                                        "/api/system-admin/**"
+                                )
+                                .hasRole(
+                                        "SYSTEM_ADMINISTRATOR"
+                                )
+
+                                // =========================
+                                // EMPLOYEE
+                                // =========================
+
+                                .requestMatchers(
+                                        "/api/employee/**"
+                                )
+                                .hasRole("EMPLOYEE")
+
+                                // =========================
+                                // EVERYTHING ELSE
+                                // =========================
+
+                                .anyRequest()
+                                .authenticated()
                 )
 
                 .addFilterBefore(
