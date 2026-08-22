@@ -1,21 +1,44 @@
 import API from "@/api/axios";
 
-export const profileService = {
-  getProfile: async () => {
-    // GET /api/profile
-    const response = await API.get("/api/profile");
+export interface EmployeeProfile {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  dateOfBirth: string;
+  gender: string;
+}
+
+const profileService = {
+  getMyProfile: async (): Promise<EmployeeProfile> => {
+    const response = await API.get<EmployeeProfile>("/profile");
     return response.data;
   },
 
-  updateProfile: async (profileData: any) => {
-    // PUT /api/profile
-    const response = await API.put("/api/profile", profileData);
+  updateMyProfile: async (
+    data: Partial<EmployeeProfile>
+  ): Promise<EmployeeProfile> => {
+    const response = await API.put<EmployeeProfile>(
+      "/profile",
+      data
+    );
     return response.data;
   },
 
-  createProfile: async (profileData: any) => {
-    // POST /api/profile
-    const response = await API.post("/api/profile", profileData);
+  createProfile: async (
+    data: Omit<EmployeeProfile, "employeeId" | "employeeCode" | "employeeName">
+  ): Promise<EmployeeProfile> => {
+    const response = await API.post<EmployeeProfile>(
+      "/profile",
+      data
+    );
     return response.data;
   },
 };
+
+export default profileService;

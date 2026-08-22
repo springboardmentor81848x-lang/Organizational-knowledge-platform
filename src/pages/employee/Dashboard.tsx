@@ -1,1054 +1,386 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { NavLink } from "react-router-dom";
 import {
   Activity,
   Award,
   Bell,
   BookOpen,
+  CheckCircle2,
   ChevronRight,
   CircleHelp,
   FileCheck2,
   GraduationCap,
+   Briefcase,
   LayoutDashboard,
   LogOut,
   Moon,
   Search,
   Settings,
   ShieldCheck,
-  Star,
   Target,
   TrendingUp,
   User,
   Users,
   Zap,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
+import EmployeeSidebar from "@/components/layout/EmployeeSidebar";
+import gapAnalysisService, { GapAnalysisResponse } from "@/services/gapAnalysisService";
+import analyticsService from "@/services/analyticsService";
+import aiService from "@/services/aiServices";
+import profileService from "@/services/profileService";
+import { getMySkills } from "@/services/skillService";
+import { useAuth } from "@/context/AuthContext";
+
 import "@/styles/employee-dashboard.css";
-import gapAnalysisService from "@/services/gapAnalysisService";
 
-interface KnowledgeGap {
-  knowledgeGapId: number;
-  employeeCode: string;
-  employeeName: string;
-  jobRoleName: string;
-  skillName: string;
-  currentProficiency: string | null;
-  requiredProficiency: string;
-  currentExperience: number;
-  requiredExperience: number;
-  gapType: string;
-  gapScore: number;
-  gapPercentage: number;
-  status: string;
+const menuItems = [
+  ["Dashboard", "/employee", LayoutDashboard],
+  ["My Profile", "/employee/profile", User],
+  ["Skill Profile", "/employee/skills", Activity],
+  ["Self Assessment", "/employee/self-assessment", FileCheck2],
+  ["Peer Assessment", "/employee/peer-assessment", Users],
+  ["My Proficiency", "/employee/proficiency", Target],
+  ["Skill Gaps", "/employee/skill-gaps", TrendingUp],
+  ["Learning Paths", "/employee/learning-paths", BookOpen],
+  ["Training", "/employee/training", GraduationCap],
+  ["Experience", "/employee/experience", Briefcase],
+  ["My Progress", "/employee/progress", Activity],
+  ["Achievements", "/employee/achievements", Award],
+  ["Certifications", "/employee/certifications", ShieldCheck],
+  ["Mentorship", "/employee/mentorship", Users],
+  ["Notifications", "/employee/notifications", Bell],
+] as const;
+
+interface CertificationRow {
+  id?: number | string;
+  name: string;
+  provider?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  status?: string;
 }
 
-interface GapAnalysisResponse {
-  employeeCode: string;
-  employeeName: string;
-  jobRoleName: string;
-  totalSkills: number;
-  completedSkills: number;
-  gapSkills: number;
-  overallGapPercentage: number;
-  readinessPercentage: number;
-  knowledgeGaps: KnowledgeGap[];
-}
-const stats = [
-  {
-    title: "Overall Proficiency",
-    value: "78.4%",
-    subtitle: "Advanced",
-    change: "↑ 6.2%",
-    icon: Target,
-    type: "purple",
-  },
-  {
-    title: "Skills",
-    value: "24",
-    subtitle: "Total Skills",
-    change: "↑ 2",
-    icon: BookOpen,
-    type: "green",
-  },
-  {
-    title: "Skill Gaps",
-    value: "7",
-    subtitle: "Needs Attention",
-    change: "↓ 1",
-    icon: Activity,
-    type: "red",
-  },
-  {
-    title: "Learning Hours",
-    value: "36.5",
-    subtitle: "This Month",
-    change: "↑ 12.5%",
-    icon: GraduationCap,
-    type: "purple",
-  },
-  {
-    title: "Achievements",
-    value: "12",
-    subtitle: "Badges Earned",
-    change: "↑ 1",
-    icon: Award,
-    type: "orange",
-  },
-];
+const toPercentage = (value: unknown): number | null => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  if (n >= 0 && n <= 1) return n * 100;
+  return Math.max(0, Math.min(100, n));
+};
 
-const skillGaps = [
-  {
-    name: "Advanced React",
-    level: "Level 3",
-    gap: "40%",
-    width: "40%",
-    type: "red",
-  },
-  {
-    name: "System Design",
-    level: "Level 3",
-    gap: "45%",
-    width: "45%",
-    type: "orange",
-  },
-  {
-    name: "Kubernetes",
-    level: "Level 2",
-    gap: "55%",
-    width: "55%",
-    type: "yellow",
-  },
-  {
-    name: "AWS Services",
-    level: "Level 2",
-    gap: "60%",
-    width: "60%",
-    type: "yellow",
-  },
-  {
-    name: "CI/CD Pipelines",
-    level: "Level 2",
-    gap: "65%",
-    width: "65%",
-    type: "green",
-  },
-];
+const extractRows = (value: any, keys: string[]): any[] => {
+  if (Array.isArray(value)) return value;
+  for (const key of keys) {
+    if (Array.isArray(value?.[key])) return value[key];
+  }
+  return [];
+};
 
-const recommendations = [
-  {
-    title: "Advanced React Patterns",
-    type: "COURSE",
-    match: "95% Match",
-    icon: BookOpen,
-  },
-  {
-    title: "System Design Basics",
-    type: "LEARNING PATH",
-    match: "92% Match",
-    icon: Target,
-  },
-  {
-    title: "Kubernetes Essentials",
-    type: "COURSE",
-    match: "89% Match",
-    icon: Zap,
-  },
-  {
-    title: "AWS Solutions Architect",
-    type: "CERTIFICATION",
-    match: "85% Match",
-    icon: ShieldCheck,
-  },
-];
+const formatDate = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
-const activities = [
-  {
-    title: "Advanced React Concepts",
-    subtitle: "Course Progress",
-    progress: "65%",
-    time: "2 hours ago",
-    status: "progress",
-  },
-  {
-    title: "System Design Fundamentals",
-    subtitle: "Learning Path",
-    progress: "Completed",
-    time: "1 day ago",
-    status: "completed",
-  },
-  {
-    title: "AWS S3 Deep Dive",
-    subtitle: "Course Progress",
-    progress: "75%",
-    time: "2 days ago",
-    status: "progress",
-  },
-  {
-    title: "React Performance Optimization",
-    subtitle: "Video Watch",
-    progress: "Completed",
-    time: "3 days ago",
-    status: "completed",
-  },
-  {
-    title: "CI/CD with GitHub Actions",
-    subtitle: "Course Progress",
-    progress: "40%",
-    time: "3 days ago",
-    status: "progress",
-  },
-];
-
-const achievements = [
-  {
-    title: "Quick Learner",
-    description: "Completed 5 courses in 30 days",
-    date: "May 12, 2025",
-    icon: Zap,
-  },
-  {
-    title: "Consistent Learner",
-    description: "7 day learning streak",
-    date: "May 10, 2025",
-    icon: Target,
-  },
-  {
-    title: "Skill Master",
-    description: "Reached Advanced level in React",
-    date: "May 8, 2025",
-    icon: Award,
-  },
-  {
-    title: "Knowledge Seeker",
-    description: "Completed 10 learning paths",
-    date: "May 5, 2025",
-    icon: BookOpen,
-  },
-];
-
-const certifications = [
-  {
-    title: "AWS Solutions Architect",
-    subtitle: "Associate",
-    valid: "Valid until Dec 15, 2025",
-    status: "Active",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Google Cloud Professional",
-    subtitle: "Cloud Engineer",
-    valid: "Valid until Aug 20, 2025",
-    status: "Active",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Certified Scrum Master",
-    subtitle: "CSM",
-    valid: "Valid until Feb 10, 2026",
-    status: "Active",
-    icon: FileCheck2,
-  },
-];
-
-const tasks = [
-  {
-    title: "Self Assessment",
-    description: "React Advanced Level",
-    due: "Due Tomorrow",
-    urgent: true,
-  },
-  {
-    title: "Peer Assessment",
-    description: "Design Team Assignment",
-    due: "Due in 3 days",
-  },
-  {
-    title: "Learning Path Quiz",
-    description: "Advanced React Concepts",
-    due: "Due in 5 days",
-  },
-];
-
-const mentorship = [
-  {
-    name: "John Doe",
-    title: "Tech Talk: Microservices",
-    action: "Join Live",
-  },
-  {
-    name: "Jane Smith",
-    title: "Frontend Best Practices",
-    action: "Watch Now",
-  },
-  {
-    name: "Michael Brown",
-    title: "Career Growth Session",
-    action: "Register",
-  },
-];
-
-const notifications = [
-  {
-    text: "Your assessment has been reviewed",
-    time: "2 hours ago",
-  },
-  {
-    text: "New course recommended for you",
-    time: "1 day ago",
-  },
-  {
-    text: "John Doe accepted your mentorship request",
-    time: "2 days ago",
-  },
-  {
-    text: "Your certificate is expiring soon",
-    time: "3 days ago",
-  },
-];
-
-export const EmployeeDashboard: React.FC = () => {
-  const navigate = useNavigate();
-
-  const [gapAnalysis, setGapAnalysis] =
-    useState<GapAnalysisResponse | null>(null);
-
-  const [gapLoading, setGapLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadGapAnalysis = async () => {
-      try {
-        setGapLoading(true);
-        const data = await gapAnalysisService.getMyGapAnalysis();
-
-        if (isMounted) {
-          console.log("Gap Analysis Response:", data);
-          setGapAnalysis(data as GapAnalysisResponse);
-        }
-      } catch (error) {
-        console.error("Gap Analysis API Error:", error);
-        // Keep the dashboard usable even if the API returns 401/403.
-        if (isMounted) {
-          setGapAnalysis(null);
-        }
-      } finally {
-        if (isMounted) {
-          setGapLoading(false);
-        }
-      }
-    };
-
-    loadGapAnalysis();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const dashboardStats = stats.map((stat) => {
-    if (stat.title === "Skills" && gapAnalysis) {
-      return { ...stat, value: String(gapAnalysis.totalSkills), subtitle: "Total Skills" };
-    }
-
-    if (stat.title === "Skill Gaps" && gapAnalysis) {
-      return { ...stat, value: String(gapAnalysis.gapSkills), subtitle: "Needs Attention" };
-    }
-
-    if (stat.title === "Overall Proficiency" && gapAnalysis) {
-      const proficiency = Math.max(0, Math.min(100, gapAnalysis.readinessPercentage));
-      return { ...stat, value: `${proficiency.toFixed(1)}%`, subtitle: "Readiness" };
-    }
-
-    return stat;
+async function fetchCertifications(): Promise<CertificationRow[]> {
+  const response = await fetch("http://localhost:8080/api/certification", {
+    headers: {
+      Accept: "application/json",
+      ...(localStorage.getItem("okip_token")
+        ? { Authorization: `Bearer ${localStorage.getItem("okip_token")}` }
+        : {}),
+    },
   });
 
-  const dashboardSkillGaps = gapAnalysis?.knowledgeGaps?.length
-    ? gapAnalysis.knowledgeGaps
-        .filter((gap) => gap.gapPercentage > 0)
-        .sort((a, b) => b.gapPercentage - a.gapPercentage)
-        .slice(0, 5)
-        .map((gap, index) => ({
-          name: gap.skillName,
-          level: gap.requiredProficiency || "Required",
-          gap: `${Math.round(gap.gapPercentage)}%`,
-          width: `${Math.max(0, Math.min(100, gap.gapPercentage))}%`,
-          type: index === 0 ? "red" : index === 1 ? "orange" : index < 4 ? "yellow" : "green",
-        }))
-    : skillGaps;
+  if (!response.ok) throw new Error(`Certification API returned ${response.status}`);
+  const data = await response.json();
+  const rows = extractRows(data, ["certifications", "data"]);
+
+  return rows.map((row: any, index) => ({
+    id: row.certificationId || row.id || index,
+    name: row.certificationName || row.name || row.title || "Certification",
+    provider: row.provider || row.issuer,
+    issueDate: row.issueDate || row.issuedDate,
+    expiryDate: row.expiryDate || row.expirationDate,
+    status: row.status,
+  }));
+}
+
+const StatCard = ({ title, value, subtitle, icon: Icon, type }: any) => (
+  <div className="employee-stat-card">
+    <div className="employee-stat-top">
+      <div className={`employee-stat-icon ${type}`}><Icon size={15} /></div>
+    </div>
+    <span className="employee-stat-title">{title}</span>
+    <strong className="employee-stat-value">{value}</strong>
+    <span className="employee-stat-subtitle">{subtitle}</span>
+    <div className="employee-mini-chart"><span /><span /><span /><span /><span /></div>
+  </div>
+);
+
+const CardHeader = ({ title, subtitle, action }: { title: string; subtitle?: string; action?: string }) => (
+  <div className="employee-card-header">
+    <div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
+    {action && <NavLink to="#" onClick={(e) => e.preventDefault()}>{action}</NavLink>}
+  </div>
+);
+
+const CardFooter = ({ text, to }: { text: string; to: string }) => (
+  <div className="employee-card-footer"><NavLink to={to}>{text}<ChevronRight size={13} /></NavLink></div>
+);
+
+const EmptyState = ({ text, action, to }: { text: string; action?: string; to?: string }) => (
+  <div className="dashboard-empty-state">
+    <span>{text}</span>
+    {action && to && <NavLink to={to}>{action}<ChevronRight size={13} /></NavLink>}
+  </div>
+);
+
+const EmployeeDashboard: React.FC = () => {
+  const { logout, email } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisResponse | null>(null);
+  const [proficiency, setProficiency] = useState<any>(null);
+  const [learningPath, setLearningPath] = useState<any>(null);
+  const [certifications, setCertifications] = useState<CertificationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sectionErrors, setSectionErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      const errors: string[] = [];
+
+      const results = await Promise.allSettled([
+        profileService.getMyProfile(),
+        getMySkills(),
+        gapAnalysisService.getMyGapAnalysis(),
+        analyticsService.getMyProficiency(),
+        aiService.getMyLearningPath(),
+        fetchCertifications(),
+      ]);
+
+      if (!mounted) return;
+
+      const [profileResult, skillsResult, gapResult, proficiencyResult, learningResult, certificationResult] = results;
+
+      if (profileResult.status === "fulfilled") setProfile(profileResult.value);
+      else errors.push("Profile");
+
+      if (skillsResult.status === "fulfilled") setSkills(Array.isArray(skillsResult.value) ? skillsResult.value : []);
+      else errors.push("Skills");
+
+      if (gapResult.status === "fulfilled") setGapAnalysis(gapResult.value);
+      else errors.push("Skill gaps");
+
+      if (proficiencyResult.status === "fulfilled") setProficiency(proficiencyResult.value);
+      else errors.push("Proficiency");
+
+      if (learningResult.status === "fulfilled") setLearningPath(learningResult.value);
+      else errors.push("Learning paths");
+
+      if (certificationResult.status === "fulfilled") setCertifications(certificationResult.value);
+      else errors.push("Certifications");
+
+      setSectionErrors(errors);
+      setLoading(false);
+    };
+
+    void loadDashboard();
+    return () => { mounted = false; };
+  }, []);
+
+  const proficiencyRows = useMemo(
+    () => extractRows(proficiency, ["skills", "proficiencies", "data", "items"]),
+    [proficiency]
+  );
+
+  const overallProficiency = useMemo(() => {
+    const values = proficiencyRows
+      .map((row) => toPercentage(row.proficiencyPercentage ?? row.percentage ?? row.score ?? row.currentPercentage))
+      .filter((value): value is number => value !== null);
+    if (!values.length) return null;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }, [proficiencyRows]);
+
+  const topGaps = useMemo(
+    () => (gapAnalysis?.knowledgeGaps ?? [])
+      .filter((gap) => Number(gap.gapPercentage ?? 0) > 0)
+      .sort((a, b) => Number(b.gapPercentage ?? 0) - Number(a.gapPercentage ?? 0))
+      .slice(0, 4),
+    [gapAnalysis]
+  );
+
+  const learningItems = useMemo(
+    () => extractRows(learningPath, ["learningPaths", "paths", "recommendations", "steps", "data", "items"]),
+    [learningPath]
+  );
+
+  const displayName = profile?.employeeName || email?.split("@")[0]?.replace(/[._-]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) || "Employee";
+  const initials = displayName.split(/\s+/).filter(Boolean).map((part: string) => part[0]).join("").slice(0, 2).toUpperCase();
+  const jobRole = profile?.jobRoleName || "Employee";
+
+  // Do not show a misleading 100% readiness when the employee has no skills yet.
+  const readiness = skills.length > 0 ? toPercentage(gapAnalysis?.readinessPercentage) : null;
+  const skillCount = skills.length;
+  const gapCount = gapAnalysis?.gapSkills ?? null;
 
   return (
     <div className="employee-dashboard">
-      {/* ================= SIDEBAR ================= */}
-
-      <aside className="employee-sidebar">
-        <div className="employee-brand">
-          <div className="employee-brand-icon">
-            <Zap size={19} />
-          </div>
-
-          <span>OKGIP</span>
-        </div>
-
-        <nav className="employee-nav">
-          <NavItem icon={LayoutDashboard} label="Dashboard" active />
-          <NavItem icon={User} label="My Profile" />
-          <NavItem icon={Activity} label="Skill Profile" />
-          <NavItem icon={FileCheck2} label="Self Assessment" />
-          <NavItem icon={Users} label="Peer Assessment" />
-          <NavItem icon={Target} label="My Proficiency" />
-          <NavItem icon={TrendingUp} label="Skill Gaps" onClick={() => navigate("/employee/skill-gaps")} />          <NavItem icon={BookOpen} label="Learning Paths" />
-          <NavItem icon={GraduationCap} label="Training" />
-          <NavItem icon={Activity} label="My Progress" />
-          <NavItem icon={Award} label="Achievements" />
-          <NavItem icon={ShieldCheck} label="Certifications" />
-          <NavItem icon={Users} label="Mentorship" />
-          <NavItem icon={Bell} label="Notifications" />
-        </nav>
-
-        <div className="employee-sidebar-bottom">
-          <NavItem icon={Settings} label="Settings" />
-          <NavItem icon={LogOut} label="Logout" />
-
-          <div className="employee-collapse">
-            <ChevronRight size={14} />
-            <span>Collapse Sidebar</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* ================= MAIN ================= */}
+       
+       <EmployeeSidebar />
 
       <main className="employee-main">
-        {/* TOP BAR */}
-
         <header className="employee-topbar">
-          <div className="employee-breadcrumb">
-            <span>Dashboard</span>
-            <span>/</span>
-            <strong>Overview</strong>
-          </div>
-
+          <div className="employee-breadcrumb"><span>Dashboard</span><span>/</span><strong>Overview</strong></div>
           <div className="employee-top-actions">
-            <div className="employee-search">
-              <Search size={15} />
-              <input placeholder="Search skills, training, people..." />
-            </div>
-
-            <button className="employee-top-icon">
-              <Bell size={17} />
-              <span className="employee-notification-count">3</span>
-            </button>
-
-            <button className="employee-top-icon">
-              <Moon size={16} />
-            </button>
-
-            <div className="employee-user">
-              <div className="employee-avatar">SJ</div>
-
-              <div className="employee-user-text">
-                <strong>Sarah Johnson</strong>
-                <small>Software Engineer</small>
-              </div>
-
-              <ChevronRight size={14} />
-            </div>
+            <div className="employee-search"><Search size={15} /><input placeholder="Search skills, training, people..." /></div>
+            <button className="employee-top-icon" type="button" aria-label="Notifications"><Bell size={17} /></button>
+            <button className="employee-top-icon" type="button" aria-label="Toggle theme"><Moon size={16} /></button>
+            <div className="employee-user"><div className="employee-avatar">{initials || "E"}</div><div className="employee-user-text"><strong>{displayName}</strong><small>{jobRole}</small></div><ChevronRight size={14} /></div>
           </div>
         </header>
 
         <section className="employee-content">
-          {/* ================= WELCOME ================= */}
-
           <div className="employee-welcome-row">
             <div className="employee-welcome">
-              <span className="employee-greeting">
-                Good Morning, Sarah! 👋
-              </span>
-
+              <span className="employee-greeting">EMPLOYEE DASHBOARD</span>
               <h1>Welcome back! 👋</h1>
-
-              <p>
-                Continue your learning journey and grow your skills.
-              </p>
+              <p>Continue your learning journey and grow your skills.</p>
             </div>
-
             <div className="xp-card">
-              <div className="xp-icon">
-                <Star size={20} />
-              </div>
-
-              <div className="xp-level">
-                <span>Current Level</span>
-                <strong>Advanced</strong>
-              </div>
-
-              <div className="xp-progress-text">
-                <span>XP Progress</span>
-                <strong>2,450 / 4,000 XP</strong>
-              </div>
-
-              <div className="xp-progress">
-                <div className="xp-progress-fill" />
-              </div>
-
-              <span className="xp-percent">61%</span>
+              <div className="xp-icon"><Target size={20} /></div>
+              <div className="xp-level"><span>Role Readiness</span><strong>{readiness === null ? "—" : `${readiness.toFixed(1)}%`}</strong></div>
+              <div className="xp-progress-text"><span>Source</span><strong>/api/gap-analysis/my</strong></div>
+              <div className="xp-progress"><div className="xp-progress-fill" style={{ width: `${readiness ?? 0}%` }} /></div>
+              <span className="xp-percent">{readiness === null ? "—" : `${Math.round(readiness)}%`}</span>
             </div>
           </div>
 
-          {/* ================= STATS ================= */}
+          {sectionErrors.length > 0 && (
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+              Some sections could not be loaded: {sectionErrors.join(", ")}. The dashboard will still show the data that is available.
+            </div>
+          )}
 
           <div className="employee-stats">
-            {dashboardStats.map((stat) => {
-              const Icon = stat.icon;
-
-              return (
-                <div className="employee-stat-card" key={stat.title}>
-                  <div className="employee-stat-top">
-                    <div className={`employee-stat-icon ${stat.type}`}>
-                      <Icon size={15} />
-                    </div>
-
-                    <span
-                      className={`employee-stat-change ${stat.type}`}
-                    >
-                      {stat.change}
-                    </span>
-                  </div>
-
-                  <span className="employee-stat-title">
-                    {stat.title}
-                  </span>
-
-                  <strong className="employee-stat-value">
-                    {stat.value}
-                  </strong>
-
-                  <span className="employee-stat-subtitle">
-                    {stat.subtitle}
-                  </span>
-
-                  <div className="employee-mini-chart">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </div>
-              );
-            })}
+            <StatCard title="Overall Proficiency" value={overallProficiency === null ? "—" : `${overallProficiency.toFixed(1)}%`} subtitle="From proficiency API" icon={Target} type="purple" />
+            <StatCard title="Skills" value={skillCount} subtitle="From /api/skills" icon={BookOpen} type="green" />
+            <StatCard title="Skill Gaps" value={gapCount === null ? "—" : gapCount} subtitle="Needs attention" icon={Activity} type="red" />
+            <StatCard title="Learning Hours" value="—" subtitle="Training API not connected" icon={GraduationCap} type="purple" />
+            <StatCard title="Achievements" value="—" subtitle="Achievements API not connected" icon={Award} type="orange" />
           </div>
-
-          {/* ================= SKILLS / GAPS / RECOMMENDATION ================= */}
 
           <div className="employee-three-column">
-            {/* SKILL PROFICIENCY */}
-
             <section className="employee-card proficiency-card">
-              <CardHeader
-                title="Skill Proficiency Overview"
-                subtitle=""
-              />
-
-              <div className="radar-wrapper">
-                <div className="radar-chart">
-                  <div className="radar-ring ring-1" />
-                  <div className="radar-ring ring-2" />
-                  <div className="radar-ring ring-3" />
-                  <div className="radar-ring ring-4" />
-
-                  <div className="radar-line line-top" />
-                  <div className="radar-line line-right-top" />
-                  <div className="radar-line line-right-bottom" />
-                  <div className="radar-line line-left-bottom" />
-                  <div className="radar-line line-left-top" />
-
-                  <div className="radar-polygon" />
-
-                  <span className="radar-label top">
-                    Technical Skills
-                    <strong>85%</strong>
-                  </span>
-
-                  <span className="radar-label right-top">
-                    Problem Solving
-                    <strong>80%</strong>
-                  </span>
-
-                  <span className="radar-label right-bottom">
-                    Communication
-                    <strong>75%</strong>
-                  </span>
-
-                  <span className="radar-label left-bottom">
-                    Leadership
-                    <strong>65%</strong>
-                  </span>
-
-                  <span className="radar-label left-top">
-                    Domain
-                    Knowledge
-                    <strong>90%</strong>
-                  </span>
+              <CardHeader title="Skill Proficiency Overview" subtitle="Live data from /api/analytics/my/proficiency" />
+              {loading ? <LoadingText /> : proficiencyRows.length === 0 ? (
+                <EmptyState text="No proficiency records yet. Add skills and complete an assessment to see proficiency here." action="Open Skill Profile" to="/employee/skills" />
+              ) : (
+                <div className="dashboard-list">
+                  {proficiencyRows.slice(0, 5).map((row, index) => {
+                    const value = toPercentage(row.proficiencyPercentage ?? row.percentage ?? row.score ?? row.currentPercentage);
+                    const name = row.skillName || row.name || row.skill || `Skill ${index + 1}`;
+                    return <div key={row.employeeSkillId || row.id || index} className="dashboard-progress-row">
+                      <div className="dashboard-progress-heading"><strong>{name}</strong><span>{value === null ? (row.proficiencyLevel || row.proficiency || "Not assessed") : `${Math.round(value)}%`}</span></div>
+                      <div className="skill-gap-track"><div className="skill-gap-fill green" style={{ width: `${value ?? 0}%` }} /></div>
+                    </div>;
+                  })}
                 </div>
-              </div>
-
-              <div className="radar-legend">
-                <span>
-                  <i className="legend-purple" />
-                  Your Level
-                </span>
-
-                <span>
-                  <i className="legend-gray" />
-                  Organization Avg.
-                </span>
-              </div>
-
-              <CardFooter text="View All Skills" />
+              )}
+              <CardFooter text="View All Skills" to="/employee/proficiency" />
             </section>
-
-            {/* SKILL GAPS */}
 
             <section className="employee-card gaps-card">
-              <CardHeader
-                title="Top Skill Gaps"
-                subtitle={gapLoading ? "Loading your latest skill gaps..." : "Skills that need your attention"}
-              />
-
-              <div className="skill-gap-list">
-                {dashboardSkillGaps.map((gap) => (
-                  <div className="skill-gap-item" key={gap.name}>
-                    <div className="skill-gap-heading">
-                      <strong>{gap.name}</strong>
-
-                      <span>{gap.level}</span>
-
-                      <b>{gap.gap}</b>
-                    </div>
-
-                    <div className="skill-gap-track">
-                      <div
-                        className={`skill-gap-fill ${gap.type}`}
-                        style={{ width: gap.width }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <CardFooter text="View All Gaps" />
+              <CardHeader title="Top Skill Gaps" subtitle="Skills that need your attention" />
+              {loading ? <LoadingText /> : topGaps.length === 0 ? (
+                <EmptyState text={skills.length === 0 ? "Add your skills first to calculate knowledge gaps." : "No skill gaps detected from the returned requirements."} action={skills.length === 0 ? "Add Skills" : undefined} to={skills.length === 0 ? "/employee/skills" : undefined} />
+              ) : (
+                <div className="skill-gap-list">
+                  {topGaps.map((gap) => {
+                    const percentage = toPercentage(gap.gapPercentage) ?? 0;
+                    const type = percentage >= 60 ? "red" : percentage >= 40 ? "orange" : percentage >= 20 ? "yellow" : "green";
+                    return <div className="skill-gap-item" key={gap.knowledgeGapId}>
+                      <div className="skill-gap-heading"><strong>{gap.skillName}</strong><span>{gap.currentProficiency || "—"} → {gap.requiredProficiency || "—"}</span><b>{Math.round(percentage)}%</b></div>
+                      <div className="skill-gap-track"><div className={`skill-gap-fill ${type}`} style={{ width: `${percentage}%` }} /></div>
+                    </div>;
+                  })}
+                </div>
+              )}
+              <CardFooter text="View All Gaps" to="/employee/skill-gaps" />
             </section>
-
-            {/* RECOMMENDATIONS */}
 
             <section className="employee-card recommendations-card">
-              <CardHeader
-                title="Recommended for You"
-                subtitle="Based on your goals and gaps"
-              />
-
-              <div className="recommendation-list">
-                {recommendations.map((recommendation) => {
-                  const Icon = recommendation.icon;
-
-                  return (
-                    <div
-                      className="recommendation-item"
-                      key={recommendation.title}
-                    >
-                      <div className="recommendation-icon">
-                        <Icon size={15} />
-                      </div>
-
-                      <div className="recommendation-content">
-                        <strong>{recommendation.title}</strong>
-
-                        <span className="recommendation-type">
-                          {recommendation.type}
-                        </span>
-
-                        <small>{recommendation.match}</small>
-                      </div>
+              <CardHeader title="Recommended for You" subtitle="Based on your goals and gaps" />
+              {loading ? <LoadingText /> : learningItems.length === 0 ? (
+                <EmptyState text="No learning recommendations were returned by the backend yet." action="View Learning Paths" to="/employee/learning-paths" />
+              ) : (
+                <div className="recommendation-list">
+                  {learningItems.slice(0, 4).map((item: any, index: number) => (
+                    <div className="recommendation-item" key={item.id || item.learningPathId || index}>
+                      <div className="recommendation-icon"><BookOpen size={15} /></div>
+                      <div className="recommendation-content"><strong>{item.title || item.name || item.skillName || `Learning Step ${index + 1}`}</strong><span className="recommendation-type">{item.type || "LEARNING PATH"}</span><small>{item.match || item.matchPercentage ? `${item.match || item.matchPercentage}% Match` : (item.description || item.reason || "Recommended by the backend")}</small></div>
                     </div>
-                  );
-                })}
-              </div>
-
-              <CardFooter text="View All Recommendations" />
+                  ))}
+                </div>
+              )}
+              <CardFooter text="View All Recommendations" to="/employee/learning-paths" />
             </section>
           </div>
-
-          {/* ================= LEARNING PATH ================= */}
 
           <div className="employee-two-column">
             <section className="employee-card learning-path-card">
-              <div className="learning-path-header">
-                <div>
-                  <h2>My Learning Path</h2>
-                  <p>Full Stack Developer Path</p>
-                </div>
-
-                <span className="complete-badge">82% Complete</span>
-              </div>
-
-              <div className="learning-steps">
-                <LearningStep
-                  number="1"
-                  title="HTML & CSS"
-                  status="Completed"
-                  done
-                />
-
-                <LearningStep
-                  number="2"
-                  title="JavaScript"
-                  status="Completed"
-                  done
-                />
-
-                <LearningStep
-                  number="3"
-                  title="React Basics"
-                  status="Completed"
-                  done
-                />
-
-                <LearningStep
-                  number="4"
-                  title="Advanced React"
-                  status="In Progress"
-                  active
-                />
-
-                <LearningStep
-                  number="5"
-                  title="Node.js"
-                  status="Upcoming"
-                />
-              </div>
-
-              <div className="current-step">
-                <div className="current-step-content">
-                  <span>Current Step</span>
-
-                  <h3>Advanced React Concepts</h3>
-
-                  <p>
-                    Learn advanced patterns, hooks, context API, and
-                    performance optimization.
-                  </p>
-
-                  <div className="current-progress">
-                    <div>
-                      <span />
-                    </div>
-
-                    <strong>65%</strong>
+              <CardHeader title="My Learning Path" subtitle="Live data from the AI learning-path API" />
+              {loading ? <LoadingText /> : learningItems.length === 0 ? (
+                <EmptyState text="No learning path has been returned yet. Recommendations will appear here when the backend provides them." action="Open Learning Paths" to="/employee/learning-paths" />
+              ) : (
+                <>
+                  <div className="learning-steps">
+                    {learningItems.slice(0, 5).map((item: any, index: number) => (
+                      <LearningStep key={item.id || item.learningPathId || index} number={String(index + 1)} title={item.title || item.name || item.skillName || `Step ${index + 1}`} status={item.status || (index === 0 ? "In Progress" : "Upcoming")} done={String(item.status || "").toLowerCase() === "completed"} active={index === 0 && String(item.status || "").toLowerCase() !== "completed"} />
+                    ))}
                   </div>
-                </div>
-
-                <div className="current-step-actions">
-                  <button className="continue-button">
-                    Continue Learning
-                  </button>
-
-                  <button className="details-button">
-                    View Path Details
-                  </button>
-                </div>
-              </div>
+                  <div className="current-step">
+                    <div className="current-step-content"><span>Current Step</span><h3>{learningItems[0]?.title || learningItems[0]?.name || learningItems[0]?.skillName || "Learning step"}</h3><p>{learningItems[0]?.description || learningItems[0]?.reason || "Continue with the next recommended learning step."}</p></div>
+                    <div className="current-step-actions"><NavLink className="continue-button" to="/employee/learning-paths">Continue Learning</NavLink><NavLink className="details-button" to="/employee/learning-paths">View Path Details</NavLink></div>
+                  </div>
+                </>
+              )}
             </section>
-
-            {/* TRAINING PROGRESS */}
 
             <section className="employee-card training-card">
-              <CardHeader
-                title="Training Progress"
-                subtitle="Overview of your training activities"
-              />
-
-              <div className="training-content">
-                <div className="training-donut">
-                  <div>
-                    <strong>12</strong>
-                    <span>In Progress</span>
-                  </div>
-                </div>
-
-                <div className="training-legend">
-                  <TrainingLegend
-                    color="green"
-                    label="Completed"
-                    value="18"
-                    percent="45%"
-                  />
-
-                  <TrainingLegend
-                    color="purple"
-                    label="In Progress"
-                    value="12"
-                    percent="30%"
-                  />
-
-                  <TrainingLegend
-                    color="gray"
-                    label="Not Started"
-                    value="10"
-                    percent="25%"
-                  />
-                </div>
-              </div>
-
-              <CardFooter text="View All Training" />
+              <CardHeader title="Training Progress" subtitle="Training progress API is not connected yet" />
+              <EmptyState text="Training progress will appear here when the employee training/progress API is available." action="Open Training" to="/employee/training" />
+              <CardFooter text="View All Training" to="/employee/training" />
             </section>
           </div>
-
-          {/* ================= THREE CARDS ================= */}
 
           <div className="employee-three-column lower-grid">
-            {/* RECENT ACTIVITY */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="Recent Learning Activity"
-                subtitle="Your latest learning activities"
-                action="View All"
-              />
-
-              <div className="activity-list">
-                {activities.map((activity) => (
-                  <div className="activity-item" key={activity.title}>
-                    <div className="activity-icon">
-                      <BookOpen size={14} />
-                    </div>
-
-                    <div className="activity-info">
-                      <strong>{activity.title}</strong>
-                      <span>{activity.subtitle}</span>
-                    </div>
-
-                    <div className="activity-progress">
-                      <strong
-                        className={
-                          activity.status === "completed"
-                            ? "completed"
-                            : ""
-                        }
-                      >
-                        {activity.progress}
-                      </strong>
-
-                      <small>{activity.time}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <CardFooter text="View All Activity" />
-            </section>
-
-            {/* ACHIEVEMENTS */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="Achievements"
-                subtitle="Your recent achievements"
-                action="View All"
-              />
-
-              <div className="achievement-list">
-                {achievements.map((achievement) => {
-                  const Icon = achievement.icon;
-
-                  return (
-                    <div
-                      className="achievement-item"
-                      key={achievement.title}
-                    >
-                      <div className="achievement-icon">
-                        <Icon size={15} />
-                      </div>
-
-                      <div className="achievement-info">
-                        <strong>{achievement.title}</strong>
-                        <span>{achievement.description}</span>
-                      </div>
-
-                      <small>{achievement.date}</small>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="achievement-footer">
-                <strong>12</strong>
-                <span>Badges Earned</span>
-
-                <strong>#4</strong>
-                <span>Dept Rank</span>
-              </div>
-            </section>
-
-            {/* CERTIFICATIONS */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="My Certifications"
-                subtitle="Manage your certifications"
-                action="View All"
-              />
-
-              <div className="certification-list">
-                {certifications.map((certificate) => {
-                  const Icon = certificate.icon;
-
-                  return (
-                    <div
-                      className="certification-item"
-                      key={certificate.title}
-                    >
-                      <div className="certificate-icon">
-                        <Icon size={15} />
-                      </div>
-
-                      <div className="certificate-info">
-                        <strong>{certificate.title}</strong>
-                        <span>{certificate.subtitle}</span>
-                        <small>{certificate.valid}</small>
-                      </div>
-
-                      <em>{certificate.status}</em>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+            <section className="employee-card"><CardHeader title="Recent Learning Activity" subtitle="Training progress API is not connected yet" /><EmptyState text="No live learning activity data is available yet." action="Open My Progress" to="/employee/progress" /><CardFooter text="View All Activity" to="/employee/progress" /></section>
+            <section className="employee-card"><CardHeader title="Achievements" subtitle="Achievements API is not connected yet" /><EmptyState text="Achievements will appear here when the backend API is available." action="Open Achievements" to="/employee/achievements" /></section>
+            <section className="employee-card"><CardHeader title="My Certifications" subtitle="Live data from /api/certification" />{loading ? <LoadingText /> : certifications.length === 0 ? <EmptyState text="No certification records were returned by the backend." action="Add Certification" to="/employee/certifications" /> : <div className="certification-list">{certifications.slice(0, 4).map((certificate) => <div className="certification-item" key={certificate.id || certificate.name}><div className="certificate-icon"><ShieldCheck size={15} /></div><div className="certificate-info"><strong>{certificate.name}</strong>{certificate.provider && <span>{certificate.provider}</span>}<small>{certificate.expiryDate ? `Valid until ${formatDate(certificate.expiryDate)}` : "No expiry returned"}</small></div>{certificate.status && <em>{certificate.status}</em>}</div>)}</div>}<CardFooter text="View All Certifications" to="/employee/certifications" /></section>
           </div>
-
-          {/* ================= BOTTOM THREE ================= */}
 
           <div className="employee-three-column lower-grid">
-            {/* TASKS */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="Upcoming Tasks"
-                subtitle="Your pending assessments and tasks"
-                action="View All"
-              />
-
-              <div className="task-list">
-                {tasks.map((task) => (
-                  <div className="task-item" key={task.title}>
-                    <div className="task-icon">
-                      <FileCheck2 size={14} />
-                    </div>
-
-                    <div className="task-content">
-                      <strong>{task.title}</strong>
-                      <span>{task.description}</span>
-                    </div>
-
-                    <em className={task.urgent ? "urgent" : ""}>
-                      {task.due}
-                    </em>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* MENTORSHIP */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="Mentorship & Knowledge Sharing"
-                subtitle="Connect and learn from your peers"
-                action="View All"
-              />
-
-              <div className="mentorship-list">
-                {mentorship.map((mentor) => (
-                  <div className="mentor-item" key={mentor.name}>
-                    <div className="mentor-avatar">
-                      {mentor.name
-                        .split(" ")
-                        .map((x) => x[0])
-                        .join("")}
-                    </div>
-
-                    <div className="mentor-info">
-                      <strong>{mentor.title}</strong>
-                      <span>With {mentor.name}</span>
-                    </div>
-
-                    <button>{mentor.action}</button>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* NOTIFICATIONS */}
-
-            <section className="employee-card">
-              <CardHeader
-                title="Notifications"
-                subtitle="Stay updated with important alerts"
-                action="View All"
-              />
-
-              <div className="notification-list">
-                {notifications.map((notification) => (
-                  <div
-                    className="notification-item"
-                    key={notification.text}
-                  >
-                    <div className="notification-icon">
-                      <Bell size={13} />
-                    </div>
-
-                    <span>{notification.text}</span>
-
-                    <small>{notification.time}</small>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <section className="employee-card"><CardHeader title="Upcoming Tasks" subtitle="Assessment/task API is not connected yet" /><EmptyState text="Upcoming assessments and tasks will appear here when their APIs are available." action="Open Self Assessment" to="/employee/self-assessment" /></section>
+            <section className="employee-card"><CardHeader title="Mentorship & Knowledge Sharing" subtitle="Mentorship API is not connected yet" /><EmptyState text="Mentorship and knowledge-sharing items will appear here when the backend API is available." action="Open Mentorship" to="/employee/mentorship" /></section>
+            <section className="employee-card"><CardHeader title="Notifications" subtitle="Notification API is not connected yet" /><EmptyState text="Notifications will appear here when the backend notification API is available." action="Open Notifications" to="/employee/notifications" /></section>
           </div>
-
-          {/* ================= QUICK ACTIONS ================= */}
 
           <div className="employee-quick-actions">
-            <QuickAction
-              icon={User}
-              title="Update Skill Profile"
-              subtitle="Keep your skills current"
-            />
-
-            <QuickAction
-              icon={FileCheck2}
-              title="Take Self Assessment"
-              subtitle="Assess your skills"
-            />
-
-            <QuickAction
-              icon={BookOpen}
-              title="Browse Training"
-              subtitle="Explore courses"
-            />
-
-            <QuickAction
-              icon={Users}
-              title="Join Study Group"
-              subtitle="Learn with peers"
-            />
-
-            <QuickAction
-              icon={CircleHelp}
-              title="Ask a Question"
-              subtitle="Get help from experts"
-            />
+            <QuickAction icon={User} title="Update Skill Profile" subtitle="Keep your skills current" to="/employee/skills" />
+            <QuickAction icon={FileCheck2} title="Take Self Assessment" subtitle="Assess your skills" to="/employee/self-assessment" />
+            <QuickAction icon={BookOpen} title="Browse Training" subtitle="Explore courses" to="/employee/training" />
+            <QuickAction icon={Users} title="Join Study Group" subtitle="Learn with peers" to="/employee/mentorship" />
+            <QuickAction icon={CircleHelp} title="Ask a Question" subtitle="Get help from experts" to="/employee/mentorship" />
           </div>
         </section>
       </main>
@@ -1056,144 +388,14 @@ export const EmployeeDashboard: React.FC = () => {
   );
 };
 
-/* ================= SMALL COMPONENTS ================= */
+const LoadingText = () => <div className="p-8 text-center text-xs text-slate-500">Loading live backend data...</div>;
 
-function NavItem({
-  icon: Icon,
-  label,
-  active = false,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <div
-      className={`employee-nav-item ${active ? "active" : ""}`}
-      onClick={onClick}
-      style={{ cursor: onClick ? "pointer" : "default" }}
-    >
-      <Icon size={15} />
-      <span>{label}</span>
-    </div>
-  );
+function LearningStep({ number, title, status, done, active }: { number: string; title: string; status: string; done?: boolean; active?: boolean }) {
+  return <div className={`learning-step ${active ? "active" : ""}`}><div className={`learning-number ${done ? "done" : active ? "current" : ""}`}>{number}</div><strong>{title}</strong><span className={done ? "done-text" : active ? "active-text" : ""}>{status}</span></div>;
 }
 
-function CardHeader({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: string;
-}) {
-  return (
-    <div className="employee-card-header">
-      <div>
-        <h2>{title}</h2>
-        {subtitle && <p>{subtitle}</p>}
-      </div>
-
-      {action && (
-        <button>
-          {action}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function CardFooter({ text }: { text: string }) {
-  return (
-    <div className="employee-card-footer">
-      <button>
-        {text}
-        <ChevronRight size={13} />
-      </button>
-    </div>
-  );
-}
-
-function LearningStep({
-  number,
-  title,
-  status,
-  done,
-  active,
-}: {
-  number: string;
-  title: string;
-  status: string;
-  done?: boolean;
-  active?: boolean;
-}) {
-  return (
-    <div className={`learning-step ${active ? "active" : ""}`}>
-      <div
-        className={`learning-number ${
-          done ? "done" : active ? "current" : ""
-        }`}
-      >
-        {number}
-      </div>
-
-      <strong>{title}</strong>
-
-      <span className={done ? "done-text" : active ? "active-text" : ""}>
-        {status}
-      </span>
-    </div>
-  );
-}
-
-function TrainingLegend({
-  color,
-  label,
-  value,
-  percent,
-}: {
-  color: string;
-  label: string;
-  value: string;
-  percent: string;
-}) {
-  return (
-    <div className="training-legend-row">
-      <span className={`training-dot ${color}`} />
-
-      <span>{label}</span>
-
-      <strong>{value}</strong>
-
-      <small>{percent}</small>
-    </div>
-  );
-}
-
-function QuickAction({
-  icon: Icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <button className="employee-quick-action">
-      <div className="quick-action-icon">
-        <Icon size={16} />
-      </div>
-
-      <div>
-        <strong>{title}</strong>
-        <span>{subtitle}</span>
-      </div>
-    </button>
-  );
+function QuickAction({ icon: Icon, title, subtitle, to }: { icon: React.ElementType; title: string; subtitle: string; to: string }) {
+  return <NavLink className="employee-quick-action" to={to}><div className="quick-action-icon"><Icon size={16} /></div><div><strong>{title}</strong><span>{subtitle}</span></div></NavLink>;
 }
 
 export default EmployeeDashboard;

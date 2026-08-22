@@ -1,1176 +1,1040 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  Award,
-  Bell,
-  BookOpen,
-  CalendarDays,
+  AlertTriangle,
+  ArrowUpRight,
   CheckCircle2,
   ChevronRight,
-  ClipboardCheck,
-  FileCheck2,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Moon,
-  Plus,
   Search,
-  Settings,
   ShieldCheck,
   Target,
-  TrendingUp,
-  UserPlus,
   Users,
   Zap,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import "@/styles/manager-dashboard.css";
+import "@/styles/manager-pages.css";
 
-const stats = [
-  {
-    title: "MY TEAM MEMBERS",
-    value: "12",
-    change: "",
-    icon: Users,
-    type: "purple",
-  },
-  {
-    title: "TEAM COMPETENCY SCORE",
-    value: "82.4",
-    change: "↑ 4.2%",
-    icon: Target,
-    type: "purple",
-  },
-  {
-    title: "TEAM KNOWLEDGE GAP",
-    value: "12.5%",
-    change: "↓ 5.4%",
-    icon: Activity,
-    type: "red",
-  },
-  {
-    title: "TRAINING COMPLETION",
-    value: "94.2%",
-    change: "↑ 12.5%",
-    icon: GraduationCap,
-    type: "green",
-  },
-  {
-    title: "PENDING ASSESSMENTS",
-    value: "8",
-    change: "↓ 2.1%",
-    icon: ClipboardCheck,
-    type: "purple",
-  },
-  {
-    title: "TEAM READINESS SCORE",
-    value: "88.6",
-    change: "↑ 3.8%",
-    icon: ShieldCheck,
-    type: "green",
-  },
-];
+import managerService from "@/services/managerService";
+import { TeamAnalytics } from "@/services/analyticsService";
+import ManagerLayout from "./ManagerLayout";
 
-const heatmap = [
-  {
-    name: "FRONTEND",
-    values: ["92%", "72%", "65%", "88%", "52%", "76%"],
-  },
-  {
-    name: "BACKEND",
-    values: ["86%", "82%", "91%", "74%", "55%", "88%"],
-  },
-  {
-    name: "SERVER",
-    values: ["89%", "92%", "85%", "65%", "92%", "85%"],
-  },
-  {
-    name: "DATA ENG",
-    values: ["62%", "58%", "74%", "90%", "82%", "79%"],
-  },
-];
+const pct = (value: any) => {
+  const number = Number(value);
 
-const employees = [
-  {
-    name: "Sarah Chen",
-    initials: "SC",
-    role: "Cloud Architect",
-    competency: "94%",
-    gap: "6%",
-    training: "100%",
-    cert: "CERTIFIED",
-    rating: "4.8",
-  },
-  {
-    name: "Marcus Thorne",
-    initials: "MT",
-    role: "Senior Security Analyst",
-    competency: "88%",
-    gap: "12%",
-    training: "75%",
-    cert: "IN PROGRESS",
-    rating: "4.5",
-  },
-  {
-    name: "Elena Rodriguez",
-    initials: "ER",
-    role: "DevOps Engineer",
-    competency: "82%",
-    gap: "18%",
-    training: "60%",
-    cert: "READY",
-    rating: "4.2",
-  },
-  {
-    name: "David Kim",
-    initials: "DK",
-    role: "Infrastructure Lead",
-    competency: "91%",
-    gap: "9%",
-    training: "95%",
-    cert: "CERTIFIED",
-    rating: "4.7",
-  },
-  {
-    name: "Anya Petrova",
-    initials: "AP",
-    role: "ML Engineer",
-    competency: "76%",
-    gap: "24%",
-    training: "45%",
-    cert: "PLANNED",
-    rating: "4.0",
-  },
-];
+  if (!Number.isFinite(number)) {
+    return "0%";
+  }
 
-const recommendations = [
-  {
-    label: "PERFORMANCE",
-    title: "Projected Upskilling ROI",
-    description:
-      "Completion of the 'Serverless Security' track by Sarah and David is predicted to reduce.",
-  },
-  {
-    label: "CRITICAL GAP",
-    title: "ML Infrastructure Shortage",
-    description:
-      "Anya Petrova's gap in Kubernetes for ML is becoming a blocking factor for project Orion.",
-  },
-  {
-    label: "READINESS",
-    title: "Role Transition Opportunity",
-    description:
-      "Marcus Thorne shows 92% alignment for a Principal Security role.",
-  },
-];
+  return `${Math.round(number)}%`;
+};
 
-const approvals = [
-  {
-    name: "Elena Rodriguez",
-    type: "AWS Certified DevOps Engineer Exam",
-    cost: "$300",
-    priority: "HIGH",
-  },
-  {
-    name: "Marcus Thorne",
-    type: "Advanced Pentesting Workshop",
-    cost: "$1,200",
-    priority: "MEDIUM",
-  },
-  {
-    name: "Anya Petrova",
-    type: "PyTorch for Production Course",
-    cost: "$450",
-    priority: "STANDARD",
-  },
-];
+const safeNumber = (value: any) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
 
-const events = [
-  {
-    title: "React 18 Performance Audit",
-    type: "ASSESSMENT",
-    date: "Oct 24 • 10:00 AM",
-    count: "8 Enrolled",
-  },
-  {
-    title: "Zero Trust Architecture",
-    type: "TRAINING",
-    date: "Oct 25 • 02:00 PM",
-    count: "12 Enrolled",
-  },
-  {
-    title: "GCP Cloud Architect Renewal",
-    type: "CERTIFICATION",
-    date: "Oct 28 • All Day",
-    count: "2 Enrolled",
-  },
-];
+const initials = (name = "") => {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
-export const ManagerDashboard: React.FC = () => {
   return (
-    <div className="manager-dashboard">
-
-      {/* ================= SIDEBAR ================= */}
-
-      <aside className="manager-sidebar">
-
-        <div className="manager-brand">
-          <div className="manager-brand-icon">
-            <Zap size={18} />
-          </div>
-
-          <span>OKGIP</span>
-        </div>
-
-        <nav className="manager-nav">
-
-          <ManagerNav
-            icon={LayoutDashboard}
-            label="Dashboard"
-            active
-          />
-
-          <ManagerNav
-            icon={Users}
-            label="Employees"
-          />
-
-          <ManagerNav
-            icon={BookOpen}
-            label="Departments"
-          />
-
-          <ManagerNav
-            icon={BriefcaseIcon}
-            label="Job Roles"
-          />
-
-          <ManagerNav
-            icon={Target}
-            label="Skills"
-          />
-
-          <ManagerNav
-            icon={BookOpen}
-            label="Competency Framework"
-          />
-
-          <ManagerNav
-            icon={Activity}
-            label="Knowledge Gap Analysis"
-          />
-
-          <ManagerNav
-            icon={Zap}
-            label="AI Recommendations"
-          />
-
-          <ManagerNav
-            icon={GraduationCap}
-            label="Training Management"
-          />
-
-          <ManagerNav
-            icon={ClipboardCheck}
-            label="Assessments"
-          />
-
-          <ManagerNav
-            icon={TrendingUp}
-            label="Reports & Analytics"
-          />
-
-        </nav>
-
-        <div className="manager-sidebar-bottom">
-
-          <ManagerNav
-            icon={Settings}
-            label="Settings"
-          />
-
-          <ManagerNav
-            icon={LogOut}
-            label="Logout"
-          />
-
-          <div className="manager-collapse">
-            <ChevronRight size={13} />
-            <span>Collapse Sidebar</span>
-          </div>
-
-        </div>
-
-      </aside>
-
-      {/* ================= MAIN ================= */}
-
-      <main className="manager-main">
-
-        {/* TOP BAR */}
-
-        <header className="manager-topbar">
-
-          <div className="manager-breadcrumb">
-            <span>Dashboard</span>
-            <span>/</span>
-            <strong>Overview</strong>
-          </div>
-
-          <div className="manager-top-actions">
-
-            <div className="manager-search">
-              <Search size={14} />
-              <input
-                placeholder="Search insights, employees..."
-              />
-            </div>
-
-            <button className="manager-top-icon">
-              <Bell size={16} />
-              <span>3</span>
-            </button>
-
-            <button className="manager-top-icon">
-              <Moon size={16} />
-            </button>
-
-            <div className="manager-profile">
-              <div className="manager-profile-avatar">
-                AR
-              </div>
-
-              <div>
-                <strong>Alex Rivera</strong>
-                <small>Admin</small>
-              </div>
-
-              <ChevronRight size={13} />
-            </div>
-
-          </div>
-
-        </header>
-
-        {/* ================= CONTENT ================= */}
-
-        <section className="manager-content">
-
-          {/* HEADER */}
-
-          <div className="manager-page-header">
-
-            <div>
-
-              <div className="manager-labels">
-                <span>ENGINEERING OPS</span>
-                <span>● Predictive Insights Active</span>
-              </div>
-
-              <h1>Manager Dashboard</h1>
-
-              <p>
-                Real-time workforce intelligence for Team Engineering.
-                Track proficiency, bridge gaps, and optimize team impact.
-              </p>
-
-            </div>
-
-            <div className="manager-header-actions">
-
-              <button>
-                <GraduationCap size={13} />
-                Assign Training
-              </button>
-
-              <button>
-                <CheckCircle2 size={13} />
-                Approve Requests
-              </button>
-
-              <button>
-                <FileCheck2 size={13} />
-                Generate Team Report
-              </button>
-
-              <button className="primary-action">
-                ↓
-                Export Dashboard
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* ================= STATS ================= */}
-
-          <div className="manager-stats">
-
-            {stats.map((stat) => {
-
-              const Icon = stat.icon;
-
-              return (
-                <div
-                  className="manager-stat-card"
-                  key={stat.title}
-                >
-
-                  <div className="manager-stat-top">
-
-                    <div
-                      className={`manager-stat-icon ${stat.type}`}
-                    >
-                      <Icon size={14} />
-                    </div>
-
-                    {stat.change && (
-                      <span
-                        className={`manager-stat-change ${stat.type}`}
-                      >
-                        {stat.change}
-                      </span>
-                    )}
-
-                  </div>
-
-                  <span className="manager-stat-title">
-                    {stat.title}
-                  </span>
-
-                  <strong className="manager-stat-value">
-                    {stat.value}
-                  </strong>
-
-                  <div className="manager-stat-line">
-                    <span />
-                  </div>
-
-                </div>
-              );
-            })}
-
-          </div>
-
-          {/* ================= HEATMAP + AI ================= */}
-
-          <div className="manager-main-grid">
-
-            {/* HEATMAP */}
-
-            <section className="manager-card heatmap-card">
-
-              <CardTitle
-                title="Team Knowledge Gap Heatmap"
-                subtitle="Proficiency levels across strategic technology domains."
-              />
-
-              <div className="heatmap-legend">
-                <span>
-                  <i className="expert" />
-                  EXPERT
-                </span>
-
-                <span>
-                  <i className="learning" />
-                  LEARNING
-                </span>
-
-                <span>
-                  <i className="critical" />
-                  CRITICAL
-                </span>
-              </div>
-
-              <div className="heatmap">
-
-                <div className="heatmap-header">
-                  <span />
-                  <span>CLOUD</span>
-                  <span>SECURITY</span>
-                  <span>DEVOPS</span>
-                  <span>DATA</span>
-                  <span>AI/ML</span>
-                  <span>ARCHITECTURE</span>
-                </div>
-
-                {heatmap.map((row) => (
-
-                  <div
-                    className="heatmap-row"
-                    key={row.name}
-                  >
-
-                    <strong>{row.name}</strong>
-
-                    {row.values.map((value, index) => {
-
-                      const numeric =
-                        parseInt(value);
-
-                      let level = "expert";
-
-                      if (numeric < 60) {
-                        level = "critical";
-                      } else if (numeric < 75) {
-                        level = "learning";
-                      }
-
-                      return (
-                        <div
-                          className={`heatmap-cell ${level}`}
-                          key={index}
-                        >
-                          {value}
-                        </div>
-                      );
-                    })}
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </section>
-
-            {/* AI MANAGER INSIGHTS */}
-
-            <section className="manager-card ai-manager-card">
-
-              <div className="ai-manager-heading">
-
-                <div className="ai-icon">
-                  <Zap size={17} />
-                </div>
-
-                <div>
-                  <h2>AI Manager Insights</h2>
-                  <p>Predictive team intelligence feed.</p>
-                </div>
-
-              </div>
-
-              <div className="ai-image-placeholder">
-                <div>
-                  <strong>Intelligence Active</strong>
-                  <span>UPDATED: 2M AGO</span>
-                </div>
-
-                <i />
-              </div>
-
-              <div className="recommendation-list">
-
-                {recommendations.map((item) => (
-
-                  <div
-                    className="manager-recommendation"
-                    key={item.title}
-                  >
-
-                    <span>{item.label}</span>
-
-                    <strong>{item.title}</strong>
-
-                    <p>{item.description}</p>
-
-                    <button>
-                      Review
-                      <ChevronRight size={11} />
-                    </button>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-              <button className="view-recommendations">
-                Review All Recommendations
-                <ChevronRight size={12} />
-              </button>
-
-            </section>
-
-          </div>
-
-          {/* ================= TEAM DIRECTORY ================= */}
-
-          <section className="manager-card team-directory">
-
-            <div className="directory-header">
-
-              <CardTitle
-                title="Team Directory & Performance"
-                subtitle="Granular metrics for each direct report."
-              />
-
-              <div className="directory-search">
-                <Search size={12} />
-                <input placeholder="Search team..." />
-              </div>
-
-            </div>
-
-            <div className="employee-table">
-
-              <div className="employee-table-head">
-                <span>Employee</span>
-                <span>Role</span>
-                <span>Competency</span>
-                <span>Gap</span>
-                <span>Training</span>
-                <span>Cert</span>
-                <span>Rating</span>
-              </div>
-
-              {employees.map((employee) => (
-
-                <div
-                  className="employee-table-row"
-                  key={employee.name}
-                >
-
-                  <div className="employee-name">
-
-                    <div className="employee-avatar">
-                      {employee.initials}
-                    </div>
-
-                    <div>
-                      <strong>{employee.name}</strong>
-                      <small>EMP-{Math.floor(Math.random() * 900 + 100)}</small>
-                    </div>
-
-                  </div>
-
-                  <span className="employee-role">
-                    {employee.role}
-                  </span>
-
-                  <strong className="competency">
-                    {employee.competency}
-                  </strong>
-
-                  <strong className="gap">
-                    {employee.gap}
-                  </strong>
-
-                  <div className="training-progress">
-                    <div>
-                      <span
-                        style={{
-                          width: employee.training,
-                        }}
-                      />
-                    </div>
-
-                    <small>{employee.training}</small>
-                  </div>
-
-                  <span
-                    className={`cert-status ${
-                      employee.cert === "CERTIFIED"
-                        ? "certified"
-                        : ""
-                    }`}
-                  >
-                    {employee.cert}
-                  </span>
-
-                  <span className="rating">
-                    ★ {employee.rating}
-                  </span>
-
-                </div>
-
-              ))}
-
-            </div>
-
-            <CardFooter text="View Full Team Analytics" />
-
-          </section>
-
-          {/* ================= CHARTS + EMPLOYEE SPOTLIGHT ================= */}
-
-          <div className="manager-lower-grid">
-
-            {/* TEAM GROWTH */}
-
-            <section className="manager-card chart-card">
-
-              <CardTitle
-                title="Team Growth Velocity"
-                subtitle="Tracking competency vs knowledge gap reduction."
-              />
-
-              <div className="line-chart">
-
-                <div className="chart-y">
-                  <span>100</span>
-                  <span>75</span>
-                  <span>50</span>
-                  <span>25</span>
-                  <span>0</span>
-                </div>
-
-                <div className="chart-area">
-
-                  <div className="growth-line" />
-
-                  <div className="gap-line" />
-
-                  <div className="chart-months">
-                    <span>Jan</span>
-                    <span>Feb</span>
-                    <span>Mar</span>
-                    <span>Apr</span>
-                    <span>May</span>
-                    <span>Jun</span>
-                  </div>
-
-                </div>
-
-              </div>
-
-              <div className="chart-legend">
-                <span>
-                  <i className="purple-dot" />
-                  Competency Index
-                </span>
-
-                <span>
-                  <i className="red-dot" />
-                  Knowledge Gap
-                </span>
-              </div>
-
-            </section>
-
-            {/* TRAINING COMPLETION */}
-
-            <section className="manager-card chart-card">
-
-              <CardTitle
-                title="Training Completion Rate"
-                subtitle="Monthly percentage of successfully completed learning paths."
-              />
-
-              <div className="bar-chart">
-
-                {[
-                  "65%",
-                  "70%",
-                  "72%",
-                  "78%",
-                  "88%",
-                  "94%",
-                ].map((height, index) => (
-
-                  <div
-                    className="bar-item"
-                    key={index}
-                  >
-                    <div className="bar-wrapper">
-                      <div
-                        className="bar"
-                        style={{
-                          height,
-                        }}
-                      />
-                    </div>
-
-                    <span>
-                      {[
-                        "Jan",
-                        "Feb",
-                        "Mar",
-                        "Apr",
-                        "May",
-                        "Jun",
-                      ][index]}
-                    </span>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-              <div className="chart-legend">
-                <span>
-                  <i className="green-dot" />
-                  Completion %
-                </span>
-              </div>
-
-            </section>
-
-            {/* EMPLOYEE SPOTLIGHT */}
-
-            <section className="manager-card employee-spotlight">
-
-              <div className="spotlight-code">
-                EMP-001
-              </div>
-
-              <div className="spotlight-avatar">
-                SC
-                <i />
-              </div>
-
-              <h2>Sarah Chen</h2>
-
-              <span className="spotlight-role">
-                Cloud Architect
-              </span>
-
-              <div className="spotlight-badges">
-                <span>LVL 5</span>
-                <span>★ Expert</span>
-              </div>
-
-              <div className="spotlight-stats">
-
-                <div>
-                  <span>COMPETENCY</span>
-                  <strong>94%</strong>
-                </div>
-
-                <div>
-                  <span>GAP INDEX</span>
-                  <strong>6%</strong>
-                </div>
-
-              </div>
-
-              <h3>Skill Breakdown</h3>
-
-              <SkillBar
-                name="Cloud Strategy"
-                value="95%"
-              />
-
-              <SkillBar
-                name="IaC Frameworks"
-                value="88%"
-              />
-
-              <SkillBar
-                name="Security Compliance"
-                value="92%"
-              />
-
-              <div className="growth-path">
-
-                <small>AI GROWTH PATHWAY</small>
-
-                <strong>
-                  "Recommended: Advanced Distributed Systems
-                  certification to unlock Principal Role transition."
-                </strong>
-
-                <button>
-                  Open Talent Map
-                  <ChevronRight size={11} />
-                </button>
-
-              </div>
-
-              <h3>Pending Actions</h3>
-
-              <button className="pending-action">
-                <GraduationCap size={12} />
-                Assign Security Track
-              </button>
-
-              <button className="pending-action">
-                <CalendarDays size={12} />
-                Schedule Annual Review
-              </button>
-
-              <CardFooter text="Comprehensive Performance Log" />
-
-            </section>
-
-          </div>
-
-          {/* ================= APPROVALS + EVENTS ================= */}
-
-          <div className="manager-bottom-grid">
-
-            <section className="manager-card approval-card">
-
-              <div className="approval-heading">
-                <CardTitle
-                  title="Team Approval Queue"
-                  subtitle="Training and assessment requests requiring your sign-off."
-                />
-
-                <span>3 PENDING ACTIONS</span>
-              </div>
-
-              <div className="approval-table">
-
-                <div className="approval-head">
-                  <span>REQUESTED BY</span>
-                  <span>REQUEST TYPE</span>
-                  <span>COST/IMPACT</span>
-                  <span>PRIORITY</span>
-                  <span>ACTIONS</span>
-                </div>
-
-                {approvals.map((item) => (
-
-                  <div
-                    className="approval-row"
-                    key={item.name}
-                  >
-
-                    <strong>{item.name}</strong>
-
-                    <span>{item.type}</span>
-
-                    <strong className="cost">
-                      {item.cost}
-                    </strong>
-
-                    <span
-                      className={`priority ${item.priority.toLowerCase()}`}
-                    >
-                      {item.priority}
-                    </span>
-
-                    <div className="approval-actions">
-                      <button>
-                        ✓
-                      </button>
-
-                      <button>
-                        +
-                      </button>
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-              <CardFooter text="Open All Pending Requests" />
-
-            </section>
-
-            {/* EVENTS */}
-
-            <section className="manager-card events-card">
-
-              <div className="events-title">
-                <div>
-                  <h2>Upcoming Team Events</h2>
-                </div>
-
-                <span>CALENDAR</span>
-              </div>
-
-              {events.map((event) => (
-
-                <div
-                  className="event-item"
-                  key={event.title}
-                >
-
-                  <div className="event-icon">
-                    <CalendarDays size={14} />
-                  </div>
-
-                  <div className="event-info">
-                    <strong>{event.title}</strong>
-                    <span>{event.date}</span>
-                  </div>
-
-                  <div className="event-meta">
-                    <b>{event.type}</b>
-                    <small>{event.count}</small>
-                  </div>
-
-                </div>
-
-              ))}
-
-              <CardFooter text="View Full Schedule" />
-
-            </section>
-
-          </div>
-
-          {/* ================= QUICK ACTIONS ================= */}
-
-          <div className="manager-quick-actions">
-
-            <QuickAction
-              icon={Plus}
-              title="Assign Training"
-              subtitle="Select paths for individuals"
-            />
-
-            <QuickAction
-              icon={Target}
-              title="New Assessment"
-              subtitle="Create a skill checkpoint"
-            />
-
-            <QuickAction
-              icon={Award}
-              title="Verify Certificates"
-              subtitle="Audit team credentials"
-            />
-
-            <QuickAction
-              icon={Zap}
-              title="AI Strategy Sync"
-              subtitle="Re-analyze workforce gaps"
-            />
-
-          </div>
-
-        </section>
-
-      </main>
-
-    </div>
+    parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "--"
   );
 };
 
-/* =========================================================
-   COMPONENTS
-   ========================================================= */
+const getGapStatus = (gap: number) => {
+  if (gap >= 50) {
+    return {
+      label: "High Risk",
+      className: "high",
+    };
+  }
 
-function ManagerNav({
-  icon: Icon,
-  label,
-  active = false,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-}) {
+  if (gap >= 25) {
+    return {
+      label: "Needs Attention",
+      className: "medium",
+    };
+  }
+
+  return {
+    label: "Healthy",
+    className: "low",
+  };
+};
+
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [team, setTeam] = useState<TeamAnalytics[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTeam = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await managerService.getTeamAnalytics();
+
+        console.log("MANAGER DASHBOARD TEAM DATA:", data);
+
+        if (mounted) {
+          setTeam(Array.isArray(data) ? data : []);
+        }
+      } catch (err: any) {
+        console.error("MANAGER DASHBOARD ERROR:", err);
+
+        if (mounted) {
+          setError(
+            err?.response?.data?.message ||
+              err?.response?.data?.error ||
+              err?.message ||
+              "Unable to load team analytics."
+          );
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTeam();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /*
+   * ============================
+   * TEAM CALCULATIONS
+   * ============================
+   */
+
+  const avgGap = useMemo(() => {
+    if (!team.length) return 0;
+
+    return (
+      team.reduce(
+        (total, member) =>
+          total + safeNumber(member.gapPercentage),
+        0
+      ) / team.length
+    );
+  }, [team]);
+
+  const avgReadiness = useMemo(() => {
+    if (!team.length) return 0;
+
+    return (
+      team.reduce(
+        (total, member) =>
+          total +
+          safeNumber(member.readinessPercentage),
+        0
+      ) / team.length
+    );
+  }, [team]);
+
+  const competencyScore = Math.max(
+    0,
+    Math.min(100, 100 - avgGap)
+  );
+
+  const criticalMembers = useMemo(() => {
+    return [...team]
+      .filter(
+        (member) =>
+          safeNumber(member.gapPercentage) >= 50
+      )
+      .sort(
+        (a, b) =>
+          safeNumber(b.gapPercentage) -
+          safeNumber(a.gapPercentage)
+      );
+  }, [team]);
+
+  const filteredTeam = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return team;
+    }
+
+    return team.filter((member) =>
+      [
+        member.employeeName,
+        member.employeeCode,
+        member.jobRoleName,
+      ].some((value) =>
+        String(value ?? "")
+          .toLowerCase()
+          .includes(query)
+      )
+    );
+  }, [team, search]);
+
+  /*
+   * ============================
+   * RENDER
+   * ============================
+   */
+
   return (
-    <div
-      className={`manager-nav-item ${
-        active ? "active" : ""
-      }`}
+    <ManagerLayout
+      active="Dashboard"
+      breadcrumb="Overview"
     >
-      <Icon size={14} />
-      <span>{label}</span>
-    </div>
+      <section className="manager-dashboard-content">
+
+        {/* =========================
+            HEADER
+        ========================= */}
+
+        <header className="manager-dashboard-header">
+          <div>
+            <div className="manager-dashboard-eyebrow">
+              <span className="eyebrow-dot" />
+              TEAM INTELLIGENCE
+              <span className="eyebrow-live">
+                LIVE DATA
+              </span>
+            </div>
+
+            <h1>Manager Dashboard</h1>
+
+            <p>
+              Monitor team readiness, competency and
+              knowledge gaps from your organizational
+              skill data.
+            </p>
+          </div>
+
+          <div className="manager-dashboard-actions">
+            <button
+              type="button"
+              className="dashboard-secondary-btn"
+              onClick={() =>
+                navigate("/manager/employees")
+              }
+            >
+              <Users size={15} />
+              View Team
+            </button>
+
+            <button
+              type="button"
+              className="dashboard-primary-btn"
+              onClick={() =>
+                navigate(
+                  "/manager/knowledge-gap-analysis"
+                )
+              }
+            >
+              <Activity size={15} />
+              Analyze Gaps
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
+        </header>
+
+        {/* =========================
+            ERROR
+        ========================= */}
+
+        {error && (
+          <div className="dashboard-error">
+            <AlertTriangle size={17} />
+
+            <div>
+              <strong>
+                Unable to load team analytics
+              </strong>
+
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* =========================
+            KPI CARDS
+        ========================= */}
+
+        <div className="dashboard-kpi-grid">
+
+          {/* TEAM MEMBERS */}
+
+          <article className="dashboard-kpi-card">
+            <div className="kpi-top">
+              <div className="kpi-icon purple">
+                <Users size={18} />
+              </div>
+
+              <span className="kpi-caption">
+                TEAM
+              </span>
+            </div>
+
+            <div className="kpi-number">
+              {loading ? "—" : team.length}
+            </div>
+
+            <div className="kpi-title">
+              Team Members
+            </div>
+
+            <div className="kpi-description">
+              Employees available under your team.
+            </div>
+          </article>
+
+          {/* COMPETENCY */}
+
+          <article className="dashboard-kpi-card">
+            <div className="kpi-top">
+              <div className="kpi-icon blue">
+                <Target size={18} />
+              </div>
+
+              <span className="kpi-caption">
+                COMPETENCY
+              </span>
+            </div>
+
+            <div className="kpi-number">
+              {loading
+                ? "—"
+                : pct(competencyScore)}
+            </div>
+
+            <div className="kpi-title">
+              Team Competency
+            </div>
+
+            <div className="kpi-progress">
+              <span
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, competencyScore)
+                  )}%`,
+                }}
+              />
+            </div>
+          </article>
+
+          {/* GAP */}
+
+          <article className="dashboard-kpi-card">
+            <div className="kpi-top">
+              <div className="kpi-icon red">
+                <Activity size={18} />
+              </div>
+
+              <span className="kpi-caption">
+                KNOWLEDGE GAP
+              </span>
+            </div>
+
+            <div className="kpi-number">
+              {loading ? "—" : pct(avgGap)}
+            </div>
+
+            <div className="kpi-title">
+              Average Gap
+            </div>
+
+            <div className="kpi-progress gap-progress">
+              <span
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, avgGap)
+                  )}%`,
+                }}
+              />
+            </div>
+          </article>
+
+          {/* READINESS */}
+
+          <article className="dashboard-kpi-card">
+            <div className="kpi-top">
+              <div className="kpi-icon green">
+                <ShieldCheck size={18} />
+              </div>
+
+              <span className="kpi-caption">
+                READINESS
+              </span>
+            </div>
+
+            <div className="kpi-number">
+              {loading
+                ? "—"
+                : pct(avgReadiness)}
+            </div>
+
+            <div className="kpi-title">
+              Team Readiness
+            </div>
+
+            <div className="kpi-progress readiness-progress">
+              <span
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, avgReadiness)
+                  )}%`,
+                }}
+              />
+            </div>
+          </article>
+        </div>
+
+        {/* =========================
+            MAIN GRID
+        ========================= */}
+
+        <div className="dashboard-main-grid">
+
+          {/* TEAM READINESS */}
+
+          <section className="dashboard-panel readiness-panel">
+            <div className="panel-header">
+              <div>
+                <div className="panel-overline">
+                  TEAM OVERVIEW
+                </div>
+
+                <h2>
+                  Team Readiness
+                </h2>
+
+                <p>
+                  Readiness and knowledge-gap
+                  performance across your team.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="panel-link"
+                onClick={() =>
+                  navigate("/manager/employees")
+                }
+              >
+                View all
+                <ChevronRight size={14} />
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="dashboard-loading">
+                <div className="dashboard-spinner" />
+                <span>
+                  Loading team analytics...
+                </span>
+              </div>
+            ) : team.length === 0 ? (
+              <div className="dashboard-empty">
+                <Users size={25} />
+
+                <strong>
+                  No team data available
+                </strong>
+
+                <p>
+                  The backend returned no team
+                  members for this manager.
+                </p>
+              </div>
+            ) : (
+              <div className="readiness-list">
+                {filteredTeam
+                  .slice(0, 6)
+                  .map((member) => {
+                    const readiness =
+                      safeNumber(
+                        member.readinessPercentage
+                      );
+
+                    const gap =
+                      safeNumber(
+                        member.gapPercentage
+                      );
+
+                    const status =
+                      getGapStatus(gap);
+
+                    return (
+                      <div
+                        className="readiness-item"
+                        key={member.employeeId}
+                      >
+                        <div className="readiness-person">
+                          <div className="readiness-avatar">
+                            {initials(
+                              member.employeeName
+                            )}
+                          </div>
+
+                          <div>
+                            <strong>
+                              {member.employeeName ||
+                                "Employee"}
+                            </strong>
+
+                            <span>
+                              {member.jobRoleName ||
+                                member.employeeCode ||
+                                "Team member"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="readiness-values">
+                          <div>
+                            <span>
+                              Readiness
+                            </span>
+
+                            <strong>
+                              {pct(readiness)}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>
+                              Gap
+                            </span>
+
+                            <strong>
+                              {pct(gap)}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div className="readiness-bars">
+                          <div className="mini-bar">
+                            <span
+                              style={{
+                                width: `${Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    readiness
+                                  )
+                                )}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="mini-bar gap-bar">
+                            <span
+                              style={{
+                                width: `${Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    gap
+                                  )
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div
+                          className={`readiness-status ${status.className}`}
+                        >
+                          {status.label}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="row-arrow"
+                          onClick={() =>
+                            navigate(
+                              `/manager/employees?employee=${member.employeeId}`
+                            )
+                          }
+                        >
+                          <ChevronRight
+                            size={15}
+                          />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {!loading &&
+              team.length > 6 && (
+                <button
+                  type="button"
+                  className="show-more-btn"
+                  onClick={() =>
+                    navigate("/manager/employees")
+                  }
+                >
+                  View all team members
+                  <ArrowUpRight size={14} />
+                </button>
+              )}
+          </section>
+
+          {/* RISK WATCH */}
+
+          <section className="dashboard-panel risk-panel">
+            <div className="panel-header">
+              <div>
+                <div className="panel-overline risk-overline">
+                  ATTENTION REQUIRED
+                </div>
+
+                <h2>
+                  Risk Watch
+                </h2>
+
+                <p>
+                  Employees with significant
+                  knowledge gaps.
+                </p>
+              </div>
+
+              <div className="risk-header-icon">
+                <Zap size={17} />
+              </div>
+            </div>
+
+            {criticalMembers.length === 0 ? (
+              <div className="risk-success">
+                <div className="success-icon">
+                  <CheckCircle2 size={20} />
+                </div>
+
+                <div>
+                  <strong>
+                    No high-risk gaps
+                  </strong>
+
+                  <p>
+                    No employee currently has a
+                    knowledge gap of 50% or higher.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="risk-list">
+                {criticalMembers
+                  .slice(0, 5)
+                  .map((member) => (
+                    <button
+                      type="button"
+                      className="risk-item"
+                      key={member.employeeId}
+                      onClick={() =>
+                        navigate(
+                          `/manager/knowledge-gap-analysis?employee=${member.employeeId}`
+                        )
+                      }
+                    >
+                      <div className="risk-avatar">
+                        {initials(
+                          member.employeeName
+                        )}
+                      </div>
+
+                      <div className="risk-person">
+                        <strong>
+                          {member.employeeName ||
+                            "Employee"}
+                        </strong>
+
+                        <span>
+                          {member.jobRoleName ||
+                            "Team member"}
+                        </span>
+                      </div>
+
+                      <div className="risk-score">
+                        <strong>
+                          {pct(
+                            member.gapPercentage
+                          )}
+                        </strong>
+
+                        <span>
+                          HIGH GAP
+                        </span>
+                      </div>
+
+                      <ChevronRight
+                        size={15}
+                      />
+                    </button>
+                  ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="risk-action"
+              onClick={() =>
+                navigate(
+                  "/manager/knowledge-gap-analysis"
+                )
+              }
+            >
+              Open Knowledge Gap Analysis
+              <ArrowRightIcon />
+            </button>
+          </section>
+        </div>
+
+        {/* =========================
+            TEAM DIRECTORY
+        ========================= */}
+
+        <section className="dashboard-panel directory-panel">
+          <div className="panel-header directory-panel-header">
+            <div>
+              <div className="panel-overline">
+                PEOPLE
+              </div>
+
+              <h2>
+                Team Directory
+              </h2>
+
+              <p>
+                Search and access employee
+                analytics.
+              </p>
+            </div>
+
+            <div className="directory-tools">
+              <div className="dashboard-search">
+                <Search size={15} />
+
+                <input
+                  value={search}
+                  onChange={(event) =>
+                    setSearch(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Search employee, code or role..."
+                />
+              </div>
+
+              <button
+                type="button"
+                className="directory-view-btn"
+                onClick={() =>
+                  navigate("/manager/employees")
+                }
+              >
+                View all
+                <ArrowUpRight size={13} />
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="dashboard-loading table-loading">
+              <div className="dashboard-spinner" />
+              <span>
+                Loading employees...
+              </span>
+            </div>
+          ) : filteredTeam.length === 0 ? (
+            <div className="dashboard-empty">
+              <Search size={25} />
+
+              <strong>
+                No matching employees
+              </strong>
+
+              <p>
+                Try another search term.
+              </p>
+            </div>
+          ) : (
+            <div className="dashboard-table-wrapper">
+              <div className="dashboard-table-head">
+                <span>Employee</span>
+                <span>Role</span>
+                <span>Readiness</span>
+                <span>Knowledge Gap</span>
+                <span>Status</span>
+                <span />
+              </div>
+
+              {filteredTeam.map((member) => {
+                const readiness =
+                  safeNumber(
+                    member.readinessPercentage
+                  );
+
+                const gap =
+                  safeNumber(
+                    member.gapPercentage
+                  );
+
+                const status =
+                  getGapStatus(gap);
+
+                return (
+                  <div
+                    className="dashboard-table-row"
+                    key={member.employeeId}
+                  >
+                    <div className="table-employee">
+                      <div className="table-avatar">
+                        {initials(
+                          member.employeeName
+                        )}
+                      </div>
+
+                      <div>
+                        <strong>
+                          {member.employeeName ||
+                            "Employee"}
+                        </strong>
+
+                        <span>
+                          {member.employeeCode ||
+                            "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="table-role">
+                      {member.jobRoleName ||
+                        "—"}
+                    </span>
+
+                    <div className="table-metric">
+                      <strong>
+                        {pct(readiness)}
+                      </strong>
+
+                      <div className="table-progress">
+                        <span
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                readiness
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="table-metric gap-metric">
+                      <strong>
+                        {pct(gap)}
+                      </strong>
+
+                      <div className="table-progress">
+                        <span
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                gap
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <span
+                      className={`table-status ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="table-action"
+                      onClick={() =>
+                        navigate(
+                          `/manager/employees?employee=${member.employeeId}`
+                        )
+                      }
+                    >
+                      View
+                      <ChevronRight
+                        size={13}
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* =========================
+            QUICK ACCESS
+        ========================= */}
+
+        <section className="quick-access-section">
+          <div className="quick-access-heading">
+            <div>
+              <div className="panel-overline">
+                MANAGER TOOLS
+              </div>
+
+              <h2>
+                Quick Access
+              </h2>
+            </div>
+          </div>
+
+          <div className="quick-access-grid">
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/manager/job-roles")
+              }
+            >
+              <div className="quick-icon purple">
+                <Target size={18} />
+              </div>
+
+              <div>
+                <strong>
+                  Job Roles
+                </strong>
+
+                <span>
+                  Explore organizational roles
+                </span>
+              </div>
+
+              <ArrowUpRight size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/manager/skills")
+              }
+            >
+              <div className="quick-icon blue">
+                <Activity size={18} />
+              </div>
+
+              <div>
+                <strong>
+                  Skill Library
+                </strong>
+
+                <span>
+                  Browse organizational skills
+                </span>
+              </div>
+
+              <ArrowUpRight size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  "/manager/competency-framework"
+                )
+              }
+            >
+              <div className="quick-icon green">
+                <ShieldCheck size={18} />
+              </div>
+
+              <div>
+                <strong>
+                  Competency Framework
+                </strong>
+
+                <span>
+                  Review role competencies
+                </span>
+              </div>
+
+              <ArrowUpRight size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  "/manager/knowledge-gap-analysis"
+                )
+              }
+            >
+              <div className="quick-icon orange">
+                <Zap size={18} />
+              </div>
+
+              <div>
+                <strong>
+                  Gap Analysis
+                </strong>
+
+                <span>
+                  Identify knowledge gaps
+                </span>
+              </div>
+
+              <ArrowUpRight size={16} />
+            </button>
+          </div>
+        </section>
+      </section>
+    </ManagerLayout>
   );
-}
+};
 
-function CardTitle({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="manager-card-title">
-      <h2>{title}</h2>
+/**
+ * Small reusable arrow icon.
+ */
+const ArrowRightIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 12h14" />
+    <path d="m13 6 6 6-6 6" />
+  </svg>
+);
 
-      {subtitle && <p>{subtitle}</p>}
-    </div>
-  );
-}
-
-function CardFooter({
-  text,
-}: {
-  text: string;
-}) {
-  return (
-    <div className="manager-card-footer">
-      <button>
-        {text}
-        <ChevronRight size={12} />
-      </button>
-    </div>
-  );
-}
-
-function SkillBar({
-  name,
-  value,
-}: {
-  name: string;
-  value: string;
-}) {
-  return (
-    <div className="skill-bar-item">
-
-      <div>
-        <span>{name}</span>
-        <strong>{value}</strong>
-      </div>
-
-      <div className="skill-bar-track">
-        <span
-          style={{
-            width: value,
-          }}
-        />
-      </div>
-
-    </div>
-  );
-}
-
-function QuickAction({
-  icon: Icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <button className="manager-quick-action">
-
-      <div className="quick-action-icon">
-        <Icon size={15} />
-      </div>
-
-      <div>
-        <strong>{title}</strong>
-        <span>{subtitle}</span>
-      </div>
-
-    </button>
-  );
-}
-
-/* Small briefcase icon without another package */
-function BriefcaseIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="7" width="18" height="13" rx="2" />
-      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M3 12h18" />
-    </svg>
-  );
-}
-
-export default ManagerDashboard;
+export default Dashboard;

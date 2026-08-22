@@ -28,10 +28,30 @@ export interface GapAnalysisResponse {
   knowledgeGaps: KnowledgeGap[];
 }
 
-const gapAnalysisService = {
+export const gapAnalysisService = {
   getMyGapAnalysis: async (): Promise<GapAnalysisResponse> => {
     const response = await API.get<GapAnalysisResponse>(
       "/gap-analysis/my"
+    );
+
+    return response.data;
+  },
+
+  getEmployeeGapAnalysis: async (
+    employeeId: number
+  ): Promise<GapAnalysisResponse> => {
+    const response = await API.get<GapAnalysisResponse>(
+      `/gap-analysis/employee/${employeeId}`
+    );
+
+    return response.data;
+  },
+
+  runGapAnalysis: async (
+    employeeId: number
+  ) => {
+    const response = await API.post(
+      `/gap-analysis/run/${employeeId}`
     );
 
     return response.data;

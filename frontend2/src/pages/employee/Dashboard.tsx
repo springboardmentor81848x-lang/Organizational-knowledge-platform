@@ -282,7 +282,7 @@ const notifications = [
   },
 ];
 
-export const EmployeeDashboard: React.FC = () => {
+export const Dashboard: React.FC = () => {
   return (
     <div className="employee-dashboard">
       {/* ================= SIDEBAR ================= */}

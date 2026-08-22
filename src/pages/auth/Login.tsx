@@ -28,6 +28,10 @@ import LoginButton from "@/components/auth/LoginButton";
 import RememberMe from "@/components/auth/RememberMe";
 import Divider from "@/components/auth/Divider";
 
+import {
+  getRoleFromPayload,
+  tryDecodeToken,
+} from "@/utils/jwt";
 // Imported ai-bg.png image
 import aiBgImage from "@/assets/images/ai-bg.png";
 

@@ -49,14 +49,14 @@ export const Login: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
- const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   setIsLoading(true);
   setErrorMessage(null);
 
   try {
-    // Login request to backend
+    // Login request
     const response = await authService.login({
       email,
       password,
@@ -64,20 +64,32 @@ export const Login: React.FC = () => {
 
     console.log("LOGIN RESPONSE =", response);
 
-    // Check JWT
     if (!response.token) {
       throw new Error("Token was not received from backend");
     }
 
     console.log("LOGIN SUCCESS - TOKEN RECEIVED");
 
-    // Store JWT through AuthContext
+    // Decode the JWT
+    const decoded = tryDecodeToken(response.token);
+
+    if (!decoded) {
+      throw new Error("Unable to decode login token");
+    }
+
+    // Get actual role from backend JWT
+    const backendRole = getRoleFromPayload(decoded);
+
+    console.log("BACKEND JWT ROLE =", backendRole);
+
+    // Store token in AuthContext
     login(response.token, rememberMe);
 
-    // Use the role selected on the login screen
+    // Redirect based on ACTUAL backend role
     let redirectPath = "/employee";
 
-    switch (role) {
+    switch (backendRole) {
+
       case "ROLE_ADMIN":
         redirectPath = "/admin";
         break;
@@ -95,35 +107,58 @@ export const Login: React.FC = () => {
         break;
 
       default:
-        redirectPath = "/employee";
-        break;
+        console.error(
+          "UNKNOWN ROLE:",
+          backendRole
+        );
+
+        throw new Error(
+          "Invalid user role. Please contact administrator."
+        );
     }
 
-    console.log("SELECTED ROLE =", role);
-    console.log("REDIRECTING TO =", redirectPath);
+    console.log(
+      "FINAL REDIRECT PATH =",
+      redirectPath
+    );
 
-    navigate(redirectPath, { replace: true });
+    navigate(
+      redirectPath,
+      { replace: true }
+    );
 
   } catch (error: any) {
-    console.error("Login failed:", error);
+
+    console.error(
+      "Login failed:",
+      error
+    );
 
     if (error?.response?.status === 401) {
+
       setErrorMessage(
         "Invalid email or password. Please check your credentials."
       );
+
     } else if (error?.response?.status === 403) {
+
       setErrorMessage(
         "Account pending HR approval or access forbidden."
       );
+
     } else {
+
       setErrorMessage(
         error?.response?.data?.message ||
         error?.message ||
         "Login failed. Please try again."
       );
     }
+
   } finally {
+
     setIsLoading(false);
+
   }
 };
   return (

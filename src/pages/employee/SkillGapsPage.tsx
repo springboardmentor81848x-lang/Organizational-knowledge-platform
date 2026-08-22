@@ -1,29 +1,43 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
+  Activity,
+  AlertTriangle,
+  Award,
+  Bell,
+  BookOpen,
   ChevronRight,
+  FileCheck2,
+  GraduationCap,
+  Briefcase,
+  LayoutDashboard,
+  Loader2,
+  LogOut,
+  Settings,
+  ShieldCheck,
   Target,
   TrendingDown,
-  TrendingUp,
+  User,
   Users,
-  XCircle,
+  Zap,
 } from "lucide-react";
+
+import { NavLink } from "react-router-dom";
 
 import gapAnalysisService, {
   GapAnalysisResponse,
-  KnowledgeGap,
 } from "@/services/gapAnalysisService";
-import "@/styles/gap-detection.css";
-import { useNavigate } from "react-router-dom";
 
 const SkillGapsPage: React.FC = () => {
-  const navigate = useNavigate();
+  const [data, setData] =
+    useState<GapAnalysisResponse | null>(null);
 
-  const [data, setData] = useState<GapAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ============================================================
+  // LOAD REAL BACKEND DATA
+  // ============================================================
 
   useEffect(() => {
     const loadGapAnalysis = async () => {
@@ -31,601 +45,607 @@ const SkillGapsPage: React.FC = () => {
         setLoading(true);
         setError("");
 
-        const response =
+        const result =
           await gapAnalysisService.getMyGapAnalysis();
 
-        setData(response);
-      } catch (err) {
-        console.error("Failed to load gap analysis:", err);
+        console.log(
+          "MY GAP ANALYSIS RESPONSE =",
+          result
+        );
+
+        setData(result);
+      } catch (err: any) {
+        console.error(
+          "GAP ANALYSIS ERROR =",
+          err
+        );
 
         setError(
-          "Unable to load your skill gap analysis. Please make sure your backend is running and the gap analysis is available."
+          "Unable to load skill gap analysis from /api/gap-analysis/my."
         );
       } finally {
         setLoading(false);
       }
     };
 
-    loadGapAnalysis();
+    void loadGapAnalysis();
   }, []);
 
-  /*
-   * Sort gaps from highest gap percentage
-   * to lowest.
-   */
-  const sortedGaps = useMemo(() => {
-    if (!data?.knowledgeGaps) {
-      return [];
-    }
+  // ============================================================
+  // SAME EMPLOYEE SIDEBAR
+  // ============================================================
 
-    return [...data.knowledgeGaps].sort(
-      (a, b) => b.gapPercentage - a.gapPercentage
-    );
-  }, [data]);
+  const Sidebar = () => (
+    <aside className="employee-sidebar">
 
-  /*
-   * Loading
-   */
+      {/* BRAND */}
+
+      <div className="employee-brand">
+        <div className="employee-brand-icon">
+          <Zap size={19} />
+        </div>
+
+        <span>OKGIP</span>
+      </div>
+
+      {/* NAVIGATION */}
+
+      <nav className="employee-nav">
+
+        <NavLink
+          to="/employee"
+          className="employee-nav-item"
+        >
+          <LayoutDashboard size={15} />
+          <span>Dashboard</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/profile"
+          className="employee-nav-item"
+        >
+          <User size={15} />
+          <span>My Profile</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/skills"
+          className="employee-nav-item"
+        >
+          <Activity size={15} />
+          <span>Skill Profile</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/self-assessment"
+          className="employee-nav-item"
+        >
+          <FileCheck2 size={15} />
+          <span>Self Assessment</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/peer-assessment"
+          className="employee-nav-item"
+        >
+          <Users size={15} />
+          <span>Peer Assessment</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/proficiency"
+          className="employee-nav-item"
+        >
+          <Target size={15} />
+          <span>My Proficiency</span>
+        </NavLink>
+
+        {/* ACTIVE */}
+
+        <NavLink
+          to="/employee/skill-gaps"
+          className="employee-nav-item active"
+        >
+          <TrendingDown size={15} />
+          <span>Skill Gaps</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/learning-paths"
+          className="employee-nav-item"
+        >
+          <BookOpen size={15} />
+          <span>Learning Paths</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/training"
+          className="employee-nav-item"
+        >
+          <GraduationCap size={15} />
+          <span>Training</span>
+        </NavLink>
+
+        {/* EXPERIENCE */}
+<NavLink
+  to="/employee/experience"
+  className="employee-nav-item"
+>
+  <Briefcase size={15} />
+  <span>Experience</span>
+</NavLink>
+
+
+        <NavLink
+          to="/employee/progress"
+          className="employee-nav-item"
+        >
+          <Activity size={15} />
+          <span>My Progress</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/achievements"
+          className="employee-nav-item"
+        >
+          <Award size={15} />
+          <span>Achievements</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/certifications"
+          className="employee-nav-item"
+        >
+          <ShieldCheck size={15} />
+          <span>Certifications</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/mentorship"
+          className="employee-nav-item"
+        >
+          <Users size={15} />
+          <span>Mentorship</span>
+        </NavLink>
+
+        <NavLink
+          to="/employee/notifications"
+          className="employee-nav-item"
+        >
+          <Bell size={15} />
+          <span>Notifications</span>
+        </NavLink>
+
+      </nav>
+
+      {/* SIDEBAR BOTTOM */}
+
+      <div className="employee-sidebar-bottom">
+
+        <NavLink
+          to="/employee/settings"
+          className="employee-nav-item"
+        >
+          <Settings size={15} />
+          <span>Settings</span>
+        </NavLink>
+
+        <div className="employee-nav-item">
+          <LogOut size={15} />
+          <span>Logout</span>
+        </div>
+
+        <div className="employee-collapse">
+          <ChevronRight size={14} />
+          <span>Collapse Sidebar</span>
+        </div>
+
+      </div>
+
+    </aside>
+  );
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
   if (loading) {
     return (
-      <div className="gap-page">
-        <div className="gap-loading">
-          <div className="gap-spinner" />
-          <h2>Loading Skill Gap Analysis...</h2>
-          <p>
-            We are checking your current skills against the
-            required skills for your role.
-          </p>
-        </div>
+      <div className="employee-dashboard">
+
+        <Sidebar />
+
+        <main className="employee-main">
+
+          <div className="space-y-6">
+
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Skill Gaps
+              </h1>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Identify the skills that need your attention.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+              <div className="flex min-h-40 items-center justify-center gap-2 text-xs text-slate-500">
+
+                <Loader2
+                  className="animate-spin text-purple-600"
+                  size={20}
+                />
+
+                Analyzing your skills...
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </main>
+
       </div>
     );
   }
 
-  /*
-   * Error
-   */
+  // ============================================================
+  // ERROR
+  // ============================================================
+
   if (error) {
     return (
-      <div className="gap-page">
-        <div className="gap-topbar">
-          <button
-            className="gap-back-button"
-            onClick={() => navigate("/employee")}
-          >
-            <ArrowLeft size={17} />
-            Back to Dashboard
-          </button>
-        </div>
+      <div className="employee-dashboard">
 
-        <div className="gap-error-card">
-          <div className="gap-error-icon">
-            <AlertCircle size={30} />
+        <Sidebar />
+
+        <main className="employee-main">
+
+          <div className="space-y-6">
+
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Skill Gaps
+              </h1>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Identify the skills that need your attention.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-sm text-red-600">
+
+              <AlertTriangle
+                className="mb-2"
+                size={20}
+              />
+
+              {error}
+
+            </div>
+
           </div>
 
-          <h2>Unable to load Skill Gap Analysis</h2>
+        </main>
 
-          <p>{error}</p>
-
-          <button
-            className="gap-primary-button"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </button>
-        </div>
       </div>
     );
   }
 
-  /*
-   * No analysis available
-   */
-  if (!data) {
-    return (
-      <div className="gap-page">
-        <div className="gap-empty-card">
-          <Target size={42} />
+  // ============================================================
+  // REAL BACKEND DATA
+  // ============================================================
 
-          <h2>No Gap Analysis Available</h2>
+  const gaps = data?.knowledgeGaps ?? [];
 
-          <p>
-            Your skill gap analysis has not been generated yet.
-          </p>
+  const sortedGaps = [...gaps].sort(
+    (a, b) =>
+      (b.gapPercentage ?? 0) -
+      (a.gapPercentage ?? 0)
+  );
 
-          <button
-            className="gap-primary-button"
-            onClick={() => navigate("/employee")}
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ============================================================
+  // MAIN PAGE
+  // ============================================================
 
   return (
-    <div className="gap-page">
+    <div className="employee-dashboard">
 
-      {/* =========================
-          HEADER
-      ========================== */}
-      <div className="gap-header">
+      <Sidebar />
 
-        <div>
-          <button
-            className="gap-back-button"
-            onClick={() => navigate("/employee")}
-          >
-            <ArrowLeft size={17} />
-            Dashboard
-          </button>
+      <main className="employee-main">
 
-          <div className="gap-title-section">
-            <div className="gap-title-icon">
-              <Target size={24} />
-            </div>
+        <div className="space-y-6">
 
-            <div>
-              <h1>Skill Gap Analysis</h1>
-
-              <p>
-                Identify the skills you need to improve
-                for your current role.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="gap-employee-info">
-          <div className="gap-avatar">
-            {data.employeeName
-              ?.charAt(0)
-              ?.toUpperCase() || "E"}
-          </div>
+          {/* HEADER */}
 
           <div>
-            <strong>{data.employeeName}</strong>
-            <span>{data.jobRoleName}</span>
+
+            <h1 className="text-2xl font-bold text-slate-900">
+              Skill Gaps
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Identify the skills that need your attention.
+            </p>
+
           </div>
-        </div>
 
-      </div>
+          {/* ==================================================
+              SUMMARY CARDS
+          ================================================== */}
 
-      {/* =========================
-          SUMMARY CARDS
-      ========================== */}
-      <div className="gap-summary-grid">
+          <div className="grid gap-4 md:grid-cols-3">
 
-        <SummaryCard
-          title="Overall Gap"
-          value={`${data.overallGapPercentage}%`}
-          subtitle="Skills requiring improvement"
-          type="danger"
-          icon={<TrendingDown size={21} />}
-        />
+            {/* OVERALL GAP */}
 
-        <SummaryCard
-          title="Total Skills"
-          value={data.totalSkills}
-          subtitle="Skills evaluated"
-          type="primary"
-          icon={<Target size={21} />}
-        />
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
 
-        <SummaryCard
-          title="Skill Gaps"
-          value={data.gapSkills}
-          subtitle="Skills needing attention"
-          type="warning"
-          icon={<AlertCircle size={21} />}
-        />
-
-        <SummaryCard
-          title="Readiness"
-          value={`${data.readinessPercentage}%`}
-          subtitle="Role readiness"
-          type="success"
-          icon={<TrendingUp size={21} />}
-        />
-
-      </div>
-
-      {/* =========================
-          OVERVIEW
-      ========================== */}
-      <div className="gap-content-grid">
-
-        <section className="gap-card gap-overview-card">
-
-          <div className="gap-card-header">
-            <div>
-              <h2>Skill Gap Overview</h2>
-              <p>
-                Current proficiency compared with
-                required proficiency.
+              <p className="text-xs font-semibold text-slate-500">
+                Overall Gap
               </p>
+
+              <p className="mt-2 text-3xl font-bold text-slate-900">
+                {(data?.overallGapPercentage ?? 0).toFixed(1)}%
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Current knowledge gap
+              </p>
+
             </div>
 
-            <Target size={21} />
+            {/* READINESS */}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+              <p className="text-xs font-semibold text-slate-500">
+                Readiness
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-purple-600">
+                {(data?.readinessPercentage ?? 0).toFixed(1)}%
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Role readiness
+              </p>
+
+            </div>
+
+            {/* GAP SKILLS */}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+              <p className="text-xs font-semibold text-slate-500">
+                Skills Needing Attention
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-slate-900">
+                {data?.gapSkills ?? gaps.length}
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Detected by backend
+              </p>
+
+            </div>
+
           </div>
 
-          <div className="gap-overview-body">
+          {/* ==================================================
+              EMPLOYEE / ROLE SUMMARY
+          ================================================== */}
 
-            <div className="gap-progress-circle">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <div className="grid gap-4 sm:grid-cols-4">
+
               <div>
-                <strong>
-                  {Math.round(data.readinessPercentage)}%
-                </strong>
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  Employee
+                </p>
 
-                <span>Ready</span>
-              </div>
-            </div>
-
-            <div className="gap-overview-details">
-
-              <div className="gap-stat-row">
-                <span>
-                  <span className="gap-dot green" />
-                  Skills completed
-                </span>
-
-                <strong>
-                  {data.completedSkills}
-                </strong>
+                <p className="mt-1 text-sm font-bold text-slate-800">
+                  {data?.employeeName || "Not available"}
+                </p>
               </div>
 
-              <div className="gap-stat-row">
-                <span>
-                  <span className="gap-dot red" />
-                  Skills with gaps
-                </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  Employee Code
+                </p>
 
-                <strong>
-                  {data.gapSkills}
-                </strong>
+                <p className="mt-1 text-sm font-bold text-slate-800">
+                  {data?.employeeCode || "Not available"}
+                </p>
               </div>
 
-              <div className="gap-stat-row">
-                <span>
-                  <span className="gap-dot purple" />
-                  Total skills
-                </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  Job Role
+                </p>
 
-                <strong>
-                  {data.totalSkills}
-                </strong>
+                <p className="mt-1 text-sm font-bold text-slate-800">
+                  {data?.jobRoleName || "Not assigned"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  Total Skills
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-slate-800">
+                  {data?.totalSkills ?? 0}
+                </p>
               </div>
 
             </div>
 
           </div>
-        </section>
 
-        {/* Priority section */}
-        <section className="gap-card">
+          {/* ==================================================
+              TOP SKILL GAPS
+          ================================================== */}
 
-          <div className="gap-card-header">
-            <div>
-              <h2>Priority Skills</h2>
-              <p>
-                Skills with the highest gaps need
-                attention first.
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <div className="mb-6">
+
+              <h2 className="text-base font-bold text-slate-900">
+                Top Skill Gaps
+              </h2>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Live gap-analysis results
               </p>
+
             </div>
 
-            <AlertCircle size={21} />
-          </div>
+            {sortedGaps.length === 0 ? (
 
-          <div className="gap-priority-list">
+              <div className="rounded-xl bg-emerald-50 p-6 text-center">
 
-            {sortedGaps.slice(0, 5).map((gap) => (
-              <PrioritySkill
-                key={gap.knowledgeGapId}
-                gap={gap}
-              />
-            ))}
+                <Target
+                  size={28}
+                  className="mx-auto text-emerald-600"
+                />
 
-            {sortedGaps.length === 0 && (
-              <div className="gap-no-data">
-                <CheckCircle2 size={25} />
-                <span>
-                  No skill gaps have been identified.
-                </span>
+                <p className="mt-3 text-xs font-semibold text-emerald-700">
+                  No current skill gaps require attention.
+                </p>
+
+                <p className="mt-1 text-[10px] text-emerald-600">
+                  The backend returned no knowledge gaps for this employee.
+                </p>
+
               </div>
+
+            ) : (
+
+              <div className="space-y-5">
+
+                {sortedGaps.map((gap) => (
+
+                  <div
+                    key={gap.knowledgeGapId}
+                    className="rounded-xl border border-slate-100 p-4"
+                  >
+
+                    <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+
+                      <div className="flex items-center gap-2">
+
+                        <TrendingDown
+                          size={15}
+                          className="text-red-500"
+                        />
+
+                        <b className="text-slate-800">
+                          {gap.skillName}
+                        </b>
+
+                      </div>
+
+                      <span className="font-semibold text-red-500">
+                        {Math.round(
+                          gap.gapPercentage ?? 0
+                        )}
+                        % gap
+                      </span>
+
+                    </div>
+
+                    {/* PROGRESS */}
+
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+
+                      <div
+                        className="h-full rounded-full bg-red-400"
+                        style={{
+                          width: `${Math.min(
+                            Math.max(
+                              gap.gapPercentage ?? 0,
+                              0
+                            ),
+                            100
+                          )}%`,
+                        }}
+                      />
+
+                    </div>
+
+                    {/* CURRENT / REQUIRED */}
+
+                    <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+
+                      <span>
+                        Current:{" "}
+                        {gap.currentProficiency ||
+                          "Not assessed"}
+                      </span>
+
+                      <span>
+                        Required:{" "}
+                        {gap.requiredProficiency ||
+                          "—"}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
             )}
 
           </div>
 
-        </section>
+          {/* ==================================================
+              NEXT ACTION
+          ================================================== */}
 
-      </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-      {/* =========================
-          GAP DETAILS
-      ========================== */}
-      <section className="gap-card gap-details-card">
+            <h2 className="text-base font-bold text-slate-900">
+              Next Action
+            </h2>
 
-        <div className="gap-card-header">
-          <div>
-            <h2>Skill Gap Details</h2>
-            <p>
-              Detailed comparison of your current
-              skills against role requirements.
-            </p>
-          </div>
+            <div className="mt-4 flex items-center gap-3 rounded-xl bg-purple-50 p-4">
 
-          <Users size={21} />
-        </div>
+              <Target
+                size={22}
+                className="text-purple-600"
+              />
 
-        {sortedGaps.length > 0 ? (
-          <div className="gap-table-wrapper">
+              <div>
 
-            <table className="gap-table">
+                <b className="text-xs text-slate-800">
+                  Continue to Learning Paths
+                </b>
 
-              <thead>
-                <tr>
-                  <th>Skill</th>
-                  <th>Current Level</th>
-                  <th>Required Level</th>
-                  <th>Current Experience</th>
-                  <th>Required Experience</th>
-                  <th>Gap</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Learning recommendations can be based on
+                  the skill gaps detected by the backend.
+                </p>
 
-              <tbody>
+              </div>
 
-                {sortedGaps.map((gap) => (
-                  <GapTableRow
-                    key={gap.knowledgeGapId}
-                    gap={gap}
-                  />
-                ))}
-
-              </tbody>
-
-            </table>
-
-          </div>
-        ) : (
-          <div className="gap-no-data large">
-            <CheckCircle2 size={30} />
-
-            <div>
-              <strong>No skill gaps found</strong>
-
-              <p>
-                Your current skills match the available
-                requirements for your role.
-              </p>
             </div>
-          </div>
-        )}
 
-      </section>
-
-      {/* =========================
-          EXPLANATION
-      ========================== */}
-      <section className="gap-info-banner">
-
-        <div className="gap-info-icon">
-          <Target size={22} />
-        </div>
-
-        <div>
-          <h3>How is your skill gap calculated?</h3>
-
-          <p>
-            The system compares your current proficiency
-            and experience with the proficiency and
-            experience required for your assigned job role.
-            The difference is used to identify your skill
-            gaps and prioritize areas for improvement.
-          </p>
-        </div>
-
-      </section>
-
-    </div>
-  );
-};
-
-
-/* =====================================================
-   SUMMARY CARD
-===================================================== */
-
-interface SummaryCardProps {
-  title: string;
-  value: string | number;
-  subtitle: string;
-  type: "primary" | "success" | "warning" | "danger";
-  icon: React.ReactNode;
-}
-
-const SummaryCard: React.FC<SummaryCardProps> = ({
-  title,
-  value,
-  subtitle,
-  type,
-  icon,
-}) => {
-  return (
-    <div className={`gap-summary-card ${type}`}>
-
-      <div className="gap-summary-top">
-
-        <div className="gap-summary-icon">
-          {icon}
-        </div>
-
-      </div>
-
-      <span className="gap-summary-title">
-        {title}
-      </span>
-
-      <strong className="gap-summary-value">
-        {value}
-      </strong>
-
-      <span className="gap-summary-subtitle">
-        {subtitle}
-      </span>
-
-    </div>
-  );
-};
-
-
-/* =====================================================
-   PRIORITY SKILL
-===================================================== */
-
-const PrioritySkill: React.FC<{
-  gap: KnowledgeGap;
-}> = ({ gap }) => {
-
-  const percentage = Math.min(
-    Math.max(gap.gapPercentage, 0),
-    100
-  );
-
-  const severity =
-    percentage >= 70
-      ? "Critical"
-      : percentage >= 40
-      ? "Medium"
-      : "Low";
-
-  return (
-    <div className="gap-priority-item">
-
-      <div className="gap-priority-main">
-
-        <div>
-          <strong>{gap.skillName}</strong>
-
-          <span>
-            {gap.currentProficiency}
-            {" → "}
-            {gap.requiredProficiency}
-          </span>
-        </div>
-
-        <div className="gap-priority-right">
-
-          <strong>{percentage}%</strong>
-
-          <span
-            className={`gap-severity ${severity.toLowerCase()}`}
-          >
-            {severity}
-          </span>
-
-        </div>
-
-      </div>
-
-      <div className="gap-progress-bar">
-        <div
-          style={{
-            width: `${percentage}%`,
-          }}
-        />
-      </div>
-
-    </div>
-  );
-};
-
-
-/* =====================================================
-   TABLE ROW
-===================================================== */
-
-const GapTableRow: React.FC<{
-  gap: KnowledgeGap;
-}> = ({ gap }) => {
-
-  const percentage = Math.min(
-    Math.max(gap.gapPercentage, 0),
-    100
-  );
-
-  const severity =
-    percentage >= 70
-      ? "Critical"
-      : percentage >= 40
-      ? "Medium"
-      : "Low";
-
-  return (
-    <tr>
-
-      <td>
-        <div className="gap-skill-name">
-          <div className="gap-skill-icon">
-            <Target size={15} />
           </div>
 
-          <strong>{gap.skillName}</strong>
         </div>
-      </td>
 
-      <td>
-        <span className="gap-level current">
-          {gap.currentProficiency}
-        </span>
-      </td>
+      </main>
 
-      <td>
-        <span className="gap-level required">
-          {gap.requiredProficiency}
-        </span>
-      </td>
-
-      <td>
-        {gap.currentExperience} years
-      </td>
-
-      <td>
-        {gap.requiredExperience} years
-      </td>
-
-      <td>
-        <div className="gap-percentage">
-          <strong>{percentage}%</strong>
-
-          <div className="gap-mini-bar">
-            <div
-              style={{
-                width: `${percentage}%`,
-              }}
-            />
-          </div>
-        </div>
-      </td>
-
-      <td>
-        <span
-          className={`gap-status ${severity.toLowerCase()}`}
-        >
-          {severity === "Critical" ? (
-            <XCircle size={14} />
-          ) : severity === "Medium" ? (
-            <AlertCircle size={14} />
-          ) : (
-            <CheckCircle2 size={14} />
-          )}
-
-          {gap.status || severity}
-        </span>
-      </td>
-
-    </tr>
+    </div>
   );
 };
 

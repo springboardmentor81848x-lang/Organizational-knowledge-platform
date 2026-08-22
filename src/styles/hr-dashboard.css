@@ -950,8 +950,14 @@
 
 /* APPROVALS */
 
+/* =========================================================
+   PENDING HR APPROVALS
+   ========================================================= */
+
 .approvals-card {
   padding-bottom: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .pending-count {
@@ -962,53 +968,88 @@
   color: #747d90;
 }
 
+/* Approval employee row */
 /* =========================================================
-   APPROVAL ROW - PREVENT HORIZONTAL OVERFLOW
+   PENDING HR APPROVALS - COMPACT ROW
    ========================================================= */
 
 .approval-row {
   display: grid;
+
   grid-template-columns:
-    48px
-    minmax(75px, 1fr)
-    minmax(90px, 1.4fr)
-    55px
+    45px
+    minmax(60px, 1fr)
+    minmax(45px, 0.8fr)
+    52px
     38px;
 
-  gap: 7px;
+  gap: 5px;
+
   align-items: center;
 
   padding: 11px 14px;
-  border-top: 1px solid #f0f1f5;
-
-  font-size: 9px;
 
   width: 100%;
-  max-width: 100%;
-  min-width: 0;
   box-sizing: border-box;
+
+  min-width: 0;
 }
 
+/* Prevent content from increasing the row width */
 .approval-row > * {
   min-width: 0;
+  max-width: 100%;
+}
+
+/* Employee ID */
+.approval-ref {
+  color: #8b94a6;
+  font-size: 10px;
+
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.approval-ref {
-  color: #8b94a6;
+/* Employee name */
+.approval-row strong {
+  min-width: 0;
+
+  font-size: 10px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Approval type */
 .approval-action {
   color: #626d81;
+
+  font-size: 10px;
+
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Pending badge */
 .priority {
   font-size: 6px;
+
   text-align: center;
-  padding: 4px;
+
+  padding: 4px 6px;
+
   border-radius: 7px;
+
   font-weight: 700;
+
+  min-width: 0;
+
+  white-space: nowrap;
 }
 
 .priority.high {
@@ -1026,28 +1067,92 @@
   background: #fff3dd;
 }
 
-.approval-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.priority.pending {
+  color: #687386;
+  background: #f0f2f5;
 }
 
-.approval-actions svg {
+
+/* =========================================================
+   APPROVE + REJECT
+   ========================================================= */
+
+.approval-actions {
+  display: flex;
+
+  flex-direction: row;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  gap: 5px;
+
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+
+  flex-shrink: 0;
+
+  white-space: nowrap;
+
+  overflow: visible;
+}
+
+.approval-actions button {
+  width: 14px;
+  height: 18px;
+
+  padding: 0;
+  margin: 0;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+/* Green approve */
+.approval-actions button:first-child {
   color: #10b981;
 }
 
-.approval-actions span {
+/* Red reject */
+.approval-actions button:last-child {
   color: #ef4444;
-  font-size: 18px;
+}
+
+.approval-actions svg {
+  width: 14px;
+  height: 14px;
+
+  flex-shrink: 0;
+}
+
+.approval-actions button:last-child {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .approval-footer {
   border-top: 1px solid #edf0f4;
+
   height: 40px;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   gap: 5px;
+
   color: #7436e8;
   font-size: 8px;
   font-weight: 700;

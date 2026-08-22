@@ -1,0 +1,4 @@
+import React from "react";
+import { Building2, LockKeyhole } from "lucide-react";
+import ManagerPage from "./ManagerPage";
+export default function Departments(){return <ManagerPage title="Departments" subtitle="Department-level analytics are controlled by the backend role policy." icon={Building2} active="Departments"><section className="manager-card manager-permission-card"><div className="permission-icon"><LockKeyhole size={22}/></div><h2>Department analytics is restricted</h2><p>The current Spring Security configuration exposes <code>GET /api/analytics/departments</code> to ADMIN and HR, not MANAGER. I have intentionally not shown fake department numbers here.</p><div className="permission-note">Use the HR/Admin dashboard for organization-wide department analytics.</div></section></ManagerPage>}

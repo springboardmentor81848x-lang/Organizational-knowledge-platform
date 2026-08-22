@@ -1,4 +1,5 @@
 import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Activity,
   Award,
@@ -282,7 +283,16 @@ const notifications = [
   },
 ];
 
-export const EmployeeDashboard: React.FC = () => {
+interface EmployeeDashboardProps {
+  employeeName?: string;
+  jobRoleName?: string;
+}
+
+export const Dashboard: React.FC<EmployeeDashboardProps> = ({
+  employeeName = "Employee",
+  jobRoleName = "Employee",
+}) => {
+  const navigate = useNavigate();
   return (
     <div className="employee-dashboard">
       {/* ================= SIDEBAR ================= */}
@@ -297,25 +307,106 @@ export const EmployeeDashboard: React.FC = () => {
         </div>
 
         <nav className="employee-nav">
-          <NavItem icon={LayoutDashboard} label="Dashboard" active />
-          <NavItem icon={User} label="My Profile" />
-          <NavItem icon={Activity} label="Skill Profile" />
-          <NavItem icon={FileCheck2} label="Self Assessment" />
-          <NavItem icon={Users} label="Peer Assessment" />
-          <NavItem icon={Target} label="My Proficiency" />
-          <NavItem icon={TrendingUp} label="Skill Gaps" />
-          <NavItem icon={BookOpen} label="Learning Paths" />
-          <NavItem icon={GraduationCap} label="Training" />
-          <NavItem icon={Activity} label="My Progress" />
-          <NavItem icon={Award} label="Achievements" />
-          <NavItem icon={ShieldCheck} label="Certifications" />
-          <NavItem icon={Users} label="Mentorship" />
-          <NavItem icon={Bell} label="Notifications" />
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            path="/employee"
+          />
+
+          <NavItem
+            icon={User}
+            label="My Profile"
+            path="/employee/profile"
+          />
+
+          <NavItem
+            icon={Activity}
+            label="Skill Profile"
+            path="/employee/skills"
+          />
+
+          <NavItem
+            icon={FileCheck2}
+            label="Self Assessment"
+            path="/employee/self-assessment"
+          />
+
+          <NavItem
+            icon={Users}
+            label="Peer Assessment"
+            path="/employee/peer-assessment"
+          />
+
+          <NavItem
+            icon={Target}
+            label="My Proficiency"
+            path="/employee/proficiency"
+          />
+
+          <NavItem
+            icon={TrendingUp}
+            label="Skill Gaps"
+            path="/employee/skill-gaps"
+          />
+
+          <NavItem
+            icon={BookOpen}
+            label="Learning Paths"
+            path="/employee/learning-paths"
+          />
+
+          <NavItem
+            icon={GraduationCap}
+            label="Training"
+            path="/employee/training"
+          />
+
+          <NavItem
+            icon={Activity}
+            label="My Progress"
+            path="/employee/progress"
+          />
+
+          <NavItem
+            icon={Award}
+            label="Achievements"
+            path="/employee/achievements"
+          />
+
+          <NavItem
+            icon={ShieldCheck}
+            label="Certifications"
+            path="/employee/certifications"
+          />
+
+          <NavItem
+            icon={Users}
+            label="Mentorship"
+            path="/employee/mentorship"
+          />
+
+          <NavItem
+            icon={Bell}
+            label="Notifications"
+            path="/employee/notifications"
+          />
         </nav>
 
         <div className="employee-sidebar-bottom">
-          <NavItem icon={Settings} label="Settings" />
-          <NavItem icon={LogOut} label="Logout" />
+          <NavItem
+            icon={Settings}
+            label="Settings"
+            path="/employee/settings"
+          />
+
+          <button
+            type="button"
+            className="employee-nav-item"
+            onClick={() => navigate("/logout")}
+          >
+            <LogOut size={15} />
+            <span>Logout</span>
+          </button>
 
           <div className="employee-collapse">
             <ChevronRight size={14} />
@@ -352,15 +443,17 @@ export const EmployeeDashboard: React.FC = () => {
             </button>
 
             <div className="employee-user">
-              <div className="employee-avatar">SJ</div>
+  <div className="employee-avatar">
+    {employeeName.charAt(0).toUpperCase() || "E"}
+  </div>
 
-              <div className="employee-user-text">
-                <strong>Sarah Johnson</strong>
-                <small>Software Engineer</small>
-              </div>
+  <div className="employee-user-text">
+    <strong>{employeeName}</strong>
+    <small>{jobRoleName}</small>
+  </div>
 
-              <ChevronRight size={14} />
-            </div>
+  <ChevronRight size={14} />
+</div>
           </div>
         </header>
 
@@ -370,8 +463,8 @@ export const EmployeeDashboard: React.FC = () => {
           <div className="employee-welcome-row">
             <div className="employee-welcome">
               <span className="employee-greeting">
-                Good Morning, Sarah! 👋
-              </span>
+  Good Morning, {employeeName}! 👋
+</span>
 
               <h1>Welcome back! 👋</h1>
 
@@ -657,11 +750,19 @@ export const EmployeeDashboard: React.FC = () => {
                 </div>
 
                 <div className="current-step-actions">
-                  <button className="continue-button">
+                  <button
+                    type="button"
+                    className="continue-button"
+                    onClick={() => navigate("/employee/learning-paths")}
+                  >
                     Continue Learning
                   </button>
 
-                  <button className="details-button">
+                  <button
+                    type="button"
+                    className="details-button"
+                    onClick={() => navigate("/employee/learning-paths")}
+                  >
                     View Path Details
                   </button>
                 </div>
@@ -890,7 +991,12 @@ export const EmployeeDashboard: React.FC = () => {
                       <span>With {mentor.name}</span>
                     </div>
 
-                    <button>{mentor.action}</button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/employee/mentorship")}
+                    >
+                      {mentor.action}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -931,30 +1037,35 @@ export const EmployeeDashboard: React.FC = () => {
               icon={User}
               title="Update Skill Profile"
               subtitle="Keep your skills current"
+              onClick={() => navigate("/employee/skills")}
             />
 
             <QuickAction
               icon={FileCheck2}
               title="Take Self Assessment"
               subtitle="Assess your skills"
+              onClick={() => navigate("/employee/self-assessment")}
             />
 
             <QuickAction
               icon={BookOpen}
               title="Browse Training"
               subtitle="Explore courses"
+              onClick={() => navigate("/employee/training")}
             />
 
             <QuickAction
               icon={Users}
               title="Join Study Group"
               subtitle="Learn with peers"
+              onClick={() => navigate("/employee/mentorship")}
             />
 
             <QuickAction
               icon={CircleHelp}
               title="Ask a Question"
               subtitle="Get help from experts"
+              onClick={() => navigate("/employee/mentorship")}
             />
           </div>
         </section>
@@ -968,17 +1079,23 @@ export const EmployeeDashboard: React.FC = () => {
 function NavItem({
   icon: Icon,
   label,
-  active = false,
+  path,
 }: {
   icon: React.ElementType;
   label: string;
-  active?: boolean;
+  path: string;
 }) {
   return (
-    <div className={`employee-nav-item ${active ? "active" : ""}`}>
+    <NavLink
+      to={path}
+      end={path === "/employee"}
+      className={({ isActive }) =>
+        `employee-nav-item ${isActive ? "active" : ""}`
+      }
+    >
       <Icon size={15} />
       <span>{label}</span>
-    </div>
+    </NavLink>
   );
 }
 
@@ -991,6 +1108,19 @@ function CardHeader({
   subtitle?: string;
   action?: string;
 }) {
+  const navigate = useNavigate();
+
+  const actionRoutes: Record<string, string> = {
+    "Recent Learning Activity": "/employee/progress",
+    Achievements: "/employee/achievements",
+    "My Certifications": "/employee/certifications",
+    "Upcoming Tasks": "/employee/self-assessment",
+    "Mentorship & Knowledge Sharing": "/employee/mentorship",
+    Notifications: "/employee/notifications",
+  };
+
+  const targetRoute = actionRoutes[title];
+
   return (
     <div className="employee-card-header">
       <div>
@@ -999,7 +1129,10 @@ function CardHeader({
       </div>
 
       {action && (
-        <button>
+        <button
+          type="button"
+          onClick={() => targetRoute && navigate(targetRoute)}
+        >
           {action}
         </button>
       )}
@@ -1008,9 +1141,25 @@ function CardHeader({
 }
 
 function CardFooter({ text }: { text: string }) {
+  const navigate = useNavigate();
+
+  const footerRoutes: Record<string, string> = {
+    "View All Skills": "/employee/skills",
+    "View All Gaps": "/employee/skill-gaps",
+    "View All Recommendations": "/employee/learning-paths",
+    "View Path Details": "/employee/learning-paths",
+    "View All Training": "/employee/training",
+    "View All Activity": "/employee/progress",
+  };
+
+  const targetRoute = footerRoutes[text];
+
   return (
     <div className="employee-card-footer">
-      <button>
+      <button
+        type="button"
+        onClick={() => targetRoute && navigate(targetRoute)}
+      >
         {text}
         <ChevronRight size={13} />
       </button>
@@ -1078,13 +1227,19 @@ function QuickAction({
   icon: Icon,
   title,
   subtitle,
+  onClick,
 }: {
   icon: React.ElementType;
   title: string;
   subtitle: string;
+  onClick?: () => void;
 }) {
   return (
-    <button className="employee-quick-action">
+    <button
+      type="button"
+      className="employee-quick-action"
+      onClick={onClick}
+    >
       <div className="quick-action-icon">
         <Icon size={16} />
       </div>
