@@ -8,8 +8,18 @@ import {
 import ManagerPage from "./ManagerPage";
 import managerService from "@/services/managerService";
 
-export default function Skills() {
-  const [items, setItems] = useState<any[]>([]);
+interface Skill {
+  skillId?: number;
+  id?: number;
+  skillName?: string;
+  name?: string;
+  skillCategory?: string;
+  category?: string;
+  description?: string;
+}
+
+const Skills: React.FC = () => {
+  const [items, setItems] = useState<Skill[]>([]);
   const [query, setQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -23,31 +33,26 @@ export default function Skills() {
         setLoading(true);
         setError("");
 
-        const result =
-          await managerService.getSkills();
+        const result = await managerService.getSkills();
 
         console.log("SKILLS PAGE DATA:", result);
 
         if (mounted) {
-          setItems(
-            Array.isArray(result) ? result : []
-          );
+          setItems(Array.isArray(result) ? result : []);
         }
       } catch (err: any) {
-        console.error(
-          "SKILLS PAGE ERROR:",
-          err
-        );
+        console.error("SKILLS PAGE ERROR:", err);
 
         if (mounted) {
           setItems([]);
 
-          setError(
+          const message =
             err?.response?.data?.message ||
-              err?.response?.data?.error ||
-              err?.message ||
-              "Unable to load skills."
-          );
+            err?.response?.data?.error ||
+            err?.message ||
+            "Unable to load skills.";
+
+          setError(message);
         }
       } finally {
         if (mounted) {
@@ -66,15 +71,31 @@ export default function Skills() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    return items.filter((item) =>
-      String(
+    if (!q) {
+      return items;
+    }
+
+    return items.filter((item) => {
+      const skillName =
         item.skillName ||
-          item.name ||
-          ""
-      )
-        .toLowerCase()
-        .includes(q)
-    );
+        item.name ||
+        "";
+
+      const category =
+        item.skillCategory ||
+        item.category ||
+        "";
+
+      const description =
+        item.description ||
+        "";
+
+      return (
+        skillName.toLowerCase().includes(q) ||
+        category.toLowerCase().includes(q) ||
+        description.toLowerCase().includes(q)
+      );
+    });
   }, [items, query]);
 
   return (
@@ -85,103 +106,168 @@ export default function Skills() {
       active="Skills"
     >
       <section className="manager-card manager-data-card">
+
+        {/* ================= TOOLBAR ================= */}
         <div className="manager-toolbar">
           <div>
-            <h2>Skill Master</h2>
-            <p>GET /master/skills</p>
+            <h2>Skill Directory</h2>
+            <p>
+              Available organizational skills
+            </p>
           </div>
 
-          <div className="manager-search-large">
-            <Search size={15} />
+          <div className="manager-toolbar-right">
+            <div className="manager-search-large">
+              <Search size={15} />
 
-            <input
-              value={query}
-              onChange={(event) =>
-                setQuery(event.target.value)
-              }
-              placeholder="Search skills…"
-            />
+              <input
+                value={query}
+                onChange={(event) =>
+                  setQuery(event.target.value)
+                }
+                placeholder="Search skills..."
+              />
+            </div>
+
+            <span className="manager-count">
+              {items.length} skill
+              {items.length === 1 ? "" : "s"}
+            </span>
           </div>
         </div>
 
+        {/* ================= LOADING ================= */}
         {loading && (
           <div className="manager-loading">
             <Loader2
               className="spin"
               size={18}
             />
-            Loading skill master…
+            <span>Loading skills...</span>
           </div>
         )}
 
+        {/* ================= ERROR ================= */}
         {!loading && error && (
           <div className="manager-empty-state">
-            <AlertTriangle size={24} />
+            <div className="manager-empty-icon">
+              <AlertTriangle size={22} />
+            </div>
 
-            <strong>
-              Unable to load skills
-            </strong>
+            <h2>Unable to load skills</h2>
 
             <p>{error}</p>
+
+            <small>
+              Check the backend server, authentication
+              token and GET /master/skills response.
+            </small>
           </div>
         )}
 
+        {/* ================= NO DATA ================= */}
         {!loading &&
           !error &&
           items.length === 0 && (
             <div className="manager-empty-state">
-              <Target size={24} />
+              <div className="manager-empty-icon">
+                <Target size={22} />
+              </div>
 
-              <strong>
-                No skills returned
-              </strong>
+              <h2>No skills available</h2>
 
               <p>
-                The skill master API returned
-                no skills.
+                The skill master API returned no skills.
               </p>
             </div>
           )}
 
+        {/* ================= DATA ================= */}
         {!loading &&
           !error &&
+          items.length > 0 &&
           filtered.length > 0 && (
-            <div className="manager-card-grid">
-              {filtered.map((item, index) => (
-                <div
-                  className="master-card"
-                  key={
-                    item.skillId ||
-                    item.id ||
-                    index
-                  }
-                >
-                  <div className="master-icon">
-                    <Target size={16} />
+            <div className="manager-skill-table">
+
+              <div className="manager-skill-head">
+                <span>SKILL</span>
+                <span>CATEGORY</span>
+                <span>DESCRIPTION</span>
+              </div>
+
+              {filtered.map((item, index) => {
+                const skillName =
+                  item.skillName ||
+                  item.name ||
+                  "Unnamed Skill";
+
+                const category =
+                  item.skillCategory ||
+                  item.category ||
+                  "General";
+
+                return (
+                  <div
+                    className="manager-skill-row"
+                    key={
+                      item.skillId ||
+                      item.id ||
+                      index
+                    }
+                  >
+                    <div className="manager-skill-name">
+                      <div className="manager-skill-icon">
+                        <Target size={16} />
+                      </div>
+
+                      <div>
+                        <strong>{skillName}</strong>
+
+                        {(item.skillId || item.id) && (
+                          <small>
+                            Skill ID:{" "}
+                            {item.skillId || item.id}
+                          </small>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="manager-skill-category">
+                        {category}
+                      </span>
+                    </div>
+
+                    <div className="manager-skill-description">
+                      {item.description || "—"}
+                    </div>
                   </div>
-
-                  <div>
-                    <h3>
-                      {item.skillName ||
-                        item.name ||
-                        "Unnamed Skill"}
-                    </h3>
-
-                    <span>
-                      {item.skillCategory ||
-                        "General"}
-                    </span>
-
-                    <p>
-                      {item.description ||
-                        "Available in the organization skill master."}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+
+        {/* ================= SEARCH EMPTY ================= */}
+        {!loading &&
+          !error &&
+          items.length > 0 &&
+          filtered.length === 0 && (
+            <div className="manager-empty-state">
+              <div className="manager-empty-icon">
+                <Search size={22} />
+              </div>
+
+              <h2>No matching skills</h2>
+
+              <p>
+                Try a different skill, category or description.
+              </p>
+            </div>
+          )}
+
       </section>
     </ManagerPage>
   );
-}
+};
+
+export default Skills;

@@ -21,6 +21,11 @@ export interface MasterSkill {
   description?: string;
   [key: string]: any;
 }
+export interface SkillGapHeatmap {
+  skillName: string;
+  averageGapPercentage: number;
+  employeeCount: number;
+}
 
 /**
  * Safely extracts array data from different backend response shapes.
@@ -206,10 +211,66 @@ const managerService = {
    * JOB ROLE COMPETENCIES
    * ============================
    */
+getJobRoleCompetencies: async (id: number) => {
+  const response = await API.get(
+    `/job-role-competencies/job-role/${id}`
+  );
 
-  getJobRoleCompetencies: async (jobRoleId: number) => {
+  console.log(
+    `MANAGER JOB ROLE ${id} COMPETENCIES RESPONSE:`,
+    response.data
+  );
+
+  return response.data;
+},
+  /**
+   * ============================
+   * AI RECOMMENDATIONS
+   * ============================
+   */
+
+  generateAiRecommendation: async (employeeId: number) => {
+    const response = await API.post(
+      `/ai/recommendation/${employeeId}`
+    );
+
+    console.log(
+      `MANAGER AI RECOMMENDATION ${employeeId}:`,
+      response.data
+    );
+
+    return response.data;
+  },
+  /**
+ * ============================
+ * TEAM SKILL GAP HEATMAP
+ * ============================
+ */
+
+getTeamSkillGapHeatmap: async (): Promise<SkillGapHeatmap[]> => {
+  const response = await API.get(
+    "/analytics/team/skill-heatmap"
+  );
+
+  console.log(
+    "MANAGER TEAM SKILL GAP HEATMAP RESPONSE:",
+    response.data
+  );
+
+  return rows<SkillGapHeatmap>(response.data);
+},
+
+  getAiLearningPath: async (role: string) => {
     const response = await API.get(
-      `/job-role-competencies/${jobRoleId}`
+      "/ai/learning-path",
+      {
+        params: { role },
+      }
+    );
+
+    console.log(
+      `AI LEARNING PATH FOR ${role}:`,
+      response.data
     );
 
     return response.data;

@@ -8,8 +8,16 @@ import {
 import ManagerPage from "./ManagerPage";
 import managerService from "@/services/managerService";
 
-export default function JobRoles() {
-  const [items, setItems] = useState<any[]>([]);
+interface JobRole {
+  jobRoleId?: number;
+  id?: number;
+  jobRoleName?: string;
+  name?: string;
+  description?: string;
+}
+
+const JobRoles: React.FC = () => {
+  const [items, setItems] = useState<JobRole[]>([]);
   const [query, setQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -23,31 +31,26 @@ export default function JobRoles() {
         setLoading(true);
         setError("");
 
-        const result =
-          await managerService.getJobRoles();
+        const result = await managerService.getJobRoles();
 
         console.log("JOB ROLES PAGE DATA:", result);
 
         if (mounted) {
-          setItems(
-            Array.isArray(result) ? result : []
-          );
+          setItems(Array.isArray(result) ? result : []);
         }
       } catch (err: any) {
-        console.error(
-          "JOB ROLES PAGE ERROR:",
-          err
-        );
+        console.error("JOB ROLES PAGE ERROR:", err);
 
         if (mounted) {
           setItems([]);
 
-          setError(
+          const message =
             err?.response?.data?.message ||
-              err?.response?.data?.error ||
-              err?.message ||
-              "Unable to load job roles."
-          );
+            err?.response?.data?.error ||
+            err?.message ||
+            "Unable to load job roles.";
+
+          setError(message);
         }
       } finally {
         if (mounted) {
@@ -66,15 +69,25 @@ export default function JobRoles() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    return items.filter((item) =>
-      String(
+    if (!q) {
+      return items;
+    }
+
+    return items.filter((item) => {
+      const roleName =
         item.jobRoleName ||
-          item.name ||
-          ""
-      )
-        .toLowerCase()
-        .includes(q)
-    );
+        item.name ||
+        "";
+
+      const description =
+        item.description ||
+        "";
+
+      return (
+        roleName.toLowerCase().includes(q) ||
+        description.toLowerCase().includes(q)
+      );
+    });
   }, [items, query]);
 
   return (
@@ -85,100 +98,155 @@ export default function JobRoles() {
       active="Job Roles"
     >
       <section className="manager-card manager-data-card">
+
+        {/* ================= TOOLBAR ================= */}
         <div className="manager-toolbar">
           <div>
-            <h2>Job Role Master</h2>
-            <p>GET /master/job-roles</p>
+            <h2>Job Role Directory</h2>
+            <p>
+              Available organizational job roles
+            </p>
           </div>
 
-          <div className="manager-search-large">
-            <Search size={15} />
+          <div className="manager-toolbar-right">
+            <div className="manager-search-large">
+              <Search size={15} />
 
-            <input
-              value={query}
-              onChange={(event) =>
-                setQuery(event.target.value)
-              }
-              placeholder="Search job roles…"
-            />
+              <input
+                value={query}
+                onChange={(event) =>
+                  setQuery(event.target.value)
+                }
+                placeholder="Search job roles..."
+              />
+            </div>
+
+            <span className="manager-count">
+              {items.length} role
+              {items.length === 1 ? "" : "s"}
+            </span>
           </div>
         </div>
 
+        {/* ================= LOADING ================= */}
         {loading && (
           <div className="manager-loading">
             <Loader2
               className="spin"
               size={18}
             />
-            Loading job roles…
+            <span>Loading job roles...</span>
           </div>
         )}
 
+        {/* ================= ERROR ================= */}
         {!loading && error && (
           <div className="manager-empty-state">
-            <AlertTriangle size={24} />
+            <div className="manager-empty-icon">
+              <AlertTriangle size={22} />
+            </div>
 
-            <strong>
-              Unable to load job roles
-            </strong>
+            <h2>Unable to load job roles</h2>
 
             <p>{error}</p>
+
+            <small>
+              Check the backend server, authentication
+              token and GET /master/job-roles response.
+            </small>
           </div>
         )}
 
+        {/* ================= NO DATA ================= */}
         {!loading &&
           !error &&
           items.length === 0 && (
             <div className="manager-empty-state">
-              <BriefcaseBusiness size={24} />
+              <div className="manager-empty-icon">
+                <BriefcaseBusiness size={22} />
+              </div>
 
-              <strong>
-                No job roles returned
-              </strong>
+              <h2>No job roles available</h2>
 
               <p>
-                The master-data API returned no
-                job roles.
+                The master-data API returned no job roles.
               </p>
             </div>
           )}
 
+        {/* ================= DATA ================= */}
         {!loading &&
           !error &&
+          items.length > 0 &&
           filtered.length > 0 && (
-            <div className="manager-card-grid">
-              {filtered.map((item, index) => (
-                <div
-                  className="master-card"
-                  key={
-                    item.jobRoleId ||
-                    item.id ||
-                    index
-                  }
-                >
-                  <div className="master-icon">
-                    <BriefcaseBusiness
-                      size={16}
-                    />
-                  </div>
+            <div className="manager-role-table">
 
-                  <div>
-                    <h3>
-                      {item.jobRoleName ||
-                        item.name ||
-                        "Unnamed Role"}
-                    </h3>
+              <div className="manager-role-head">
+                <span>JOB ROLE</span>
+                <span>DESCRIPTION</span>
+              </div>
 
-                    <p>
-                      {item.description ||
-                        "Organizational job role."}
-                    </p>
+              {filtered.map((item, index) => {
+                const roleName =
+                  item.jobRoleName ||
+                  item.name ||
+                  "Unnamed Role";
+
+                return (
+                  <div
+                    className="manager-role-row"
+                    key={
+                      item.jobRoleId ||
+                      item.id ||
+                      index
+                    }
+                  >
+                    <div className="manager-role-name">
+                      <div className="manager-role-icon">
+                        <BriefcaseBusiness size={16} />
+                      </div>
+
+                      <div>
+                        <strong>{roleName}</strong>
+
+                        {(item.jobRoleId || item.id) && (
+                          <small>
+                            Role ID:{" "}
+                            {item.jobRoleId || item.id}
+                          </small>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="manager-role-description">
+                      {item.description || "—"}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+
+        {/* ================= SEARCH EMPTY ================= */}
+        {!loading &&
+          !error &&
+          items.length > 0 &&
+          filtered.length === 0 && (
+            <div className="manager-empty-state">
+              <div className="manager-empty-icon">
+                <Search size={22} />
+              </div>
+
+              <h2>No matching job roles</h2>
+
+              <p>
+                Try a different job role or description.
+              </p>
             </div>
           )}
       </section>
     </ManagerPage>
   );
-}
+};
+
+export default JobRoles;

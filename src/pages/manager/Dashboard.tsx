@@ -17,9 +17,11 @@ import "@/styles/manager-dashboard.css";
 import "@/styles/manager-pages.css";
 
 import managerService from "@/services/managerService";
-import { TeamAnalytics } from "@/services/analyticsService";
 import ManagerLayout from "./ManagerLayout";
-
+import analyticsService, {
+  TeamAnalytics,
+  SkillGapHeatmap,
+} from "@/services/analyticsService";
 const pct = (value: any) => {
   const number = Number(value);
 
@@ -74,49 +76,92 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [team, setTeam] = useState<TeamAnalytics[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
+const [heatmapData, setHeatmapData] = useState<SkillGapHeatmap[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
+const [loading, setLoading] = useState(true);
+const [heatmapLoading, setHeatmapLoading] = useState(true);
 
-    const loadTeam = async () => {
-      try {
-        setLoading(true);
-        setError("");
+const [error, setError] = useState("");
+const [heatmapError, setHeatmapError] = useState("");
 
-        const data = await managerService.getTeamAnalytics();
+const [search, setSearch] = useState("");
+ useEffect(() => {
+  let mounted = true;
 
-        console.log("MANAGER DASHBOARD TEAM DATA:", data);
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setHeatmapLoading(true);
 
-        if (mounted) {
-          setTeam(Array.isArray(data) ? data : []);
-        }
-      } catch (err: any) {
-        console.error("MANAGER DASHBOARD ERROR:", err);
+      setError("");
+      setHeatmapError("");
 
-        if (mounted) {
-          setError(
-            err?.response?.data?.message ||
-              err?.response?.data?.error ||
-              err?.message ||
-              "Unable to load team analytics."
-          );
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+      const [teamData, heatmapResponse] =
+        await Promise.all([
+          managerService.getTeamAnalytics(),
+          analyticsService.getTeamSkillGapHeatmap(),
+        ]);
+
+      console.log(
+        "MANAGER DASHBOARD TEAM DATA:",
+        teamData
+      );
+
+      console.log(
+        "MANAGER DASHBOARD HEATMAP DATA:",
+        heatmapResponse
+      );
+
+      if (mounted) {
+        setTeam(
+          Array.isArray(teamData)
+            ? teamData
+            : []
+        );
+
+        setHeatmapData(
+          Array.isArray(heatmapResponse)
+            ? heatmapResponse
+            : []
+        );
       }
-    };
+    } catch (err: any) {
+      console.error(
+        "MANAGER DASHBOARD ANALYTICS ERROR:",
+        err
+      );
 
-    loadTeam();
+      if (mounted) {
+        setError(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Unable to load dashboard analytics."
+        );
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
+        setHeatmapError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Unable to load skill gap heatmap."
+        );
+
+        setTeam([]);
+        setHeatmapData([]);
+      }
+    } finally {
+      if (mounted) {
+        setLoading(false);
+        setHeatmapLoading(false);
+      }
+    }
+  };
+
+  loadDashboardData();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
 
   /*
    * ============================
@@ -706,6 +751,157 @@ const Dashboard: React.FC = () => {
             </button>
           </section>
         </div>
+
+                {/* =========================
+            TEAM KNOWLEDGE GAP HEATMAP
+        ========================= */}
+
+        <section className="dashboard-panel heatmap-panel">
+
+          <div className="panel-header">
+            <div>
+              <div className="panel-overline">
+                GAP ANALYSIS
+              </div>
+
+              <h2>
+                Team Knowledge Gap Heatmap
+              </h2>
+
+              <p>
+                Skill-wise knowledge gap across the team.
+              </p>
+            </div>
+          </div>
+
+          <div className="heatmap-legend">
+
+            <span>
+              <i className="expert" />
+              LOW GAP
+            </span>
+
+            <span>
+              <i className="learning" />
+              MODERATE GAP
+            </span>
+
+            <span>
+              <i className="critical" />
+              HIGH GAP
+            </span>
+
+          </div>
+
+          {heatmapLoading ? (
+
+            <div className="dashboard-loading">
+              <div className="dashboard-spinner" />
+
+              <span>
+                Loading skill gap heatmap...
+              </span>
+            </div>
+
+          ) : heatmapError ? (
+
+            <div className="dashboard-empty">
+
+              <AlertTriangle size={25} />
+
+              <strong>
+                Unable to load heatmap
+              </strong>
+
+              <p>
+                {heatmapError}
+              </p>
+
+            </div>
+
+          ) : heatmapData.length === 0 ? (
+
+            <div className="dashboard-empty">
+
+              <Activity size={25} />
+
+              <strong>
+                No skill gap data available
+              </strong>
+
+              <p>
+                Run gap analysis to generate skill gap data.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="skill-gap-heatmap">
+
+              {heatmapData.map((item) => {
+
+                const gap = Number(
+                  item.averageGapPercentage || 0
+                );
+
+                let level = "expert";
+
+                if (gap >= 50) {
+                  level = "critical";
+                } else if (gap >= 25) {
+                  level = "learning";
+                }
+
+                return (
+                  <div
+                    className="skill-gap-row"
+                    key={item.skillName}
+                  >
+
+                    <div className="skill-gap-name">
+
+                      <strong>
+                        {item.skillName}
+                      </strong>
+
+                      <small>
+                        {item.employeeCount} employee
+                        {item.employeeCount !== 1
+                          ? "s"
+                          : ""}
+                      </small>
+
+                    </div>
+
+                    <div className="skill-gap-track">
+
+                      <div
+                        className={`skill-gap-fill ${level}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(0, gap)
+                          )}%`,
+                        }}
+                      />
+
+                    </div>
+
+                    <div
+                      className={`skill-gap-value ${level}`}
+                    >
+                      {gap.toFixed(1)}%
+                    </div>
+
+                  </div>
+                );
+              })}
+
+            </div>
+          )}
+
+        </section>
 
         {/* =========================
             TEAM DIRECTORY
