@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS skill CASCADE;
 DROP TABLE IF EXISTS employee CASCADE;
 DROP TABLE IF EXISTS job_role CASCADE;
 DROP TABLE IF EXISTS department CASCADE;
+DROP TABLE IF EXISTS mentor_profile CASCADE;
 DROP TABLE IF EXISTS app_users CASCADE;
 
 -- -------------------------------------------------------------
@@ -60,6 +61,18 @@ CREATE TABLE employee (
     job_role_id BIGINT,
     experience VARCHAR(255),
     education VARCHAR(255),
+    bio TEXT
+);
+
+-- -------------------------------------------------------------
+-- Table: mentor_profile
+-- -------------------------------------------------------------
+CREATE TABLE mentor_profile (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    expertise VARCHAR(255),
+    experience_years INT,
+    availability VARCHAR(255),
     bio TEXT
 );
 
@@ -230,7 +243,14 @@ INSERT INTO app_users (id, full_name, email, password, role) VALUES
 (14, 'Security Dept Head', 'depthead.security@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'DEPARTMENT_HEAD'),
 (15, 'Product Dept Head', 'depthead.product@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'DEPARTMENT_HEAD'),
 (16, 'Michael Chen', 'mentor@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
-(17, 'L&D Admin', 'lnd.admin@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'LEARNING_DEVELOPMENT_ADMIN');
+(17, 'L&D Admin', 'lnd.admin@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'LEARNING_DEVELOPMENT_ADMIN'),
+(18, 'Alex Rivera', 'alex.rivera@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(19, 'Sarah Jenkins', 'sarah.jenkins@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(20, 'Ramesh Rao', 'ramesh.rao@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(21, 'Elena Vance', 'elena.vance@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(22, 'David Kim', 'david.kim@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(23, 'Sophia Martinez', 'sophia.martinez@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR'),
+(24, 'Liam O''Connor', 'liam.oconnor@kgap.com', '$2a$10$mFxEqIPzY1kC6ex5mRf.zunDKbZyU2EnEnGZjdT7x1qYPOZ.F5Km6', 'MENTOR');
 
 INSERT INTO employee (id, first_name, last_name, email, phone_number, department, role, job_role_id, experience, education, bio) VALUES
 (1, 'System', 'Admin', 'admin@kgap.com', '+91-9876543213', 'Software Engineering', 'ADMIN', 1, '10+ Years Systems Admin', 'B.S. IT', 'Platform Administrator overseeing user roles and system catalogs.'),
@@ -249,10 +269,31 @@ INSERT INTO employee (id, first_name, last_name, email, phone_number, department
 (14, 'Security', 'Dept Head', 'depthead.security@kgap.com', '+91-9876543305', 'Cybersecurity', 'DEPARTMENT_HEAD', 8, '9+ Years Security Leadership', 'M.S. Cybersecurity', 'Department Head for Cybersecurity.'),
 (15, 'Product', 'Dept Head', 'depthead.product@kgap.com', '+91-9876543306', 'Product', 'DEPARTMENT_HEAD', 5, '8+ Years Product Leadership', 'MBA', 'Department Head for Product.'),
 (16, 'Michael', 'Chen', 'mentor@kgap.com', '+1-555-0151', 'Backend Engineering', 'MENTOR', 1, '12+ Years Mentoring', 'M.S. CS', 'Senior Mentor providing backend engineering guidance.'),
-(17, 'L&D', 'Admin', 'lnd.admin@kgap.com', '+1-555-0152', NULL, 'LEARNING_DEVELOPMENT_ADMIN', 6, '7 Years L&D', 'MBA Learning Design', 'Org-wide Learning & Development administrator.');
+(17, 'L&D', 'Admin', 'lnd.admin@kgap.com', '+1-555-0152', NULL, 'LEARNING_DEVELOPMENT_ADMIN', 6, '7 Years L&D', 'MBA Learning Design', 'Org-wide Learning & Development administrator.'),
+(18, 'Alex', 'Rivera', 'alex.rivera@kgap.com', '+1-555-0153', 'Engineering', 'MENTOR', 1, '15 Years', 'B.S. CS', 'Java performance tuning specialist.'),
+(19, 'Sarah', 'Jenkins', 'sarah.jenkins@kgap.com', '+1-555-0154', 'Cloud', 'MENTOR', 7, '8 Years', 'M.S. Cloud', 'Cloud native infrastructure expert.'),
+(20, 'Ramesh', 'Rao', 'ramesh.rao@kgap.com', '+91-9876543401', 'Engineering', 'MENTOR', 1, '5 Years', 'B.Tech', 'Strong background in enterprise Java.'),
+(21, 'Elena', 'Vance', 'elena.vance@kgap.com', '+1-555-0155', 'Security', 'MENTOR', 8, '10 Years', 'Ph.D. Security', 'Expert in application security.'),
+(22, 'David', 'Kim', 'david.kim@kgap.com', '+1-555-0156', 'Mobile', 'MENTOR', 2, '7 Years', 'B.S. Mobile', 'Android development expert.'),
+(23, 'Sophia', 'Martinez', 'sophia.martinez@kgap.com', '+1-555-0157', 'Frontend', 'MENTOR', 2, '6 Years', 'M.S. UI', 'Modern web development specialist.'),
+(24, 'Liam', 'O''Connor', 'liam.oconnor@kgap.com', '+1-555-0158', 'Engineering', 'MENTOR', 1, '9 Years', 'B.S. DB', 'DB performance and scaling expert.');
 
 
--- 6. Employee Skill Ratings
+-- 6. Mentor Profiles
+INSERT INTO mentor_profile (id, employee_id, expertise, experience_years, availability, bio) VALUES
+(1, 4, 'Java', 3, 'Available', 'Strong proficiency in Java and suitable for the identified skill gap.'),
+(2, 6, 'Java', 5, 'Available', 'Expert knowledge in high-performance Java systems.'),
+(3, 16, 'System Design', 12, 'Busy', 'Expert in scalable architectures.'),
+(4, 18, 'Java', 15, 'Available', 'Java performance tuning specialist.'),
+(5, 19, 'Kubernetes', 8, 'Available', 'Cloud native infrastructure expert.'),
+(6, 20, 'Java & Spring Boot', 5, 'Available', 'Strong background in enterprise Java.'),
+(7, 21, 'Cybersecurity', 10, 'Available', 'Expert in application security.'),
+(8, 22, 'Kotlin', 7, 'Available', 'Android development expert.'),
+(9, 23, 'React', 6, 'Busy', 'Modern web development specialist.'),
+(10, 24, 'PostgreSQL', 9, 'Available', 'DB performance and scaling expert.');
+
+
+-- 7. Employee Skill Ratings
 INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
 (1, 1, 'EXPERT'), (1, 2, 'EXPERT'), (1, 5, 'EXPERT'),
 (2, 1, 'EXPERT'), (2, 2, 'ADVANCED'), (2, 5, 'ADVANCED'), (2, 7, 'EXPERT'),
@@ -265,7 +306,7 @@ INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
 (9, 9, 'INTERMEDIATE'), (9, 8, 'BEGINNER'), (9, 7, 'BEGINNER'), (9, 12, 'INTERMEDIATE');
 
 
--- 7. Skill Gaps Matrix
+-- 8. Skill Gaps Matrix
 INSERT INTO skill_gaps (employee_id, job_role_id, skill_id, current_proficiency, required_proficiency, gap_score, gap_level, analyzed_at) VALUES
 (4, 1, 1, 'INTERMEDIATE', 'EXPERT', 2, 'MEDIUM', CURRENT_TIMESTAMP),
 (4, 1, 2, 'BEGINNER', 'ADVANCED', 2, 'HIGH', CURRENT_TIMESTAMP),
@@ -292,7 +333,7 @@ INSERT INTO skill_gaps (employee_id, job_role_id, skill_id, current_proficiency,
 (9, 5, 7, 'BEGINNER', 'INTERMEDIATE', 1, 'LOW', CURRENT_TIMESTAMP);
 
 
--- 8. AI Recommendations Initial Seed Data
+-- 9. AI Recommendations Initial Seed Data
 INSERT INTO ai_recommendations (employee_id, skill_id, gap_level, recommendation, source, created_at) VALUES
 (9, 8, 'HIGH', 'Focus on Technical Documentation & Writing. Step 1: Complete Technical Communication Course. Step 2: Practice drafting software specification docs.', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP),
 (4, 2, 'HIGH', 'Master PostgreSQL & Database Tuning. Step 1: Learn PostgreSQL indexing strategies. Step 2: Practice writing query execution plans (EXPLAIN ANALYZE).', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP),
@@ -300,23 +341,23 @@ INSERT INTO ai_recommendations (employee_id, skill_id, gap_level, recommendation
 (7, 6, 'HIGH', 'Master Kubernetes Orchestration. Step 1: Complete CKAD path. Step 2: Practice Helm deployments.', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP);
 
 
--- 9. External Courses Initial Seed Data
+-- 10. External Courses Initial Seed Data
 INSERT INTO external_courses (id, title, provider, description, skill_name, level, duration_hours, course_link) VALUES
-(1, 'Mastering Java 21 & Spring Boot Microservices', 'Udemy Academy', 'Comprehensive guide to enterprise microservices, Spring Security, and Hibernate JPA.', 'Java & Spring Boot', 'EXPERT', 40, 'https://udemy.com/course/spring-boot-masterclass'),
-(2, 'PostgreSQL Administration & Query Optimization', 'Coursera', 'Deep dive into relational database schema design, B-tree indexes, and SQL performance tuning.', 'PostgreSQL Database Management', 'ADVANCED', 25, 'https://coursera.org/learn/postgresql-admin'),
-(3, 'Modern React 18, Redux & TypeScript', 'Pluralsight', 'Single Page Application development using modern React components, Hooks, and Redux Toolkit.', 'React & Modern Frontend', 'EXPERT', 35, 'https://pluralsight.com/courses/react-redux'),
-(4, 'LLM Architecture & HuggingFace Fine-Tuning', 'DeepLearning.AI', 'Build AI/ML pipelines, implement HuggingFace Llama inference, and fine-tune models.', 'AI/ML & LLM Integration', 'EXPERT', 30, 'https://deeplearning.ai/courses/llm-fine-tuning'),
-(5, 'Docker & Container Mastery for Developers', 'Udemy Academy', 'Package multi-tier applications with Docker container manifests and multi-stage builds.', 'Docker & Containerization', 'INTERMEDIATE', 15, 'https://udemy.com/course/docker-mastery'),
-(6, 'Certified Kubernetes Application Developer (CKAD)', 'Linux Foundation', 'Hands-on Kubernetes cluster orchestration, deployments, services, and cloud architecture.', 'Kubernetes & Cloud Architecture', 'EXPERT', 50, 'https://training.linuxfoundation.org/ckad'),
-(7, 'RESTful API Design & OpenAPI 3.0 Standard', 'LinkedIn Learning', 'Standardized REST API interface design, HTTP status codes, and API security practices.', 'REST API Design', 'EXPERT', 12, 'https://linkedin.com/learning/rest-api-design'),
-(8, 'Technical Communication & Architecture Specs', 'Google Tech Writing', 'Creating technical architecture diagrams, API docs, and user-facing reports.', 'Technical Documentation & Writing', 'ADVANCED', 10, 'https://developers.google.com/tech-writing'),
-(9, 'Agile Product Management & Roadmap Execution', 'Product School', 'Agile milestone tracking, product vision scoping, and strategic cross-team planning.', 'Product Lifecycle Management', 'EXPERT', 20, 'https://productschool.com/agile-pm'),
-(10, 'Enterprise Cyber Risk Assessment & Vulnerability Audit', 'SANS Institute', 'Threat modeling, security compliance auditing, IAM access controls, and vulnerability scanning.', 'Cyber Risk Assessment', 'EXPERT', 45, 'https://sans.org/cyber-risk'),
-(11, 'Building BigQuery Data Pipelines & Data Lakes', 'Google Cloud Training', 'Building automated ETL data pipelines, BigQuery analytics, and streaming data feeds.', 'Data Pipelines & BigQuery', 'ADVANCED', 28, 'https://cloud.google.com/training/bigquery'),
-(12, 'Figma UI/UX Design & Component Design Systems', 'Interaction Design Foundation', 'Wireframing, modern design systems, user journey mapping, and interactive prototypes.', 'UI/UX Design & Prototyping', 'ADVANCED', 18, 'https://interaction-design.org/figma-design');
+(1, 'Mastering Java 21 & Spring Boot Microservices', 'Udemy Academy', 'Comprehensive guide to enterprise microservices, Spring Security, and Hibernate JPA.', 'Java & Spring Boot', 'EXPERT', 40, 'https://www.udemy.com/course/spring-boot-masterclass/'),
+(2, 'PostgreSQL Administration & Query Optimization', 'Coursera', 'Deep dive into relational database schema design, B-tree indexes, and SQL performance tuning.', 'PostgreSQL Database Management', 'ADVANCED', 25, 'https://www.coursera.org/specializations/postgresql-for-everybody'),
+(3, 'Modern React 18, Redux & TypeScript', 'Pluralsight', 'Single Page Application development using modern React components, Hooks, and Redux Toolkit.', 'React & Modern Frontend', 'EXPERT', 35, 'https://www.pluralsight.com/courses/react-js-getting-started'),
+(4, 'LLM Architecture & HuggingFace Fine-Tuning', 'DeepLearning.AI', 'Build AI/ML pipelines, implement HuggingFace Llama inference, and fine-tune models.', 'AI/ML & LLM Integration', 'EXPERT', 30, 'https://www.deeplearning.ai/courses/generative-ai-with-llms/'),
+(5, 'Docker & Container Mastery for Developers', 'Udemy Academy', 'Package multi-tier applications with Docker container manifests and multi-stage builds.', 'Docker & Containerization', 'INTERMEDIATE', 15, 'https://www.udemy.com/course/docker-mastery/'),
+(6, 'Certified Kubernetes Application Developer (CKAD)', 'Linux Foundation', 'Hands-on Kubernetes cluster orchestration, deployments, services, and cloud architecture.', 'Kubernetes & Cloud Architecture', 'EXPERT', 50, 'https://training.linuxfoundation.org/training/certified-kubernetes-application-developer-ckad/'),
+(7, 'RESTful API Design & OpenAPI 3.0 Standard', 'LinkedIn Learning', 'Standardized REST API interface design, HTTP status codes, and API security practices.', 'REST API Design', 'EXPERT', 12, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4'),
+(8, 'Technical Documentation & Writing', 'Google Tech Writing', 'Creating technical architecture diagrams, API docs, and user-facing reports.', 'Technical Documentation & Writing', 'ADVANCED', 10, 'https://developers.google.com/tech-writing'),
+(9, 'Agile Product Management & Roadmap Execution', 'Product School', 'Agile milestone tracking, product vision scoping, and strategic cross-team planning.', 'Product Lifecycle Management', 'EXPERT', 20, 'https://productschool.com/'),
+(10, 'Enterprise Cyber Risk Assessment & Vulnerability Audit', 'SANS Institute', 'Threat modeling, security compliance auditing, IAM access controls, and vulnerability scanning.', 'Cyber Risk Assessment', 'EXPERT', 45, 'https://www.sans.org/cyber-security-courses/security-strategic-planning-policy-leadership/'),
+(11, 'Building BigQuery Data Pipelines & Data Lakes', 'Google Cloud Training', 'Building automated ETL data pipelines, BigQuery analytics, and streaming data feeds.', 'Data Pipelines & BigQuery', 'ADVANCED', 28, 'https://www.cloudskillsboost.google/course_templates/3'),
+(12, 'Figma UI/UX Design & Component Design Systems', 'Interaction Design Foundation', 'Wireframing, modern design systems, user journey mapping, and interactive prototypes.', 'UI/UX Design & Prototyping', 'ADVANCED', 18, 'https://www.interaction-design.org/courses/design-systems-for-figma');
 
 
--- 10. Reset Sequences to match max inserted IDs
+-- 11. Reset Sequences to match max inserted IDs
 SELECT setval(pg_get_serial_sequence('app_users', 'id'), COALESCE(MAX(id), 1)) FROM app_users;
 SELECT setval(pg_get_serial_sequence('department', 'id'), COALESCE(MAX(id), 1)) FROM department;
 SELECT setval(pg_get_serial_sequence('job_role', 'id'), COALESCE(MAX(id), 1)) FROM job_role;
@@ -328,3 +369,4 @@ SELECT setval(pg_get_serial_sequence('skill_gaps', 'id'), COALESCE(MAX(id), 1)) 
 SELECT setval(pg_get_serial_sequence('ai_recommendations', 'id'), COALESCE(MAX(id), 1)) FROM ai_recommendations;
 SELECT setval(pg_get_serial_sequence('external_courses', 'id'), COALESCE(MAX(id), 1)) FROM external_courses;
 SELECT setval(pg_get_serial_sequence('learning_paths', 'id'), COALESCE(MAX(id), 1)) FROM learning_paths;
+SELECT setval(pg_get_serial_sequence('mentor_profile', 'id'), COALESCE(MAX(id), 1)) FROM mentor_profile;

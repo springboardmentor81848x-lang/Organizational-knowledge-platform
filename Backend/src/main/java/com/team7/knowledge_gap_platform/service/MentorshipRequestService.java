@@ -12,14 +12,29 @@ import com.team7.knowledge_gap_platform.repository.MentorshipRequestRepository;
 public class MentorshipRequestService {
 
     private final MentorshipRequestRepository repository;
+    private final com.team7.knowledge_gap_platform.repository.EmployeeRepository employeeRepository;
 
     public MentorshipRequestService(
-            MentorshipRequestRepository repository) {
+            MentorshipRequestRepository repository,
+            com.team7.knowledge_gap_platform.repository.EmployeeRepository employeeRepository) {
         this.repository = repository;
+        this.employeeRepository = employeeRepository;
     }
 
     public MentorshipRequest sendRequest(
             MentorshipRequest request) {
+
+        if (request == null || request.getMentorId() == null) {
+            throw new RuntimeException("Invalid mentor request.");
+        }
+
+        com.team7.knowledge_gap_platform.entity.Employee mentor = employeeRepository.findById(request.getMentorId())
+                .orElseThrow(() -> new RuntimeException("Target mentor employee record not found."));
+
+        String role = mentor.getRole();
+        if (!"EMPLOYEE".equalsIgnoreCase(role) && !"MENTOR".equalsIgnoreCase(role)) {
+            throw new RuntimeException("User with role " + role + " is not eligible to receive mentorship requests.");
+        }
 
         request.setStatus("PENDING");
         request.setCreatedAt(LocalDateTime.now());

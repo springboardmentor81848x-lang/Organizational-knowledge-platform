@@ -10,4 +10,5 @@ public interface MentorProfileRepository
         extends JpaRepository<MentorProfile, Long> {
 
     List<MentorProfile> findByExpertiseContainingIgnoreCase(String expertise);
+    java.util.Optional<MentorProfile> findByEmployeeId(Long employeeId);
 }

@@ -27,33 +27,43 @@ public class AssessmentService {
     private final AssessmentResultRepository assessmentResultRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
 
+    // NEW
+    private final SkillGapService skillGapService;
+
     public AssessmentService(
             AssessmentRepository assessmentRepository,
             AssessmentQuestionRepository assessmentQuestionRepository,
             AssessmentResultRepository assessmentResultRepository,
-            EmployeeSkillRepository employeeSkillRepository) {
+            EmployeeSkillRepository employeeSkillRepository,
+            SkillGapService skillGapService) {
 
         this.assessmentRepository = assessmentRepository;
         this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.assessmentResultRepository = assessmentResultRepository;
         this.employeeSkillRepository = employeeSkillRepository;
+        this.skillGapService = skillGapService;
     }
 
     // =========================================================
     // CREATE ASSESSMENT
     // =========================================================
 
-    public Assessment createAssessment(Assessment assessment) {
-        return assessmentRepository.save(assessment);
+    public Assessment createAssessment(
+            Assessment assessment) {
+
+        return assessmentRepository
+                .save(assessment);
     }
 
     // =========================================================
     // GET ASSESSMENT BY SKILL
     // =========================================================
 
-    public Assessment getAssessmentBySkillId(Long skillId) {
+    public Assessment getAssessmentBySkillId(
+            Long skillId) {
 
-        return assessmentRepository.findBySkillId(skillId)
+        return assessmentRepository
+                .findBySkillId(skillId)
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Assessment not found for skill: "
@@ -62,7 +72,6 @@ public class AssessmentService {
 
     // =========================================================
     // GET ASSESSMENT BY SKILL + TYPE
-    // SELF / PEER / MANAGER
     // =========================================================
 
     public Assessment getAssessmentBySkillIdAndType(
@@ -73,12 +82,13 @@ public class AssessmentService {
                 .findBySkillIdAndAssessmentType(
                         skillId,
                         assessmentType.toUpperCase())
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Assessment not found for skill "
-                                        + skillId
-                                        + " and type "
-                                        + assessmentType));
+                .orElseGet(() ->
+                        assessmentRepository
+                                .findBySkillId(skillId)
+                                .orElseThrow(() ->
+                                        new RuntimeException(
+                                                "Assessment not found for skill "
+                                                        + skillId)));
     }
 
     // =========================================================
@@ -88,7 +98,8 @@ public class AssessmentService {
     public AssessmentQuestion addQuestion(
             AssessmentQuestion question) {
 
-        return assessmentQuestionRepository.save(question);
+        return assessmentQuestionRepository
+                .save(question);
     }
 
     // =========================================================
@@ -99,7 +110,8 @@ public class AssessmentService {
             Long assessmentId) {
 
         return assessmentQuestionRepository
-                .findByAssessmentId(assessmentId);
+                .findByAssessmentId(
+                        assessmentId);
     }
 
     // =========================================================
@@ -119,7 +131,8 @@ public class AssessmentService {
 
         List<AssessmentQuestion> questions =
                 assessmentQuestionRepository
-                        .findByAssessmentId(assessmentId);
+                        .findByAssessmentId(
+                                assessmentId);
 
         if (questions.isEmpty()) {
             throw new RuntimeException(
@@ -141,13 +154,12 @@ public class AssessmentService {
                 continue;
             }
 
-            // Make sure this question belongs to this assessment
             if (!question.getAssessmentId()
                     .equals(assessmentId)) {
+
                 continue;
             }
 
-            // Compare selected answer with correct answer
             if (question.getCorrectAnswer() != null
                     && answer.getSelectedAnswer() != null
                     && question.getCorrectAnswer()
@@ -158,14 +170,17 @@ public class AssessmentService {
             }
         }
 
-        int totalQuestions = questions.size();
+        int totalQuestions =
+                questions.size();
 
         double scorePercentage =
                 ((double) correctAnswers
-                        / totalQuestions) * 100.0;
+                        / totalQuestions)
+                        * 100.0;
 
         String proficiencyLevel =
-                getProficiencyLevel(scorePercentage);
+                getProficiencyLevel(
+                        scorePercentage);
 
         System.out.println(
                 "DEBUG: Assessment Complete. "
@@ -183,13 +198,15 @@ public class AssessmentService {
         AssessmentResult result =
                 new AssessmentResult();
 
-        result.setAssessmentId(assessmentId);
+        result.setAssessmentId(
+                assessmentId);
+
         result.setEmployeeId(
                 request.getEmployeeId());
+
         result.setSkillId(
                 assessment.getSkillId());
 
-        // Save SELF / PEER / MANAGER
         result.setAssessmentType(
                 assessment.getAssessmentType());
 
@@ -208,19 +225,49 @@ public class AssessmentService {
         result.setCompletedAt(
                 LocalDateTime.now());
 
-        assessmentResultRepository.save(result);
+        assessmentResultRepository
+                .save(result);
 
         System.out.println(
                 "DEBUG: Saved assessment type = "
                         + assessment.getAssessmentType());
 
         // =====================================================
-        // UPDATE EMPLOYEE SKILL USING COMBINED RESULT
+        // UPDATE COMBINED EMPLOYEE PROFICIENCY
         // =====================================================
 
         updateEmployeeSkillFromCombinedAssessments(
                 request.getEmployeeId(),
                 assessment.getSkillId());
+
+        // =====================================================
+        // NEW: AUTOMATIC SKILL GAP RECALCULATION
+        // =====================================================
+
+        try {
+
+            skillGapService
+                    .analyzeAndSaveGapsByEmployee(
+                            request.getEmployeeId());
+
+            System.out.println(
+                    "DEBUG: Skill gaps recalculated automatically "
+                            + "for employee "
+                            + request.getEmployeeId());
+
+        } catch (RuntimeException e) {
+
+            /*
+             * Do not fail assessment submission if employee
+             * currently has no job role / competency setup.
+             *
+             * Assessment result and proficiency update remain saved.
+             */
+
+            System.out.println(
+                    "DEBUG: Skill gap recalculation skipped: "
+                            + e.getMessage());
+        }
 
         // =====================================================
         // BUILD RESPONSE
@@ -254,6 +301,20 @@ public class AssessmentService {
                 proficiencyLevel);
 
         return response;
+    }
+
+    // =========================================================
+    // HISTORICAL RESULTS
+    // =========================================================
+
+    public List<AssessmentResult> getHistoricalResults(
+            Long employeeId,
+            Long skillId) {
+
+        return assessmentResultRepository
+                .findByEmployeeIdAndSkillId(
+                        employeeId,
+                        skillId);
     }
 
     // =========================================================
@@ -327,7 +388,8 @@ public class AssessmentService {
         double combinedScore =
                 scoreCount == 0
                         ? 0.0
-                        : totalScore / scoreCount;
+                        : totalScore
+                        / scoreCount;
 
         String combinedProficiencyLevel =
                 getProficiencyLevel(
@@ -361,7 +423,7 @@ public class AssessmentService {
     }
 
     // =========================================================
-    // UPDATE EMPLOYEE SKILL FROM SELF + PEER + MANAGER
+    // UPDATE EMPLOYEE SKILL FROM ASSESSMENTS
     // =========================================================
 
     private void updateEmployeeSkillFromCombinedAssessments(
@@ -389,34 +451,46 @@ public class AssessmentService {
                                 skillId,
                                 "MANAGER");
 
-        // Wait until all 3 assessments exist
-        if (selfResult.isEmpty()
-                || peerResult.isEmpty()
-                || managerResult.isEmpty()) {
+        double totalScore = 0.0;
+        int count = 0;
 
-            System.out.println(
-                    "DEBUG: Waiting for SELF + PEER + MANAGER");
+        if (selfResult.isPresent()) {
 
+            totalScore +=
+                    selfResult
+                            .get()
+                            .getScorePercentage();
+
+            count++;
+        }
+
+        if (peerResult.isPresent()) {
+
+            totalScore +=
+                    peerResult
+                            .get()
+                            .getScorePercentage();
+
+            count++;
+        }
+
+        if (managerResult.isPresent()) {
+
+            totalScore +=
+                    managerResult
+                            .get()
+                            .getScorePercentage();
+
+            count++;
+        }
+
+        if (count == 0) {
             return;
         }
 
-        double selfScore =
-                selfResult.get()
-                        .getScorePercentage();
-
-        double peerScore =
-                peerResult.get()
-                        .getScorePercentage();
-
-        double managerScore =
-                managerResult.get()
-                        .getScorePercentage();
-
         double combinedScore =
-                (selfScore
-                        + peerScore
-                        + managerScore)
-                        / 3.0;
+                totalScore
+                        / (double) count;
 
         String combinedProficiencyLevel =
                 getProficiencyLevel(
@@ -472,8 +546,8 @@ public class AssessmentService {
         employeeSkill.setProficiencyScore(
                 proficiencyScore);
 
-        employeeSkillRepository.save(
-                employeeSkill);
+        employeeSkillRepository
+                .save(employeeSkill);
     }
 
     // =========================================================

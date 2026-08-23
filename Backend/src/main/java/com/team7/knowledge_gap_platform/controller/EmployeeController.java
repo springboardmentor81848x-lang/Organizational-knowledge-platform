@@ -36,13 +36,13 @@ public class EmployeeController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MENTOR', 'ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
     public List<Employee> getAllEmployees() {
         return employeeService.getAllEmployees();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_MENTOR', 'ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_DEPARTMENT_HEAD')")
     public Optional<Employee> getEmployeeById(@PathVariable Long id) {
         return employeeService.getEmployeeById(id);
     }

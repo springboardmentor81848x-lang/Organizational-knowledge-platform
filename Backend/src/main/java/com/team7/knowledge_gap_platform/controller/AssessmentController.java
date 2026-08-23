@@ -15,6 +15,7 @@ import com.team7.knowledge_gap_platform.dto.AssessmentResultResponse;
 import com.team7.knowledge_gap_platform.dto.AssessmentSubmitRequest;
 import com.team7.knowledge_gap_platform.entity.Assessment;
 import com.team7.knowledge_gap_platform.entity.AssessmentQuestion;
+import com.team7.knowledge_gap_platform.entity.AssessmentResult;
 import com.team7.knowledge_gap_platform.service.AssessmentService;
 
 @RestController
@@ -98,11 +99,27 @@ public class AssessmentController {
                                 skillId,
                                 assessmentType);
 
-        return ResponseEntity.ok(
+        List<AssessmentQuestion> questions =
                 assessmentService
                         .getQuestions(
-                                assessment.getId())
-        );
+                                assessment.getId());
+
+        if (questions.isEmpty()) {
+
+            Assessment defaultAssessment =
+                    assessmentService
+                            .getAssessmentBySkillId(
+                                    skillId);
+
+            questions =
+                    assessmentService
+                            .getQuestions(
+                                    defaultAssessment
+                                            .getId());
+        }
+
+        return ResponseEntity.ok(
+                questions);
     }
 
     @PostMapping("/questions")
@@ -143,9 +160,28 @@ public class AssessmentController {
         );
     }
 
-    // ========================================
-    // SELF + PEER + MANAGER comparison endpoint
-    // ========================================
+    // =========================================================
+    // HISTORICAL ASSESSMENT RESULTS
+    // =========================================================
+
+    @GetMapping(
+            "/results/employee/{employeeId}/skill/{skillId}")
+    public ResponseEntity<List<AssessmentResult>>
+    getHistoricalResults(
+            @PathVariable Long employeeId,
+            @PathVariable Long skillId) {
+
+        return ResponseEntity.ok(
+                assessmentService
+                        .getHistoricalResults(
+                                employeeId,
+                                skillId)
+        );
+    }
+
+    // =========================================================
+    // SELF + PEER + MANAGER COMPARISON
+    // =========================================================
 
     @GetMapping(
             "/results/employee/{employeeId}/skill/{skillId}/comparison")

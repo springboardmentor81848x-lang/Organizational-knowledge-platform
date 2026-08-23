@@ -12,7 +12,11 @@ import com.team7.knowledge_gap_platform.entity.EmployeeSkill;
 public interface EmployeeSkillRepository
         extends JpaRepository<EmployeeSkill, Long> {
 
-    List<EmployeeSkill> findByEmployeeId(Long employeeId);
+    List<EmployeeSkill> findByEmployeeId(
+            Long employeeId);
 
-    Optional<EmployeeSkill> findByEmployeeIdAndSkillId(Long employeeId, Long skillId);
+    Optional<EmployeeSkill>
+    findByEmployeeIdAndSkillId(
+            Long employeeId,
+            Long skillId);
 }

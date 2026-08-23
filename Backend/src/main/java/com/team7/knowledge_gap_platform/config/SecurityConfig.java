@@ -30,12 +30,16 @@ public class SecurityConfig {
             CustomUserDetailsService customUserDetailsService,
             JwtAuthenticationFilter jwtAuthenticationFilter) {
 
-        this.customUserDetailsService = customUserDetailsService;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.customUserDetailsService =
+                customUserDetailsService;
+
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 
@@ -43,42 +47,124 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
 
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(customUserDetailsService);
+                new DaoAuthenticationProvider(
+                        customUserDetailsService);
 
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setPasswordEncoder(
+                passwordEncoder());
 
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration) throws Exception {
+            AuthenticationConfiguration configuration)
+            throws Exception {
 
-        return configuration.getAuthenticationManager();
+        return configuration
+                .getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http)
+            throws Exception {
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()))
+
+                .csrf(csrf ->
+                        csrf.disable())
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
 
-                .authenticationProvider(authenticationProvider())
+                .authenticationProvider(
+                        authenticationProvider())
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
+                        // =====================================================
+                        // PUBLIC APIs
+                        // =====================================================
+
                         .requestMatchers(
                                 "/auth/**"
-                        ).permitAll()
+                        )
+                        .permitAll()
 
-                        // Employee + Manager + HR + Admin + DepartmentHead + Mentor: Core Skill Access
+                        // =====================================================
+                        // EMPLOYEE REPORTS
+                        // JSON + PDF + EXCEL
+                        // =====================================================
+
+                        .requestMatchers(
+                                "/reports/employee/**"
+                        )
+                        .hasAnyAuthority(
+                                "ROLE_EMPLOYEE",
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD",
+                                "ROLE_MENTOR",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
+
+                        // =====================================================
+                        // DEPARTMENT + ORGANIZATION REPORTS
+                        // =====================================================
+
+                        .requestMatchers(
+                                "/reports/department/**",
+                                "/reports/organization"
+                        )
+                        .hasAnyAuthority(
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
+
+                        // =====================================================
+                        // ADMINISTRATIVE MENTOR ASSIGNMENT
+                        // =====================================================
+
+                        .requestMatchers(
+                                "/mentor-assignments/**"
+                        )
+                        .hasAnyAuthority(
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
+
+                        // =====================================================
+                        // EMPLOYEE ANALYTICS
+                        // =====================================================
+
+                        .requestMatchers(
+                                "/analytics/employee/**"
+                        )
+                        .hasAnyAuthority(
+                                "ROLE_EMPLOYEE",
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD",
+                                "ROLE_MENTOR",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
+
+                        // =====================================================
+                        // CORE EMPLOYEE ACCESS
+                        // =====================================================
+
                         .requestMatchers(
                                 "/skill-gaps/employee/**",
                                 "/heatmap/employee/**",
@@ -96,11 +182,41 @@ public class SecurityConfig {
                                 "/knowledge-session-registrations/**",
                                 "/knowledge-session-feedback/**",
                                 "/training-enrollments/**",
-                                "/training-milestones/**"
+                                "/training-milestones/**",
+                                "/course-recommendations/employee/**",
+                                "/external-courses/**",
+                                "/employees/**",
+                                "/notifications/**"
                         )
-                        .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DEPARTMENT_HEAD", "ROLE_MENTOR", "ROLE_LEARNING_DEVELOPMENT_ADMIN")
+                        .hasAnyAuthority(
+                                "ROLE_EMPLOYEE",
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD",
+                                "ROLE_MENTOR",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
 
-                        // Organizational access: Manager/HR/Admin/DepartmentHead
+                        // =====================================================
+                        // ORGANIZATIONAL ANALYTICS
+                        // =====================================================
+
+                        .requestMatchers(
+                                "/analytics/department/**",
+                                "/analytics/organization"
+                        )
+                        .hasAnyAuthority(
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD"
+                        )
+
+                        // =====================================================
+                        // ORGANIZATIONAL ACCESS
+                        // =====================================================
+
                         .requestMatchers(
                                 "/knowledge-gaps/**",
                                 "/skill-gaps/**",
@@ -109,25 +225,46 @@ public class SecurityConfig {
                                 "/recommendations/**",
                                 "/learning-paths/**"
                         )
-                        .hasAnyAuthority("ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DEPARTMENT_HEAD")
+                        .hasAnyAuthority(
+                                "ROLE_MANAGER",
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_DEPARTMENT_HEAD"
+                        )
 
-                        // L&D Admin specific: Catalog management
+                        // =====================================================
+                        // L&D ADMIN / TRAINING CATALOG
+                        // =====================================================
+
                         .requestMatchers(
                                 "/external-courses/**",
                                 "/training-programs/**"
                         )
-                        .hasAnyAuthority("ROLE_HR", "ROLE_ADMIN", "ROLE_LEARNING_DEVELOPMENT_ADMIN")
+                        .hasAnyAuthority(
+                                "ROLE_HR",
+                                "ROLE_ADMIN",
+                                "ROLE_LEARNING_DEVELOPMENT_ADMIN"
+                        )
 
-                        // System Admin specific: User/Permission management
+                        // =====================================================
+                        // SYSTEM ADMIN
+                        // =====================================================
+
                         .requestMatchers(
                                 "/users/**",
                                 "/permissions/**",
                                 "/system-settings/**"
                         )
-                        .hasAuthority("ROLE_SYSTEM_ADMIN")
+                        .hasAuthority(
+                                "ROLE_SYSTEM_ADMIN"
+                        )
 
-                        // Everything else requires authentication
-                        .anyRequest().authenticated()
+                        // =====================================================
+                        // EVERYTHING ELSE
+                        // =====================================================
+
+                        .anyRequest()
+                        .authenticated()
                 )
 
                 .addFilterBefore(
@@ -140,13 +277,43 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
-        configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+
+        CorsConfiguration configuration =
+                new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                Arrays.asList("*"));
+
+        configuration.setAllowedMethods(
+                Arrays.asList(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                ));
+
+        configuration.setAllowedHeaders(
+                Arrays.asList(
+                        "authorization",
+                        "content-type",
+                        "x-auth-token"
+                ));
+
+        configuration.setExposedHeaders(
+                Arrays.asList(
+                        "x-auth-token",
+                        "content-disposition"
+                ));
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration);
+
         return source;
     }
 }
