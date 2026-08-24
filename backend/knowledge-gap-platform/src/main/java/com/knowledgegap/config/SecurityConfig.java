@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -28,15 +27,27 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JWTAuthenticationFilter jwtAuthenticationFilter) {
+<<<<<<< HEAD
 
         this.jwtAuthenticationFilter =
                 jwtAuthenticationFilter;
+=======
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+>>>>>>> origin/team1-krishnapriya
     }
+
+    // =========================================================
+    // PASSWORD ENCODER
+    // =========================================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    // =========================================================
+    // CORS CONFIGURATION
+    // =========================================================
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -65,6 +76,27 @@ public class SecurityConfig {
                 List.of("*")
         );
 
+<<<<<<< HEAD
+=======
+        configuration.setAllowedOrigins(
+                List.of("http://localhost:5173")
+        );
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
+
+>>>>>>> origin/team1-krishnapriya
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
@@ -78,8 +110,13 @@ public class SecurityConfig {
         return source;
     }
 
+    // =========================================================
+    // SECURITY FILTER CHAIN
+    // =========================================================
+
     @Bean
     public SecurityFilterChain securityFilterChain(
+<<<<<<< HEAD
             HttpSecurity http)
             throws Exception {
 
@@ -193,11 +230,121 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated()
                 )
+=======
+            HttpSecurity http) throws Exception {
 
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                );
+        http
+            // CORS
+            .cors(cors -> cors.configurationSource(
+                    corsConfigurationSource()
+            ))
+
+            // CSRF disabled because JWT is being used
+            .csrf(AbstractHttpConfigurer::disable)
+
+            // Stateless JWT authentication
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(
+                            SessionCreationPolicy.STATELESS
+                    )
+            )
+
+            // =================================================
+            // AUTHORIZATION
+            // =================================================
+
+            .authorizeHttpRequests(auth -> auth
+
+                // ---------------------------------------------
+                // CORS preflight
+                // ---------------------------------------------
+                .requestMatchers(
+                        HttpMethod.OPTIONS,
+                        "/**"
+                ).permitAll()
+
+                // ---------------------------------------------
+                // Authentication endpoints
+                // ---------------------------------------------
+                .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/auth/login"
+                ).permitAll()
+
+                .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/auth/signup"
+                ).permitAll()
+
+                .requestMatchers(
+                        "/api/auth/**"
+                ).permitAll()
+
+                // ---------------------------------------------
+                // AI endpoints
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/ai/**"
+                ).permitAll()
+
+                // ---------------------------------------------
+                // Swagger
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs/**"
+                ).permitAll()
+
+                // ---------------------------------------------
+                // HR
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/hr/**"
+                ).hasRole("HR")
+>>>>>>> origin/team1-krishnapriya
+
+                // ---------------------------------------------
+                // Manager
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/manager/**"
+                ).hasRole("MANAGER")
+
+                // ---------------------------------------------
+                // Department Head
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/department-head/**"
+                ).hasRole("DEPARTMENT_HEAD")
+
+                // ---------------------------------------------
+                // System Administrator
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/system-admin/**"
+                ).hasRole("SYSTEM_ADMINISTRATOR")
+
+                // ---------------------------------------------
+                // Employee
+                // ---------------------------------------------
+                .requestMatchers(
+                        "/api/employee/**"
+                ).hasRole("EMPLOYEE")
+
+                // ---------------------------------------------
+                // Everything else requires login
+                // ---------------------------------------------
+                .anyRequest().authenticated()
+            )
+
+            // =================================================
+            // JWT FILTER
+            // =================================================
+            .addFilterBefore(
+                    jwtAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

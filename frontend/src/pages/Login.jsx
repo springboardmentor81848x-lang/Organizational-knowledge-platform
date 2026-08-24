@@ -40,10 +40,6 @@ function Login() {
       // =====================================================
       // CLEAR OLD TARGET ROLE DATA
       // =====================================================
-      // This is important.
-      // It prevents an old employee's targetRoleId from being
-      // reused for the current employee.
-      // =====================================================
 
       localStorage.removeItem("targetRoleId");
       localStorage.removeItem("targetRole");
@@ -57,6 +53,31 @@ function Login() {
         localStorage.setItem(
           "token",
           response.data.token
+        );
+      }
+
+      // =====================================================
+      // SAVE DATABASE USER ID
+      // =====================================================
+      // IMPORTANT:
+      // id = database primary key
+      // Example: 43
+      //
+      // This is different from employeeId:
+      // employeeId = MEN001
+      //
+      // Knowledge Session backend expects the database ID.
+      // =====================================================
+
+      if (response.data.id != null) {
+        localStorage.setItem(
+          "userId",
+          response.data.id.toString()
+        );
+
+        console.log(
+          "Saved Database User ID:",
+          response.data.id
         );
       }
 
@@ -85,6 +106,15 @@ function Login() {
         );
       }
 
+      // =====================================================
+      // SAVE EMPLOYEE ID
+      // =====================================================
+      // Example:
+      // employeeId = MEN001
+      //
+      // Keep this separate from userId.
+      // =====================================================
+
       if (response.data.employeeId) {
         localStorage.setItem(
           "employeeId",
@@ -94,22 +124,6 @@ function Login() {
 
       // =====================================================
       // SAVE TARGET ROLE ID
-      // =====================================================
-      // IMPORTANT FIX
-      //
-      // Backend AuthResponse contains:
-      //
-      // targetRoleId
-      //
-      // Example:
-      // Software Developer = 1
-      // Software Tester = 2
-      // Data Analyst = 3
-      // Data Scientist = 4
-      // DevOps Engineer = 5
-      // UI/UX Designer = 6
-      // Cybersecurity Analyst = 7
-      // Database Administrator = 8
       // =====================================================
 
       if (response.data.targetRoleId != null) {
@@ -127,9 +141,9 @@ function Login() {
           targetRoleId
         );
 
-        // =================================================
+        // ===================================================
         // SAVE TARGET ROLE NAME
-        // =================================================
+        // ===================================================
 
         const targetRoles = {
           1: "Software Developer",
@@ -169,9 +183,8 @@ function Login() {
       let role = response.data.role;
 
       // Backend may return:
-      //
       // role: { roleName: "Mentor" }
-      //
+
       if (
         role &&
         typeof role === "object"
@@ -260,6 +273,11 @@ function Login() {
 
       console.log(
         "========== LOGIN STORAGE =========="
+      );
+
+      console.log(
+        "Database User ID:",
+        localStorage.getItem("userId")
       );
 
       console.log(
@@ -354,9 +372,7 @@ function Login() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
 
-        {/* =====================================================
-            LEFT SIDE
-        ====================================================== */}
+        {/* LEFT SIDE */}
 
         <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
 
@@ -375,9 +391,7 @@ function Login() {
 
         </div>
 
-        {/* =====================================================
-            RIGHT SIDE
-        ====================================================== */}
+        {/* RIGHT SIDE */}
 
         <div className="p-10">
 

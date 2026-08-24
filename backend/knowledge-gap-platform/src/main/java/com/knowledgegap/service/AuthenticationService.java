@@ -101,6 +101,16 @@ public class AuthenticationService {
         );
 
         // --------------------------------------------------------
+        // EMPLOYEE DATABASE ID
+        // --------------------------------------------------------
+
+        Long employeeDatabaseId = employee.getId();
+
+        System.out.println(
+                "Employee Database ID: " + employeeDatabaseId
+        );
+
+        // --------------------------------------------------------
         // JWT
         // --------------------------------------------------------
 
@@ -113,7 +123,7 @@ public class AuthenticationService {
         System.out.println("==============================");
 
         // --------------------------------------------------------
-        // RETURN EMPLOYEE DATA + TARGET ROLE
+        // RETURN EMPLOYEE DATA + TARGET ROLE + DATABASE ID
         // --------------------------------------------------------
 
         return new AuthResponse(
@@ -123,7 +133,8 @@ public class AuthenticationService {
                 employee.getLastName(),
                 employee.getEmployeeId(),
                 employee.getDesignation(),
-                targetRoleId
+                targetRoleId,
+                employeeDatabaseId
         );
     }
 
@@ -233,14 +244,6 @@ public class AuthenticationService {
         // 7. DEFAULT SKILLS
         // --------------------------------------------------------
 
-        /*
-         * Keep your existing designation-based default
-         * skill logic.
-         *
-         * Assessment results will later update these
-         * EmployeeSkill records.
-         */
-
         if (employee.getDesignation() != null
                 && !employee.getDesignation().isBlank()) {
 
@@ -287,7 +290,7 @@ public class AuthenticationService {
                 );
 
         // --------------------------------------------------------
-        // 9. RETURN RESPONSE INCLUDING TARGET ROLE
+        // 9. RETURN RESPONSE
         // --------------------------------------------------------
 
         return new AuthResponse(
@@ -297,7 +300,8 @@ public class AuthenticationService {
                 employee.getLastName(),
                 employee.getEmployeeId(),
                 employee.getDesignation(),
-                employee.getTargetRoleId()
+                employee.getTargetRoleId(),
+                employee.getId()
         );
     }
 
@@ -373,28 +377,28 @@ public class AuthenticationService {
         switch (normalizedTargetRole) {
 
             case "software developer":
-                return 1L;
-
-            case "software tester":
                 return 2L;
 
-            case "data analyst":
+            case "software tester":
                 return 3L;
 
-            case "data scientist":
+            case "data analyst":
                 return 4L;
 
-            case "devops engineer":
+            case "data scientist":
                 return 5L;
 
-            case "ui/ux designer":
+            case "devops engineer":
                 return 6L;
 
-            case "cybersecurity analyst":
+            case "ui/ux designer":
                 return 7L;
 
-            case "database administrator":
+            case "cybersecurity analyst":
                 return 8L;
+
+            case "database administrator":
+                return 9L;
 
             default:
                 throw new RuntimeException(

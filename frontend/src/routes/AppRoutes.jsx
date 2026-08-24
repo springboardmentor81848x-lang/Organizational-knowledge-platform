@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 
 // ==================================================
-// COMMON PAGES
+// COMMON
 // ==================================================
 
 import Login from "../pages/Login";
@@ -16,7 +16,7 @@ import Notifications from "../pages/Notifications";
 import ReportsAndAnalytics from "../pages/ReportsAndAnalytics";
 
 // ==================================================
-// EMPLOYEE PAGES
+// EMPLOYEE
 // ==================================================
 
 import EmployeeDashboard from "../pages/EmployeeDashboard";
@@ -27,11 +27,11 @@ import AssessmentResult from "../pages/AssessmentResult";
 import KnowledgeGap from "../pages/KnowledgeGap";
 import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
-import KnowledgeSharing from "../pages/KnowledgeSharing";
+import KnowledgeSession from "../pages/KnowledgeSession";
 import Mentorship from "../pages/Mentorship";
 
 // ==================================================
-// HR PAGES
+// HR
 // ==================================================
 
 import HRDashboard from "../pages/HRDashboard";
@@ -56,12 +56,16 @@ import DepartmentHeadDashboard from "../pages/DepartmentHeadDashboard";
 // ==================================================
 
 import MentorDashboard from "../pages/MentorDashboard";
+import LearningAnalytics from "../pages/LearningAnalytics";
+import TrainingManagement from "../pages/TrainingManagement";
+import MentorManagement from "../pages/MentorManagement";
 
 // ==================================================
-// SYSTEM ADMINISTRATOR
+// SYSTEM ADMIN
 // ==================================================
 
 import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
+
 
 // ==================================================
 // GET ROLE FROM JWT
@@ -81,22 +85,32 @@ const getRoleFromToken = () => {
       return "";
     }
 
+    const base64Payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
     const payload = JSON.parse(
-      atob(
-        parts[1]
-          .replace(/-/g, "+")
-          .replace(/_/g, "/")
-      )
+      atob(base64Payload)
     );
 
     console.log("JWT payload:", payload);
 
-    return payload.role || "";
+    return (
+      payload.role ||
+      payload.roles ||
+      payload.authorities ||
+      ""
+    );
   } catch (error) {
-    console.error("Unable to read role from JWT:", error);
+    console.error(
+      "Unable to read role from JWT:",
+      error
+    );
+
     return "";
   }
 };
+
 
 // ==================================================
 // NORMALIZE ROLE
@@ -107,6 +121,10 @@ const normalizeRole = (role) => {
     return "";
   }
 
+  if (Array.isArray(role)) {
+    role = role[0];
+  }
+
   return String(role)
     .toUpperCase()
     .replace("ROLE_", "")
@@ -114,41 +132,36 @@ const normalizeRole = (role) => {
     .trim();
 };
 
+
 // ==================================================
-// GET CURRENT USER ROLE
+// GET CURRENT ROLE
 // ==================================================
 
 const getRole = () => {
-
-  // First try localStorage
   let role =
     localStorage.getItem("role") ||
     localStorage.getItem("userRole") ||
     "";
 
-  console.log("Role from localStorage:", role);
-
-  // If localStorage role is empty/null,
-  // read it directly from JWT
-  if (!role || role === "null" || role === "undefined") {
-
+  if (
+    !role ||
+    role === "null" ||
+    role === "undefined"
+  ) {
     role = getRoleFromToken();
-
-    console.log(
-      "Role extracted from JWT:",
-      role
-    );
   }
 
-  const normalizedRole = normalizeRole(role);
+  const normalizedRole =
+    normalizeRole(role);
 
   console.log(
-    "Final normalized role:",
+    "Current normalized role:",
     normalizedRole
   );
 
   return normalizedRole;
 };
+
 
 // ==================================================
 // PROTECTED ROUTE
@@ -158,21 +171,12 @@ function ProtectedRoute({
   children,
   allowedRoles,
 }) {
+  const token =
+    localStorage.getItem("token");
 
-  const token = localStorage.getItem("token");
   const role = getRole();
 
-  console.log("--------------------------------");
-  console.log("PROTECTED ROUTE");
-  console.log("Token exists:", !!token);
-  console.log("Current role:", role);
-  console.log("Allowed roles:", allowedRoles);
-  console.log("--------------------------------");
-
-  // ==================================================
-  // NOT LOGGED IN
-  // ==================================================
-
+  // User is not logged in
   if (!token) {
     return (
       <Navigate
@@ -182,61 +186,48 @@ function ProtectedRoute({
     );
   }
 
-  // ==================================================
-  // ROLE CHECK
-  // ==================================================
+  // No role restrictions
+  if (
+    !allowedRoles ||
+    allowedRoles.length === 0
+  ) {
+    return children;
+  }
+
+  const normalizedAllowedRoles =
+    allowedRoles.map(normalizeRole);
 
   if (
-    allowedRoles &&
-    allowedRoles.length > 0
+    !normalizedAllowedRoles.includes(role)
   ) {
+    console.error(
+      "Access denied. Current role:",
+      role
+    );
 
-    const normalizedAllowedRoles =
-      allowedRoles.map(normalizeRole);
-
-    console.log(
-      "Normalized allowed roles:",
+    console.error(
+      "Allowed roles:",
       normalizedAllowedRoles
     );
 
-    if (
-      !normalizedAllowedRoles.includes(role)
-    ) {
-
-      console.error(
-        "ACCESS DENIED"
-      );
-
-      console.error(
-        "Current role:",
-        role
-      );
-
-      console.error(
-        "Allowed roles:",
-        normalizedAllowedRoles
-      );
-
-      return (
-        <Navigate
-          to="/unauthorized"
-          replace
-        />
-      );
-    }
+    return (
+      <Navigate
+        to="/unauthorized"
+        replace
+      />
+    );
   }
 
   return children;
 }
+
 
 // ==================================================
 // APP ROUTES
 // ==================================================
 
 function AppRoutes() {
-
   return (
-
     <Routes>
 
       {/* ==================================================
@@ -252,6 +243,7 @@ function AppRoutes() {
         path="/signup"
         element={<Signup />}
       />
+
 
       {/* ==================================================
           COMMON
@@ -283,6 +275,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
 
       {/* ==================================================
           EMPLOYEE
@@ -421,12 +414,15 @@ function AppRoutes() {
       />
 
       <Route
-        path="/knowledge-sharing"
+        path="/knowledge-sessions"
         element={
           <ProtectedRoute
-            allowedRoles={["EMPLOYEE"]}
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+            ]}
           >
-            <KnowledgeSharing />
+            <KnowledgeSession />
           </ProtectedRoute>
         }
       />
@@ -452,6 +448,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
 
       {/* ==================================================
           HR
@@ -490,16 +487,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ==================================================
-          HR - WORKFORCE SKILLS
-          
-          URL:
-          /hr/workforce-skills
-          
-          Page component:
-          WorkforceSkillInventory
-      ================================================== */}
-
       <Route
         path="/hr/workforce-skills"
         element={
@@ -521,6 +508,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
 
       {/* ==================================================
           MANAGER
@@ -547,6 +535,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
 
       {/* ==================================================
           DEPARTMENT HEAD
@@ -580,6 +569,7 @@ function AppRoutes() {
         }
       />
 
+
       {/* ==================================================
           MENTOR
       ================================================== */}
@@ -605,6 +595,40 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/learning-analytics"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <LearningAnalytics />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/training-management"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <TrainingManagement />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/mentor-management"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <MentorManagement />
+          </ProtectedRoute>
+        }
+      />
+
 
       {/* ==================================================
           SYSTEM ADMINISTRATOR
@@ -640,6 +664,7 @@ function AppRoutes() {
         }
       />
 
+
       {/* ==================================================
           UNAUTHORIZED
       ================================================== */}
@@ -673,6 +698,7 @@ function AppRoutes() {
           </div>
         }
       />
+
 
       {/* ==================================================
           DEFAULT

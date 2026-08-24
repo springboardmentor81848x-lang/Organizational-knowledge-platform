@@ -34,29 +34,29 @@ function HRDashboard() {
     totalKnowledgeGaps: 0,
 
     performance: {
-        excellent: 0,
-        good: 0,
-        needsAttention: 0,
-        critical: 0,
+      excellent: 0,
+      good: 0,
+      needsAttention: 0,
+      critical: 0,
     },
 
     gapDistribution: {
-        low: 0,
-        medium: 0,
-        high: 0,
-        critical: 0,
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
     },
 
     topSkillGaps: [],
     employees: [],
-});
+  });
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
   // =========================================================
-  // Load HR Dashboard Data
+  // LOAD DASHBOARD
   // =========================================================
 
   useEffect(() => {
@@ -71,16 +71,82 @@ function HRDashboard() {
 
       console.log("HR Dashboard Data:", response.data);
 
-      setDashboard(response.data);
+      setDashboard({
+        totalEmployees: response.data?.totalEmployees ?? 0,
+        employeesWithGaps: response.data?.employeesWithGaps ?? 0,
+        criticalGaps: response.data?.criticalGaps ?? 0,
+
+        employeesInTraining:
+          response.data?.employeesInTraining ?? 0,
+
+        trainingCompletionRate:
+          response.data?.trainingCompletionRate ?? 0,
+
+        averageLearningProgress:
+          response.data?.averageLearningProgress ?? 0,
+
+        averageSkillImprovement:
+          response.data?.averageSkillImprovement ?? 0,
+
+        activeMentorships:
+          response.data?.activeMentorships ?? 0,
+
+        averageGap:
+          response.data?.averageGap ?? 0,
+
+        totalKnowledgeGaps:
+          response.data?.totalKnowledgeGaps ?? 0,
+
+        performance: {
+          excellent:
+            response.data?.performance?.excellent ?? 0,
+
+          good:
+            response.data?.performance?.good ?? 0,
+
+          needsAttention:
+            response.data?.performance?.needsAttention ?? 0,
+
+          critical:
+            response.data?.performance?.critical ?? 0,
+        },
+
+        gapDistribution: {
+          low:
+            response.data?.gapDistribution?.low ?? 0,
+
+          medium:
+            response.data?.gapDistribution?.medium ?? 0,
+
+          high:
+            response.data?.gapDistribution?.high ?? 0,
+
+          critical:
+            response.data?.gapDistribution?.critical ?? 0,
+        },
+
+        topSkillGaps:
+          Array.isArray(response.data?.topSkillGaps)
+            ? response.data.topSkillGaps
+            : [],
+
+        employees:
+          Array.isArray(response.data?.employees)
+            ? response.data.employees
+            : [],
+      });
     } catch (error) {
-      console.error("Error loading HR dashboard:", error);
+      console.error(
+        "Error loading HR dashboard:",
+        error
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // =========================================================
-  // Filter Employees
+  // FILTER EMPLOYEES
   // =========================================================
 
   const filteredEmployees = useMemo(() => {
@@ -103,10 +169,14 @@ function HRDashboard() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [dashboard.employees, search, statusFilter]);
+  }, [
+    dashboard.employees,
+    search,
+    statusFilter,
+  ]);
 
   // =========================================================
-  // Loading Screen
+  // LOADING
   // =========================================================
 
   if (loading) {
@@ -114,7 +184,7 @@ function HRDashboard() {
       <div className="flex min-h-screen bg-slate-50">
         <Sidebar role="HR" />
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Navbar title="HR Dashboard" />
 
           <div className="flex items-center justify-center min-h-[80vh]">
@@ -135,21 +205,21 @@ function HRDashboard() {
   }
 
   // =========================================================
-  // Main Dashboard
+  // MAIN DASHBOARD
   // =========================================================
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+
       <Sidebar role="HR" />
 
       <div className="flex-1 min-w-0">
+
         <Navbar title="HR Dashboard" />
 
         <main className="p-5 md:p-8">
 
-          {/* =================================================
-              HEADER
-          ================================================= */}
+          {/* HEADER */}
 
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
 
@@ -169,6 +239,7 @@ function HRDashboard() {
               className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
             >
               <RefreshCw size={18} />
+
               Refresh Data
             </button>
 
@@ -177,71 +248,72 @@ function HRDashboard() {
           {/* =================================================
               SUMMARY CARDS
           ================================================= */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-              <SummaryCard
-                  title="Total Employees"
-                  value={dashboard.totalEmployees}
-                  description="Employees in organization"
-                  icon={<Users size={24} />}
-                  iconClass="bg-indigo-100 text-indigo-600"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-              <SummaryCard
-                  title="Employees With Skill Gaps"
-                  value={dashboard.employeesWithGaps}
-                  description="Employees requiring attention"
-                  icon={<UserCheck size={24} />}
-                  iconClass="bg-orange-100 text-orange-600"
-              />
+            <SummaryCard
+              title="Total Employees"
+              value={dashboard.totalEmployees}
+              description="Employees in organization"
+              icon={<Users size={24} />}
+              iconClass="bg-indigo-100 text-indigo-600"
+            />
 
-              <SummaryCard
-                  title="Critical Skill Gaps"
-                  value={dashboard.criticalGaps}
-                  description="Critical gaps requiring immediate action"
-                  icon={<AlertCircle size={24} />}
-                  iconClass="bg-red-100 text-red-600"
-              />
+            <SummaryCard
+              title="Employees With Skill Gaps"
+              value={dashboard.employeesWithGaps}
+              description="Employees requiring attention"
+              icon={<UserCheck size={24} />}
+              iconClass="bg-orange-100 text-orange-600"
+            />
 
-              <SummaryCard
-                  title="Employees in Training"
-                  value={dashboard.employeesInTraining ?? 0}
-                  description="Employees currently in training"
-                  icon={<Target size={24} />}
-                  iconClass="bg-blue-100 text-blue-600"
-              />
+            <SummaryCard
+              title="Critical Skill Gaps"
+              value={dashboard.criticalGaps}
+              description="Critical gaps requiring immediate action"
+              icon={<AlertCircle size={24} />}
+              iconClass="bg-red-100 text-red-600"
+            />
 
-              <SummaryCard
-                  title="Training Completion Rate"
-                  value={`${dashboard.trainingCompletionRate ?? 0}%`}
-                  description="Overall training completion"
-                  icon={<CheckCircle size={24} />}
-                  iconClass="bg-green-100 text-green-600"
-              />
+            <SummaryCard
+              title="Employees in Training"
+              value={dashboard.employeesInTraining}
+              description="Employees currently in training"
+              icon={<Target size={24} />}
+              iconClass="bg-blue-100 text-blue-600"
+            />
 
-              <SummaryCard
-                  title="Average Learning Progress"
-                  value={`${dashboard.averageLearningProgress ?? 0}%`}
-                  description="Average employee learning progress"
-                  icon={<TrendingUp size={24} />}
-                  iconClass="bg-purple-100 text-purple-600"
-              />
+            <SummaryCard
+              title="Training Completion Rate"
+              value={`${dashboard.trainingCompletionRate}%`}
+              description="Overall training completion"
+              icon={<CheckCircle size={24} />}
+              iconClass="bg-green-100 text-green-600"
+            />
 
-              <SummaryCard
-                  title="Average Skill Improvement"
-                  value={`${dashboard.averageSkillImprovement ?? 0}%`}
-                  description="Average improvement after training"
-                  icon={<BarChart3 size={24} />}
-                  iconClass="bg-cyan-100 text-cyan-600"
-              />
+            <SummaryCard
+              title="Average Learning Progress"
+              value={`${dashboard.averageLearningProgress}%`}
+              description="Average employee learning progress"
+              icon={<TrendingUp size={24} />}
+              iconClass="bg-purple-100 text-purple-600"
+            />
 
-              <SummaryCard
-                  title="Active Mentorships"
-                  value={dashboard.activeMentorships ?? 0}
-                  description="Currently active mentorships"
-                  icon={<Users size={24} />}
-                  iconClass="bg-pink-100 text-pink-600"
-              />
+            <SummaryCard
+              title="Average Skill Improvement"
+              value={`${dashboard.averageSkillImprovement}%`}
+              description="Average improvement after training"
+              icon={<BarChart3 size={24} />}
+              iconClass="bg-cyan-100 text-cyan-600"
+            />
+
+            <SummaryCard
+              title="Active Mentorships"
+              value={dashboard.activeMentorships}
+              description="Currently active mentorships"
+              icon={<Users size={24} />}
+              iconClass="bg-pink-100 text-pink-600"
+            />
 
           </div>
 
@@ -251,7 +323,7 @@ function HRDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
 
-            {/* Employee Performance */}
+            {/* PERFORMANCE */}
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
 
@@ -289,7 +361,9 @@ function HRDashboard() {
 
               <PerformanceBar
                 label="Needs Attention"
-                value={dashboard.performance.needsAttention}
+                value={
+                  dashboard.performance.needsAttention
+                }
                 total={dashboard.totalEmployees}
                 color="bg-orange-500"
               />
@@ -303,7 +377,7 @@ function HRDashboard() {
 
             </div>
 
-            {/* Knowledge Gap Distribution */}
+            {/* KNOWLEDGE GAP */}
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
 
@@ -431,13 +505,13 @@ function HRDashboard() {
                           </td>
 
                           <td className="py-4 px-3 text-slate-600">
-                            {item.employeesAffected}
+                            {item.employeesAffected ?? 0}
                           </td>
 
                           <td className="py-4 px-3">
 
                             <span className="font-semibold text-orange-600">
-                              {item.averageGap}
+                              {item.averageGap ?? 0}
                             </span>
 
                           </td>
@@ -480,8 +554,6 @@ function HRDashboard() {
                 </p>
               </div>
 
-              {/* Search */}
-
               <div className="relative w-full lg:w-72">
 
                 <Search
@@ -493,7 +565,9 @@ function HRDashboard() {
                   type="text"
                   placeholder="Search employee..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) =>
+                    setSearch(e.target.value)
+                  }
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
 
@@ -501,35 +575,37 @@ function HRDashboard() {
 
             </div>
 
-            {/* =================================================
-                STATUS FILTERS
-            ================================================= */}
+            {/* FILTERS */}
 
             <div className="flex flex-wrap gap-2 mb-6">
 
-              {["All", "Low", "Medium", "High", "Critical"].map(
-                (status) => (
+              {[
+                "All",
+                "Low",
+                "Medium",
+                "High",
+                "Critical",
+              ].map((status) => (
 
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={
-                      statusFilter === status
-                        ? "px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white"
-                        : "px-4 py-2 rounded-lg text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }
-                  >
-                    {status}
-                  </button>
+                <button
+                  key={status}
+                  onClick={() =>
+                    setStatusFilter(status)
+                  }
+                  className={
+                    statusFilter === status
+                      ? "px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white"
+                      : "px-4 py-2 rounded-lg text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }
+                >
+                  {status}
+                </button>
 
-                )
-              )}
+              ))}
 
             </div>
 
-            {/* =================================================
-                EMPLOYEE TABLE
-            ================================================= */}
+            {/* EMPLOYEE TABLE */}
 
             <div className="overflow-x-auto">
 
@@ -568,40 +644,45 @@ function HRDashboard() {
 
                         <tr
                           key={
-                            employee.employeeId ||
+                            employee.employeeId ??
                             index
                           }
                           className="border-b border-slate-100 hover:bg-slate-50 transition"
                         >
 
-                          {/* Employee */}
+                          {/* EMPLOYEE */}
 
                           <td className="py-4 px-3">
 
                             <div className="flex items-center gap-3">
 
                               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
+
                                 {employee.employee
                                   ?.charAt(0)
                                   ?.toUpperCase() || "E"}
+
                               </div>
 
                               <span className="font-medium text-slate-800">
-                                {employee.employee}
+                                {employee.employee ||
+                                  "Unknown Employee"}
                               </span>
 
                             </div>
 
                           </td>
 
-                          {/* Designation */}
+                          {/* DESIGNATION */}
 
                           <td className="py-4 px-3 text-slate-600">
+
                             {employee.designation ||
                               "Not Assigned"}
+
                           </td>
 
-                          {/* Average Skill */}
+                          {/* AVERAGE SKILL */}
 
                           <td className="py-4 px-3">
 
@@ -624,14 +705,16 @@ function HRDashboard() {
                               </div>
 
                               <span className="text-sm font-medium text-slate-700">
-                                {employee.averageSkill || 0}%
+                                {employee.averageSkill ??
+                                  0}
+                                %
                               </span>
 
                             </div>
 
                           </td>
 
-                          {/* Gap Status */}
+                          {/* GAP STATUS */}
 
                           <td className="py-4 px-3">
 
@@ -671,17 +754,19 @@ function HRDashboard() {
 
           </div>
 
-          {/* =================================================
-              FOOTER
-          ================================================= */}
+          {/* FOOTER */}
 
           <div className="mt-6 text-sm text-slate-400 text-center">
+
             Showing {filteredEmployees.length} of{" "}
             {dashboard.employees.length} employees
+
           </div>
 
         </main>
+
       </div>
+
     </div>
   );
 }
@@ -733,48 +818,6 @@ function SummaryCard({
 
 
 // =============================================================
-// INSIGHT CARD
-// =============================================================
-
-function InsightCard({
-  icon,
-  title,
-  value,
-  description,
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-
-      <div className="flex items-center gap-3">
-
-        <div className="p-2.5 bg-slate-100 text-slate-600 rounded-lg">
-          {icon}
-        </div>
-
-        <div>
-
-          <p className="text-sm text-slate-500">
-            {title}
-          </p>
-
-          <h3 className="text-2xl font-bold text-slate-800">
-            {value}
-          </h3>
-
-        </div>
-
-      </div>
-
-      <p className="text-xs text-slate-400 mt-3">
-        {description}
-      </p>
-
-    </div>
-  );
-}
-
-
-// =============================================================
 // PERFORMANCE BAR
 // =============================================================
 
@@ -784,9 +827,15 @@ function PerformanceBar({
   total,
   color,
 }) {
+  const safeValue = Number(value) || 0;
+  const safeTotal = Number(total) || 0;
+
   const percentage =
-    total > 0
-      ? Math.min((value / total) * 100, 100)
+    safeTotal > 0
+      ? Math.min(
+          (safeValue / safeTotal) * 100,
+          100
+        )
       : 0;
 
   return (
@@ -799,7 +848,7 @@ function PerformanceBar({
         </span>
 
         <span className="text-sm text-slate-500">
-          {value} ({percentage.toFixed(0)}%)
+          {safeValue} ({percentage.toFixed(0)}%)
         </span>
 
       </div>
@@ -821,7 +870,7 @@ function PerformanceBar({
 
 
 // =============================================================
-// KNOWLEDGE GAP BAR
+// GAP BAR
 // =============================================================
 
 function GapBar({
@@ -830,9 +879,15 @@ function GapBar({
   total,
   color,
 }) {
+  const safeValue = Number(value) || 0;
+  const safeTotal = Number(total) || 0;
+
   const percentage =
-    total > 0
-      ? Math.min((value / total) * 100, 100)
+    safeTotal > 0
+      ? Math.min(
+          (safeValue / safeTotal) * 100,
+          100
+        )
       : 0;
 
   return (
@@ -845,7 +900,7 @@ function GapBar({
         </span>
 
         <span className="text-sm text-slate-500">
-          {value} ({percentage.toFixed(0)}%)
+          {safeValue} ({percentage.toFixed(0)}%)
         </span>
 
       </div>
@@ -874,25 +929,34 @@ function GapStatus({ status }) {
   let className =
     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold";
 
-  let icon = null;
+  let icon;
 
   if (status === "Low") {
-    className += " bg-green-100 text-green-700";
+    className +=
+      " bg-green-100 text-green-700";
+
     icon = <CheckCircle size={13} />;
   } else if (status === "Medium") {
-    className += " bg-yellow-100 text-yellow-700";
+    className +=
+      " bg-yellow-100 text-yellow-700";
+
     icon = <AlertTriangle size={13} />;
   } else if (status === "High") {
-    className += " bg-orange-100 text-orange-700";
+    className +=
+      " bg-orange-100 text-orange-700";
+
     icon = <AlertTriangle size={13} />;
   } else {
-    className += " bg-red-100 text-red-700";
+    className +=
+      " bg-red-100 text-red-700";
+
     icon = <AlertCircle size={13} />;
   }
 
   return (
     <span className={className}>
       {icon}
+
       {status || "Unknown"}
     </span>
   );

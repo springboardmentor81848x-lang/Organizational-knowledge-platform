@@ -12,6 +12,10 @@ public class AuthResponse {
     // Target role selected by employee
     private Long targetRoleId;
 
+    // Database ID of the employee
+    // For a mentor, this value is used as mentorId
+    private Long id;
+
     public AuthResponse(
             String token,
             String role,
@@ -19,7 +23,8 @@ public class AuthResponse {
             String lastName,
             String employeeId,
             String designation,
-            Long targetRoleId) {
+            Long targetRoleId,
+            Long id) {
 
         this.token = token;
         this.role = role;
@@ -28,6 +33,7 @@ public class AuthResponse {
         this.employeeId = employeeId;
         this.designation = designation;
         this.targetRoleId = targetRoleId;
+        this.id = id;
     }
 
     public String getToken() {
@@ -84,5 +90,13 @@ public class AuthResponse {
 
     public void setTargetRoleId(Long targetRoleId) {
         this.targetRoleId = targetRoleId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }
