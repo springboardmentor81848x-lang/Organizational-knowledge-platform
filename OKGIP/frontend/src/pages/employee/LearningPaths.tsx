@@ -1,752 +1,943 @@
-import React, { useEffect, useState } from "react";
-import {
-  Activity,
-  AlertCircle,
-  Award,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  Briefcase,
-  FileCheck2,
-  GraduationCap,
-  LayoutDashboard,
-  Loader2,
-  LogOut,
-  Settings,
-  ShieldCheck,
-  Target,
-  TrendingDown,
-  User,
-  Users,
-  Zap,
-} from "lucide-react";
-import { NavLink } from "react-router-dom";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
-import API from "@/api/axios";
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from "lucide-react";
+
+import EmployeePage, {
+  Card,
+  ProgressBar,
+} from "@/components/layout/EmployeePage";
+
+import { useNavigate } from "react-router-dom";
+import profileService from "@/services/profileService";
+import aiService from "@/services/aiServices";
+
+// =====================================================
+// TYPES
+// =====================================================
 
 interface PriorityGap {
-  skillName: string;
-  gapType: string;
-  gapPercentage: number;
-  priority: string;
+  skillName?: string;
+  gapType?: string;
+  gapPercentage?: number;
+  priority?: string;
 }
 
-interface LearningPath {
-  phase: number;
-  title: string;
-  duration: string;
-  reason: string;
+interface LearningStep {
+  phase?: number;
+  title?: string;
+  duration?: string;
+  reason?: string;
 }
 
 interface RecommendedCourse {
-  trainingId: number;
-  trainingName: string;
-  provider: string;
-  level: string;
-  duration: string;
-  courseUrl: string;
+  trainingId?: number;
+  trainingName?: string;
+  provider?: string;
+  level?: string;
+  duration?: string;
+  courseUrl?: string;
 }
 
-interface AIRecommendation {
-  employeeId: number;
-  employeeCode: string;
-  employeeName: string;
-  priorityGaps: PriorityGap[];
-  learningPath: LearningPath[];
-  recommendedCourses: RecommendedCourse[];
+interface LearningPathResponse {
+  employeeId?: number;
+  employeeCode?: string;
+  employeeName?: string;
+
+  priorityGaps?: PriorityGap[];
+
+  learningPath?: LearningStep[];
+
+  recommendedCourses?: RecommendedCourse[];
 }
 
-interface EmployeeProfile {
-  employeeId: number;
-  employeeCode: string;
-  employeeName: string;
-}
+// =====================================================
+// COMPONENT
+// =====================================================
 
 const LearningPaths: React.FC = () => {
-  const [data, setData] = useState<AIRecommendation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  // ============================================================
-  // LOAD REAL AI RECOMMENDATION
-  // ============================================================
+  // ===================================================
+  // STATE
+  // ===================================================
 
-  useEffect(() => {
-    const loadAIRecommendation = async () => {
+  const [employeeId, setEmployeeId] =
+    useState<number | null>(null);
+
+  const [data, setData] =
+    useState<LearningPathResponse | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  // ===================================================
+  // LOAD PROFILE + AI RECOMMENDATIONS
+  // ===================================================
+
+  const loadRecommendations =
+    useCallback(async () => {
+
       try {
+
         setLoading(true);
-        setError("");
-
-        // --------------------------------------------------------
-        // 1. Get logged-in employee profile
-        // --------------------------------------------------------
-
-        const profileResponse =
-          await API.get<EmployeeProfile>("/profile");
-
-        const employeeId = profileResponse.data.employeeId;
+        setError(null);
 
         console.log(
-          "EMPLOYEE PROFILE FOR AI =",
-          profileResponse.data
+          "========================================"
         );
 
-        if (!employeeId) {
+        console.log(
+          "LEARNING PATHS: START"
+        );
+
+        console.log(
+          "========================================"
+        );
+
+        // =================================================
+        // STEP 1: GET LOGGED-IN EMPLOYEE PROFILE
+        // =================================================
+
+        console.log(
+          "LEARNING PATHS: Getting profile..."
+        );
+
+        const profile =
+          await profileService.getMyProfile();
+
+        console.log(
+          "LEARNING PATHS: PROFILE:",
+          profile
+        );
+
+        // =================================================
+        // STEP 2: GET EMPLOYEE ID
+        // =================================================
+
+        const id =
+          Number(profile.employeeId);
+
+        console.log(
+          "LEARNING PATHS: EMPLOYEE ID:",
+          id
+        );
+
+        if (
+          !Number.isFinite(id) ||
+          id <= 0
+        ) {
+
           throw new Error(
-            "Employee ID was not returned by the profile API."
+            "Unable to identify the logged-in employee. Please login again."
           );
         }
 
-        // --------------------------------------------------------
-        // 2. Ask backend to generate Gemini recommendation
-        // --------------------------------------------------------
+        setEmployeeId(id);
+
+        console.log(
+          "LEARNING PATHS: VALID EMPLOYEE ID:",
+          id
+        );
+
+        // =================================================
+        // STEP 3: CALL REAL AI BACKEND
+        // =================================================
+
+        console.log(
+          "LEARNING PATHS: Calling AI API..."
+        );
+
+        console.log(
+          "LEARNING PATHS: ENDPOINT:",
+          `/api/ai/employee/recommendations/${id}`
+        );
 
         const response =
-          await API.post<AIRecommendation>(
-            `/ai/recommendation/${employeeId}`
+          await aiService.getEmployeeRecommendations(
+            id
           );
 
         console.log(
-          "AI RECOMMENDATION RESPONSE =",
-          response.data
+          "LEARNING PATHS: AI RESPONSE:",
+          response
         );
+
+        // =================================================
+        // STEP 4: VALIDATE RESPONSE
+        // =================================================
+
+        if (
+          response === null ||
+          response === undefined
+        ) {
+
+          throw new Error(
+            "AI returned an empty response."
+          );
+        }
+
+        // =================================================
+        // STEP 5: HANDLE RESPONSE
+        // =================================================
+
+        let finalData: any =
+          response;
+
+        if (
+          typeof response === "string"
+        ) {
+
+          try {
+
+            finalData =
+              JSON.parse(response);
+
+          } catch {
+
+            finalData = {
+              message: response,
+            };
+
+          }
+        }
 
         console.log(
-          "AI RECOMMENDATION JSON =",
-          JSON.stringify(response.data, null, 2)
+          "LEARNING PATHS: FINAL DATA:",
+          finalData
         );
 
-        setData(response.data);
+        setData(finalData);
+
+        console.log(
+          "LEARNING PATHS: SUCCESS"
+        );
+
       } catch (err: any) {
+
         console.error(
-          "AI RECOMMENDATION ERROR =",
-          err?.response?.data || err
+          "========================================"
         );
 
-        setError(
+        console.error(
+          "LEARNING PATHS: ERROR"
+        );
+
+        console.error(
+          "========================================"
+        );
+
+        console.error(
+          "ERROR:",
+          err
+        );
+
+        console.error(
+          "STATUS:",
+          err?.response?.status
+        );
+
+        console.error(
+          "URL:",
+          err?.config?.url
+        );
+
+        console.error(
+          "BACKEND RESPONSE:",
+          err?.response?.data
+        );
+
+        const message =
           err?.response?.data?.message ||
-            "Unable to generate AI recommendations from the backend."
-        );
+          err?.response?.data?.error ||
+          (
+            typeof err?.response?.data ===
+            "string"
+              ? err.response.data
+              : null
+          ) ||
+          err?.message ||
+          "Unable to generate AI recommendations.";
+
+        setError(message);
+
       } finally {
+
         setLoading(false);
+
+        console.log(
+          "LEARNING PATHS: END"
+        );
       }
-    };
 
-    void loadAIRecommendation();
-  }, []);
+    }, []);
 
-  // ============================================================
-  // SAME EMPLOYEE SIDEBAR
-  // ============================================================
+  // ===================================================
+  // INITIAL LOAD
+  // ===================================================
 
-  const Sidebar = () => (
-    <aside className="employee-sidebar">
+  useEffect(() => {
 
-      {/* BRAND */}
+    loadRecommendations();
 
-      <div className="employee-brand">
-        <div className="employee-brand-icon">
-          <Zap size={19} />
-        </div>
+  }, [loadRecommendations]);
 
-        <span>OKGIP</span>
-      </div>
+  // ===================================================
+  // DATA
+  // ===================================================
 
-      {/* NAVIGATION */}
+  const skillGaps =
+    data?.priorityGaps ?? [];
 
-      <nav className="employee-nav">
+  const learningSteps =
+    data?.learningPath ?? [];
 
-        <NavLink
-          to="/employee"
-          className="employee-nav-item"
-        >
-          <LayoutDashboard size={15} />
-          <span>Dashboard</span>
-        </NavLink>
+  const trainings =
+    data?.recommendedCourses ?? [];
 
-        <NavLink
-          to="/employee/profile"
-          className="employee-nav-item"
-        >
-          <User size={15} />
-          <span>My Profile</span>
-        </NavLink>
+  // ===================================================
+  // PRIORITY
+  // ===================================================
 
-        <NavLink
-          to="/employee/skills"
-          className="employee-nav-item"
-        >
-          <Activity size={15} />
-          <span>Skill Profile</span>
-        </NavLink>
+  const getPriority = (
+    gap: PriorityGap
+  ): string => {
 
-        <NavLink
-          to="/employee/self-assessment"
-          className="employee-nav-item"
-        >
-          <FileCheck2 size={15} />
-          <span>Self Assessment</span>
-        </NavLink>
+    const percentage =
+      Number(
+        gap.gapPercentage ?? 0
+      );
 
-        <NavLink
-          to="/employee/peer-assessment"
-          className="employee-nav-item"
-        >
-          <Users size={15} />
-          <span>Peer Assessment</span>
-        </NavLink>
+    return (
+      gap.priority ||
+      (
+        percentage >= 70
+          ? "HIGH"
+          : percentage >= 40
+          ? "MEDIUM"
+          : "LOW"
+      )
+    ).toUpperCase();
+  };
 
-        <NavLink
-          to="/employee/proficiency"
-          className="employee-nav-item"
-        >
-          <Target size={15} />
-          <span>My Proficiency</span>
-        </NavLink>
+  // ===================================================
+  // PRIORITY CLASS
+  // ===================================================
 
-        <NavLink
-          to="/employee/skill-gaps"
-          className="employee-nav-item"
-        >
-          <TrendingDown size={15} />
-          <span>Skill Gaps</span>
-        </NavLink>
+  const getPriorityClass = (
+    priority: string
+  ): string => {
 
-        {/* ACTIVE */}
+    switch (priority) {
 
-        <NavLink
-          to="/employee/learning-paths"
-          className="employee-nav-item active"
-        >
-          <BookOpen size={15} />
-          <span>Learning Paths</span>
-        </NavLink>
+      case "HIGH":
+        return "text-red-500";
 
-        <NavLink
-          to="/employee/training"
-          className="employee-nav-item"
-        >
-          <GraduationCap size={15} />
-          <span>Training</span>
-        </NavLink>
+      case "MEDIUM":
+        return "text-purple-600";
 
-        {/* EXPERIENCE */}
-<NavLink
-  to="/employee/experience"
-  className="employee-nav-item"
->
-  <Briefcase size={15} />
-  <span>Experience</span>
-</NavLink>
+      default:
+        return "text-green-600";
+    }
+  };
 
-
-        <NavLink
-          to="/employee/progress"
-          className="employee-nav-item"
-        >
-          <Activity size={15} />
-          <span>My Progress</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/achievements"
-          className="employee-nav-item"
-        >
-          <Award size={15} />
-          <span>Achievements</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/certifications"
-          className="employee-nav-item"
-        >
-          <ShieldCheck size={15} />
-          <span>Certifications</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/mentorship"
-          className="employee-nav-item"
-        >
-          <Users size={15} />
-          <span>Mentorship</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/notifications"
-          className="employee-nav-item"
-        >
-          <Bell size={15} />
-          <span>Notifications</span>
-        </NavLink>
-
-      </nav>
-
-      {/* SIDEBAR BOTTOM */}
-
-      <div className="employee-sidebar-bottom">
-
-        <NavLink
-          to="/employee/settings"
-          className="employee-nav-item"
-        >
-          <Settings size={15} />
-          <span>Settings</span>
-        </NavLink>
-
-        <div className="employee-nav-item">
-          <LogOut size={15} />
-          <span>Logout</span>
-        </div>
-
-        <div className="employee-collapse">
-          <ChevronRight size={14} />
-          <span>Collapse Sidebar</span>
-        </div>
-
-      </div>
-
-    </aside>
-  );
-
-  // ============================================================
-  // MAIN PAGE
-  // ============================================================
+  // ===================================================
+  // RENDER
+  // ===================================================
 
   return (
-    <div className="employee-dashboard">
+    <EmployeePage
+      title="Learning Paths"
+      subtitle="Get personalized learning recommendations based on your current skills, knowledge gaps and available training."
+    >
 
-      <Sidebar />
+      <Card className="overflow-hidden p-0">
 
-      <main className="employee-main">
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
 
-        <div className="space-y-6">
-
-          {/* HEADER */}
+        <div className="flex items-start justify-between border-b border-slate-100 p-6">
 
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Learning Paths
-            </h1>
+
+            <div className="mb-2 flex items-center gap-2">
+
+              <span className="text-xs font-bold tracking-wide text-purple-600">
+                GEMINI AI RECOMMENDATION
+              </span>
+
+              <span className="rounded-full bg-purple-50 px-2 py-1 text-[10px] font-semibold text-purple-600">
+                PERSONALIZED
+              </span>
+
+            </div>
+
+            <h2 className="text-xl font-bold text-slate-900">
+              Personalized Learning
+            </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Personalized learning recommendations generated by AI
-              based on your current skills and knowledge gaps.
+              AI recommendations are generated from
+              your current skills, knowledge gaps and
+              available training data.
             </p>
+
+            {employeeId && (
+              <p className="mt-2 text-xs text-purple-600">
+                Employee ID: {employeeId}
+              </p>
+            )}
+
+            {data?.employeeName && (
+              <p className="mt-1 text-xs font-medium text-purple-600">
+                Recommendations for{" "}
+                {data.employeeName}
+              </p>
+            )}
+
+            {data?.employeeCode && (
+              <p className="mt-1 text-xs text-slate-400">
+                Employee Code:{" "}
+                {data.employeeCode}
+              </p>
+            )}
+
           </div>
 
-          {/* ==================================================
-              LOADING
-          ================================================== */}
+          <button
+            type="button"
+            onClick={loadRecommendations}
+            disabled={loading}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
 
-          {loading && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
-              <div className="flex min-h-[250px] items-center justify-center">
-                <div className="text-center">
+            <Sparkles
+              size={23}
+              className={
+                loading
+                  ? "animate-pulse"
+                  : ""
+              }
+            />
 
-                  <Loader2
-                    size={32}
-                    className="mx-auto animate-spin text-purple-600"
-                  />
+          </button>
 
-                  <p className="mt-4 text-sm font-semibold text-slate-700">
-                    Generating your AI learning recommendations...
-                  </p>
+        </div>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    Gemini is analyzing your skills and knowledge gaps.
-                  </p>
+        {/* ================================================= */}
+        {/* LOADING */}
+        {/* ================================================= */}
 
-                </div>
-              </div>
+        {loading && (
+
+          <div className="flex min-h-[360px] flex-col items-center justify-center p-8">
+
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-purple-50">
+
+              <Sparkles
+                size={30}
+                className="animate-pulse text-purple-500"
+              />
+
             </div>
-          )}
 
-          {/* ==================================================
-              ERROR
-          ================================================== */}
+            <h3 className="text-base font-semibold text-slate-900">
+              Generating your learning path...
+            </h3>
 
-          {!loading && error && (
+            <p className="mt-2 max-w-md text-center text-sm text-slate-500">
+              We are analyzing your current
+              skills and knowledge gaps.
+            </p>
+
+          </div>
+
+        )}
+
+        {/* ================================================= */}
+        {/* ERROR */}
+        {/* ================================================= */}
+
+        {!loading && error && (
+
+          <div className="p-6">
+
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
 
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
 
-                <AlertCircle
-                  size={22}
-                  className="mt-0.5 shrink-0 text-red-500"
-                />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+
+                  <AlertTriangle size={21} />
+
+                </div>
 
                 <div>
 
-                  <p className="text-sm font-bold text-red-700">
-                    Unable to generate AI recommendations
-                  </p>
+                  <h3 className="font-semibold text-red-700">
+                    Unable to Generate AI Recommendations
+                  </h3>
 
-                  <p className="mt-2 text-xs leading-5 text-red-600">
+                  <p className="mt-1 text-sm text-red-600">
                     {error}
                   </p>
+
+                  <button
+                    type="button"
+                    onClick={loadRecommendations}
+                    className="mt-4 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                  >
+                    Try Again
+                  </button>
 
                 </div>
 
               </div>
 
             </div>
-          )}
 
-          {/* ==================================================
-              AI DATA
-          ================================================== */}
+          </div>
 
-          {!loading && !error && data && (
+        )}
 
-            <>
-              {/* EMPLOYEE AI HEADER */}
+        {/* ================================================= */}
+        {/* SUCCESS */}
+        {/* ================================================= */}
 
-              <div className="rounded-2xl bg-purple-600 p-6 text-white shadow-sm">
+        {!loading &&
+          !error &&
+          data && (
 
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="p-6">
+
+            {/* ============================================= */}
+            {/* SUMMARY */}
+            {/* ============================================= */}
+
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+
+              <div className="rounded-xl border border-slate-200 p-4">
+
+                <div className="flex items-center gap-3">
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <Target size={19} />
+                  </div>
 
                   <div>
 
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-200">
-                      AI-Powered Recommendation
+                    <p className="text-xs text-slate-500">
+                      Skill Gaps
                     </p>
 
-                    <h2 className="mt-2 text-xl font-bold">
-                      Personalized for {data.employeeName}
-                    </h2>
-
-                    <p className="mt-1 text-xs text-purple-100">
-                      Employee Code: {data.employeeCode}
+                    <p className="text-xl font-bold text-slate-900">
+                      {skillGaps.length}
                     </p>
 
-                  </div>
-
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
-                    <Zap size={28} />
                   </div>
 
                 </div>
 
               </div>
 
-              {/* ==================================================
-                  PRIORITY GAPS
-              ================================================== */}
+              <div className="rounded-xl border border-slate-200 p-4">
 
-              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
 
-                <div className="mb-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <BookOpen size={19} />
+                  </div>
 
-                  <h2 className="text-base font-bold text-slate-900">
-                    Priority Skill Gaps
-                  </h2>
+                  <div>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    Skills identified by the AI recommendation engine
-                    as requiring attention.
-                  </p>
-
-                </div>
-
-                {data.priorityGaps.length === 0 ? (
-
-                  <div className="rounded-xl bg-emerald-50 p-6 text-center">
-
-                    <p className="text-sm font-semibold text-emerald-700">
-                      No priority skill gaps were identified.
+                    <p className="text-xs text-slate-500">
+                      Learning Steps
                     </p>
 
-                    <p className="mt-1 text-xs text-emerald-600">
-                      Your current skill profile does not contain
-                      any AI-detected priority gaps.
+                    <p className="text-xl font-bold text-slate-900">
+                      {learningSteps.length}
                     </p>
 
                   </div>
 
-                ) : (
+                </div>
 
-                  <div className="space-y-4">
+              </div>
 
-                    {data.priorityGaps.map(
-                      (gap, index) => (
+              <div className="rounded-xl border border-slate-200 p-4">
+
+                <div className="flex items-center gap-3">
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                    <CheckCircle2 size={19} />
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-slate-500">
+                      Recommended Courses
+                    </p>
+
+                    <p className="text-xl font-bold text-slate-900">
+                      {trainings.length}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* ============================================= */}
+            {/* PRIORITY GAPS */}
+            {/* ============================================= */}
+
+            {skillGaps.length > 0 && (
+
+              <section className="mb-8">
+
+                <div className="mb-4 flex items-center gap-3">
+
+                  <Target
+                    size={20}
+                    className="text-purple-600"
+                  />
+
+                  <div>
+
+                    <h3 className="font-semibold text-slate-900">
+                      Priority Skill Gaps
+                    </h3>
+
+                    <p className="text-xs text-slate-500">
+                      Skills that should be addressed first.
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="space-y-3">
+
+                  {skillGaps.map(
+                    (gap, index) => {
+
+                      const percentage =
+                        Number(
+                          gap.gapPercentage ?? 0
+                        );
+
+                      const priority =
+                        getPriority(gap);
+
+                      return (
 
                         <div
-                          key={`${gap.skillName}-${index}`}
+                          key={`${gap.skillName ?? "skill"}-${index}`}
                           className="rounded-xl border border-slate-200 p-4"
                         >
 
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center justify-between">
 
                             <div>
 
-                              <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-slate-900">
+                                {gap.skillName ||
+                                  "Skill"}
+                              </h4>
 
-                                <TrendingDown
-                                  size={16}
-                                  className="text-red-500"
-                                />
-
-                                <h3 className="text-sm font-bold text-slate-800">
-                                  {gap.skillName}
-                                </h3>
-
-                              </div>
-
-                              <p className="mt-1 text-[10px] uppercase font-semibold text-slate-400">
-                                {gap.gapType}
+                              <p className="mt-1 text-xs uppercase text-slate-400">
+                                {gap.gapType ||
+                                  "SKILL GAP"}
                               </p>
 
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="text-right">
 
-                              <span className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-600">
-                                {gap.priority}
+                              <span
+                                className={`text-xs font-bold ${getPriorityClass(
+                                  priority
+                                )}`}
+                              >
+                                {priority}
                               </span>
 
-                              <span className="text-xs font-bold text-slate-700">
-                                {Math.round(gap.gapPercentage)}%
-                              </span>
+                              <p className="text-xs text-slate-500">
+                                {percentage}% gap
+                              </p>
 
                             </div>
 
                           </div>
 
-                          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div className="mt-4">
 
-                            <div
-                              className="h-full rounded-full bg-red-500 transition-all duration-500"
-                              style={{
-                                width: `${Math.min(
-                                  Math.max(
-                                    gap.gapPercentage,
-                                    0
-                                  ),
-                                  100
-                                )}%`,
-                              }}
+                            <ProgressBar
+                              value={percentage}
+                              showValue={false}
                             />
 
                           </div>
 
                         </div>
 
-                      )
-                    )}
-
-                  </div>
-
-                )}
-
-              </section>
-
-              {/* ==================================================
-                  LEARNING PATH
-              ================================================== */}
-
-              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <div className="mb-6">
-
-                  <h2 className="text-base font-bold text-slate-900">
-                    AI Learning Path
-                  </h2>
-
-                  <p className="mt-1 text-xs text-slate-500">
-                    A personalized roadmap generated from your
-                    knowledge gaps.
-                  </p>
+                      );
+                    }
+                  )}
 
                 </div>
 
-                {data.learningPath.length === 0 ? (
+              </section>
 
-                  <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+            )}
 
-                    <BookOpen
-                      size={32}
-                      className="mx-auto text-slate-300"
-                    />
+            {/* ============================================= */}
+            {/* LEARNING PATH */}
+            {/* ============================================= */}
 
-                    <p className="mt-3 text-sm font-semibold text-slate-700">
-                      No learning path returned
+            {learningSteps.length > 0 && (
+
+              <section className="mb-8 border-t border-slate-100 pt-6">
+
+                <div className="mb-4 flex items-center gap-3">
+
+                  <BookOpen
+                    size={20}
+                    className="text-purple-600"
+                  />
+
+                  <div>
+
+                    <h3 className="font-semibold text-slate-900">
+                      Personalized Learning Path
+                    </h3>
+
+                    <p className="text-xs text-slate-500">
+                      Recommended learning progression.
                     </p>
 
                   </div>
 
-                ) : (
+                </div>
 
-                  <div className="space-y-5">
+                <div className="space-y-3">
 
-                    {data.learningPath.map(
-                      (step, index) => (
+                  {learningSteps.map(
+                    (step, index) => (
 
-                        <div
-                          key={`${step.phase}-${index}`}
-                          className="relative flex gap-4"
-                        >
+                      <div
+                        key={`${step.phase ?? index}-${step.title ?? "step"}`}
+                        className="flex gap-4 rounded-xl border border-slate-200 p-4"
+                      >
 
-                          {/* TIMELINE */}
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white">
+                          {step.phase ??
+                            index + 1}
+                        </div>
 
-                          <div className="flex flex-col items-center">
+                        <div className="flex-1">
 
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white">
-                              {step.phase || index + 1}
-                            </div>
+                          <h4 className="font-semibold text-slate-900">
+                            {step.title ||
+                              "Learning Step"}
+                          </h4>
 
-                            {index <
-                              data.learningPath.length - 1 && (
-                              <div className="mt-2 h-full min-h-8 w-px bg-purple-100" />
-                            )}
+                          {step.duration && (
 
-                          </div>
+                            <div className="mt-1 flex items-center gap-1 text-xs font-medium text-purple-600">
 
-                          {/* CONTENT */}
+                              <Clock3 size={13} />
 
-                          <div className="flex-1 rounded-xl border border-slate-200 p-4">
-
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-
-                              <h3 className="text-sm font-bold text-slate-800">
-                                {step.title}
-                              </h3>
-
-                              {step.duration && (
-                                <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-700">
-                                  {step.duration}
-                                </span>
-                              )}
+                              {step.duration}
 
                             </div>
 
-                            <p className="mt-2 text-xs leading-5 text-slate-500">
+                          )}
+
+                          {step.reason && (
+
+                            <p className="mt-2 text-sm text-slate-500">
                               {step.reason}
                             </p>
 
-                          </div>
+                          )}
 
                         </div>
 
-                      )
-                    )}
+                      </div>
 
-                  </div>
-
-                )}
-
-              </section>
-
-              {/* ==================================================
-                  RECOMMENDED COURSES
-              ================================================== */}
-
-              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <div className="mb-6">
-
-                  <h2 className="text-base font-bold text-slate-900">
-                    Recommended Courses
-                  </h2>
-
-                  <p className="mt-1 text-xs text-slate-500">
-                    Training recommendations returned by the AI
-                    recommendation service.
-                  </p>
+                    )
+                  )}
 
                 </div>
 
-                {data.recommendedCourses.length === 0 ? (
+              </section>
 
-                  <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+            )}
 
-                    <GraduationCap
-                      size={32}
-                      className="mx-auto text-slate-300"
-                    />
+            {/* ============================================= */}
+            {/* COURSES */}
+            {/* ============================================= */}
 
-                    <p className="mt-3 text-sm font-semibold text-slate-700">
-                      No recommended courses returned
+            {trainings.length > 0 && (
+
+              <section className="border-t border-slate-100 pt-6">
+
+                <div className="mb-4 flex items-center gap-3">
+
+                  <CheckCircle2
+                    size={20}
+                    className="text-purple-600"
+                  />
+
+                  <div>
+
+                    <h3 className="font-semibold text-slate-900">
+                      Recommended Courses
+                    </h3>
+
+                    <p className="text-xs text-slate-500">
+                      Courses recommended based on your skill gaps.
                     </p>
 
                   </div>
 
-                ) : (
+                </div>
 
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="space-y-3">
 
-                    {data.recommendedCourses.map(
-                      (course, index) => (
+                  {trainings.map(
+                    (training, index) => (
 
-                        <div
-                          key={
-                            course.trainingId ||
-                            `${course.trainingName}-${index}`
-                          }
-                          className="rounded-2xl border border-slate-200 p-5 transition hover:border-purple-200 hover:shadow-sm"
-                        >
+                      <div
+                        key={
+                          training.trainingId ??
+                          index
+                        }
+                        className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"
+                      >
 
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                            <GraduationCap size={18} />
+                        <div className="flex items-center gap-3">
+
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+
+                            <BookOpen size={18} />
+
                           </div>
 
-                          <h3 className="mt-4 text-sm font-bold text-slate-800">
-                            {course.trainingName}
-                          </h3>
+                          <div>
 
-                          {course.provider && (
+                            <h4 className="font-semibold text-slate-900">
+                              {training.trainingName ||
+                                "Recommended Course"}
+                            </h4>
+
                             <p className="mt-1 text-xs text-slate-500">
-                              {course.provider}
+
+                              {[
+                                training.provider,
+                                training.level,
+                                training.duration,
+                              ]
+                                .filter(Boolean)
+                                .join(" • ")}
+
                             </p>
-                          )}
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-
-                            {course.level && (
-                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-bold text-slate-600">
-                                {course.level}
-                              </span>
-                            )}
-
-                            {course.duration && (
-                              <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[9px] font-bold text-purple-700">
-                                {course.duration}
-                              </span>
-                            )}
 
                           </div>
-
-                          {course.courseUrl && (
-                            <a
-                              href={course.courseUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-800"
-                            >
-                              View Course
-                              <ChevronRight size={14} />
-                            </a>
-                          )}
 
                         </div>
 
-                      )
-                    )}
+                        {training.courseUrl && (
 
-                  </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              window.open(
+                                training.courseUrl,
+                                "_blank",
+                                "noopener,noreferrer"
+                              )
+                            }
+                            className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-600 hover:bg-purple-100"
+                          >
 
-                )}
+                            Open
+
+                            <ExternalLink size={14} />
+
+                          </button>
+
+                        )}
+
+                      </div>
+
+                    )
+                  )}
+
+                </div>
 
               </section>
 
-            </>
-          )}
+            )}
 
-        </div>
+            {/* ============================================= */}
+            {/* NO DATA */}
+            {/* ============================================= */}
 
-      </main>
+            {skillGaps.length === 0 &&
+              learningSteps.length === 0 &&
+              trainings.length === 0 && (
 
-    </div>
+              <div className="flex min-h-[250px] flex-col items-center justify-center text-center">
+
+                <TrendingUp
+                  size={32}
+                  className="mb-3 text-purple-500"
+                />
+
+                <h3 className="font-semibold text-slate-900">
+                  No recommendations available yet
+                </h3>
+
+                <p className="mt-1 max-w-md text-sm text-slate-500">
+                  Complete your skill profile
+                  and assessments so the AI
+                  recommendation engine can
+                  generate a personalized
+                  learning path.
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        )}
+
+      </Card>
+
+    </EmployeePage>
   );
 };
 

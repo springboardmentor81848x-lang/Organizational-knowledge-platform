@@ -28,34 +28,45 @@ export interface GapAnalysisResponse {
   knowledgeGaps: KnowledgeGap[];
 }
 
-export const gapAnalysisService = {
+const gapAnalysisService = {
+
   getMyGapAnalysis: async (): Promise<GapAnalysisResponse> => {
-    const response = await API.get<GapAnalysisResponse>(
-      "/gap-analysis/my"
-    );
+
+    const response =
+      await API.get<GapAnalysisResponse>(
+        "/gap-analysis/my"
+      );
 
     return response.data;
   },
+
 
   getEmployeeGapAnalysis: async (
     employeeId: number
   ): Promise<GapAnalysisResponse> => {
-    const response = await API.get<GapAnalysisResponse>(
-      `/gap-analysis/employee/${employeeId}`
-    );
+
+    const response =
+      await API.get<GapAnalysisResponse>(
+        `/gap-analysis/employee/${employeeId}`
+      );
 
     return response.data;
   },
+
 
   runGapAnalysis: async (
     employeeId: number
   ) => {
-    const response = await API.post(
-      `/gap-analysis/run/${employeeId}`
-    );
+
+    const response =
+      await API.post(
+        `/gap-analysis/run/${employeeId}`
+      );
 
     return response.data;
   },
+
 };
+
 
 export default gapAnalysisService;

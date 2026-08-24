@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getStoredToken } from "@/utils/authStorage";
 
 const API = axios.create({
   baseURL: "http://localhost:8080/api",
@@ -7,18 +8,25 @@ const API = axios.create({
   },
 });
 
+// =====================================================
+// JWT REQUEST INTERCEPTOR
+// =====================================================
+
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("okip_token");
+    const token = getStoredToken();
 
+    console.log("=================================");
+    console.log("AXIOS REQUEST");
+    console.log("URL:", config.url);
     console.log("TOKEN FOUND:", !!token);
-    console.log("REQUEST:", config.method?.toUpperCase(), config.url);
+    console.log("TOKEN LENGTH:", token?.length || 0);
+    console.log("=================================");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("Authorization header attached");
     } else {
-      console.warn("NO OKIP TOKEN FOUND");
+      console.warn("⚠️ NO JWT TOKEN FOUND");
     }
 
     return config;
@@ -28,23 +36,32 @@ API.interceptors.request.use(
   }
 );
 
+// =====================================================
+// RESPONSE ERROR HANDLER
+// =====================================================
+
 API.interceptors.response.use(
   (response) => {
-    console.log(
-      "API SUCCESS:",
-      response.status,
-      response.config.url
-    );
-
     return response;
   },
   (error) => {
     console.error(
       "API ERROR:",
-      error?.response?.status,
-      error?.config?.url,
-      error?.response?.data
+      error.response?.status,
+      error.config?.url
     );
+
+    if (error.response?.status === 401) {
+      console.error(
+        "401 UNAUTHORIZED - JWT invalid or expired"
+      );
+    }
+
+    if (error.response?.status === 403) {
+      console.error(
+        "403 FORBIDDEN - Authentication or role problem"
+      );
+    }
 
     return Promise.reject(error);
   }

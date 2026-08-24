@@ -52,15 +52,18 @@ export const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
- const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   setIsLoading(true);
   setErrorMessage(null);
 
   try {
-    // Login request to backend
+    console.log("========== LOGIN START ==========");
+    console.log("EMAIL:", email);
+    console.log("SELECTED ROLE:", role);
+
+    // 1. Authenticate with backend
     const response = await authService.login({
       email,
       password,
@@ -68,30 +71,40 @@ export const Login: React.FC = () => {
 
     console.log("LOGIN RESPONSE =", response);
 
-    // Check JWT
-    if (!response.token) {
-      throw new Error("Token was not received from backend");
+    // 2. Make sure backend returned JWT
+    if (!response?.token) {
+      throw new Error("Token was not received from backend.");
     }
 
     console.log("LOGIN SUCCESS - TOKEN RECEIVED");
 
-    // Store JWT through AuthContext
+    // 3. Decode JWT only for information/debugging
+    const decoded = tryDecodeToken(response.token);
+
+    console.log("JWT PAYLOAD =", decoded);
+
+    if (decoded) {
+      console.log("JWT SUBJECT =", decoded.sub);
+      console.log("JWT ROLE FROM TOKEN =", getRoleFromPayload(decoded));
+    }
+
+    // 4. Store JWT
     login(response.token, rememberMe);
 
-    // Use the role selected on the login screen
+    // 5. Redirect according to selected role
     let redirectPath = "/employee";
 
     switch (role) {
-      case "ROLE_ADMIN":
-        redirectPath = "/admin";
+      case "ROLE_MANAGER":
+        redirectPath = "/manager";
         break;
 
       case "ROLE_HR":
         redirectPath = "/hr";
         break;
 
-      case "ROLE_MANAGER":
-        redirectPath = "/manager";
+      case "ROLE_ADMIN":
+        redirectPath = "/admin";
         break;
 
       case "ROLE_EMPLOYEE":
@@ -100,16 +113,15 @@ export const Login: React.FC = () => {
 
       default:
         redirectPath = "/employee";
-        break;
     }
 
-    console.log("SELECTED ROLE =", role);
-    console.log("REDIRECTING TO =", redirectPath);
+    console.log("FINAL REDIRECT =", redirectPath);
+    console.log("================================");
 
     navigate(redirectPath, { replace: true });
 
   } catch (error: any) {
-    console.error("Login failed:", error);
+    console.error("LOGIN ERROR =", error);
 
     if (error?.response?.status === 401) {
       setErrorMessage(
@@ -130,6 +142,7 @@ export const Login: React.FC = () => {
     setIsLoading(false);
   }
 };
+
   return (
     <div className={`h-screen w-full flex bg-[#0d0922] font-sans antialiased overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
       

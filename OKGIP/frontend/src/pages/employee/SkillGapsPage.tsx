@@ -1,651 +1,680 @@
-import React, { useEffect, useState } from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Activity,
   AlertTriangle,
-  Award,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  FileCheck2,
-  GraduationCap,
-  Briefcase,
-  LayoutDashboard,
-  Loader2,
-  LogOut,
-  Settings,
-  ShieldCheck,
+  ArrowUpRight,
+  CheckCircle2,
   Target,
-  TrendingDown,
-  User,
-  Users,
-  Zap,
+  TrendingUp,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
-
+import EmployeePage from "@/components/layout/EmployeePage";
 import gapAnalysisService, {
-  GapAnalysisResponse,
+  type GapAnalysisResponse,
+  type KnowledgeGap,
 } from "@/services/gapAnalysisService";
 
+// =====================================================
+// HELPERS
+// =====================================================
+
+const parsePercentage = (
+  value: string | number | null | undefined
+): number => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  const parsed = Number(
+    String(value).replace("%", "").trim()
+  );
+
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const clampPercentage = (value: number): number => {
+  return Math.min(Math.max(value, 0), 100);
+};
+
+const formatPercentage = (value: number): string => {
+  const rounded = Math.round(value * 10) / 10;
+
+  return `${rounded}%`;
+};
+
+// =====================================================
+// PRIORITY
+// =====================================================
+
+const getPriority = (gap: KnowledgeGap) => {
+  const status = String(gap.status || "").toLowerCase();
+
+  if (
+    status.includes("improv") ||
+    status.includes("progress")
+  ) {
+    return "Improving";
+  }
+
+  const gapPercentage = clampPercentage(
+    Number(gap.gapPercentage) || 0
+  );
+
+  if (gapPercentage >= 20) {
+    return "High Priority";
+  }
+
+  if (gapPercentage > 0) {
+    return "Medium Priority";
+  }
+
+  return "Improving";
+};
+
+// =====================================================
+// PRIORITY STYLE
+// =====================================================
+
+const getPriorityClass = (priority: string) => {
+  if (priority === "High Priority") {
+    return "bg-red-50 text-red-600";
+  }
+
+  if (priority === "Medium Priority") {
+    return "bg-orange-50 text-orange-500";
+  }
+
+  return "bg-green-50 text-green-600";
+};
+
+// =====================================================
+// GAP COLOR
+// =====================================================
+
+const getGapColorClass = (gapPercentage: number) => {
+  if (gapPercentage >= 20) {
+    return "text-red-500";
+  }
+
+  if (gapPercentage > 10) {
+    return "text-orange-500";
+  }
+
+  return "text-green-600";
+};
+
+// =====================================================
+// SKILL ICON
+// =====================================================
+
+const SkillIcon: React.FC = () => {
+  return (
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50">
+      <Target
+        size={23}
+        className="text-purple-600"
+      />
+    </div>
+  );
+};
+
+// =====================================================
+// STAT CARD
+// =====================================================
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  description: string;
+  icon: React.ReactNode;
+  iconClassName: string;
+  descriptionClassName?: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  description,
+  icon,
+  iconClassName,
+  descriptionClassName = "text-slate-500",
+}) => {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            {title}
+          </p>
+
+          <h2 className="mt-2 text-3xl font-bold text-slate-900">
+            {value}
+          </h2>
+
+          <p
+            className={`mt-2 text-sm ${descriptionClassName}`}
+          >
+            {description}
+          </p>
+        </div>
+
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconClassName}`}
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// SKILL CARD
+// =====================================================
+
+interface SkillCardProps {
+  skill: KnowledgeGap;
+}
+
+const SkillCard: React.FC<SkillCardProps> = ({
+  skill,
+}) => {
+  const currentLevel = clampPercentage(
+    parsePercentage(skill.currentProficiency)
+  );
+
+  const targetLevel = clampPercentage(
+    parsePercentage(skill.requiredProficiency)
+  );
+
+  const gapPercentage = clampPercentage(
+    Number(skill.gapPercentage) || 0
+  );
+
+  const priority = getPriority(skill);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      {/* TOP */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <SkillIcon />
+
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">
+              {skill.skillName}
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {skill.jobRoleName || "Employee"}
+            </p>
+          </div>
+        </div>
+
+        <span
+          className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold ${getPriorityClass(
+            priority
+          )}`}
+        >
+          {priority}
+        </span>
+      </div>
+
+      {/* LEVELS */}
+      <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1fr_180px]">
+        {/* CURRENT LEVEL */}
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">
+              Current Level
+            </span>
+
+            <span className="text-sm font-semibold text-slate-700">
+              {formatPercentage(currentLevel)}
+            </span>
+          </div>
+
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-purple-600 transition-all duration-500"
+              style={{
+                width: `${currentLevel}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* TARGET LEVEL */}
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">
+              Target Level
+            </span>
+
+            <span className="text-sm font-semibold text-slate-700">
+              {formatPercentage(targetLevel)}
+            </span>
+          </div>
+
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-purple-600 transition-all duration-500"
+              style={{
+                width: `${targetLevel}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* GAP */}
+        <div className="flex flex-col justify-center">
+          <span className="text-sm font-medium text-slate-500">
+            Gap
+          </span>
+
+          <span
+            className={`mt-1 text-2xl font-bold ${getGapColorClass(
+              gapPercentage
+            )}`}
+          >
+            {formatPercentage(gapPercentage)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// MAIN PAGE
+// =====================================================
+
 const SkillGapsPage: React.FC = () => {
+  const navigate = useNavigate();
+
   const [data, setData] =
     useState<GapAnalysisResponse | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
 
-  // ============================================================
-  // LOAD REAL BACKEND DATA
-  // ============================================================
+  const [error, setError] =
+    useState<string | null>(null);
+
+  // ===================================================
+  // LOAD CURRENT LOGGED-IN EMPLOYEE GAP ANALYSIS
+  // ===================================================
 
   useEffect(() => {
+    let mounted = true;
+
     const loadGapAnalysis = async () => {
       try {
         setLoading(true);
-        setError("");
+        setError(null);
 
-        const result =
+        console.log(
+          "SKILL GAPS: Loading current employee gap analysis..."
+        );
+
+        const response =
           await gapAnalysisService.getMyGapAnalysis();
 
         console.log(
-          "MY GAP ANALYSIS RESPONSE =",
-          result
+          "SKILL GAPS: API RESPONSE:",
+          response
         );
 
-        setData(result);
-      } catch (err: any) {
+        if (!mounted) {
+          return;
+        }
+
+        setData(response);
+      } catch (err) {
         console.error(
-          "GAP ANALYSIS ERROR =",
+          "SKILL GAPS: Failed to load:",
           err
         );
 
+        if (!mounted) {
+          return;
+        }
+
         setError(
-          "Unable to load skill gap analysis from /api/gap-analysis/my."
+          "Unable to load your skill gap analysis."
         );
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    void loadGapAnalysis();
+    loadGapAnalysis();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // ============================================================
-  // SAME EMPLOYEE SIDEBAR
-  // ============================================================
+  // ===================================================
+  // CALCULATE STATS
+  // ===================================================
 
-  const Sidebar = () => (
-    <aside className="employee-sidebar">
+  const stats = useMemo(() => {
+    const skills = data?.knowledgeGaps ?? [];
 
-      {/* BRAND */}
+    const totalSkillGaps =
+      data?.gapSkills ?? skills.length;
 
-      <div className="employee-brand">
-        <div className="employee-brand-icon">
-          <Zap size={19} />
-        </div>
+    const highPriority =
+      skills.filter((skill) => {
+        const priority = getPriority(skill);
 
-        <span>OKGIP</span>
-      </div>
+        return priority === "High Priority";
+      }).length;
 
-      {/* NAVIGATION */}
+    const improving =
+      skills.filter((skill) => {
+        const priority = getPriority(skill);
 
-      <nav className="employee-nav">
+        return priority === "Improving";
+      }).length;
 
-        <NavLink
-          to="/employee"
-          className="employee-nav-item"
-        >
-          <LayoutDashboard size={15} />
-          <span>Dashboard</span>
-        </NavLink>
+    const gapClosure = clampPercentage(
+      Number(data?.readinessPercentage) || 0
+    );
 
-        <NavLink
-          to="/employee/profile"
-          className="employee-nav-item"
-        >
-          <User size={15} />
-          <span>My Profile</span>
-        </NavLink>
+    return {
+      totalSkillGaps,
+      highPriority,
+      improving,
+      gapClosure,
+    };
+  }, [data]);
 
-        <NavLink
-          to="/employee/skills"
-          className="employee-nav-item"
-        >
-          <Activity size={15} />
-          <span>Skill Profile</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/self-assessment"
-          className="employee-nav-item"
-        >
-          <FileCheck2 size={15} />
-          <span>Self Assessment</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/peer-assessment"
-          className="employee-nav-item"
-        >
-          <Users size={15} />
-          <span>Peer Assessment</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/proficiency"
-          className="employee-nav-item"
-        >
-          <Target size={15} />
-          <span>My Proficiency</span>
-        </NavLink>
-
-        {/* ACTIVE */}
-
-        <NavLink
-          to="/employee/skill-gaps"
-          className="employee-nav-item active"
-        >
-          <TrendingDown size={15} />
-          <span>Skill Gaps</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/learning-paths"
-          className="employee-nav-item"
-        >
-          <BookOpen size={15} />
-          <span>Learning Paths</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/training"
-          className="employee-nav-item"
-        >
-          <GraduationCap size={15} />
-          <span>Training</span>
-        </NavLink>
-
-        {/* EXPERIENCE */}
-<NavLink
-  to="/employee/experience"
-  className="employee-nav-item"
->
-  <Briefcase size={15} />
-  <span>Experience</span>
-</NavLink>
-
-
-        <NavLink
-          to="/employee/progress"
-          className="employee-nav-item"
-        >
-          <Activity size={15} />
-          <span>My Progress</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/achievements"
-          className="employee-nav-item"
-        >
-          <Award size={15} />
-          <span>Achievements</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/certifications"
-          className="employee-nav-item"
-        >
-          <ShieldCheck size={15} />
-          <span>Certifications</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/mentorship"
-          className="employee-nav-item"
-        >
-          <Users size={15} />
-          <span>Mentorship</span>
-        </NavLink>
-
-        <NavLink
-          to="/employee/notifications"
-          className="employee-nav-item"
-        >
-          <Bell size={15} />
-          <span>Notifications</span>
-        </NavLink>
-
-      </nav>
-
-      {/* SIDEBAR BOTTOM */}
-
-      <div className="employee-sidebar-bottom">
-
-        <NavLink
-          to="/employee/settings"
-          className="employee-nav-item"
-        >
-          <Settings size={15} />
-          <span>Settings</span>
-        </NavLink>
-
-        <div className="employee-nav-item">
-          <LogOut size={15} />
-          <span>Logout</span>
-        </div>
-
-        <div className="employee-collapse">
-          <ChevronRight size={14} />
-          <span>Collapse Sidebar</span>
-        </div>
-
-      </div>
-
-    </aside>
-  );
-
-  // ============================================================
+  // ===================================================
   // LOADING
-  // ============================================================
+  // ===================================================
 
   if (loading) {
     return (
-      <div className="employee-dashboard">
+      <EmployeePage
+        title="Skill Gaps"
+        subtitle="Identify your skill gaps and understand the areas you need to improve for your career growth."
+      >
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-purple-100 border-t-purple-600" />
 
-        <Sidebar />
-
-        <main className="employee-main">
-
-          <div className="space-y-6">
-
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                Skill Gaps
-              </h1>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Identify the skills that need your attention.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-              <div className="flex min-h-40 items-center justify-center gap-2 text-xs text-slate-500">
-
-                <Loader2
-                  className="animate-spin text-purple-600"
-                  size={20}
-                />
-
-                Analyzing your skills...
-
-              </div>
-
-            </div>
-
+            <p className="mt-4 text-sm text-slate-500">
+              Loading your skill gap analysis...
+            </p>
           </div>
-
-        </main>
-
-      </div>
+        </div>
+      </EmployeePage>
     );
   }
 
-  // ============================================================
+  // ===================================================
   // ERROR
-  // ============================================================
+  // ===================================================
 
   if (error) {
     return (
-      <div className="employee-dashboard">
-
-        <Sidebar />
-
-        <main className="employee-main">
-
-          <div className="space-y-6">
+      <EmployeePage
+        title="Skill Gaps"
+        subtitle="Identify your skill gaps and understand the areas you need to improve for your career growth."
+      >
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+          <div className="flex items-center gap-3">
+            <AlertTriangle
+              size={22}
+              className="text-red-500"
+            />
 
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                Skill Gaps
-              </h1>
+              <h3 className="font-semibold text-red-700">
+                Unable to load Skill Gaps
+              </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Identify the skills that need your attention.
+              <p className="mt-1 text-sm text-red-600">
+                {error}
               </p>
             </div>
-
-            <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-sm text-red-600">
-
-              <AlertTriangle
-                className="mb-2"
-                size={20}
-              />
-
-              {error}
-
-            </div>
-
           </div>
-
-        </main>
-
-      </div>
+        </div>
+      </EmployeePage>
     );
   }
 
-  // ============================================================
-  // REAL BACKEND DATA
-  // ============================================================
+  // ===================================================
+  // NO DATA
+  // ===================================================
 
-  const gaps = data?.knowledgeGaps ?? [];
+  if (!data) {
+    return (
+      <EmployeePage
+        title="Skill Gaps"
+        subtitle="Identify your skill gaps and understand the areas you need to improve for your career growth."
+      >
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <Target
+            size={40}
+            className="mx-auto text-purple-500"
+          />
 
-  const sortedGaps = [...gaps].sort(
-    (a, b) =>
-      (b.gapPercentage ?? 0) -
-      (a.gapPercentage ?? 0)
-  );
+          <h3 className="mt-4 text-lg font-bold text-slate-900">
+            No Skill Gap Data
+          </h3>
 
-  // ============================================================
-  // MAIN PAGE
-  // ============================================================
+          <p className="mt-2 text-sm text-slate-500">
+            There is currently no skill gap analysis available
+            for your account.
+          </p>
+        </div>
+      </EmployeePage>
+    );
+  }
+
+  // ===================================================
+  // MAIN UI
+  // ===================================================
 
   return (
-    <div className="employee-dashboard">
-
-      <Sidebar />
-
-      <main className="employee-main">
-
-        <div className="space-y-6">
-
-          {/* HEADER */}
-
-          <div>
-
-            <h1 className="text-2xl font-bold text-slate-900">
-              Skill Gaps
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Identify the skills that need your attention.
-            </p>
-
-          </div>
-
-          {/* ==================================================
-              SUMMARY CARDS
-          ================================================== */}
-
-          <div className="grid gap-4 md:grid-cols-3">
-
-            {/* OVERALL GAP */}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-              <p className="text-xs font-semibold text-slate-500">
-                Overall Gap
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-slate-900">
-                {(data?.overallGapPercentage ?? 0).toFixed(1)}%
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Current knowledge gap
-              </p>
-
-            </div>
-
-            {/* READINESS */}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-              <p className="text-xs font-semibold text-slate-500">
-                Readiness
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-purple-600">
-                {(data?.readinessPercentage ?? 0).toFixed(1)}%
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Role readiness
-              </p>
-
-            </div>
-
-            {/* GAP SKILLS */}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-              <p className="text-xs font-semibold text-slate-500">
-                Skills Needing Attention
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-slate-900">
-                {data?.gapSkills ?? gaps.length}
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Detected by backend
-              </p>
-
-            </div>
-
-          </div>
-
-          {/* ==================================================
-              EMPLOYEE / ROLE SUMMARY
-          ================================================== */}
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            <div className="grid gap-4 sm:grid-cols-4">
-
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Employee
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-slate-800">
-                  {data?.employeeName || "Not available"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Employee Code
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-slate-800">
-                  {data?.employeeCode || "Not available"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Job Role
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-slate-800">
-                  {data?.jobRoleName || "Not assigned"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Total Skills
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-slate-800">
-                  {data?.totalSkills ?? 0}
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* ==================================================
-              TOP SKILL GAPS
-          ================================================== */}
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            <div className="mb-6">
-
-              <h2 className="text-base font-bold text-slate-900">
-                Top Skill Gaps
-              </h2>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Live gap-analysis results
-              </p>
-
-            </div>
-
-            {sortedGaps.length === 0 ? (
-
-              <div className="rounded-xl bg-emerald-50 p-6 text-center">
-
-                <Target
-                  size={28}
-                  className="mx-auto text-emerald-600"
-                />
-
-                <p className="mt-3 text-xs font-semibold text-emerald-700">
-                  No current skill gaps require attention.
-                </p>
-
-                <p className="mt-1 text-[10px] text-emerald-600">
-                  The backend returned no knowledge gaps for this employee.
-                </p>
-
-              </div>
-
-            ) : (
-
-              <div className="space-y-5">
-
-                {sortedGaps.map((gap) => (
-
-                  <div
-                    key={gap.knowledgeGapId}
-                    className="rounded-xl border border-slate-100 p-4"
-                  >
-
-                    <div className="mb-3 flex items-center justify-between gap-3 text-xs">
-
-                      <div className="flex items-center gap-2">
-
-                        <TrendingDown
-                          size={15}
-                          className="text-red-500"
-                        />
-
-                        <b className="text-slate-800">
-                          {gap.skillName}
-                        </b>
-
-                      </div>
-
-                      <span className="font-semibold text-red-500">
-                        {Math.round(
-                          gap.gapPercentage ?? 0
-                        )}
-                        % gap
-                      </span>
-
-                    </div>
-
-                    {/* PROGRESS */}
-
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-
-                      <div
-                        className="h-full rounded-full bg-red-400"
-                        style={{
-                          width: `${Math.min(
-                            Math.max(
-                              gap.gapPercentage ?? 0,
-                              0
-                            ),
-                            100
-                          )}%`,
-                        }}
-                      />
-
-                    </div>
-
-                    {/* CURRENT / REQUIRED */}
-
-                    <div className="mt-2 flex justify-between text-[10px] text-slate-400">
-
-                      <span>
-                        Current:{" "}
-                        {gap.currentProficiency ||
-                          "Not assessed"}
-                      </span>
-
-                      <span>
-                        Required:{" "}
-                        {gap.requiredProficiency ||
-                          "—"}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            )}
-
-          </div>
-
-          {/* ==================================================
-              NEXT ACTION
-          ================================================== */}
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            <h2 className="text-base font-bold text-slate-900">
-              Next Action
-            </h2>
-
-            <div className="mt-4 flex items-center gap-3 rounded-xl bg-purple-50 p-4">
-
-              <Target
-                size={22}
-                className="text-purple-600"
-              />
-
-              <div>
-
-                <b className="text-xs text-slate-800">
-                  Continue to Learning Paths
-                </b>
-
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Learning recommendations can be based on
-                  the skill gaps detected by the backend.
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
+    <EmployeePage
+      title="Skill Gaps"
+      subtitle="Identify your skill gaps and understand the areas you need to improve for your career growth."
+    >
+      {/* =================================================
+          EMPLOYEE INFO
+         ================================================= */}
+
+      <div className="mb-6 rounded-2xl border border-purple-100 bg-purple-50/70 px-6 py-5">
+        <p className="text-sm font-medium text-purple-600">
+          Skill Gap Analysis For
+        </p>
+
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <span className="font-bold text-slate-900">
+            {data.employeeName || "Employee"}
+          </span>
+
+          <span className="text-slate-400">
+            |
+          </span>
+
+          <span className="text-sm text-slate-600">
+            {data.employeeCode || "—"}
+          </span>
+
+          <span className="text-slate-400">
+            |
+          </span>
+
+          <span className="text-sm text-slate-600">
+            {data.jobRoleName || "Employee"}
+          </span>
+        </div>
+      </div>
+
+      {/* =================================================
+          STAT CARDS
+         ================================================= */}
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total Skill Gaps"
+          value={stats.totalSkillGaps}
+          description="Skills requiring improvement"
+          icon={
+            <TrendingUp
+              size={22}
+              className="text-purple-600"
+            />
+          }
+          iconClassName="bg-purple-50"
+        />
+
+        <StatCard
+          title="High Priority"
+          value={stats.highPriority}
+          description="Needs immediate attention"
+          icon={
+            <AlertTriangle
+              size={22}
+              className="text-red-500"
+            />
+          }
+          iconClassName="bg-red-50"
+          descriptionClassName="text-red-500"
+        />
+
+        <StatCard
+          title="Improving"
+          value={stats.improving}
+          description="Skills showing progress"
+          icon={
+            <ArrowUpRight
+              size={22}
+              className="text-green-600"
+            />
+          }
+          iconClassName="bg-green-50"
+          descriptionClassName="text-green-600"
+        />
+
+        <StatCard
+          title="Gap Closure"
+          value={formatPercentage(stats.gapClosure)}
+          description="Overall improvement"
+          icon={
+            <Target
+              size={22}
+              className="text-blue-600"
+            />
+          }
+          iconClassName="bg-blue-50"
+        />
+      </div>
+
+      {/* =================================================
+          SKILL GAP LIST
+         ================================================= */}
+
+      <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-slate-900">
+            Your Skill Gaps
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Skills where your current proficiency is below
+            the expected level.
+          </p>
         </div>
 
-      </main>
+        {data.knowledgeGaps.length === 0 ? (
+          <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
+            <CheckCircle2
+              size={40}
+              className="mx-auto text-green-600"
+            />
 
-    </div>
+            <h3 className="mt-3 font-bold text-green-700">
+              No Skill Gaps Found
+            </h3>
+
+            <p className="mt-1 text-sm text-green-600">
+              Great! You currently have no identified skill
+              gaps.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {data.knowledgeGaps.map(
+              (skill, index) => (
+                <SkillCard
+                  key={
+                    skill.knowledgeGapId ||
+                    `${skill.skillName}-${index}`
+                  }
+                  skill={skill}
+                />
+              )
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* =================================================
+          RECOMMENDED NEXT STEP
+         ================================================= */}
+
+      <section className="mt-6 rounded-2xl border border-purple-100 bg-purple-50/70 p-5">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white">
+              <CheckCircle2
+                size={21}
+                className="text-purple-600"
+              />
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-900">
+                Recommended Next Step
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-600">
+                Focus on your highest-priority skill gaps
+                first, then continue with the recommended
+                learning path to strengthen your skills.
+              </p>
+            </div>
+          </div>
+
+          {/* =================================================
+              THIS BUTTON GOES TO THE SAME ROUTE AS SIDEBAR
+             ================================================= */}
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/employee/learning-paths")
+            }
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700"
+          >
+            View Learning Path
+            <ArrowUpRight size={18} />
+          </button>
+        </div>
+      </section>
+    </EmployeePage>
   );
 };
 
