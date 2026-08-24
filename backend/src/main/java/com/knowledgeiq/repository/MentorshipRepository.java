@@ -15,6 +15,10 @@ public interface MentorshipRepository extends JpaRepository<Mentorship, UUID> {
     List<Mentorship> findByMenteeIdOrMentorIdOrderByCreatedAtDesc(UUID menteeId, UUID mentorId);
     List<Mentorship> findByMentorIdAndMenteeIdAndSkillIdAndStatusIn(UUID mentorId, UUID menteeId, UUID skillId, List<String> statuses);
     
+    // Org-level queries for L&D Admin
+    List<Mentorship> findByMenteeOrganizationIdOrderByCreatedAtDesc(UUID orgId);
+    List<Mentorship> findByMentorOrganizationIdOrderByCreatedAtDesc(UUID orgId);
+
     long countByMentorIdAndStatus(UUID mentorId, String status);
     long countByMenteeIdAndStatus(UUID menteeId, String status);
 }

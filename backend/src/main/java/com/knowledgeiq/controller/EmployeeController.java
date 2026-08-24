@@ -129,11 +129,13 @@ public class EmployeeController {
                 dto.setStoragePath(storagePath);
                 dto.setFileType(file.getContentType());
                 dto.setFileSize(file.getSize());
-                dto.setStatus("UPLOADED");
-                dto.setAssessmentStatus("Not Attempted");
-            } else {
-                dto.setStatus("UPLOADED");
-                dto.setAssessmentStatus("Not Attempted");
+            }
+
+            if (dto.getStatus() == null) {
+                dto.setStatus("PENDING_VERIFICATION");
+            }
+            if (dto.getAssessmentStatus() == null) {
+                dto.setAssessmentStatus("Pending Verification");
             }
 
             return ResponseEntity.ok(employeeService.addCertification(userId, dto));
@@ -150,8 +152,12 @@ public class EmployeeController {
         String userIdStr = (String) authentication.getPrincipal();
         UUID userId = UUID.fromString(userIdStr);
 
-        dto.setStatus("UPLOADED");
-        dto.setAssessmentStatus("Not Attempted");
+        if (dto.getStatus() == null) {
+            dto.setStatus("PENDING_VERIFICATION");
+        }
+        if (dto.getAssessmentStatus() == null) {
+            dto.setAssessmentStatus("Pending Verification");
+        }
         return ResponseEntity.ok(employeeService.addCertification(userId, dto));
     }
 

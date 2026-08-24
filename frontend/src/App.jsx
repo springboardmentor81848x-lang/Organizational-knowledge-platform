@@ -20,7 +20,7 @@ import {
 import { EmployeeSkills as SkillsShared } from './pages/EmployeePages.jsx'
 import { ProfilePage, NotificationsPage } from './pages/SharedPages.jsx'
 import { DeptHeadDashboard, DeptHeadBenchmarks, DeptHeadAllocation } from './pages/DeptHeadPages.jsx'
-import { LdAdminDashboard, LdAdminCatalog, LdAdminPaths, LdAdminCerts } from './pages/LdAdminPages.jsx'
+import { LdAdminDashboard, LdAdminCatalog, LdAdminPaths, LdAdminCerts, LdAdminMentorManagement } from './pages/LdAdminPages.jsx'
 import api from './services/api.js'
 
 function parseRouteFromLocation() {
@@ -348,6 +348,7 @@ function PageRouter({ role, page, onNav, user }) {
       case 'catalog': return <LdAdminCatalog onNav={onNav} />
       case 'paths': return <LdAdminPaths onNav={onNav} />
       case 'certs': return <LdAdminCerts onNav={onNav} />
+      case 'mentors': return <LdAdminMentorManagement onNav={onNav} user={user} />
       default: return <NotFound onNav={onNav} />
     }
   }

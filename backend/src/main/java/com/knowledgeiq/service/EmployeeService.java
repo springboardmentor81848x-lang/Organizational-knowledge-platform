@@ -34,6 +34,9 @@ public class EmployeeService {
     @Autowired
     private GapAnalysisService gapAnalysisService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public UserProfileDto getEmployeeProfile(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -242,14 +245,28 @@ public class EmployeeService {
             Skill skill = skillRepository.findById(dto.getSkillId()).orElse(null);
             cert.setSkill(skill);
         }
-        cert.setStatus(dto.getStatus() != null ? dto.getStatus() : "UPLOADED");
+        cert.setStatus(dto.getStatus() != null ? dto.getStatus() : "PENDING_VERIFICATION");
         cert.setStoragePath(dto.getStoragePath());
         cert.setFileType(dto.getFileType());
         cert.setFileSize(dto.getFileSize());
-        cert.setAssessmentStatus(dto.getAssessmentStatus() != null ? dto.getAssessmentStatus() : "Not Attempted");
+        cert.setAssessmentStatus(dto.getAssessmentStatus() != null ? dto.getAssessmentStatus() : "Pending Verification");
         cert.setAssessmentScore(dto.getAssessmentScore());
 
         cert = certificationRepository.save(cert);
+
+        // Notify L&D Admin(s) of new certification submission
+        try {
+            if (user.getOrganization() != null) {
+                List<User> ldAdmins = userRepository.findByOrganizationId(user.getOrganization().getId()).stream()
+                        .filter(u -> u.getSystemRole() == SystemRole.L_AND_D_ADMIN || "L_AND_D_ADMIN".equalsIgnoreCase(u.getRoleTitle()))
+                        .collect(Collectors.toList());
+                for (User admin : ldAdmins) {
+                    notificationService.notifyLdCertSubmitted(admin, user.getFullName(), cert.getName(), cert.getId());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Notification error on cert submission: " + e.getMessage());
+        }
 
         try {
             gapAnalysisService.recalculateUserGaps(userId);
@@ -277,6 +294,10 @@ public class EmployeeService {
         result.setFileSize(cert.getFileSize());
         result.setAssessmentStatus(cert.getAssessmentStatus());
         result.setAssessmentScore(cert.getAssessmentScore());
+        result.setEmployeeName(user.getFullName());
+        result.setEmployeeEmail(user.getEmail());
+        result.setDepartmentName(user.getDepartment() != null ? user.getDepartment().getName() : "Enterprise");
+        result.setRoleTitle(user.getRoleTitle());
         
         return result;
     }

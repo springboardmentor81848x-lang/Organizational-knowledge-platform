@@ -32,6 +32,8 @@ public class MentorshipDto {
     private ZonedDateTime endDate;
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
+    
+    private String assignedByName; // L&D Admin name who assigned this (null for self-requested)
 
     public MentorshipDto() {}
 
@@ -103,4 +105,7 @@ public class MentorshipDto {
 
     public ZonedDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(ZonedDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getAssignedByName() { return assignedByName; }
+    public void setAssignedByName(String assignedByName) { this.assignedByName = assignedByName; }
 }

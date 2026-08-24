@@ -1,7 +1,6 @@
 package com.knowledgeiq.service;
 
-import com.knowledgeiq.dto.KnowledgeSessionDto;
-import com.knowledgeiq.dto.KnowledgeSessionFeedbackDto;
+import com.knowledgeiq.dto.*;
 import com.knowledgeiq.model.*;
 import com.knowledgeiq.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +30,23 @@ public class KnowledgeSessionService {
     private SkillRepository skillRepository;
 
     @Autowired
+    private EmployeeSkillRepository employeeSkillRepository;
+
+    @Autowired
     private NotificationService notificationService;
+
+    public List<SkillDto> getEligibleHostSkills(UUID mentorId) {
+        List<EmployeeSkill> skills = employeeSkillRepository.findByUserId(mentorId);
+        return skills.stream()
+                .filter(es -> es.getProficiencyLevel() >= 4)
+                .map(es -> new SkillDto(
+                        es.getSkill().getId(),
+                        es.getSkill().getName(),
+                        es.getSkill().getCategory() != null ? es.getSkill().getCategory().getName() : "General",
+                        es.getProficiencyLevel()
+                ))
+                .collect(Collectors.toList());
+    }
 
     public List<KnowledgeSessionDto> getAllSessions(UUID currentUserId) {
         List<KnowledgeSession> sessions = sessionRepository.findAllByOrderByScheduledAtDesc();
@@ -52,6 +67,18 @@ public class KnowledgeSessionService {
                 .orElseThrow(() -> new RuntimeException("Host / Mentor not found: " + mentorId));
 
         Skill skill = skillId != null ? skillRepository.findById(skillId).orElse(null) : null;
+
+        // Host Eligibility Engine Validation: Must hold >= 90% proficiency (Level 4+ or Level 5)
+        if (skill != null) {
+            Optional<EmployeeSkill> empSkill = employeeSkillRepository.findByUserIdAndSkillId(mentorId, skill.getId());
+            if (empSkill.isEmpty() || empSkill.get().getProficiencyLevel() < 4) {
+                int currentLvl = empSkill.isPresent() ? empSkill.get().getProficiencyLevel() : 0;
+                throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Ineligible Host: Hosting knowledge sessions requires >= 90% proficiency (Level 4+ or Level 5 Expert Mastery) in " + skill.getName() + ". Your evaluated level is Level " + currentLvl + "/5."
+                );
+            }
+        }
 
         if (scheduledAt == null) {
             scheduledAt = ZonedDateTime.now().plusDays(1);
@@ -134,6 +161,48 @@ public class KnowledgeSessionService {
         registrationRepository.save(reg);
 
         return mapToDto(session, userId);
+    }
+
+    @Transactional
+    public KnowledgeSessionDto cancelRegistration(UUID sessionId, UUID userId) {
+        KnowledgeSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Knowledge Session not found: " + sessionId));
+
+        Optional<KnowledgeSessionRegistration> reg = registrationRepository.findBySessionIdAndUserId(sessionId, userId);
+        reg.ifPresent(registrationRepository::delete);
+
+        return mapToDto(session, userId);
+    }
+
+    @Transactional
+    public void cancelSession(UUID sessionId, UUID mentorId) {
+        KnowledgeSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Knowledge Session not found: " + sessionId));
+
+        if (!session.getMentor().getId().equals(mentorId)) {
+            throw new SecurityException("Only the host mentor can cancel this session.");
+        }
+
+        session.setStatus("CANCELLED");
+        sessionRepository.save(session);
+    }
+
+    @Transactional
+    public KnowledgeSessionDto editSession(UUID sessionId, UUID mentorId, Map<String, Object> body) {
+        KnowledgeSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Knowledge Session not found: " + sessionId));
+
+        if (!session.getMentor().getId().equals(mentorId)) {
+            throw new SecurityException("Only the host mentor can edit this session.");
+        }
+
+        if (body.containsKey("title")) session.setTitle((String) body.get("title"));
+        if (body.containsKey("description")) session.setDescription((String) body.get("description"));
+        if (body.containsKey("capacity")) session.setCapacity(Integer.parseInt(body.get("capacity").toString()));
+        if (body.containsKey("durationMinutes")) session.setDurationMinutes(Integer.parseInt(body.get("durationMinutes").toString()));
+        if (body.containsKey("meetingLink")) session.setMeetingLink((String) body.get("meetingLink"));
+
+        return mapToDto(sessionRepository.save(session), mentorId);
     }
 
     private KnowledgeSessionDto mapToDto(KnowledgeSession session, UUID currentUserId) {

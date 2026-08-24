@@ -50,6 +50,9 @@ public class DataInitializer implements CommandLineRunner {
     private KnowledgeSessionRepository sessionRepository;
 
     @Autowired
+    private com.knowledgeiq.repository.CommunityPostRepository communityPostRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -206,6 +209,35 @@ public class DataInitializer implements CommandLineRunner {
                 );
             } catch (Exception e) {
                 System.err.println("Initial notifications seeding skipped: " + e.getMessage());
+            }
+
+            // --- 9. Seed Community of Practice Posts ---
+            try {
+                if (communityPostRepository.count() == 0) {
+                    communityPostRepository.save(new com.knowledgeiq.model.CommunityPost(
+                            "Java Guild",
+                            "Spring Boot 3.2 Virtual Threads & Performance Best Practices",
+                            "Virtual Threads (Project Loom) in Java 21+ drastically simplify concurrent I/O programming. Here are 5 key patterns for production microservices.",
+                            "https://spring.io/blog/2023/09/09/virtual-threads-in-spring-boot-3-2",
+                            employee
+                    ));
+                    communityPostRepository.save(new com.knowledgeiq.model.CommunityPost(
+                            "DevOps Guild",
+                            "Kubernetes Zero-Downtime Rolling Deployment Strategies",
+                            "Learn how to configure readiness and liveness probes alongside PodDisruptionBudgets to prevent service dropouts during production deployments.",
+                            "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+                            jordanTaylor
+                    ));
+                    communityPostRepository.save(new com.knowledgeiq.model.CommunityPost(
+                            "UI/UX Practice",
+                            "Designing Accessible & Glassmorphic Component Libraries",
+                            "A breakdown of WCAG 2.1 AA contrast standards when using backdrop-blur and semi-transparent CSS color overlays in modern Web Apps.",
+                            "https://www.w3.org/WAI/standards-guidelines/wcag/",
+                            sofiaRuiz
+                    ));
+                }
+            } catch (Exception e) {
+                System.err.println("Community post seeding skipped: " + e.getMessage());
             }
         }
 

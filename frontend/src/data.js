@@ -74,6 +74,9 @@ export const NAV = {
       { id: 'paths', label: 'Adaptive Learning Path Builder', icon: 'map' },
       { id: 'certs', label: 'Certification Verification', icon: 'award' }
     ]},
+    { section: 'Mentorship', items: [
+      { id: 'mentors', label: 'Mentor Management', icon: 'users' }
+    ]},
     { section: 'Account', items: [
       { id: 'profile', label: 'Profile', icon: 'user-circle' },
       { id: 'notifications', label: 'Notifications', icon: 'bell' }

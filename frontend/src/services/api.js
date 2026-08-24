@@ -446,6 +446,12 @@ export const api = {
     })
   },
 
+  rejectCertification: async (id) => {
+    return request(`/ldadmin/certifications/${id}/reject`, {
+      method: 'POST'
+    })
+  },
+
   createCourse: async (payload) => {
     return request('/training/courses', {
       method: 'POST',
@@ -684,6 +690,10 @@ export const api = {
     return request('/sessions')
   },
 
+  getEligibleHostSkills: async () => {
+    return request('/sessions/eligible-skills')
+  },
+
   createKnowledgeSession: async (payload) => {
     return request('/sessions', {
       method: 'POST',
@@ -708,6 +718,64 @@ export const api = {
     return request(`/sessions/${id}/attendance`, {
       method: 'PUT',
       body: JSON.stringify({ status })
+    })
+  },
+
+  cancelKnowledgeSessionRegistration: async (id) => {
+    return request(`/sessions/${id}/register`, {
+      method: 'DELETE'
+    })
+  },
+
+  editKnowledgeSession: async (id, payload) => {
+    return request(`/sessions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  cancelKnowledgeSession: async (id) => {
+    return request(`/sessions/${id}`, {
+      method: 'DELETE'
+    })
+  },
+
+  // ── L&D ADMIN MENTOR MANAGEMENT APIs ──────────────────────────────────
+  getLdEmployees: async () => {
+    return request('/ldadmin/mentorship/employees')
+  },
+
+  getLdMentorRecommendations: async (employeeId) => {
+    return request(`/ldadmin/mentorship/recommendations?employeeId=${employeeId}`)
+  },
+
+  assignMentor: async (payload) => {
+    return request('/ldadmin/mentorship/assign', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  getLdAllMentorships: async () => {
+    return request('/ldadmin/mentorship/all')
+  },
+
+  ldCancelMentorship: async (id) => {
+    return request(`/ldadmin/mentorship/${id}/cancel`, {
+      method: 'PUT'
+    })
+  },
+
+  ldCompleteMentorship: async (id) => {
+    return request(`/ldadmin/mentorship/${id}/complete`, {
+      method: 'PUT'
+    })
+  },
+
+  ldReassignMentorship: async (id, newMentorId) => {
+    return request(`/ldadmin/mentorship/${id}/reassign`, {
+      method: 'PUT',
+      body: JSON.stringify({ newMentorId })
     })
   }
 }

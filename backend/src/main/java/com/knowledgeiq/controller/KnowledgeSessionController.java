@@ -1,7 +1,6 @@
 package com.knowledgeiq.controller;
 
-import com.knowledgeiq.dto.KnowledgeSessionDto;
-import com.knowledgeiq.dto.KnowledgeSessionFeedbackDto;
+import com.knowledgeiq.dto.*;
 import com.knowledgeiq.service.KnowledgeSessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +23,12 @@ public class KnowledgeSessionController {
     public ResponseEntity<List<KnowledgeSessionDto>> getAllSessions(Authentication auth) {
         UUID userId = auth != null ? UUID.fromString((String) auth.getPrincipal()) : null;
         return ResponseEntity.ok(sessionService.getAllSessions(userId));
+    }
+
+    @GetMapping("/eligible-skills")
+    public ResponseEntity<List<SkillDto>> getEligibleHostSkills(Authentication auth) {
+        UUID mentorId = UUID.fromString((String) auth.getPrincipal());
+        return ResponseEntity.ok(sessionService.getEligibleHostSkills(mentorId));
     }
 
     @GetMapping("/{id}")
@@ -63,6 +68,28 @@ public class KnowledgeSessionController {
             Authentication auth) {
         UUID userId = UUID.fromString((String) auth.getPrincipal());
         return ResponseEntity.ok(sessionService.submitFeedback(id, userId, req));
+    }
+
+    @DeleteMapping("/{id}/register")
+    public ResponseEntity<KnowledgeSessionDto> cancelRegistration(@PathVariable UUID id, Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
+        return ResponseEntity.ok(sessionService.cancelRegistration(id, userId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<KnowledgeSessionDto> editSession(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> body,
+            Authentication auth) {
+        UUID mentorId = UUID.fromString((String) auth.getPrincipal());
+        return ResponseEntity.ok(sessionService.editSession(id, mentorId, body));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> cancelSession(@PathVariable UUID id, Authentication auth) {
+        UUID mentorId = UUID.fromString((String) auth.getPrincipal());
+        sessionService.cancelSession(id, mentorId);
+        return ResponseEntity.ok(Map.of("message", "Session successfully cancelled."));
     }
 
     @PutMapping("/{id}/attendance")

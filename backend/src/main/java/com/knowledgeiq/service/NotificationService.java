@@ -133,6 +133,34 @@ public class NotificationService {
         );
     }
 
+    public void notifyMentorAssigned(User mentor, String menteeName, String skillName, String adminName, UUID mentorshipId) {
+        if (mentor == null) return;
+        createNotification(
+                mentor,
+                "MENTORSHIP_ASSIGNED",
+                "New Mentee Assignment from L&D",
+                adminName + " assigned " + menteeName + " to you as a mentee for " + skillName + ". Please review and accept or decline.",
+                "HIGH",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
+    public void notifyMenteePendingAssignment(User mentee, String mentorName, String skillName, String adminName, UUID mentorshipId) {
+        if (mentee == null) return;
+        createNotification(
+                mentee,
+                "MENTORSHIP_PENDING",
+                "Mentor Assigned by L&D (Pending Acceptance)",
+                adminName + " assigned " + mentorName + " as your mentor for " + skillName + ". Awaiting mentor acceptance.",
+                "MEDIUM",
+                "MENTORSHIP",
+                mentorshipId != null ? mentorshipId.toString() : null,
+                "/employee/mentorship"
+        );
+    }
+
     public void notifyMentorshipAccepted(User mentee, String mentorName, String skillName, UUID mentorshipId) {
         if (mentee == null) return;
         createNotification(
@@ -195,11 +223,53 @@ public class NotificationService {
                 recipient,
                 "SESSION_REGISTERED",
                 "Session Registration Confirmed",
-                "You successfully registered for '" + sessionTitle + "'.",
-                "MEDIUM",
+                "You are registered for '" + sessionTitle + "'.",
+                "LOW",
                 "KNOWLEDGE_SESSION",
                 sessionId != null ? sessionId.toString() : null,
                 "/employee/mentorship"
+        );
+    }
+
+    public void notifyLdCertSubmitted(User ldAdmin, String employeeName, String certName, UUID certId) {
+        if (ldAdmin == null) return;
+        createNotification(
+                ldAdmin,
+                "CERTIFICATION_SUBMITTED",
+                "New Credential Verification Request",
+                employeeName + " submitted '" + certName + "' for credential verification.",
+                "MEDIUM",
+                "CERTIFICATION",
+                certId != null ? certId.toString() : null,
+                "/ldadmin/certs"
+        );
+    }
+
+    public void notifyCertVerified(User employee, String certName, String skillName) {
+        if (employee == null) return;
+        createNotification(
+                employee,
+                "CERTIFICATION_VERIFIED",
+                "Certification Verified!",
+                "Your credential '" + certName + "' has been verified by L&D. Your proficiency in " + skillName + " has been upgraded!",
+                "HIGH",
+                "CERTIFICATION",
+                null,
+                "/employee/inventory"
+        );
+    }
+
+    public void notifyCertRejected(User employee, String certName) {
+        if (employee == null) return;
+        createNotification(
+                employee,
+                "CERTIFICATION_REJECTED",
+                "Certification Submission Update",
+                "Your certification submission '" + certName + "' was reviewed and declined by L&D.",
+                "LOW",
+                "CERTIFICATION",
+                null,
+                "/employee/inventory"
         );
     }
 }

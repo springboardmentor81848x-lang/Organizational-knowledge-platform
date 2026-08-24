@@ -47,7 +47,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**", "/api/ai/onboarding", "/h2-console/**", "/error").permitAll()
+                .requestMatchers("/api/auth/**", "/api/ai/onboarding", "/api/community/**", "/h2-console/**", "/error").permitAll()
                 .anyRequest().authenticated()
             );
 

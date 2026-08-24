@@ -878,44 +878,47 @@ export function EmployeeSkills({ onNav }) {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          c.status === 'COMPLETED' 
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
-                            : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                          (c.status === 'VERIFIED' || c.status === 'COMPLETED')
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                            : c.status === 'REJECTED'
+                            ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
+                            : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
                         }`}>
-                          {c.status === 'COMPLETED' ? 'COMPLETED' : 'UPLOADED'}
+                          {(c.status === 'VERIFIED' || c.status === 'COMPLETED') ? '✓ Verified by L&D' : c.status === 'REJECTED' ? 'Declined by L&D' : 'Pending L&D Verification'}
                         </span>
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex flex-col gap-0.5">
                           <span className={`text-[10px] font-bold ${
-                            c.assessmentStatus === 'Completed' ? 'text-emerald-400' : 'text-amber-400'
+                            (c.status === 'VERIFIED' || c.status === 'COMPLETED') ? 'text-emerald-400' : c.status === 'REJECTED' ? 'text-rose-400' : 'text-amber-400'
                           }`}>
-                            {c.assessmentStatus || 'Not Attempted'}
+                            {(c.status === 'VERIFIED' || c.status === 'COMPLETED') ? 'Skill Proficiency Upgraded' : c.status === 'REJECTED' ? 'Verification Declined' : 'In L&D Verification Queue'}
                           </span>
-                          {c.assessmentScore != null && (
-                            <span className="text-[10px] text-slate-500 font-mono">Score: {c.assessmentScore}%</span>
+                          {c.credentialId && (
+                            <span className="text-[10px] text-slate-500 font-mono">ID: {c.credentialId}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-2.5">
+                          {c.credentialUrl && (
+                            <a
+                              href={c.credentialUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-amber-400 hover:text-amber-300 font-bold hover:underline inline-flex items-center gap-1"
+                            >
+                              <Icon name="external-link" className="w-3 h-3" /> Credential Link
+                            </a>
+                          )}
                           {c.storagePath && (
                             <button
                               type="button"
                               onClick={() => handleViewCertificate(c.id)}
                               className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline"
                             >
-                              View Certificate
-                            </button>
-                          )}
-                          {c.status !== 'COMPLETED' && (
-                            <button
-                              type="button"
-                              onClick={() => onNav('assessments')}
-                              className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold px-2.5 py-1 rounded-lg transition-all"
-                            >
-                              Take Assessment
+                              View File
                             </button>
                           )}
                           <button
@@ -3880,20 +3883,13 @@ export function EmployeeAssessments({ onNav, initialTab = 'ai' }) {
 // MODULE 1: KNOWLEDGE SHARING & MENTORSHIP ECOSYSTEM
 // ==============================================================================
 export function EmployeeMentorship({ user, onNav }) {
-  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'find' | 'my-mentorships' | 'requests' | 'sessions'
-  const [recommendations, setRecommendations] = useState([])
+  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'my-mentorships' | 'requests' | 'sessions'
   const [myMentors, setMyMentors] = useState([])
   const [myMentees, setMyMentees] = useState([])
   const [sessions, setSessions] = useState([])
-  const [experts, setExperts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Filters & Modals
-  const [searchQuery, setSearchQuery] = useState('')
-  const [deptFilter, setDeptFilter] = useState('ALL')
-  const [viewingExpert, setViewingExpert] = useState(null)
-  const [requestModal, setRequestModal] = useState(null) // mentor object to request
-  const [requestForm, setRequestForm] = useState({ skillId: '', goal: '', message: '' })
+
   
   // Chat Drawer
   const [activeChat, setActiveChat] = useState(null) // MentorshipDto
@@ -3903,12 +3899,15 @@ export function EmployeeMentorship({ user, onNav }) {
   const [resourceForm, setResourceForm] = useState({ title: '', url: '' })
   const [showResourceModal, setShowResourceModal] = useState(false)
 
-  // Session Modals
+  // Session Modals & Host Engine
   const [hostSessionModal, setHostSessionModal] = useState(false)
   const [sessionForm, setSessionForm] = useState({ title: '', description: '', skillId: '', scheduledAt: '', durationMinutes: 60, capacity: 20, meetingLink: '' })
+  const [eligibleHostSkills, setEligibleHostSkills] = useState([])
   const [feedbackModal, setFeedbackModal] = useState(null) // SessionDto
   const [feedbackForm, setFeedbackForm] = useState({ rating: 5, comment: '' })
   const [confirmRegisterModal, setConfirmRegisterModal] = useState(null) // SessionDto to confirm
+
+  const [attendanceModal, setAttendanceModal] = useState(null)
 
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -3918,26 +3917,24 @@ export function EmployeeMentorship({ user, onNav }) {
     setTimeout(() => setToast(null), 4000)
   }
 
-  const loadData = async () => {
-    setLoading(true)
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
-      const [recsRes, mentorsRes, menteesRes, sessionsRes, expertsRes] = await Promise.allSettled([
-        api.getMentorRecommendations(),
+      const [mentorsRes, menteesRes, sessionsRes, hostSkillsRes] = await Promise.allSettled([
         api.getMyMentors(),
         api.getMyMentees(),
         api.getKnowledgeSessions(),
-        api.getExpertDirectory()
+        api.getEligibleHostSkills()
       ])
 
-      if (recsRes.status === 'fulfilled') setRecommendations(recsRes.value || [])
       if (mentorsRes.status === 'fulfilled') setMyMentors(mentorsRes.value || [])
       if (menteesRes.status === 'fulfilled') setMyMentees(menteesRes.value || [])
       if (sessionsRes.status === 'fulfilled') setSessions(sessionsRes.value || [])
-      if (expertsRes.status === 'fulfilled') setExperts(expertsRes.value || [])
+      if (hostSkillsRes.status === 'fulfilled') setEligibleHostSkills(hostSkillsRes.value || [])
     } catch (e) {
       console.error('Error loading mentorship data:', e)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -3947,7 +3944,7 @@ export function EmployeeMentorship({ user, onNav }) {
 
   // Prevent page scroll/jump when modal opens; keep viewport locked at click location
   useEffect(() => {
-    const hasModal = Boolean(requestModal || hostSessionModal || feedbackModal || showResourceModal || viewingExpert || confirmRegisterModal)
+    const hasModal = Boolean(hostSessionModal || feedbackModal || showResourceModal || confirmRegisterModal || attendanceModal)
     if (hasModal) {
       document.body.style.overflow = 'hidden'
     } else {
@@ -3956,7 +3953,7 @@ export function EmployeeMentorship({ user, onNav }) {
     return () => {
       document.body.style.overflow = ''
     }
-  }, [requestModal, hostSessionModal, feedbackModal, showResourceModal, viewingExpert, confirmRegisterModal])
+  }, [hostSessionModal, feedbackModal, showResourceModal, confirmRegisterModal, attendanceModal])
 
   // Poll chat messages when chat drawer is open
   useEffect(() => {
@@ -3976,54 +3973,29 @@ export function EmployeeMentorship({ user, onNav }) {
     }
   }, [activeChat])
 
-  // Handlers
-  const handleOpenRequestModal = (mentorItem) => {
-    setRequestModal(mentorItem)
-    setRequestForm({
-      skillId: mentorItem.skillId || '',
-      goal: `I want to close my gap in ${mentorItem.skillName || 'core skills'} and build production experience.`,
-      message: `Hi ${mentorItem.fullName ? mentorItem.fullName.split(' ')[0] : 'there'}, I would really appreciate your guidance and feedback.`
-    })
-  }
-
-  const handleSendMentorshipRequest = async (e) => {
-    e.preventDefault()
-    if (!requestModal || !requestForm.skillId) return
-    setSubmitting(true)
-    try {
-      await api.requestMentorship({
-        mentorId: requestModal.mentorId || requestModal.id,
-        skillId: requestForm.skillId,
-        goal: requestForm.goal,
-        message: requestForm.message
-      })
-      showToast(`✓ Mentorship request sent to ${requestModal.fullName}!`)
-      setRequestModal(null)
-      loadData()
-    } catch (err) {
-      showToast(`❌ Request failed: ${err.message}`)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleAcceptRequest = async (mentorshipId) => {
+  const handleAcceptRequest = async (mentorshipId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setMyMentees(prev => prev.map(m => m.id === mentorshipId ? { ...m, status: 'ACTIVE', startDate: new Date().toISOString() } : m))
     try {
       await api.acceptMentorship(mentorshipId)
       showToast('✓ Mentorship request accepted!')
-      loadData()
+      loadData(true)
     } catch (err) {
       showToast(`❌ Error: ${err.message}`)
+      loadData(true)
     }
   }
 
-  const handleRejectRequest = async (mentorshipId) => {
+  const handleRejectRequest = async (mentorshipId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setMyMentees(prev => prev.map(m => m.id === mentorshipId ? { ...m, status: 'REJECTED' } : m))
     try {
       await api.rejectMentorship(mentorshipId)
       showToast('Mentorship request declined.')
-      loadData()
+      loadData(true)
     } catch (err) {
       showToast(`❌ Error: ${err.message}`)
+      loadData(true)
     }
   }
 
@@ -4050,6 +4022,7 @@ export function EmployeeMentorship({ user, onNav }) {
       setActiveChat(updated)
       setMeetingUrlInput('')
       showToast('✓ Google Meet link shared successfully!')
+      loadData(true)
     } catch (err) {
       showToast(`❌ Error: ${err.message}`)
     }
@@ -4081,7 +4054,7 @@ export function EmployeeMentorship({ user, onNav }) {
       showToast('✓ Knowledge sharing session created!')
       setHostSessionModal(false)
       setSessionForm({ title: '', description: '', skillId: '', scheduledAt: '', durationMinutes: 60, capacity: 20, meetingLink: '' })
-      loadData()
+      loadData(true)
     } catch (err) {
       showToast(`❌ Creation failed: ${err.message}`)
     } finally {
@@ -4089,17 +4062,60 @@ export function EmployeeMentorship({ user, onNav }) {
     }
   }
 
-  const handleRegisterSession = async (sessionId) => {
+  const handleRegisterSession = async (sessionId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     setSubmitting(true)
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRegistered: true, registeredCount: (s.registeredCount || 0) + 1 } : s))
     try {
       await api.registerKnowledgeSession(sessionId)
       showToast('✓ Successfully registered for Knowledge Sharing Session!')
       setConfirmRegisterModal(null)
-      loadData()
+      loadData(true)
     } catch (err) {
       showToast(`❌ Registration failed: ${err.message}`)
+      loadData(true)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleCancelRegistration = async (sessionId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRegistered: false, registeredCount: Math.max(0, (s.registeredCount || 1) - 1) } : s))
+    try {
+      await api.cancelKnowledgeSessionRegistration(sessionId)
+      showToast('✓ Session registration cancelled.')
+      loadData(true)
+    } catch (err) {
+      showToast(`❌ Cancel failed: ${err.message}`)
+      loadData(true)
+    }
+  }
+
+  const handleCancelSession = async (sessionId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setSessions(prev => prev.filter(s => s.id !== sessionId))
+    try {
+      await api.cancelKnowledgeSession(sessionId)
+      showToast('✓ Knowledge session cancelled.')
+      loadData(true)
+    } catch (err) {
+      showToast(`❌ Cancel session failed: ${err.message}`)
+      loadData(true)
+    }
+  }
+
+  const handleCompleteMentorship = async (mentorshipId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setMyMentors(prev => prev.map(m => m.id === mentorshipId ? { ...m, status: 'COMPLETED' } : m))
+    setMyMentees(prev => prev.map(m => m.id === mentorshipId ? { ...m, status: 'COMPLETED' } : m))
+    try {
+      await api.completeMentorship(mentorshipId)
+      showToast('🎉 Mentorship marked as Completed!')
+      loadData(true)
+    } catch (err) {
+      showToast(`❌ Failed to complete mentorship: ${err.message}`)
+      loadData(true)
     }
   }
 
@@ -4111,7 +4127,7 @@ export function EmployeeMentorship({ user, onNav }) {
       await api.submitSessionFeedback(feedbackModal.id, feedbackForm)
       showToast('✓ Thank you for your feedback!')
       setFeedbackModal(null)
-      loadData()
+      loadData(true)
     } catch (err) {
       showToast(`❌ Feedback error: ${err.message}`)
     } finally {
@@ -4119,33 +4135,9 @@ export function EmployeeMentorship({ user, onNav }) {
     }
   }
 
-  // Derived Filtered Data
-  const filteredRecommendations = recommendations.filter(r => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      const matchName = r.fullName && r.fullName.toLowerCase().includes(q)
-      const matchSkill = r.skillName && r.skillName.toLowerCase().includes(q)
-      if (!matchName && !matchSkill) return false
-    }
-    if (deptFilter !== 'ALL') {
-      if (!r.departmentName || r.departmentName.toLowerCase() !== deptFilter.toLowerCase()) return false
-    }
-    return true
-  })
+  const userDept = user?.departmentName || 'Engineering'
 
-  const filteredExperts = experts.filter(exp => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      const matchName = exp.fullName && exp.fullName.toLowerCase().includes(q)
-      const matchTitle = exp.roleTitle && exp.roleTitle.toLowerCase().includes(q)
-      const matchSkill = exp.expertSkills && exp.expertSkills.some(s => (s.skillName || s.name || '').toLowerCase().includes(q))
-      if (!matchName && !matchTitle && !matchSkill) return false
-    }
-    if (deptFilter !== 'ALL') {
-      if (!exp.departmentName || exp.departmentName.toLowerCase() !== deptFilter.toLowerCase()) return false
-    }
-    return true
-  })
+
 
   const pendingIncoming = myMentees.filter(m => m.status === 'REQUESTED')
   const activeMenteesList = myMentees.filter(m => m.status === 'ACCEPTED' || m.status === 'ACTIVE')
@@ -4178,7 +4170,6 @@ export function EmployeeMentorship({ user, onNav }) {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Pill text="Milestone 3 Module 1" className="bg-lime-400/15 text-lime-300 border border-lime-400/30" />
               <Pill text="Skill-Gap Driven" className="bg-emerald-400/15 text-emerald-300 border border-emerald-400/30" />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mb-2">Knowledge Sharing & Mentorship</h1>
@@ -4194,12 +4185,6 @@ export function EmployeeMentorship({ user, onNav }) {
             >
               <Icon name="video" className="w-4 h-4" /> Host Session
             </button>
-            <button
-              onClick={() => setActiveTab('find')}
-              className="bg-white/10 hover:bg-white/15 text-white font-medium text-xs rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors border border-white/10"
-            >
-              <Icon name="search" className="w-4 h-4" /> Find a Mentor
-            </button>
           </div>
         </div>
 
@@ -4207,7 +4192,6 @@ export function EmployeeMentorship({ user, onNav }) {
         <div className="flex items-center gap-2 mt-8 border-b border-white/10 overflow-x-auto pb-1">
           {[
             { id: 'overview', label: 'Overview', icon: 'layout-dashboard' },
-            { id: 'find', label: `Find a Mentor (${recommendations.length})`, icon: 'sparkles' },
             { id: 'my-mentorships', label: `My Mentorships (${activeMentorsList.length + activeMenteesList.length})`, icon: 'users' },
             { id: 'requests', label: `Requests (${pendingIncoming.length + pendingOutgoing.length})`, icon: 'bell', badge: pendingIncoming.length },
             { id: 'sessions', label: `Knowledge Sessions (${sessions.length})`, icon: 'video' }
@@ -4240,24 +4224,24 @@ export function EmployeeMentorship({ user, onNav }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">My Mentors</span>
+                <span className="text-xs font-bold text-lime-400 uppercase tracking-wider">My Mentors</span>
                 <div className="w-8 h-8 rounded-xl bg-lime-400/10 text-lime-400 flex items-center justify-center">
                   <Icon name="user-check" className="w-4 h-4" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">{activeMentorsList.length}</div>
-              <div className="text-[11px] text-slate-500 mt-1">Guiding your skill gaps</div>
+              <div className="text-[11px] text-slate-500 font-medium mt-1">Experts guiding your skill gaps</div>
             </div>
 
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Employees I Mentor</span>
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">My Mentees</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-400/10 text-emerald-400 flex items-center justify-center">
                   <Icon name="users" className="w-4 h-4" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">{activeMenteesList.length}</div>
-              <div className="text-[11px] text-slate-500 mt-1">Direct mentees supported</div>
+              <div className="text-[11px] text-slate-500 font-medium mt-1">Employees you are guiding</div>
             </div>
 
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm">
@@ -4273,15 +4257,15 @@ export function EmployeeMentorship({ user, onNav }) {
 
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Mentor Match Rate</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Connections</span>
                 <div className="w-8 h-8 rounded-xl bg-sky-400/10 text-sky-400 flex items-center justify-center">
-                  <Icon name="sparkles" className="w-4 h-4" />
+                  <Icon name="users" className="w-4 h-4" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {recommendations.length > 0 ? `${recommendations[0].matchScore}%` : '100%'}
+                {activeMentorsList.length + activeMenteesList.length}
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">Based on gap deltas</div>
+              <div className="text-[11px] text-slate-500 mt-1">Active mentor/mentee pairs</div>
             </div>
           </div>
 
@@ -4291,22 +4275,19 @@ export function EmployeeMentorship({ user, onNav }) {
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="font-display font-bold text-base text-slate-900 dark:text-white">My Active Mentors</h2>
+                  <h2 className="font-display font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>📘 My Mentors</span>
+                    <span className="text-xs text-lime-400 font-medium">(Guiding Me)</span>
+                  </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Experts helping you elevate your skill benchmarks.</p>
                 </div>
-                <button onClick={() => setActiveTab('find')} className="text-xs font-semibold text-lime-500 hover:underline flex items-center gap-1">
-                  Find Mentor <Icon name="chevron-right" className="w-3.5 h-3.5" />
-                </button>
               </div>
 
               {activeMentorsList.length === 0 ? (
                 <div className="bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center">
-                  <Icon name="user-plus" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <Icon name="user-check" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                   <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">No active mentors yet</div>
-                  <div className="text-[11px] text-slate-500 max-w-xs mx-auto mt-1 mb-3">Request guidance from higher-proficiency colleagues based on your skill gaps.</div>
-                  <button onClick={() => setActiveTab('find')} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-4 py-2">
-                    Browse AI Recommended Mentors
-                  </button>
+                  <div className="text-[11px] text-slate-500 max-w-xs mx-auto mt-1">Mentors are assigned by your L&D Administrator based on AI skill-gap analysis.</div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -4317,7 +4298,10 @@ export function EmployeeMentorship({ user, onNav }) {
                           {m.mentorName ? m.mentorName[0] : 'M'}
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-slate-900 dark:text-white">{m.mentorName}</div>
+                          <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>{m.mentorName}</span>
+                            <span className="bg-lime-400/15 text-lime-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-lime-400/30">MENTOR</span>
+                          </div>
                           <div className="text-xs text-slate-500">{m.mentorRole || 'Senior Engineer'} · <span className="text-lime-400 font-medium">{m.skillName}</span></div>
                         </div>
                       </div>
@@ -4341,7 +4325,10 @@ export function EmployeeMentorship({ user, onNav }) {
             <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="font-display font-bold text-base text-slate-900 dark:text-white">Employees I Mentor</h2>
+                  <h2 className="font-display font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>🎓 My Mentees</span>
+                    <span className="text-xs text-emerald-400 font-medium">(Employees I Am Guiding)</span>
+                  </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Team members receiving your domain expertise.</p>
                 </div>
                 <button onClick={() => setActiveTab('my-mentorships')} className="text-xs font-semibold text-lime-500 hover:underline flex items-center gap-1">
@@ -4353,10 +4340,7 @@ export function EmployeeMentorship({ user, onNav }) {
                 <div className="bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center">
                   <Icon name="users" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                   <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">You are not mentoring anyone yet</div>
-                  <div className="text-[11px] text-slate-500 max-w-xs mx-auto mt-1 mb-3">Colleagues with lower proficiency in your expert skills can send mentorship requests to you.</div>
-                  <button onClick={() => setActiveTab('find')} className="bg-white/10 hover:bg-white/15 text-white font-medium text-xs rounded-xl px-4 py-2 border border-white/10">
-                    Explore Expert Directory
-                  </button>
+                  <div className="text-[11px] text-slate-500 max-w-xs mx-auto mt-1">Colleagues with lower proficiency in your expert skills will be assigned to you by L&D.</div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -4367,7 +4351,10 @@ export function EmployeeMentorship({ user, onNav }) {
                           {m.menteeName ? m.menteeName[0] : 'E'}
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-slate-900 dark:text-white">{m.menteeName}</div>
+                          <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>{m.menteeName}</span>
+                            <span className="bg-emerald-400/15 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-400/30">MENTEE</span>
+                          </div>
                           <div className="text-xs text-slate-500">{m.menteeRole || 'Developer'} · <span className="text-emerald-400 font-medium">{m.skillName}</span></div>
                         </div>
                       </div>
@@ -4408,15 +4395,12 @@ export function EmployeeMentorship({ user, onNav }) {
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1.5">{s.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 mb-4">{s.description}</p>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{s.title}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{s.description}</p>
 
-                    <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-200 dark:border-white/5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-lime-400/20 text-lime-400 font-bold text-[10px] flex items-center justify-center">
-                          {s.mentorName ? s.mentorName[0] : 'H'}
-                        </div>
-                        <span className="text-slate-300 font-medium">{s.mentorName}</span>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/5 text-xs">
+                      <div className="text-slate-400">
+                        Host: <span className="text-slate-200 font-semibold">{s.mentorName}</span>
                       </div>
 
                       {s.isRegistered ? (
@@ -4437,155 +4421,7 @@ export function EmployeeMentorship({ user, onNav }) {
         </div>
       )}
 
-      {/* TAB 2: FIND A MENTOR & EXPERT DIRECTORY */}
-      {activeTab === 'find' && (
-        <div className="space-y-6">
-          {/* Search & Filter Bar */}
-          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative w-full md:w-80">
-              <Icon name="search" className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search mentor by name or skill..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-              />
-            </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <label className="text-xs font-semibold text-slate-400 whitespace-nowrap">Department:</label>
-              <select
-                value={deptFilter}
-                onChange={e => setDeptFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-              >
-                <option value="ALL">All Departments</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Data & AI">Data & AI</option>
-                <option value="Product & Design">Product & Design</option>
-                <option value="Marketing">Marketing</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Section: Priority Skill-Gap Mentor Recommendations */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                  <Icon name="sparkles" className="w-5 h-5 text-lime-400" />
-                  Prioritized Skill-Gap Mentor Recommendations
-                </h2>
-                <p className="text-xs text-slate-400">Mentors evaluated with higher proficiency than your current gap level.</p>
-              </div>
-              <span className="text-xs font-semibold text-lime-400 bg-lime-400/10 px-3 py-1 rounded-full border border-lime-400/20">
-                {filteredRecommendations.length} Suitable Mentors
-              </span>
-            </div>
-
-            {filteredRecommendations.length === 0 ? (
-              <div className="bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-3xl p-8 text-center">
-                <Icon name="shield-alert" className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">No suitable mentors found for current filters</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">Your current skill profile has no unfulfilled gaps requiring mentor elevation, or all candidates have been requested.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredRecommendations.map(r => (
-                  <div key={r.mentorId + '_' + r.skillId} className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col justify-between hover:border-lime-400/40 transition-all shadow-md">
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lime-400 to-emerald-500 text-[#0B0F1A] font-bold text-base flex items-center justify-center shrink-0 shadow-md">
-                            {r.fullName ? r.fullName[0] : 'M'}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-sm text-slate-900 dark:text-white">{r.fullName}</h3>
-                            <div className="text-xs text-slate-400">{r.roleTitle || 'Senior Engineer'}</div>
-                            <div className="text-[11px] text-slate-500">{r.departmentName}</div>
-                          </div>
-                        </div>
-                        <span className="bg-lime-400/15 text-lime-300 border border-lime-400/30 text-xs font-extrabold px-2.5 py-1 rounded-xl">
-                          {r.matchScore}% Match
-                        </span>
-                      </div>
-
-                      {/* Skill & Proficiency Comparison */}
-                      <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-4 space-y-3 mb-4">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-slate-300">{r.skillName}</span>
-                          <span className="text-lime-400">Mentor Level {r.mentorProficiency}/5</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-slate-400 text-[11px]">Your Level: {r.menteeProficiency}/5</span>
-                          <span className="text-slate-600">→</span>
-                          <span className="text-emerald-400 font-semibold text-[11px]">Target: Level {r.requiredProficiency}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 italic leading-relaxed pt-1 border-t border-slate-200 dark:border-white/5">
-                          "{r.reason}"
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 flex items-center gap-3">
-                      <button onClick={() => setViewingExpert(r)} className="flex-1 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs py-2.5 rounded-xl transition-colors border border-white/10">
-                        View Profile
-                      </button>
-                      <button onClick={() => handleOpenRequestModal(r)} className="flex-1 bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs py-2.5 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5">
-                        <Icon name="send" className="w-3.5 h-3.5" /> Request
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Section: Expert Directory */}
-          <div className="pt-6 border-t border-white/10">
-            <div className="mb-4">
-              <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Expert Directory</h2>
-              <p className="text-xs text-slate-400">Browse verified organization experts with Level 4+ Advanced/Expert domain mastery.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredExperts.map(exp => (
-                <div key={exp.id} className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-11 h-11 rounded-full bg-purple-400/20 text-purple-300 font-bold flex items-center justify-center shrink-0">
-                        {exp.fullName ? exp.fullName[0] : 'E'}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">{exp.fullName}</h3>
-                        <div className="text-xs text-slate-400">{exp.roleTitle}</div>
-                        <div className="text-[11px] text-slate-500">{exp.departmentName}</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Expertise:</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {exp.expertSkills && exp.expertSkills.map(sk => (
-                          <Pill key={sk.id} text={`${sk.name} (Lvl ${sk.proficiencyLevel})`} className="bg-purple-400/10 text-purple-300 text-[10px] border border-purple-400/20" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleOpenRequestModal({ mentorId: exp.id, fullName: exp.fullName, skillId: exp.expertSkills && exp.expertSkills[0] ? exp.expertSkills[0].id : '', skillName: exp.expertSkills && exp.expertSkills[0] ? exp.expertSkills[0].name : 'Domain Skills' })}
-                    className="w-full bg-white/10 hover:bg-white/15 text-white font-semibold text-xs py-2.5 rounded-xl border border-white/10 flex items-center justify-center gap-2"
-                  >
-                    <Icon name="user-plus" className="w-3.5 h-3.5 text-lime-400" /> Request Mentorship
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TAB 3: MY MENTORSHIPS & PERSISTENT CHAT */}
       {activeTab === 'my-mentorships' && (
@@ -4596,8 +4432,11 @@ export function EmployeeMentorship({ user, onNav }) {
               {/* Mentors View */}
               <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-5 shadow-sm">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-3 flex items-center justify-between">
-                  <span>My Active Mentors</span>
-                  <span className="bg-lime-400/15 text-lime-300 text-xs px-2.5 py-0.5 rounded-full">{activeMentorsList.length}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span>📘 My Mentors</span>
+                    <span className="text-[11px] text-lime-400 font-normal">(Guiding Me)</span>
+                  </span>
+                  <span className="bg-lime-400/15 text-lime-300 text-xs px-2.5 py-0.5 rounded-full font-bold">{activeMentorsList.length}</span>
                 </h3>
 
                 {activeMentorsList.length === 0 ? (
@@ -4619,7 +4458,10 @@ export function EmployeeMentorship({ user, onNav }) {
                             {m.mentorName ? m.mentorName[0] : 'M'}
                           </div>
                           <div>
-                            <div className="text-xs font-bold text-slate-900 dark:text-white">{m.mentorName}</div>
+                            <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <span>{m.mentorName}</span>
+                              <span className="bg-lime-400/15 text-lime-400 text-[9px] font-bold px-1.5 py-0.2 rounded border border-lime-400/30">MENTOR</span>
+                            </div>
                             <div className="text-[10px] text-slate-400">{m.skillName}</div>
                           </div>
                         </div>
@@ -4633,8 +4475,11 @@ export function EmployeeMentorship({ user, onNav }) {
               {/* Mentees View */}
               <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-5 shadow-sm">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-3 flex items-center justify-between">
-                  <span>Employees I Mentor</span>
-                  <span className="bg-emerald-400/15 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full">{activeMenteesList.length}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span>🎓 My Mentees</span>
+                    <span className="text-[11px] text-emerald-400 font-normal">(I Am Guiding)</span>
+                  </span>
+                  <span className="bg-emerald-400/15 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-bold">{activeMenteesList.length}</span>
                 </h3>
 
                 {activeMenteesList.length === 0 ? (
@@ -4656,7 +4501,10 @@ export function EmployeeMentorship({ user, onNav }) {
                             {m.menteeName ? m.menteeName[0] : 'E'}
                           </div>
                           <div>
-                            <div className="text-xs font-bold text-slate-900 dark:text-white">{m.menteeName}</div>
+                            <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <span>{m.menteeName}</span>
+                              <span className="bg-emerald-400/15 text-emerald-300 text-[9px] font-bold px-1.5 py-0.2 rounded border border-emerald-400/30">MENTEE</span>
+                            </div>
                             <div className="text-[10px] text-slate-400">{m.skillName}</div>
                           </div>
                         </div>
@@ -4682,22 +4530,39 @@ export function EmployeeMentorship({ user, onNav }) {
                   <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-white/5">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-lime-400/20 text-lime-400 font-bold flex items-center justify-center">
-                        {activeChat.mentorName ? activeChat.mentorName[0] : 'C'}
+                        {activeChat.mentorId === user?.id ? (activeChat.menteeName ? activeChat.menteeName[0] : 'E') : (activeChat.mentorName ? activeChat.mentorName[0] : 'M')}
                       </div>
                       <div>
                         <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           <span>{activeChat.mentorId === user?.id ? activeChat.menteeName : activeChat.mentorName}</span>
-                          <Pill text={activeChat.skillName} className="bg-lime-400/15 text-lime-300 text-[10px]" />
+                          <Pill text={activeChat.skillName} className="bg-purple-400/15 text-purple-300 text-[10px]" />
+                          {activeChat.mentorId === user?.id ? (
+                            <span className="bg-emerald-400/15 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              MENTEE
+                            </span>
+                          ) : (
+                            <span className="bg-lime-400/15 text-lime-400 border border-lime-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              MENTOR
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          {activeChat.mentorId === user?.id ? 'Your Mentee' : 'Your Mentor'} · {activeChat.status}
+                        <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                          {activeChat.mentorId === user?.id ? '🎓 You are the Mentor (Guiding Employee)' : '📘 You are the Mentee (Receiving Guidance)'} · <span className="text-emerald-400 font-bold">{activeChat.status}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setShowResourceModal(true)} className="bg-white/10 hover:bg-white/15 text-white font-medium text-xs rounded-xl px-3 py-1.5 border border-white/10 flex items-center gap-1.5">
-                        <Icon name="link" className="w-3.5 h-3.5 text-lime-400" /> Share Resource
+                      {activeChat.status === 'ACTIVE' && (
+                        <button onClick={() => handleCompleteMentorship(activeChat.id)} className="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 font-bold text-xs rounded-xl px-3 py-2 border border-emerald-500/30 flex items-center gap-1 transition-all">
+                          <Icon name="check-circle" className="w-3.5 h-3.5" /> Mark Completed
+                        </button>
+                      )}
+                      <button onClick={() => setShowResourceModal(true)} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-3.5 py-2 shadow-md flex items-center gap-1.5 transition-all">
+                        <Icon name="link" className="w-3.5 h-3.5 text-[#0B0F1A]" /> Share Resource
+                      </button>
+                      <button onClick={() => setActiveChat(null)} className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors" title="Close Chat">
+                        <Icon name="x" className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -4730,7 +4595,7 @@ export function EmployeeMentorship({ user, onNav }) {
                   </div>
 
                   {/* Messages Feed */}
-                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#0B0F1A]/40">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 dark:bg-[#0B0F1A]/40">
                     {messages.length === 0 ? (
                       <div className="text-center text-xs text-slate-500 py-12">No messages yet. Send a message to start the conversation!</div>
                     ) : (
@@ -4739,7 +4604,7 @@ export function EmployeeMentorship({ user, onNav }) {
                         return (
                           <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                             <div className={`max-w-md rounded-2xl p-3 text-xs leading-relaxed ${
-                              isMine ? 'bg-lime-400 text-[#0B0F1A] rounded-br-none font-medium' : 'bg-slate-800 text-slate-200 rounded-bl-none border border-white/5'
+                              isMine ? 'bg-lime-400 text-[#0B0F1A] rounded-br-none font-medium shadow-sm' : 'bg-slate-800 text-white rounded-bl-none border border-slate-700 shadow-sm'
                             }`}>
                               <div className="text-[10px] font-bold opacity-75 mb-1">{msg.senderName}</div>
                               <div>{msg.message}</div>
@@ -4781,36 +4646,74 @@ export function EmployeeMentorship({ user, onNav }) {
       {/* TAB 4: REQUESTS (INCOMING & OUTGOING) */}
       {activeTab === 'requests' && (
         <div className="space-y-6">
-          {/* Incoming Requests Section */}
+          {/* Incoming Assignments & Requests Section */}
           <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
-            <h2 className="font-display font-bold text-base text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-              <Icon name="bell" className="w-5 h-5 text-lime-400" /> Incoming Mentorship Requests
-            </h2>
-            <p className="text-xs text-slate-400 mb-4">Requests sent by colleagues asking you to mentor them.</p>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-display font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <Icon name="bell" className="w-5 h-5 text-lime-400" /> Mentee Assignments & Requests
+              </h2>
+              <span className="text-xs font-bold text-slate-400">{pendingIncoming.length} Pending Review</span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Review mentee assignments from your L&D Administrator and peer mentorship requests. You can accept to start guiding them or decline.
+            </p>
 
             {pendingIncoming.length === 0 ? (
-              <div className="text-xs text-slate-400 italic py-4 text-center">No pending incoming mentorship requests.</div>
+              <div className="text-xs text-slate-400 italic py-8 text-center bg-slate-50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                <Icon name="check-circle" className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <div className="font-semibold text-slate-300">All caught up!</div>
+                <div className="mt-1">No pending mentee assignments or requests right now.</div>
+              </div>
             ) : (
               <div className="space-y-4">
                 {pendingIncoming.map(req => (
-                  <div key={req.id} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                  <div key={req.id} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-purple-400/40 transition-all">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center">
+                          {req.menteeName ? req.menteeName[0] : 'E'}
+                        </div>
                         <span className="font-bold text-sm text-slate-900 dark:text-white">{req.menteeName}</span>
                         <Pill text={req.skillName} className="bg-lime-400/15 text-lime-300 text-[10px]" />
+                        {req.matchScore && (
+                          <span className="bg-lime-400/10 text-lime-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-lime-400/20">
+                            {req.matchScore}% Match
+                          </span>
+                        )}
+                        {req.assignedByName ? (
+                          <span className="bg-purple-400/15 text-purple-300 border border-purple-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                            <Icon name="shield-check" className="w-3 h-3 text-purple-400" /> Assigned by L&D: {req.assignedByName}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">Peer Request</span>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-400 font-medium mb-2">Goal: {req.goal}</div>
+
+                      <div className="text-xs text-slate-300">
+                        <span className="text-slate-400">Goal:</span> <span className="font-medium text-slate-200">{req.goal}</span>
+                      </div>
+
                       {req.requestMessage && (
-                        <p className="text-xs text-slate-300 bg-black/20 p-2.5 rounded-xl italic">"{req.requestMessage}"</p>
+                        <p className="text-xs text-slate-300 bg-black/20 p-2.5 rounded-xl italic border border-white/5">
+                          "{req.requestMessage}"
+                        </p>
                       )}
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <button onClick={() => handleRejectRequest(req.id)} className="px-4 py-2 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 border border-red-500/20">
-                        Decline
+                      <button
+                        type="button"
+                        onClick={(e) => handleRejectRequest(req.id, e)}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 transition-colors flex items-center gap-1"
+                      >
+                        <Icon name="x" className="w-3.5 h-3.5" /> Decline
                       </button>
-                      <button onClick={() => handleAcceptRequest(req.id)} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2 flex items-center gap-1.5 shadow-md">
-                        <Icon name="check" className="w-4 h-4" /> Accept Mentorship
+                      <button
+                        type="button"
+                        onClick={(e) => handleAcceptRequest(req.id, e)}
+                        className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-1.5 shadow-md transition-colors"
+                      >
+                        <Icon name="check" className="w-3.5 h-3.5" /> Accept Mentorship
                       </button>
                     </div>
                   </div>
@@ -4819,24 +4722,33 @@ export function EmployeeMentorship({ user, onNav }) {
             )}
           </div>
 
-          {/* Outgoing Requests Section */}
+          {/* Outgoing Requests / Pending Assignments Section */}
           <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
-            <h2 className="font-display font-bold text-base text-slate-900 dark:text-white mb-1">My Outgoing Requests</h2>
-            <p className="text-xs text-slate-400 mb-4">Mentorship requests you have submitted awaiting acceptance.</p>
+            <h2 className="font-display font-bold text-base text-slate-900 dark:text-white mb-1">My Mentorship Assignments (Pending Acceptance)</h2>
+            <p className="text-xs text-slate-400 mb-4">Mentors assigned to you by L&D that are awaiting mentor acceptance.</p>
 
             {pendingOutgoing.length === 0 ? (
-              <div className="text-xs text-slate-400 italic py-4 text-center">No pending outgoing requests.</div>
+              <div className="text-xs text-slate-400 italic py-4 text-center">No pending mentorship assignments awaiting acceptance.</div>
             ) : (
               <div className="space-y-3">
                 {pendingOutgoing.map(req => (
                   <div key={req.id} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Requested Mentor: {req.mentorName}</div>
-                      <div className="text-[11px] text-slate-400">Skill: {req.skillName} · Status: <span className="text-amber-400 font-semibold">{req.status}</span></div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>Assigned Mentor: {req.mentorName}</span>
+                        {req.assignedByName && (
+                          <span className="bg-purple-400/15 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-purple-400/30">
+                            By {req.assignedByName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        Skill: <span className="text-lime-300 font-medium">{req.skillName}</span> · Status: <span className="text-amber-400 font-semibold">{req.status === 'REQUESTED' ? 'Pending Mentor Acceptance' : req.status}</span>
+                      </div>
                     </div>
-                    <button onClick={() => api.cancelMentorship(req.id).then(() => loadData())} className="text-xs text-slate-400 hover:text-red-400 underline">
-                      Cancel Request
-                    </button>
+                    <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                      Awaiting Acceptance
+                    </span>
                   </div>
                 ))}
               </div>
@@ -4893,13 +4805,29 @@ export function EmployeeMentorship({ user, onNav }) {
                     </a>
                   )}
 
-                  {s.isRegistered ? (
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 bg-emerald-400/15 text-emerald-400 font-bold text-xs py-2 rounded-xl text-center border border-emerald-400/30">
-                        Registered
-                      </span>
-                      <button onClick={() => setFeedbackModal(s)} className="bg-white/10 hover:bg-white/15 text-white font-medium text-xs px-3 py-2 rounded-xl border border-white/10">
-                        Rate
+                  {s.mentorId === user?.id ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setAttendanceModal(s)} className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold text-xs py-2 rounded-xl border border-purple-500/30 flex items-center justify-center gap-1.5">
+                          <Icon name="check-square" className="w-3.5 h-3.5" /> Attendance
+                        </button>
+                        <button onClick={() => handleCancelSession(s.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-xs px-3 py-2 rounded-xl border border-red-500/20">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : s.isRegistered ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 bg-emerald-400/15 text-emerald-400 font-bold text-xs py-2 rounded-xl text-center border border-emerald-400/30">
+                          ✓ Registered
+                        </span>
+                        <button onClick={() => setFeedbackModal(s)} className="bg-white/10 hover:bg-white/15 text-white font-medium text-xs px-3 py-2 rounded-xl border border-white/10">
+                          Rate
+                        </button>
+                      </div>
+                      <button onClick={() => handleCancelRegistration(s.id)} className="w-full text-slate-400 hover:text-red-400 text-[11px] underline text-center">
+                        Cancel Registration
                       </button>
                     </div>
                   ) : (
@@ -4918,6 +4846,8 @@ export function EmployeeMentorship({ user, onNav }) {
           </div>
         </div>
       )}
+
+
 
       {/* CONFIRM SESSION REGISTRATION MODAL */}
       {confirmRegisterModal && createPortal(
@@ -4962,111 +4892,7 @@ export function EmployeeMentorship({ user, onNav }) {
         document.body
       )}
 
-      {/* VIEW EXPERT PROFILE MODAL */}
-      {viewingExpert && createPortal(
-        <div className="fixed inset-0 z-[99999] overflow-y-auto">
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setViewingExpert(null)} />
-          <div className="flex min-h-screen items-center justify-center p-4 text-center">
-            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-lg my-8 p-6 z-10 animate-scale space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-lime-400/20 text-lime-400 font-bold text-base flex items-center justify-center">
-                    {viewingExpert.fullName ? viewingExpert.fullName[0] : 'E'}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">{viewingExpert.fullName}</h3>
-                    <div className="text-xs text-slate-400">{viewingExpert.roleTitle} · {viewingExpert.departmentName}</div>
-                  </div>
-                </div>
-                <button onClick={() => setViewingExpert(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
-              </div>
 
-              <div className="space-y-3">
-                <div className="text-xs font-semibold text-slate-400">Match Reason & Skill Delta</div>
-                <p className="text-xs text-slate-300 bg-slate-50 dark:bg-white/5 p-3 rounded-2xl leading-relaxed italic">
-                  "{viewingExpert.reason}"
-                </p>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button onClick={() => setViewingExpert(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Close</button>
-                <button
-                  onClick={() => { const exp = viewingExpert; setViewingExpert(null); handleOpenRequestModal(exp); }}
-                  className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5"
-                >
-                  Send Request Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* MENTORSHIP REQUEST MODAL */}
-      {requestModal && createPortal(
-        <div className="fixed inset-0 z-[99999] overflow-y-auto">
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setRequestModal(null)} />
-          <div className="flex min-h-screen items-center justify-center p-4 text-center">
-            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-lg my-8 z-10 animate-scale">
-              <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                <div>
-                  <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">Request Mentorship</h2>
-                  <p className="text-xs text-slate-400">Send a mentorship request to {requestModal.fullName}.</p>
-                </div>
-                <button onClick={() => setRequestModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSendMentorshipRequest} className="p-6 space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Target Skill Gap *</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={requestModal.skillName || 'Domain Skill'}
-                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-400 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Mentorship Goal *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Master Spring Boot microservices and REST security"
-                    value={requestForm.goal}
-                    onChange={e => setRequestForm({ ...requestForm, goal: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Message to Mentor</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Introduce yourself and share what specific guidance you are seeking..."
-                    value={requestForm.message}
-                    onChange={e => setRequestForm({ ...requestForm, message: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-3">
-                  <button type="button" onClick={() => setRequestModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                  <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
-                    {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="send" className="w-4 h-4" />} Submit Request
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* HOST KNOWLEDGE SESSION MODAL */}
       {hostSessionModal && createPortal(
@@ -5084,7 +4910,42 @@ export function EmployeeMentorship({ user, onNav }) {
                 </button>
               </div>
 
+              {/* Host Eligibility Engine Status Banner */}
+              {eligibleHostSkills.length === 0 ? (
+                <div className="mx-6 mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-3">
+                  <Icon name="shield-alert" className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold text-amber-200 text-xs mb-0.5">High Skill Proficiency Gate (90%+ Required)</div>
+                    <div className="text-[11px] text-amber-300/90 leading-relaxed">
+                      To guarantee high technical quality, employees can host knowledge sessions once they achieve <strong>90%+ Expert Mastery (Level 4+ or Level 5/5)</strong> in their domain skills. Currently you have 0 evaluated skills at 90%+.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mx-6 mt-4 p-3 rounded-2xl bg-lime-400/10 border border-lime-400/30 text-lime-300 text-xs flex items-center gap-2">
+                  <Icon name="check-circle" className="w-4 h-4 text-lime-400 shrink-0" />
+                  <span>Eligible Host: You hold <strong>90%+ Expert Mastery</strong> in {eligibleHostSkills.length} domain topic(s).</span>
+                </div>
+              )}
+
               <form onSubmit={handleCreateSession} className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-slate-400 block mb-1.5">Topic / Domain Skill (Requires 90%+ Mastery) *</label>
+                  <select
+                    required
+                    value={sessionForm.skillId}
+                    onChange={e => setSessionForm({ ...sessionForm, skillId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white outline-none focus:border-lime-400"
+                  >
+                    <option value="" className="bg-[#0F1420]">-- Select High-Proficiency Skill Topic --</option>
+                    {eligibleHostSkills.map(sk => (
+                      <option key={sk.id} value={sk.id} className="bg-[#0F1420]">
+                        {sk.name} ({sk.proficiencyLevel}/5 Mastery - 90%+ Eligible)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="text-xs font-medium text-slate-400 block mb-1.5">Session Title *</label>
                   <input
@@ -5145,7 +5006,7 @@ export function EmployeeMentorship({ user, onNav }) {
 
                 <div className="pt-2 flex items-center justify-end gap-3">
                   <button type="button" onClick={() => setHostSessionModal(false)} className="px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                  <button type="submit" disabled={submitting} className="bg-lime-400 hover:bg-lime-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
+                  <button type="submit" disabled={submitting || eligibleHostSkills.length === 0} className="bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md">
                     {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="check" className="w-4 h-4" />} Create Session
                   </button>
                 </div>
@@ -5262,6 +5123,59 @@ export function EmployeeMentorship({ user, onNav }) {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+
+
+      {/* MARK ATTENDANCE MODAL */}
+      {attendanceModal && createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setAttendanceModal(null)} />
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 text-left shadow-2xl transition-all w-full max-w-md my-8 p-6 z-10 animate-scale space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">Session Attendance Checklist</h3>
+                  <div className="text-xs text-slate-400">{attendanceModal.title}</div>
+                </div>
+                <button onClick={() => setAttendanceModal(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  As the session host, confirm participant attendance to record completed knowledge sharing hours.
+                </p>
+                <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Registered Seats:</span>
+                    <span className="font-bold text-white">{attendanceModal.registeredCount}/{attendanceModal.capacity}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Duration:</span>
+                    <span className="font-bold text-lime-400">{attendanceModal.durationMinutes || 60} Mins</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button onClick={() => setAttendanceModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-400">Close</button>
+                <button
+                  onClick={() => {
+                    api.updateSessionAttendance(attendanceModal.id, 'ATTENDED')
+                      .then(() => { showToast('✓ Attendance finalized and recorded.'); setAttendanceModal(null); loadData(); })
+                      .catch(err => showToast(`❌ Error: ${err.message}`))
+                  }}
+                  className="bg-emerald-400 hover:bg-emerald-300 text-[#0B0F1A] font-bold text-xs rounded-xl px-5 py-2.5"
+                >
+                  Mark All Attended
+                </button>
+              </div>
             </div>
           </div>
         </div>,

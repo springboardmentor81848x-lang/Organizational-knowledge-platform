@@ -107,7 +107,9 @@ public class MentorshipController {
     public ResponseEntity<List<ExpertProfileDto>> getExpertDirectory(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String department,
-            @RequestParam(required = false) String skill) {
-        return ResponseEntity.ok(mentorshipService.getExpertDirectory(query, department, skill));
+            @RequestParam(required = false) String skill,
+            Authentication auth) {
+        UUID currentUserId = auth != null ? UUID.fromString((String) auth.getPrincipal()) : null;
+        return ResponseEntity.ok(mentorshipService.getExpertDirectory(query, department, skill, currentUserId));
     }
 }

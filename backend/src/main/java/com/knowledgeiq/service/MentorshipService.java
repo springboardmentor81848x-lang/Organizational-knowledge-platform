@@ -74,12 +74,16 @@ public class MentorshipService {
             UUID skillId = gap.getSkillId();
             int menteeLevel = gap.getCurrentLevel();
 
-            // Find all candidate users with proficiency strictly greater than menteeLevel
+            // Find candidate users with proficiency strictly greater than menteeLevel within the SAME department
             List<EmployeeSkill> candidates = allEmployeeSkills.stream()
                     .filter(es -> es.getSkill().getId().equals(skillId))
                     .filter(es -> es.getProficiencyLevel() > menteeLevel)
                     .filter(es -> !es.getUser().getId().equals(menteeId))
                     .filter(es -> Boolean.TRUE.equals(es.getUser().getIsActive()))
+                    .filter(es -> {
+                        if (mentee.getDepartment() == null || es.getUser().getDepartment() == null) return true;
+                        return mentee.getDepartment().getId().equals(es.getUser().getDepartment().getId());
+                    })
                     .collect(Collectors.toList());
 
             for (EmployeeSkill candidateEs : candidates) {
@@ -335,7 +339,21 @@ public class MentorshipService {
     }
 
     // EXPERT DIRECTORY
-    public List<ExpertProfileDto> getExpertDirectory(String query, String deptFilter, String skillFilter) {
+    public List<ExpertProfileDto> getExpertDirectory(String query, String deptFilter, String skillFilter, UUID currentUserId) {
+        User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
+        String userDeptName = (currentUser != null && currentUser.getDepartment() != null) ? currentUser.getDepartment().getName() : null;
+
+        // Default department filter to logged-in user's own department unless 'ALL' is explicitly requested
+        String effectiveDeptFilter = deptFilter;
+        if (effectiveDeptFilter == null || effectiveDeptFilter.isBlank()) {
+            effectiveDeptFilter = userDeptName;
+        }
+
+        // Strictly scope to the user's department domain (e.g. Engineering)
+        String targetDept = (effectiveDeptFilter != null && !effectiveDeptFilter.isBlank() && !effectiveDeptFilter.equalsIgnoreCase("ALL"))
+                ? effectiveDeptFilter
+                : (userDeptName != null ? userDeptName : "Engineering");
+
         List<User> activeUsers = userRepository.findAll().stream()
                 .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
                 .filter(u -> u.getSystemRole() == SystemRole.EMPLOYEE || u.getSystemRole() == SystemRole.MANAGER)
@@ -345,18 +363,16 @@ public class MentorshipService {
         List<EmployeeSkill> allEmployeeSkills = employeeSkillRepository.findAll();
 
         for (User user : activeUsers) {
+            if (user.getDepartment() == null || !user.getDepartment().getName().equalsIgnoreCase(targetDept)) {
+                continue; // Exclude non-department personnel
+            }
+
             if (query != null && !query.isBlank()) {
                 String q = query.toLowerCase();
                 boolean matchName = user.getFullName() != null && user.getFullName().toLowerCase().contains(q);
                 boolean matchTitle = user.getRoleTitle() != null && user.getRoleTitle().toLowerCase().contains(q);
                 boolean matchEmail = user.getEmail() != null && user.getEmail().toLowerCase().contains(q);
                 if (!matchName && !matchTitle && !matchEmail) continue;
-            }
-
-            if (deptFilter != null && !deptFilter.isBlank() && !deptFilter.equalsIgnoreCase("ALL")) {
-                if (user.getDepartment() == null || !user.getDepartment().getName().equalsIgnoreCase(deptFilter)) {
-                    continue;
-                }
             }
 
             // Find skills where user has level >= 4 (Advanced or Expert)
@@ -427,7 +443,134 @@ public class MentorshipService {
         dto.setEndDate(m.getEndDate());
         dto.setCreatedAt(m.getCreatedAt());
         dto.setUpdatedAt(m.getUpdatedAt());
+        
+        // L&D assignment tracking
+        if (m.getAssignedBy() != null) {
+            dto.setAssignedByName(m.getAssignedBy().getFullName());
+        }
+        
         return dto;
+    }
+
+    // ======================================================================
+    // L&D ADMIN MENTOR MANAGEMENT METHODS
+    // ======================================================================
+
+    /**
+     * L&D Admin assigns a mentor to an employee.
+     * Creates a mentorship with status ACTIVE and records who assigned it.
+     */
+    @Transactional
+    public MentorshipDto assignMentorship(UUID adminId, UUID menteeId, UUID mentorId, UUID skillId, String goal, String message) {
+        if (menteeId.equals(mentorId)) {
+            throw new IllegalArgumentException("Mentor and mentee cannot be the same person.");
+        }
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("L&D Admin not found: " + adminId));
+        User mentee = userRepository.findById(menteeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found: " + menteeId));
+        User mentor = userRepository.findById(mentorId)
+                .orElseThrow(() -> new RuntimeException("Mentor not found: " + mentorId));
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new RuntimeException("Skill not found: " + skillId));
+
+        // Prevent duplicate active/requested mentorships
+        List<Mentorship> activePending = mentorshipRepository.findByMentorIdAndMenteeIdAndSkillIdAndStatusIn(
+                mentor.getId(), mentee.getId(), skill.getId(), Arrays.asList("REQUESTED", "ACCEPTED", "ACTIVE")
+        );
+        if (!activePending.isEmpty()) {
+            throw new IllegalStateException("An active or pending mentorship already exists between these users for this skill.");
+        }
+
+        // Check proficiency constraint
+        int menteeLevel = employeeSkillRepository.findByUserIdAndSkillId(mentee.getId(), skill.getId())
+                .map(EmployeeSkill::getProficiencyLevel).orElse(1);
+        int mentorLevel = employeeSkillRepository.findByUserIdAndSkillId(mentor.getId(), skill.getId())
+                .map(EmployeeSkill::getProficiencyLevel).orElse(1);
+
+        if (mentorLevel <= menteeLevel) {
+            throw new IllegalArgumentException("Selected mentor must have higher proficiency in " + skill.getName() + " than the employee.");
+        }
+
+        boolean sameDept = mentee.getDepartment() != null && mentor.getDepartment() != null &&
+                mentee.getDepartment().getId().equals(mentor.getDepartment().getId());
+        int score = 70 + ((mentorLevel - menteeLevel) * 7) + (sameDept ? 8 : 0);
+        score = Math.min(98, Math.max(65, score));
+
+        String assignGoal = goal != null && !goal.isEmpty() ? goal :
+                String.format("L&D assigned mentorship to close %s skill gap (Level %d → Level %d)", skill.getName(), menteeLevel, mentorLevel);
+        String assignMessage = message != null && !message.isEmpty() ? message :
+                String.format("Assigned by %s via L&D Mentor Management", admin.getFullName());
+
+        Mentorship mentorship = new Mentorship(mentor, mentee, skill, assignGoal, assignMessage, score);
+        mentorship.setStatus("REQUESTED");
+        mentorship.setStartDate(null);
+        mentorship.setAssignedBy(admin);
+        mentorship = mentorshipRepository.save(mentorship);
+
+        // Notify Mentor to accept/decline, and Mentee of pending assignment
+        notificationService.notifyMentorAssigned(mentor, mentee.getFullName(), skill.getName(), admin.getFullName(), mentorship.getId());
+        notificationService.notifyMenteePendingAssignment(mentee, mentor.getFullName(), skill.getName(), admin.getFullName(), mentorship.getId());
+
+        return mapToDto(mentorship);
+    }
+
+    /**
+     * Get all mentorships across the organization for L&D admin oversight.
+     */
+    public List<MentorshipDto> getAllOrgMentorships(UUID orgId) {
+        List<Mentorship> mentorships = mentorshipRepository.findByMenteeOrganizationIdOrderByCreatedAtDesc(orgId);
+        return mentorships.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    /**
+     * L&D Admin reassigns a mentorship to a different mentor.
+     * Cancels the existing mentorship and creates a new one with the new mentor.
+     */
+    @Transactional
+    public MentorshipDto reassignMentorship(UUID adminId, UUID mentorshipId, UUID newMentorId) {
+        Mentorship existing = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found: " + mentorshipId));
+
+        // Cancel existing
+        existing.setStatus("CANCELLED");
+        existing.setEndDate(ZonedDateTime.now());
+        mentorshipRepository.save(existing);
+
+        // Create new assignment with the new mentor
+        return assignMentorship(
+                adminId,
+                existing.getMentee().getId(),
+                newMentorId,
+                existing.getSkill().getId(),
+                existing.getGoal(),
+                "Reassigned by L&D Admin"
+        );
+    }
+
+    /**
+     * L&D Admin cancels a mentorship.
+     */
+    @Transactional
+    public MentorshipDto ldCancelMentorship(UUID mentorshipId) {
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found: " + mentorshipId));
+        mentorship.setStatus("CANCELLED");
+        mentorship.setEndDate(ZonedDateTime.now());
+        return mapToDto(mentorshipRepository.save(mentorship));
+    }
+
+    /**
+     * L&D Admin marks a mentorship as complete.
+     */
+    @Transactional
+    public MentorshipDto ldCompleteMentorship(UUID mentorshipId) {
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found: " + mentorshipId));
+        mentorship.setStatus("COMPLETED");
+        mentorship.setEndDate(ZonedDateTime.now());
+        return mapToDto(mentorshipRepository.save(mentorship));
     }
 
     private MentorshipMessageDto mapMessageToDto(MentorshipMessage msg) {
@@ -459,3 +602,4 @@ public class MentorshipService {
         }
     }
 }
+

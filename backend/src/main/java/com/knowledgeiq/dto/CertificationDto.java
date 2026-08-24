@@ -22,6 +22,13 @@ public class CertificationDto {
     private String assessmentStatus;
     private Double assessmentScore;
 
+    // Employee Metadata fields for L&D verification
+    private String employeeName;
+    private String employeeEmail;
+    private String departmentName;
+    private String roleTitle;
+    private String createdAt;
+
     public CertificationDto() {}
 
     public CertificationDto(UUID id, UUID userId, String name, String issuingOrganization, String issueDate, String expirationDate, String credentialId, String credentialUrl) {
@@ -43,6 +50,8 @@ public class CertificationDto {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getTitle() { return name; }
+    public void setTitle(String title) { this.name = title; }
     public String getCertificationName() { return name; }
     public void setCertificationName(String certificationName) { this.name = certificationName; }
 
@@ -84,4 +93,19 @@ public class CertificationDto {
 
     public Double getAssessmentScore() { return assessmentScore; }
     public void setAssessmentScore(Double assessmentScore) { this.assessmentScore = assessmentScore; }
+
+    public String getEmployeeName() { return employeeName; }
+    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
+
+    public String getEmployeeEmail() { return employeeEmail; }
+    public void setEmployeeEmail(String employeeEmail) { this.employeeEmail = employeeEmail; }
+
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+
+    public String getRoleTitle() { return roleTitle; }
+    public void setRoleTitle(String roleTitle) { this.roleTitle = roleTitle; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }

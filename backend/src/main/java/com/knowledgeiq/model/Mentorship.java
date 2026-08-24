@@ -36,6 +36,10 @@ public class Mentorship {
     @Column(name = "match_score")
     private Integer matchScore = 85;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "assigned_by_id")
+    private User assignedBy; // L&D Admin who assigned this mentorship (null for self-requested)
+
     @Column(name = "meeting_link", length = 500)
     private String meetingLink;
 
@@ -102,6 +106,9 @@ public class Mentorship {
 
     public ZonedDateTime getEndDate() { return endDate; }
     public void setEndDate(ZonedDateTime endDate) { this.endDate = endDate; }
+
+    public User getAssignedBy() { return assignedBy; }
+    public void setAssignedBy(User assignedBy) { this.assignedBy = assignedBy; }
 
     public ZonedDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(ZonedDateTime createdAt) { this.createdAt = createdAt; }
