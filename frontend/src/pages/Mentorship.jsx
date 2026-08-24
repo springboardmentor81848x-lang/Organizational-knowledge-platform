@@ -75,10 +75,9 @@ function Mentorship() {
       setError("");
 
       const response = await axios.get(
-        `${API_BASE_URL}/mentorships/recommendations/${employeeId}`,
+        `${API_BASE_URL}/mentor-allocations/employee/${employeeId}`,
         getHeaders()
       );
-
       console.log("Mentor recommendations:", response.data);
 
       setRecommendations(
