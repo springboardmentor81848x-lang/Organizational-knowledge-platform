@@ -171,22 +171,6 @@ public class MentorshipService {
                 }
 
                 // -------------------------------------------------
-                // Only MENTOR role
-                // -------------------------------------------------
-
-                if (potentialMentor.getRole() == null) {
-                    continue;
-                }
-
-                if (!"MENTOR".equalsIgnoreCase(
-                        potentialMentor
-                                .getRole()
-                                .getRoleName())) {
-
-                    continue;
-                }
-
-                // -------------------------------------------------
                 // Mentor proficiency
                 // -------------------------------------------------
 
@@ -283,19 +267,6 @@ public class MentorshipService {
 
             throw new RuntimeException(
                     "Mentee and mentor are required."
-            );
-        }
-
-        // -----------------------------------------------------
-        // Validate mentor role
-        // -----------------------------------------------------
-
-        if (mentor.getRole() == null ||
-                !"MENTOR".equalsIgnoreCase(
-                        mentor.getRole().getRoleName())) {
-
-            throw new RuntimeException(
-                    "Selected employee is not a mentor."
             );
         }
 

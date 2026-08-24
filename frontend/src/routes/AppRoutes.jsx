@@ -25,6 +25,7 @@ import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
 import KnowledgeSession from "../pages/KnowledgeSession";
 import Mentorship from "../pages/Mentorship";
+import ExpertDirectory from "../pages/ExpertDirectory";
 
 // ==================================================
 // HR PAGES
@@ -447,6 +448,42 @@ function AppRoutes() {
             allowedRoles={["EMPLOYEE"]}
           >
             <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          EXPERT DIRECTORY (MODULE 3)
+      ================================================== */}
+
+      <Route
+        path="/expert-directory"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+              "MANAGER",
+              "HR",
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <ExpertDirectory />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/expert-directory"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <ExpertDirectory />
           </ProtectedRoute>
         }
       />
