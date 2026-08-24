@@ -1,6 +1,6 @@
-# KnowledgeIQ — React App
+# KnowledgeIQ — React + Vite App
 
-A role-based (Employee / HR / Admin) Organizational Knowledge Gap Intelligence Platform, built with React + Vite, Tailwind, Recharts, and lucide-react.
+A role-based Organizational Knowledge Gap Intelligence Platform, built with React + Vite, Tailwind CSS, Recharts, and Lucide Icons.
 
 ## Run it
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Then open the URL Vite prints (usually http://localhost:5173).
+Then open the URL Vite prints (usually `http://localhost:5173`).
 
 To build a production bundle:
 
@@ -22,19 +22,22 @@ npm run preview
 
 ```
 src/
-  data.js                 mock data + nav config for all three roles
-  App.jsx                 auth state, routing, layout shell
+  data.js                 Navigation definitions and metadata for all 6 roles
+  App.jsx                 Authentication state, multi-role routing, layout shell
   components/
-    Icon.jsx               central icon name -> lucide-react component map
-    Bits.jsx                StatCard, Pill, Gauge, SectionHead, etc.
-    Sidebar.jsx             role-aware sidebar + mobile nav
-    Topbar.jsx               topbar + command palette (⌘K)
+    Icon.jsx              Central icon mapping to lucide-react
+    Bits.jsx              Shared UI components (StatCard, Pill, Gauge, SectionHead, Modal, etc.)
+    Sidebar.jsx           Role-aware responsive sidebar
+    Topbar.jsx            Top navigation bar + notifications + quick profile switcher
   pages/
-    Login.jsx                role-select login screen
-    EmployeePages.jsx        Employee dashboard, skills, AI, training, assessments
-    HRPages.jsx               HR dashboard, directory, skill matrix, reports, gap analysis
-    AdminPages.jsx            Admin dashboard, users, roles, audit log, settings
-    SharedPages.jsx           Profile, Notifications (used by all roles)
+    EmployeePages.jsx     Employee dashboard, skill inventory, AI learning paths, mentorship, certs
+    ManagerPages.jsx      Manager team skill matrix, critical gaps, budget recommendations
+    HRPages.jsx           HR directory, workforce skill heatmap, demand forecasting, reporting
+    DeptHeadPages.jsx     Department benchmarks, ROI analytics, training allocation
+    LdAdminPages.jsx      Course catalog, adaptive path builder, credential verification queue, AI mentors
+    AdminPages.jsx        System user management, RBAC roles, platform skill inventory, audit logs
+  services/
+    api.js                Centralized REST API client connected to Spring Boot backend
 ```
 
 ## Notes on fonts
@@ -42,9 +45,4 @@ src/
 The Sora/Inter webfonts load from Google Fonts with `display=swap`, and the whole
 app has a system-font fallback stack (`ui-sans-serif, system-ui, -apple-system, sans-serif`)
 set directly in `index.html`. If the webfont fails to load (offline, blocked network),
-text still renders immediately in the fallback — it should never appear invisible or blank.
-
-## Demo login
-
-Pick any role tab (Employee / HR / Admin) on the login screen and click **Sign in** —
-this is a front-end demo with mock data, so no real credentials are required.
+text still renders immediately in the fallback — it will never appear invisible or blank.

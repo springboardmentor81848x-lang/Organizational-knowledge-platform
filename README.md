@@ -40,6 +40,7 @@ KnowledgeIQ is an enterprise workforce skill intelligence and adaptive learning 
 │
 ├── docker-compose.yml                   # Docker Compose Configuration
 ├── .env.example                         # Environment Variables Template
+├── supabase_schema.sql                  # Complete Supabase PostgreSQL DDL & Seed Data
 └── README.md                            # Main Documentation
 ```
 
@@ -115,3 +116,6 @@ node scripts/verify_live_system.js
 - [System Architecture](docs/ARCHITECTURE.md)
 - [REST API Reference](docs/API_DOCUMENTATION.md)
 - [Setup & Execution Guide](docs/SETUP_GUIDE.md)
+=======
+# Organizational-knowledge-platform
+>>>>>>> origin/main
