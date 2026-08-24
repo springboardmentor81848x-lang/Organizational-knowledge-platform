@@ -1,1 +1,0 @@
-# Organizational-knowledge-platform
