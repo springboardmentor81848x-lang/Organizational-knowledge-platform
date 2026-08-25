@@ -13,10 +13,15 @@ import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.KnowledgeGap;
+import com.knowledgegap.entity.LearningPath;
+import com.knowledgegap.entity.LearningPathCourse;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
 import com.knowledgegap.repository.KnowledgeGapRepository;
+import com.knowledgegap.repository.LearningPathCourseRepository;
+import com.knowledgegap.repository.LearningPathRepository;
+import com.knowledgegap.repository.MentorshipRepository;
 
 @Service
 public class HRDashboardService {
@@ -26,22 +31,36 @@ public class HRDashboardService {
     private final KnowledgeGapRepository knowledgeGapRepository;
     private final AssessmentAttemptRepository assessmentAttemptRepository;
 
+    private final LearningPathRepository learningPathRepository;
+    private final LearningPathCourseRepository learningPathCourseRepository;
+    private final MentorshipRepository mentorshipRepository;
+
     public HRDashboardService(
             EmployeeRepository employeeRepository,
             EmployeeSkillRepository employeeSkillRepository,
             KnowledgeGapRepository knowledgeGapRepository,
-            AssessmentAttemptRepository assessmentAttemptRepository) {
+            AssessmentAttemptRepository assessmentAttemptRepository,
+            LearningPathRepository learningPathRepository,
+            LearningPathCourseRepository learningPathCourseRepository,
+            MentorshipRepository mentorshipRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.knowledgeGapRepository = knowledgeGapRepository;
         this.assessmentAttemptRepository = assessmentAttemptRepository;
+
+        this.learningPathRepository = learningPathRepository;
+        this.learningPathCourseRepository = learningPathCourseRepository;
+        this.mentorshipRepository = mentorshipRepository;
     }
 
     public Map<String, Object> getDashboardSummary() {
 
         /*
-         * Only EMPLOYEE and MANAGER are counted.
+         * =========================================================
+         * EMPLOYEES
+         * =========================================================
+         *
          * HR and ADMIN are excluded.
          */
         List<Employee> employees =
@@ -59,13 +78,17 @@ public class HRDashboardService {
         int criticalGaps = 0;
 
         /*
-         * Average skill improvement
+         * =========================================================
+         * SKILL IMPROVEMENT
+         * =========================================================
          */
         double totalSkillImprovement = 0;
         int employeesWithImprovement = 0;
 
         /*
-         * Performance distribution
+         * =========================================================
+         * PERFORMANCE DISTRIBUTION
+         * =========================================================
          */
         Map<String, Integer> performance =
                 new LinkedHashMap<>();
@@ -76,7 +99,9 @@ public class HRDashboardService {
         performance.put("critical", 0);
 
         /*
-         * Knowledge gap distribution
+         * =========================================================
+         * KNOWLEDGE GAP DISTRIBUTION
+         * =========================================================
          */
         Map<String, Integer> gapDistribution =
                 new LinkedHashMap<>();
@@ -87,7 +112,9 @@ public class HRDashboardService {
         gapDistribution.put("critical", 0);
 
         /*
-         * Skill gap aggregation
+         * =========================================================
+         * TOP SKILL GAPS
+         * =========================================================
          */
         Map<String, List<Integer>> skillGapValues =
                 new HashMap<>();
@@ -96,23 +123,25 @@ public class HRDashboardService {
                 new HashMap<>();
 
         /*
-         * Employee overview
+         * =========================================================
+         * EMPLOYEE OVERVIEW
+         * =========================================================
          */
         List<Map<String, Object>> employeeOverview =
                 new ArrayList<>();
 
 
         /*
-         * =====================================================
+         * =========================================================
          * PROCESS EACH EMPLOYEE
-         * =====================================================
+         * =========================================================
          */
         for (Employee employee : employees) {
 
             /*
-             * -------------------------------------------------
-             * Employee Skills
-             * -------------------------------------------------
+             * -----------------------------------------------------
+             * EMPLOYEE SKILLS
+             * -----------------------------------------------------
              */
             List<EmployeeSkill> employeeSkills =
                     employeeSkillRepository.findByEmployee(employee);
@@ -122,6 +151,7 @@ public class HRDashboardService {
             if (!employeeSkills.isEmpty()) {
 
                 int totalSkillLevel = 0;
+                int validSkillCount = 0;
 
                 for (EmployeeSkill employeeSkill : employeeSkills) {
 
@@ -129,25 +159,30 @@ public class HRDashboardService {
 
                         totalSkillLevel +=
                                 employeeSkill.getCurrentLevel();
+
+                        validSkillCount++;
                     }
                 }
 
-                double averageLevel =
-                        (double) totalSkillLevel /
-                        employeeSkills.size();
+                if (validSkillCount > 0) {
 
-                /*
-                 * Level 5 = 100%
-                 */
-                averageSkill =
-                        (averageLevel / 5.0) * 100;
+                    double averageLevel =
+                            (double) totalSkillLevel /
+                            validSkillCount;
+
+                    /*
+                     * Level 5 = 100%
+                     */
+                    averageSkill =
+                            (averageLevel / 5.0) * 100;
+                }
             }
 
 
             /*
-             * -------------------------------------------------
-             * Knowledge Gaps
-             * -------------------------------------------------
+             * -----------------------------------------------------
+             * KNOWLEDGE GAPS
+             * -----------------------------------------------------
              */
             List<KnowledgeGap> gaps =
                     knowledgeGapRepository.findByEmployee(employee);
@@ -173,7 +208,7 @@ public class HRDashboardService {
 
 
                 /*
-                 * Gap Distribution
+                 * GAP DISTRIBUTION
                  */
                 if (gapValue == 1) {
 
@@ -208,7 +243,7 @@ public class HRDashboardService {
 
 
                 /*
-                 * Top Skill Gaps
+                 * TOP SKILL GAPS
                  */
                 if (gap.getSkill() != null) {
 
@@ -234,12 +269,9 @@ public class HRDashboardService {
 
 
             /*
-             * -------------------------------------------------
-             * Average Skill Improvement
-             * -------------------------------------------------
-             *
-             * Compare the employee's first assessment
-             * with their latest assessment.
+             * -----------------------------------------------------
+             * ASSESSMENT IMPROVEMENT
+             * -----------------------------------------------------
              */
             List<AssessmentAttempt> attempts =
                     assessmentAttemptRepository
@@ -272,14 +304,9 @@ public class HRDashboardService {
 
 
             /*
-             * -------------------------------------------------
-             * Employee Performance
-             * -------------------------------------------------
-             *
-             * 80%+  = Excellent
-             * 60-79 = Good
-             * 40-59 = Needs Attention
-             * <40   = Critical
+             * -----------------------------------------------------
+             * PERFORMANCE
+             * -----------------------------------------------------
              */
             if (averageSkill >= 80) {
 
@@ -312,9 +339,9 @@ public class HRDashboardService {
 
 
             /*
-             * -------------------------------------------------
-             * Employee Gap Status
-             * -------------------------------------------------
+             * -----------------------------------------------------
+             * EMPLOYEE GAP STATUS
+             * -----------------------------------------------------
              */
             String gapStatus;
 
@@ -337,9 +364,9 @@ public class HRDashboardService {
 
 
             /*
-             * -------------------------------------------------
-             * Employee Overview
-             * -------------------------------------------------
+             * -----------------------------------------------------
+             * EMPLOYEE OVERVIEW
+             * -----------------------------------------------------
              */
             Map<String, Object> employeeData =
                     new LinkedHashMap<>();
@@ -376,9 +403,9 @@ public class HRDashboardService {
 
 
         /*
-         * =====================================================
+         * =========================================================
          * AVERAGE KNOWLEDGE GAP
-         * =====================================================
+         * =========================================================
          */
         double averageGap = 0;
 
@@ -390,13 +417,15 @@ public class HRDashboardService {
         }
 
         averageGap =
-                Math.round(averageGap * 100.0) / 100.0;
+                Math.round(
+                        averageGap * 100.0
+                ) / 100.0;
 
 
         /*
-         * =====================================================
+         * =========================================================
          * AVERAGE SKILL IMPROVEMENT
-         * =====================================================
+         * =========================================================
          */
         double averageSkillImprovement = 0;
 
@@ -414,9 +443,9 @@ public class HRDashboardService {
 
 
         /*
-         * =====================================================
-         * TOP SKILLS WITH KNOWLEDGE GAPS
-         * =====================================================
+         * =========================================================
+         * TOP SKILL GAPS
+         * =========================================================
          */
         List<Map<String, Object>> topSkillGaps =
                 new ArrayList<>();
@@ -436,7 +465,9 @@ public class HRDashboardService {
                     values.size();
 
             avg =
-                    Math.round(avg * 100.0) / 100.0;
+                    Math.round(
+                            avg * 100.0
+                    ) / 100.0;
 
             Map<String, Object> skillData =
                     new LinkedHashMap<>();
@@ -461,7 +492,7 @@ public class HRDashboardService {
 
 
         /*
-         * Sort skills by number of affected employees
+         * Sort by employees affected
          */
         topSkillGaps.sort(
                 (a, b) ->
@@ -477,119 +508,217 @@ public class HRDashboardService {
 
 
         /*
-         * =====================================================
-         * FINAL DASHBOARD RESPONSE
-         * =====================================================
+         * =========================================================
+         * TRAINING KPIs
+         * =========================================================
+         */
+
+        int employeesInTraining = 0;
+
+        int totalCourses = 0;
+        int completedCourses = 0;
+
+        /*
+         * ---------------------------------------------------------
+         * PROCESS LEARNING PATHS
+         * ---------------------------------------------------------
+         */
+        for (Employee employee : employees) {
+
+            List<LearningPath> learningPaths =
+                    learningPathRepository.findByEmployee(employee);
+
+            boolean employeeTraining = false;
+
+            for (LearningPath learningPath : learningPaths) {
+
+                /*
+                 * Employee is considered "in training" if
+                 * learning path is active/in progress.
+                 */
+                if (isActiveStatus(learningPath.getStatus())) {
+
+                    employeeTraining = true;
+                }
+
+                /*
+                 * Get courses belonging to this learning path.
+                 */
+                List<LearningPathCourse> pathCourses =
+                        learningPathCourseRepository
+                                .findByLearningPathOrderBySequenceOrderAsc(
+                                        learningPath
+                                );
+
+                for (LearningPathCourse pathCourse : pathCourses) {
+
+                    totalCourses++;
+
+                    if (isCompletedStatus(
+                            pathCourse.getStatus())) {
+
+                        completedCourses++;
+                    }
+                }
+            }
+
+            if (employeeTraining) {
+                employeesInTraining++;
+            }
+        }
+
+
+        /*
+         * ---------------------------------------------------------
+         * TRAINING COMPLETION RATE
+         * ---------------------------------------------------------
+         */
+        double trainingCompletionRate = 0;
+
+        if (totalCourses > 0) {
+
+            trainingCompletionRate =
+                    ((double) completedCourses /
+                            totalCourses) * 100;
+        }
+
+        trainingCompletionRate =
+                Math.round(
+                        trainingCompletionRate * 100.0
+                ) / 100.0;
+
+
+        /*
+         * ---------------------------------------------------------
+         * AVERAGE LEARNING PROGRESS
+         * ---------------------------------------------------------
+         *
+         * Progress = completed courses / total courses.
+         */
+        double averageLearningProgress = 0;
+
+        if (totalCourses > 0) {
+
+            averageLearningProgress =
+                    ((double) completedCourses /
+                            totalCourses) * 100;
+        }
+
+        averageLearningProgress =
+                Math.round(
+                        averageLearningProgress * 100.0
+                ) / 100.0;
+
+
+        /*
+         * =========================================================
+         * ACTIVE MENTORSHIPS
+         * =========================================================
+         *
+         * Count mentorship records whose status is ACTIVE
+         * or IN_PROGRESS.
+         */
+        int activeMentorships = 0;
+
+        /*
+         * We already have all employees.
+         * Check mentorships belonging to each employee.
+         */
+        for (Employee employee : employees) {
+
+            List<com.knowledgegap.entity.Mentorship> menteeMentorships =
+                    mentorshipRepository.findByMenteeAndStatus(
+                            employee,
+                            "ACTIVE"
+                    );
+
+            activeMentorships +=
+                    menteeMentorships.size();
+
+
+            /*
+             * Also support IN_PROGRESS.
+             */
+            List<com.knowledgegap.entity.Mentorship> inProgressMentorships =
+                    mentorshipRepository.findByMenteeAndStatus(
+                            employee,
+                            "IN_PROGRESS"
+                    );
+
+            activeMentorships +=
+                    inProgressMentorships.size();
+        }
+
+
+        /*
+         * =========================================================
+         * FINAL RESPONSE
+         * =========================================================
          */
         Map<String, Object> dashboard =
                 new LinkedHashMap<>();
 
+
         /*
-         * KPI 1
+         * =========================================================
+         * MAIN KPI CARDS
+         * =========================================================
          */
+
         dashboard.put(
                 "totalEmployees",
                 totalEmployees
         );
 
-        /*
-         * KPI 2
-         */
         dashboard.put(
                 "employeesWithGaps",
                 employeesWithGaps
         );
 
-        /*
-         * Average gap
-         */
         dashboard.put(
                 "averageGap",
                 averageGap
         );
 
-        /*
-         * KPI 3
-         */
         dashboard.put(
                 "criticalGaps",
                 criticalGaps
         );
 
-        /*
-         * Total knowledge gaps
-         */
         dashboard.put(
                 "totalKnowledgeGaps",
                 totalKnowledgeGaps
         );
 
-        /*
-         * Performance
-         */
-        dashboard.put(
-                "performance",
-                performance
-        );
 
         /*
-         * Gap distribution
-         */
-        dashboard.put(
-                "gapDistribution",
-                gapDistribution
-        );
-
-        /*
-         * Top skill gaps
-         */
-        dashboard.put(
-                "topSkillGaps",
-                topSkillGaps
-        );
-
-        /*
-         * Employee overview
-         */
-        dashboard.put(
-                "employees",
-                employeeOverview
-        );
-
-
-        /*
-         * =====================================================
-         * TRAINING KPIs
-         * =====================================================
-         *
-         * Your imported database currently has no status
-         * values in learning_path or learning_path_course.
-         *
-         * Therefore we leave these as 0 rather than inventing
-         * training data.
+         * =========================================================
+         * TRAINING KPI CARDS
+         * =========================================================
          */
 
         dashboard.put(
                 "employeesInTraining",
-                0
+                employeesInTraining
         );
 
         dashboard.put(
                 "trainingCompletionRate",
-                0
+                trainingCompletionRate
         );
 
         dashboard.put(
                 "averageLearningProgress",
-                0
+                averageLearningProgress
         );
 
 
         /*
-         * =====================================================
-         * KPI 7 - AVERAGE SKILL IMPROVEMENT
-         * =====================================================
+         * =========================================================
+         * SKILL IMPROVEMENT
+         * =========================================================
          */
+
         dashboard.put(
                 "averageSkillImprovement",
                 averageSkillImprovement
@@ -597,18 +726,84 @@ public class HRDashboardService {
 
 
         /*
-         * =====================================================
-         * KPI 8 - ACTIVE MENTORSHIPS
-         * =====================================================
-         *
-         * No mentorship entity/table currently exists.
+         * =========================================================
+         * MENTORSHIPS
+         * =========================================================
          */
+
         dashboard.put(
                 "activeMentorships",
-                0
+                activeMentorships
+        );
+
+
+        /*
+         * =========================================================
+         * CHART DATA
+         * =========================================================
+         */
+
+        dashboard.put(
+                "performance",
+                performance
+        );
+
+        dashboard.put(
+                "gapDistribution",
+                gapDistribution
+        );
+
+        dashboard.put(
+                "topSkillGaps",
+                topSkillGaps
+        );
+
+        dashboard.put(
+                "employees",
+                employeeOverview
         );
 
 
         return dashboard;
+    }
+
+
+    /*
+     * =============================================================
+     * HELPER: ACTIVE LEARNING PATH STATUS
+     * =============================================================
+     */
+    private boolean isActiveStatus(String status) {
+
+        if (status == null) {
+            return false;
+        }
+
+        String normalized =
+                status.trim().toUpperCase();
+
+        return normalized.equals("ACTIVE")
+                || normalized.equals("IN_PROGRESS")
+                || normalized.equals("STARTED");
+    }
+
+
+    /*
+     * =============================================================
+     * HELPER: COMPLETED COURSE STATUS
+     * =============================================================
+     */
+    private boolean isCompletedStatus(String status) {
+
+        if (status == null) {
+            return false;
+        }
+
+        String normalized =
+                status.trim().toUpperCase();
+
+        return normalized.equals("COMPLETED")
+                || normalized.equals("COMPLETE")
+                || normalized.equals("DONE");
     }
 }
