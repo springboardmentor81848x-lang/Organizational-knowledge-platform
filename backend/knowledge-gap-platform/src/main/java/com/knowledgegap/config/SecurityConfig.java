@@ -93,13 +93,26 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         http
+
+            // =================================================
+            // CORS
+            // =================================================
+
             .cors(cors ->
                     cors.configurationSource(
                             corsConfigurationSource()
                     )
             )
 
+            // =================================================
+            // CSRF
+            // =================================================
+
             .csrf(AbstractHttpConfigurer::disable)
+
+            // =================================================
+            // SESSION
+            // =================================================
 
             .sessionManagement(session ->
                     session.sessionCreationPolicy(
@@ -107,67 +120,126 @@ public class SecurityConfig {
                     )
             )
 
+            // =================================================
+            // AUTHORIZATION
+            // =================================================
+
             .authorizeHttpRequests(auth -> auth
 
-                // CORS
+                // -------------------------------------------------
+                // OPTIONS
+                // -------------------------------------------------
+
                 .requestMatchers(
                         HttpMethod.OPTIONS,
                         "/**"
                 ).permitAll()
 
-                // Authentication
+                // -------------------------------------------------
+                // AUTHENTICATION
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/auth/**"
                 ).permitAll()
 
-                // =================================================
-                // TEMPORARILY ALLOW WORKFORCE SKILLS
-                // =================================================
+                // -------------------------------------------------
+                // EMPLOYEES
+                // TEMPORARILY PERMITTED FOR DEVELOPMENT
+                // -------------------------------------------------
+
+                .requestMatchers(
+                        "/api/employees/**"
+                ).permitAll()
+
+                // -------------------------------------------------
+                // ASSESSMENT EVALUATION
+                // TEMPORARILY PERMITTED FOR DEVELOPMENT
+                // -------------------------------------------------
+
+                .requestMatchers(
+                        "/api/assessment-evaluation/**"
+                ).permitAll()
+                
+
+                // -------------------------------------------------
+                // WORKFORCE SKILLS
+                // -------------------------------------------------
+                
                 .requestMatchers(
                         HttpMethod.GET,
                         "/api/hr/workforce-skills"
                 ).permitAll()
 
+                // -------------------------------------------------
                 // AI
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/ai/**"
                 ).permitAll()
 
-                // Swagger
+                // -------------------------------------------------
+                // SWAGGER
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**"
                 ).permitAll()
 
+
+                // -------------------------------------------------
                 // HR
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/hr/**"
                 ).hasRole("HR")
 
-                // Manager
+                // -------------------------------------------------
+                // MANAGER
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/manager/**"
                 ).hasRole("MANAGER")
 
-                // Department Head
+                // -------------------------------------------------
+                // DEPARTMENT HEAD
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/department-head/**"
                 ).hasRole("DEPARTMENT_HEAD")
 
-                // System Administrator
+                // -------------------------------------------------
+                // SYSTEM ADMINISTRATOR
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/system-admin/**"
                 ).hasRole("SYSTEM_ADMINISTRATOR")
 
-                // Employee
+                // -------------------------------------------------
+                // EMPLOYEE
+                // -------------------------------------------------
+
                 .requestMatchers(
                         "/api/employee/**"
                 ).hasRole("EMPLOYEE")
 
-                // Everything else
+                // -------------------------------------------------
+                // EVERYTHING ELSE
+                // -------------------------------------------------
+
                 .anyRequest().authenticated()
             )
+
+            // =================================================
+            // JWT FILTER
+            // =================================================
 
             .addFilterBefore(
                     jwtAuthenticationFilter,

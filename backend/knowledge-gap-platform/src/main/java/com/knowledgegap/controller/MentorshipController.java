@@ -91,18 +91,6 @@ public class MentorshipController {
                     .build();
         }
 
-        // Make sure this employee is actually a mentor
-        if (mentor.get().getRole() == null ||
-                !"MENTOR".equalsIgnoreCase(
-                        mentor.get()
-                                .getRole()
-                                .getRoleName())) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .build();
-        }
-
         return ResponseEntity.ok(
                 mentorshipService
                         .getMentorshipsByMentor(
@@ -191,23 +179,6 @@ public class MentorshipController {
                         .badRequest()
                         .body(
                                 "Mentor employee not found."
-                        );
-            }
-
-            // -------------------------------------------------
-            // Validate mentor role
-            // -------------------------------------------------
-
-            if (mentor.get().getRole() == null ||
-                    !"MENTOR".equalsIgnoreCase(
-                            mentor.get()
-                                    .getRole()
-                                    .getRoleName())) {
-
-                return ResponseEntity
-                        .badRequest()
-                        .body(
-                                "Selected employee is not a mentor."
                         );
             }
 

@@ -2,7 +2,7 @@ import React from "react";
 import {
   Routes,
   Route,
-  Navigate,
+  Navigate
 } from "react-router-dom";
 
 // ==================================================
@@ -29,6 +29,7 @@ import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
 import KnowledgeSession from "../pages/KnowledgeSession";
 import Mentorship from "../pages/Mentorship";
+import ExpertDirectory from "../pages/ExpertDirectory";
 
 // ==================================================
 // HR
@@ -38,6 +39,7 @@ import HRDashboard from "../pages/HRDashboard";
 import GapIntelligence from "../pages/GapIntelligence";
 import CompetencyFramework from "../pages/CompetencyFramework";
 import WorkforceSkillInventory from "../pages/WorkforceSkillInventory";
+import MentorAllocation from "../pages/MentorAllocation";
 
 // ==================================================
 // MANAGER
@@ -85,22 +87,18 @@ const getRoleFromToken = () => {
       return "";
     }
 
-    const base64Payload = parts[1]
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-
     const payload = JSON.parse(
-      atob(base64Payload)
+      atob(
+        parts[1]
+          .replace(/-/g, "+")
+          .replace(/_/g, "/")
+      )
     );
 
     console.log("JWT payload:", payload);
 
-    return (
-      payload.role ||
-      payload.roles ||
-      payload.authorities ||
-      ""
-    );
+    return payload.role || "";
+
   } catch (error) {
     console.error(
       "Unable to read role from JWT:",
@@ -143,12 +141,22 @@ const getRole = () => {
     localStorage.getItem("userRole") ||
     "";
 
+  console.log(
+    "Role from localStorage:",
+    role
+  );
+
   if (
     !role ||
     role === "null" ||
     role === "undefined"
   ) {
     role = getRoleFromToken();
+
+    console.log(
+      "Role extracted from JWT:",
+      role
+    );
   }
 
   const normalizedRole =
@@ -171,12 +179,44 @@ function ProtectedRoute({
   children,
   allowedRoles,
 }) {
+
   const token =
     localStorage.getItem("token");
 
-  const role = getRole();
+  const role =
+    getRole();
 
-  // User is not logged in
+  console.log(
+    "--------------------------------"
+  );
+
+  console.log(
+    "PROTECTED ROUTE"
+  );
+
+  console.log(
+    "Token exists:",
+    !!token
+  );
+
+  console.log(
+    "Current role:",
+    role
+  );
+
+  console.log(
+    "Allowed roles:",
+    allowedRoles
+  );
+
+  console.log(
+    "--------------------------------"
+  );
+
+  // ==================================================
+  // NOT LOGGED IN
+  // ==================================================
+
   if (!token) {
     return (
       <Navigate
@@ -186,37 +226,43 @@ function ProtectedRoute({
     );
   }
 
-  // No role restrictions
-  if (
-    !allowedRoles ||
-    allowedRoles.length === 0
-  ) {
-    return children;
-  }
-
-  const normalizedAllowedRoles =
-    allowedRoles.map(normalizeRole);
+  // ==================================================
+  // CHECK ROLE PERMISSION
+  // ==================================================
 
   if (
-    !normalizedAllowedRoles.includes(role)
+    allowedRoles &&
+    allowedRoles.length > 0
   ) {
-    console.error(
-      "Access denied. Current role:",
-      role
-    );
 
-    console.error(
-      "Allowed roles:",
+    const normalizedAllowedRoles =
+      allowedRoles.map(normalizeRole);
+
+    console.log(
+      "Normalized allowed roles:",
       normalizedAllowedRoles
     );
 
-    return (
-      <Navigate
-        to="/unauthorized"
-        replace
-      />
-    );
+    if (
+      !normalizedAllowedRoles.includes(role)
+    ) {
+
+      console.error(
+        "ACCESS DENIED"
+      );
+
+      return (
+        <Navigate
+          to="/unauthorized"
+          replace
+        />
+      );
+    }
   }
+
+  // ==================================================
+  // ACCESS GRANTED
+  // ==================================================
 
   return children;
 }
@@ -227,6 +273,7 @@ function ProtectedRoute({
 // ==================================================
 
 function AppRoutes() {
+
   return (
     <Routes>
 
@@ -419,7 +466,7 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={[
               "EMPLOYEE",
-              "MENTOR",
+              "MENTOR"
             ]}
           >
             <KnowledgeSession />
@@ -445,6 +492,43 @@ function AppRoutes() {
             allowedRoles={["EMPLOYEE"]}
           >
             <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+
+      {/* ==================================================
+          EXPERT DIRECTORY
+      ================================================== */}
+
+      <Route
+        path="/expert-directory"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+              "MANAGER",
+              "HR",
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <ExpertDirectory />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/expert-directory"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <ExpertDirectory />
           </ProtectedRoute>
         }
       />
@@ -509,6 +593,17 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/hr/mentor-allocation"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <MentorAllocation />
+          </ProtectedRoute>
+        }
+      />
+
 
       {/* ==================================================
           MANAGER
@@ -547,7 +642,7 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={[
               "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
+              "DEPARTMENT_HEAD"
             ]}
           >
             <DepartmentHeadDashboard />
@@ -561,7 +656,7 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={[
               "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
+              "DEPARTMENT_HEAD"
             ]}
           >
             <DepartmentHeadDashboard />
@@ -641,7 +736,7 @@ function AppRoutes() {
             allowedRoles={[
               "SYSTEM ADMINISTRATOR",
               "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
+              "ADMIN"
             ]}
           >
             <SystemAdministratorDashboard />
@@ -656,7 +751,7 @@ function AppRoutes() {
             allowedRoles={[
               "SYSTEM ADMINISTRATOR",
               "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
+              "ADMIN"
             ]}
           >
             <SystemAdministratorDashboard />
@@ -673,7 +768,6 @@ function AppRoutes() {
         path="/unauthorized"
         element={
           <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center max-w-md w-full">
 
               <h1 className="text-3xl font-bold text-red-600">
@@ -694,7 +788,6 @@ function AppRoutes() {
               </button>
 
             </div>
-
           </div>
         }
       />

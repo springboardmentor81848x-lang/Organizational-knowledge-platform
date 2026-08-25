@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
+  UserCheck, // ✅ FIXED: required for Mentor Allocation
   ClipboardList,
   BarChart3,
   GraduationCap,
@@ -83,11 +84,7 @@ function Sidebar({ role }) {
               Gap Intelligence
             </NavLink>
 
-            {/* Workforce Skills
-                IMPORTANT:
-                Do NOT use /skills here.
-                /skills is an EMPLOYEE-only route.
-            */}
+            {/* Workforce Skills */}
             <NavLink
               to="/hr/workforce-skills"
               className={navLinkClass}
@@ -121,6 +118,15 @@ function Sidebar({ role }) {
             >
               <TrendingUp size={20} />
               Skill Forecast
+            </NavLink>
+
+            {/* Mentor Allocation */}
+            <NavLink
+              to="/hr/mentor-allocation"
+              className={navLinkClass}
+            >
+              <UserCheck size={20} />
+              Mentor Allocation
             </NavLink>
 
             {/* User Management */}

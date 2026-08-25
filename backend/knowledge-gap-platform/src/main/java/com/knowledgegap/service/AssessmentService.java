@@ -11,18 +11,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.knowledgegap.dto.AssessmentAnswerRequest;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
-
 import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentAnswer;
 import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.AssessmentQuestion;
 import com.knowledgegap.entity.Employee;
-
 import com.knowledgegap.repository.AssessmentAnswerRepository;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
@@ -261,22 +258,19 @@ public class AssessmentService {
 
         if (request.getAnswers() != null) {
 
-            for (
-                    AssessmentAnswerRequest answerRequest :
-                    request.getAnswers()
-            ) {
+        for (
+                Map.Entry<Long, String> entry :
+                request.getAnswers().entrySet()
+        ) {
 
-                if (
-                        answerRequest != null &&
-                        answerRequest.getQuestionId() != null
-                ) {
+                if (entry.getKey() != null) {
 
-                    submittedAnswers.put(
-                            answerRequest.getQuestionId(),
-                            answerRequest.getSelectedAnswer()
-                    );
+                submittedAnswers.put(
+                        entry.getKey(),
+                        entry.getValue()
+                );
                 }
-            }
+        }
         }
 
 

@@ -1,14 +1,33 @@
 package com.knowledgegap.dto;
 
-import java.util.List;
+import java.util.Map;
 
 public class AssessmentSubmitRequest {
 
+    private Long employeeId;
+
     private Long assessmentId;
 
-    private List<AssessmentAnswerRequest> answers;
+    /*
+     * questionId -> employee's selected answer
+     *
+     * Example:
+     *
+     * 1 -> "B"
+     * 2 -> "C"
+     * 3 -> "C"
+     */
+    private Map<Long, String> answers;
 
     public AssessmentSubmitRequest() {
+    }
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
     }
 
     public Long getAssessmentId() {
@@ -19,11 +38,11 @@ public class AssessmentSubmitRequest {
         this.assessmentId = assessmentId;
     }
 
-    public List<AssessmentAnswerRequest> getAnswers() {
+    public Map<Long, String> getAnswers() {
         return answers;
     }
 
-    public void setAnswers(List<AssessmentAnswerRequest> answers) {
+    public void setAnswers(Map<Long, String> answers) {
         this.answers = answers;
     }
 }
