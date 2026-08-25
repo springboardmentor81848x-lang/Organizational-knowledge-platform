@@ -1,10 +1,11 @@
 package com.knowledgegap.repository;
 
-import com.knowledgegap.entity.LearningPath;
-import com.knowledgegap.entity.LearningPathCourse;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.knowledgegap.entity.LearningPath;
+import com.knowledgegap.entity.LearningPathCourse;
 
 public interface LearningPathCourseRepository extends JpaRepository<LearningPathCourse, Long> {
 

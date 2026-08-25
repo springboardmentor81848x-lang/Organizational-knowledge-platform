@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import axios from "axios";
+import api from "../services/api";
 
 const WorkforceSkillInventory = () => {
   const [data, setData] = useState(null);
@@ -23,25 +23,13 @@ const WorkforceSkillInventory = () => {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(
-        "http://localhost:8080/api/hr/workforce-skills",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get("/hr/workforce-skills");
 
       console.log("Workforce Skill Inventory:", response.data);
 
       setData(response.data);
     } catch (err) {
-      console.error(
-        "Workforce skill inventory error:",
-        err
-      );
+      console.error("Workforce skill inventory error:", err);
 
       if (err.response?.status === 401) {
         setError(
@@ -60,10 +48,6 @@ const WorkforceSkillInventory = () => {
       setLoading(false);
     }
   };
-
-  // ============================================================
-  // LOADING
-  // ============================================================
 
   if (loading) {
     return (
@@ -90,10 +74,6 @@ const WorkforceSkillInventory = () => {
     );
   }
 
-  // ============================================================
-  // ERROR
-  // ============================================================
-
   if (error) {
     return (
       <div className="flex min-h-screen bg-slate-50">
@@ -104,7 +84,6 @@ const WorkforceSkillInventory = () => {
 
           <div className="flex items-center justify-center min-h-[80vh] p-6">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center max-w-md w-full">
-
               <AlertTriangle
                 size={42}
                 className="mx-auto text-red-500 mb-4"
@@ -125,7 +104,6 @@ const WorkforceSkillInventory = () => {
                 <RefreshCw size={17} />
                 Try Again
               </button>
-
             </div>
           </div>
         </div>
@@ -133,35 +111,16 @@ const WorkforceSkillInventory = () => {
     );
   }
 
-  // ============================================================
-  // MAIN PAGE
-  // ============================================================
-
   return (
     <div className="flex min-h-screen bg-slate-50">
-
-      {/* ======================================================
-          HR SIDEBAR
-      ====================================================== */}
-
       <Sidebar role="HR" />
 
-      {/* ======================================================
-          MAIN CONTENT
-      ====================================================== */}
-
       <div className="flex-1 min-w-0">
-
         <Navbar title="Workforce Skill Inventory" />
 
         <main className="p-5 md:p-8">
 
-          {/* ==================================================
-              HEADER
-          ================================================== */}
-
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-
             <div>
               <h1 className="text-3xl font-bold text-slate-800">
                 Workforce Skill Inventory
@@ -179,16 +138,9 @@ const WorkforceSkillInventory = () => {
               <RefreshCw size={18} />
               Refresh Data
             </button>
-
           </div>
 
-          {/* ==================================================
-              SUMMARY CARDS
-          ================================================== */}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-
-            {/* Total Employees */}
 
             <SummaryCard
               title="Total Employees"
@@ -198,8 +150,6 @@ const WorkforceSkillInventory = () => {
               iconClass="bg-indigo-100 text-indigo-600"
             />
 
-            {/* Skills Available */}
-
             <SummaryCard
               title="Skills Available"
               value={data?.totalSkills ?? 0}
@@ -208,8 +158,6 @@ const WorkforceSkillInventory = () => {
               iconClass="bg-blue-100 text-blue-600"
             />
 
-            {/* Skills With Gaps */}
-
             <SummaryCard
               title="Skills With Gaps"
               value={data?.skillsWithGaps ?? 0}
@@ -217,8 +165,6 @@ const WorkforceSkillInventory = () => {
               icon={<AlertTriangle size={24} />}
               iconClass="bg-red-100 text-red-600"
             />
-
-            {/* Average Skill */}
 
             <SummaryCard
               title="Average Workforce Skill"
@@ -230,14 +176,9 @@ const WorkforceSkillInventory = () => {
 
           </div>
 
-          {/* ==================================================
-              SKILL TABLE
-          ================================================== */}
-
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
             <div className="p-6 border-b border-slate-200">
-
               <div className="flex items-center gap-3">
 
                 <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg">
@@ -255,7 +196,6 @@ const WorkforceSkillInventory = () => {
                 </div>
 
               </div>
-
             </div>
 
             <div className="overflow-x-auto">
@@ -263,7 +203,6 @@ const WorkforceSkillInventory = () => {
               <table className="w-full">
 
                 <thead className="bg-slate-50">
-
                   <tr>
 
                     <th className="text-left px-6 py-4 text-sm font-semibold text-slate-600">
@@ -291,7 +230,6 @@ const WorkforceSkillInventory = () => {
                     </th>
 
                   </tr>
-
                 </thead>
 
                 <tbody>
@@ -305,10 +243,7 @@ const WorkforceSkillInventory = () => {
                         className="border-t border-slate-100 hover:bg-slate-50 transition"
                       >
 
-                        {/* Skill */}
-
                         <td className="px-6 py-4 font-medium text-slate-800">
-
                           <div className="flex items-center gap-3">
 
                             <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
@@ -318,22 +253,15 @@ const WorkforceSkillInventory = () => {
                             {skill.skill}
 
                           </div>
-
                         </td>
-
-                        {/* Category */}
 
                         <td className="px-6 py-4 text-slate-600">
                           {skill.category || "—"}
                         </td>
 
-                        {/* Employees */}
-
                         <td className="px-6 py-4 text-slate-600">
                           {skill.employees ?? 0}
                         </td>
-
-                        {/* Average Level */}
 
                         <td className="px-6 py-4">
 
@@ -349,8 +277,7 @@ const WorkforceSkillInventory = () => {
                                 className="h-full bg-indigo-500 rounded-full"
                                 style={{
                                   width: `${Math.min(
-                                    ((Number(skill.averageLevel) || 0) / 5) *
-                                      100,
+                                    ((Number(skill.averageLevel) || 0) / 5) * 100,
                                     100
                                   )}%`,
                                 }}
@@ -361,8 +288,6 @@ const WorkforceSkillInventory = () => {
                           </div>
 
                         </td>
-
-                        {/* Coverage */}
 
                         <td className="px-6 py-4">
 
@@ -390,14 +315,8 @@ const WorkforceSkillInventory = () => {
 
                         </td>
 
-                        {/* Gap Status */}
-
                         <td className="px-6 py-4">
-
-                          <GapStatus
-                            status={skill.gapStatus}
-                          />
-
+                          <GapStatus status={skill.gapStatus} />
                         </td>
 
                       </tr>
@@ -407,14 +326,12 @@ const WorkforceSkillInventory = () => {
                   ) : (
 
                     <tr>
-
                       <td
                         colSpan="6"
                         className="px-6 py-12 text-center text-slate-500"
                       >
                         No workforce skill data available.
                       </td>
-
                     </tr>
 
                   )}
@@ -427,26 +344,16 @@ const WorkforceSkillInventory = () => {
 
           </div>
 
-          {/* ==================================================
-              FOOTER
-          ================================================== */}
-
           <div className="mt-6 text-sm text-slate-400 text-center">
             Showing {data?.skills?.length ?? 0} skills across{" "}
             {data?.totalEmployees ?? 0} employees
           </div>
 
         </main>
-
       </div>
-
     </div>
   );
 };
-
-// ============================================================
-// SUMMARY CARD
-// ============================================================
 
 const SummaryCard = ({
   title,
@@ -486,39 +393,21 @@ const SummaryCard = ({
   );
 };
 
-// ============================================================
-// GAP STATUS
-// ============================================================
-
 const GapStatus = ({ status }) => {
 
   let className =
     "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold";
 
   if (status === "Low") {
-
-    className +=
-      " bg-emerald-100 text-emerald-700";
-
+    className += " bg-emerald-100 text-emerald-700";
   } else if (status === "Medium") {
-
-    className +=
-      " bg-yellow-100 text-yellow-700";
-
+    className += " bg-yellow-100 text-yellow-700";
   } else if (status === "High") {
-
-    className +=
-      " bg-orange-100 text-orange-700";
-
+    className += " bg-orange-100 text-orange-700";
   } else if (status === "Critical") {
-
-    className +=
-      " bg-red-100 text-red-700";
-
+    className += " bg-red-100 text-red-700";
   } else {
-
-    className +=
-      " bg-slate-100 text-slate-600";
+    className += " bg-slate-100 text-slate-600";
   }
 
   return (

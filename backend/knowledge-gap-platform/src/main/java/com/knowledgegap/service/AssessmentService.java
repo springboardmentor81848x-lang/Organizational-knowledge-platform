@@ -131,6 +131,26 @@ public class AssessmentService {
 
 
     // =========================================================
+    // GET ASSESSMENT BY ROLE ID
+    // =========================================================
+    //
+    // Used by:
+    //
+    // GET /api/assessments/role/{roleId}
+    //
+    // This method reuses the existing
+    // getAssessmentByTargetRole() functionality.
+    //
+    // =========================================================
+
+    public Assessment getAssessmentByRoleId(
+            Long roleId) {
+
+        return getAssessmentByTargetRole(roleId);
+    }
+
+
+    // =========================================================
     // GET QUESTIONS BY ASSESSMENT
     // =========================================================
 
@@ -326,24 +346,6 @@ public class AssessmentService {
 
             // -------------------------------------------------
             // CORRECT ANSWER
-            // -------------------------------------------------
-            //
-            // IMPORTANT:
-            //
-            // Your database contains two formats:
-            //
-            // 1. Full answer text:
-            //    extends
-            //    main()
-            //    Set
-            //
-            // 2. Option letter:
-            //    A
-            //    B
-            //    C
-            //    D
-            //
-            // This method supports BOTH formats.
             // -------------------------------------------------
 
             String correctAnswer =
@@ -665,19 +667,11 @@ public class AssessmentService {
     // GET CORRECT ANSWER TEXT
     // =========================================================
     //
-    // Supports BOTH formats in your database:
+    // Supports BOTH:
     //
-    // FORMAT 1:
-    // correct_answer = "extends"
+    // 1. Full answer text
+    // 2. A / B / C / D option letter
     //
-    // FORMAT 2:
-    // correct_answer = "B"
-    //
-    // If A/B/C/D is stored, the corresponding option
-    // text is returned.
-    //
-    // If actual answer text is stored, it is returned
-    // directly.
     // =========================================================
 
     private String getCorrectAnswerText(
@@ -713,8 +707,6 @@ public class AssessmentService {
                 return question.getOptionD();
 
             default:
-                // The database already contains
-                // the complete correct answer.
                 return answer;
         }
     }

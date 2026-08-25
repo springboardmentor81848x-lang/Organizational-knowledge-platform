@@ -1,9 +1,7 @@
 package com.knowledgegap.service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,316 +10,285 @@ import org.springframework.stereotype.Service;
 
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
-import com.knowledgegap.entity.KnowledgeGap;
-import com.knowledgegap.entity.Skill;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
-import com.knowledgegap.repository.KnowledgeGapRepository;
-import com.knowledgegap.repository.SkillRepository;
 
 @Service
 public class WorkforceSkillService {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
-    private final SkillRepository skillRepository;
-    private final KnowledgeGapRepository knowledgeGapRepository;
 
     public WorkforceSkillService(
             EmployeeRepository employeeRepository,
-            EmployeeSkillRepository employeeSkillRepository,
-            SkillRepository skillRepository,
-            KnowledgeGapRepository knowledgeGapRepository) {
+            EmployeeSkillRepository employeeSkillRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
-        this.skillRepository = skillRepository;
-        this.knowledgeGapRepository = knowledgeGapRepository;
     }
 
     public Map<String, Object> getWorkforceSkillInventory() {
 
-        Map<String, Object> response = new LinkedHashMap<>();
+        /*
+         * Only EMPLOYEE and MANAGER are included
+         * in workforce skill inventory.
+         */
+        List<Employee> employees =
+                employeeRepository.findByRoleRoleNameIn(
+                        Arrays.asList("EMPLOYEE", "MANAGER")
+                );
 
-        try {
+        int totalEmployees = employees.size();
 
-            // =====================================================
-            // GET ALL EMPLOYEES
-            // =====================================================
+        /*
+         * skillName -> skill levels
+         */
+        Map<String, List<Integer>> skillLevels =
+                new LinkedHashMap<>();
 
-            List<Employee> employees = employeeRepository.findAll();
+        /*
+         * skillName -> number of employees
+         */
+        Map<String, Integer> skillEmployeeCount =
+                new LinkedHashMap<>();
 
-            /*
-             * We consider employees having the EMPLOYEE application role
-             * as workforce employees.
-             *
-             * If your EmployeeRepository already returns only employees,
-             * findAll() is sufficient.
-             */
+        /*
+         * skillName -> category
+         */
+        Map<String, String> skillCategories =
+                new LinkedHashMap<>();
 
-            int totalEmployees = employees.size();
-
-            // =====================================================
-            // GET ALL SKILLS
-            // =====================================================
-
-            List<Skill> skills = skillRepository.findAll();
-
-            int totalSkills = skills.size();
-
-            // =====================================================
-            // GET ALL EMPLOYEE SKILLS
-            // =====================================================
+        /*
+         * Collect employee skills
+         */
+        for (Employee employee : employees) {
 
             List<EmployeeSkill> employeeSkills =
-                    employeeSkillRepository.findAll();
+                    employeeSkillRepository.findByEmployee(employee);
 
-            // =====================================================
-            // GET ALL KNOWLEDGE GAPS
-            // =====================================================
+            for (EmployeeSkill employeeSkill : employeeSkills) {
 
-            List<KnowledgeGap> knowledgeGaps =
-                    knowledgeGapRepository.findAll();
-
-            // =====================================================
-            // SUMMARY VARIABLES
-            // =====================================================
-
-            int skillsWithGaps = 0;
-
-            double totalSkillLevels = 0;
-            int skillLevelCount = 0;
-
-            List<Map<String, Object>> skillList = new ArrayList<>();
-
-            // =====================================================
-            // PROCESS EACH SKILL
-            // =====================================================
-
-            for (Skill skill : skills) {
-
-                Map<String, Object> skillData =
-                        new LinkedHashMap<>();
-
-                skillData.put("skill", skill.getSkillName());
-                skillData.put("category", skill.getCategory());
-
-                // -------------------------------------------------
-                // Employee skills for this particular skill
-                // -------------------------------------------------
-
-                List<EmployeeSkill> skillEmployees =
-                        employeeSkillRepository.findBySkill(skill);
-
-                int employeeCount = skillEmployees.size();
-
-                // -------------------------------------------------
-                // Average skill level
-                // -------------------------------------------------
-
-                double levelTotal = 0;
-                int levelCount = 0;
-
-                for (EmployeeSkill employeeSkill : skillEmployees) {
-
-                    if (employeeSkill.getCurrentLevel() != null) {
-
-                        levelTotal += employeeSkill.getCurrentLevel();
-                        levelCount++;
-
-                        totalSkillLevels +=
-                                employeeSkill.getCurrentLevel();
-
-                        skillLevelCount++;
-                    }
+                if (employeeSkill.getSkill() == null) {
+                    continue;
                 }
 
-                double averageLevel = 0;
+                String skillName =
+                        employeeSkill.getSkill().getSkillName();
 
-                if (levelCount > 0) {
-                    averageLevel =
-                            levelTotal / levelCount;
+                if (skillName == null ||
+                        skillName.trim().isEmpty()) {
+                    continue;
                 }
 
-                averageLevel =
-                        round(averageLevel, 2);
+                int level =
+                        employeeSkill.getCurrentLevel() != null
+                                ? employeeSkill.getCurrentLevel()
+                                : 0;
 
-                // -------------------------------------------------
-                // Coverage
-                // -------------------------------------------------
+                /*
+                 * Store skill level
+                 */
+                skillLevels
+                        .computeIfAbsent(
+                                skillName,
+                                k -> new ArrayList<>()
+                        )
+                        .add(level);
 
-                double coverage = 0;
+                /*
+                 * Count employees
+                 */
+                skillEmployeeCount.put(
+                        skillName,
+                        skillEmployeeCount.getOrDefault(
+                                skillName,
+                                0
+                        ) + 1
+                );
 
-                if (totalEmployees > 0) {
+                /*
+                 * Store category
+                 */
+                skillCategories.put(
+                        skillName,
+                        employeeSkill.getSkill().getCategory()
+                );
+            }
+        }
 
-                    coverage =
-                            ((double) employeeCount /
-                                    totalEmployees) * 100;
-                }
+        /*
+         * Build skill list
+         */
+        List<Map<String, Object>> skills =
+                new ArrayList<>();
 
-                coverage = round(coverage, 2);
+        double totalSkillLevel = 0;
+        int totalSkillRecords = 0;
 
-                // -------------------------------------------------
-                // Find knowledge gaps for this skill
-                // -------------------------------------------------
+        for (String skillName : skillLevels.keySet()) {
 
-                List<KnowledgeGap> skillGaps =
-                        knowledgeGaps.stream()
-                                .filter(gap ->
-                                        gap.getSkill() != null
-                                        && gap.getSkill().getId()
-                                            .equals(skill.getId())
-                                )
-                                .toList();
+            List<Integer> levels =
+                    skillLevels.get(skillName);
 
-                // -------------------------------------------------
-                // Determine gap status
-                // -------------------------------------------------
+            int sum =
+                    levels.stream()
+                            .mapToInt(Integer::intValue)
+                            .sum();
 
-                int gapCount = 0;
+            double averageLevel =
+                    levels.isEmpty()
+                            ? 0
+                            : (double) sum / levels.size();
 
-                for (KnowledgeGap gap : skillGaps) {
+            averageLevel =
+                    Math.round(averageLevel * 100.0) / 100.0;
 
-                    if (gap.getGap() != null
-                            && gap.getGap() > 0) {
+            /*
+             * Coverage percentage
+             */
+            double coverage =
+                    totalEmployees > 0
+                            ? ((double) levels.size()
+                            / totalEmployees) * 100
+                            : 0;
 
-                        gapCount++;
-                    }
-                }
+            coverage =
+                    Math.round(coverage * 100.0) / 100.0;
 
-                if (gapCount > 0) {
-                    skillsWithGaps++;
-                }
+            /*
+             * Gap status
+             */
+            String gapStatus;
 
-                String gapStatus =
-                        calculateGapStatus(
-                                gapCount,
-                                employeeCount
-                        );
+            if (averageLevel >= 4) {
 
-                // -------------------------------------------------
-                // Add skill information
-                // -------------------------------------------------
+                gapStatus = "Low";
 
-                skillData.put("employees", employeeCount);
-                skillData.put("averageLevel", averageLevel);
-                skillData.put("coverage", coverage);
-                skillData.put("gapStatus", gapStatus);
+            } else if (averageLevel >= 3) {
 
-                skillList.add(skillData);
+                gapStatus = "Medium";
+
+            } else if (averageLevel >= 2) {
+
+                gapStatus = "High";
+
+            } else {
+
+                gapStatus = "Critical";
             }
 
-            // =====================================================
-            // AVERAGE WORKFORCE SKILL
-            // =====================================================
+            /*
+             * Skill response
+             */
+            Map<String, Object> skillData =
+                    new LinkedHashMap<>();
 
-            double averageWorkforceSkill = 0;
+            skillData.put(
+                    "skill",
+                    skillName
+            );
 
-            if (skillLevelCount > 0) {
+            skillData.put(
+                    "category",
+                    skillCategories.get(skillName)
+            );
 
-                averageWorkforceSkill =
-                        totalSkillLevels /
-                                skillLevelCount;
+            skillData.put(
+                    "employees",
+                    skillEmployeeCount.get(skillName)
+            );
+
+            skillData.put(
+                    "averageLevel",
+                    averageLevel
+            );
+
+            skillData.put(
+                    "coverage",
+                    coverage
+            );
+
+            skillData.put(
+                    "gapStatus",
+                    gapStatus
+            );
+
+            skills.add(skillData);
+
+            totalSkillLevel += sum;
+            totalSkillRecords += levels.size();
+        }
+
+        /*
+         * Highest employee coverage first
+         */
+        skills.sort(
+                (a, b) ->
+                        Integer.compare(
+                                (Integer) b.get("employees"),
+                                (Integer) a.get("employees")
+                        )
+        );
+
+        /*
+         * Average workforce skill
+         */
+        double averageWorkforceSkill =
+                totalSkillRecords > 0
+                        ? totalSkillLevel / totalSkillRecords
+                        : 0;
+
+        averageWorkforceSkill =
+                Math.round(
+                        averageWorkforceSkill * 100.0
+                ) / 100.0;
+
+        /*
+         * Count skills with gaps
+         */
+        int skillsWithGaps = 0;
+
+        for (Map<String, Object> skill : skills) {
+
+            String status =
+                    (String) skill.get("gapStatus");
+
+            if (!"Low".equals(status)) {
+                skillsWithGaps++;
             }
-
-            averageWorkforceSkill =
-                    round(averageWorkforceSkill, 2);
-
-            // =====================================================
-            // FINAL RESPONSE
-            // =====================================================
-
-            response.put(
-                    "totalEmployees",
-                    totalEmployees
-            );
-
-            response.put(
-                    "totalSkills",
-                    totalSkills
-            );
-
-            response.put(
-                    "skillsWithGaps",
-                    skillsWithGaps
-            );
-
-            response.put(
-                    "averageWorkforceSkill",
-                    averageWorkforceSkill
-            );
-
-            response.put(
-                    "skills",
-                    skillList
-            );
-
-            return response;
-
-        } catch (Exception e) {
-
-            System.err.println(
-                    "Error generating workforce skill inventory:"
-            );
-
-            e.printStackTrace();
-
-            throw new RuntimeException(
-                    "Unable to generate workforce skill inventory",
-                    e
-            );
-        }
-    }
-
-    // =============================================================
-    // GAP STATUS
-    // =============================================================
-
-    private String calculateGapStatus(
-            int gapCount,
-            int employeeCount) {
-
-        if (gapCount == 0) {
-            return "Low";
         }
 
-        if (employeeCount == 0) {
-            return "Low";
-        }
+        /*
+         * Final response
+         */
+        Map<String, Object> response =
+                new LinkedHashMap<>();
 
-        double percentage =
-                ((double) gapCount /
-                        employeeCount) * 100;
+        response.put(
+                "totalEmployees",
+                totalEmployees
+        );
 
-        if (percentage >= 75) {
-            return "Critical";
-        }
+        response.put(
+                "totalSkills",
+                skills.size()
+        );
 
-        if (percentage >= 50) {
-            return "High";
-        }
+        response.put(
+                "skillsWithGaps",
+                skillsWithGaps
+        );
 
-        if (percentage >= 25) {
-            return "Medium";
-        }
+        response.put(
+                "averageWorkforceSkill",
+                averageWorkforceSkill
+        );
 
-        return "Low";
-    }
+        response.put(
+                "skills",
+                skills
+        );
 
-    // =============================================================
-    // ROUND DECIMAL
-    // =============================================================
-
-    private double round(
-            double value,
-            int places) {
-
-        return BigDecimal
-                .valueOf(value)
-                .setScale(
-                        places,
-                        RoundingMode.HALF_UP
-                )
-                .doubleValue();
+        return response;
     }
 }

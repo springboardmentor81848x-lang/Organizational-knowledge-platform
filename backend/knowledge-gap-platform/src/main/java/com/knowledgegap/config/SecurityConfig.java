@@ -27,7 +27,9 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JWTAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
     }
 
     // =========================================================
@@ -46,10 +48,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
+        /*
+         * Allow both Vite development ports.
+         * This preserves your existing configuration.
+         */
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173",
+                        "http://localhost:5174"
+                )
         );
 
         configuration.setAllowedMethods(
@@ -85,119 +95,161 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http)
+            throws Exception {
 
         http
-            // CORS
-            .cors(cors -> cors.configurationSource(
-                    corsConfigurationSource()
-            ))
 
-            // CSRF disabled because JWT is being used
-            .csrf(AbstractHttpConfigurer::disable)
+                // =================================================
+                // CORS
+                // =================================================
 
-            // Stateless JWT authentication
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(
-                            SessionCreationPolicy.STATELESS
-                    )
-            )
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
-            // =================================================
-            // AUTHORIZATION
-            // =================================================
+                // =================================================
+                // CSRF
+                // Disabled because JWT authentication is used
+                // =================================================
 
-            .authorizeHttpRequests(auth -> auth
+                .csrf(
+                        AbstractHttpConfigurer::disable
+                )
 
-                // ---------------------------------------------
-                // CORS preflight
-                // ---------------------------------------------
-                .requestMatchers(
-                        HttpMethod.OPTIONS,
-                        "/**"
-                ).permitAll()
+                // =================================================
+                // SESSION MANAGEMENT
+                // Stateless JWT authentication
+                // =================================================
 
-                // ---------------------------------------------
-                // Authentication endpoints
-                // ---------------------------------------------
-                .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/auth/login"
-                ).permitAll()
+                .sessionManagement(
+                        session ->
+                                session.sessionCreationPolicy(
+                                        SessionCreationPolicy.STATELESS
+                                )
+                )
 
-                .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/auth/signup"
-                ).permitAll()
+                // =================================================
+                // AUTHORIZATION
+                // =================================================
 
-                .requestMatchers(
-                        "/api/auth/**"
-                ).permitAll()
+                .authorizeHttpRequests(
+                        auth -> auth
 
-                // ---------------------------------------------
-                // AI endpoints
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/ai/**"
-                ).permitAll()
+                                // ---------------------------------
+                                // CORS preflight
+                                // ---------------------------------
 
-                // ---------------------------------------------
-                // Swagger
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**"
-                ).permitAll()
+                                .requestMatchers(
+                                        HttpMethod.OPTIONS,
+                                        "/**"
+                                )
+                                .permitAll()
 
-                // ---------------------------------------------
-                // HR
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/hr/**"
-                ).hasRole("HR")
+                                // ---------------------------------
+                                // Authentication
+                                // ---------------------------------
 
-                // ---------------------------------------------
-                // Manager
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/manager/**"
-                ).hasRole("MANAGER")
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/auth/login"
+                                )
+                                .permitAll()
 
-                // ---------------------------------------------
-                // Department Head
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/department-head/**"
-                ).hasRole("DEPARTMENT_HEAD")
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/auth/signup"
+                                )
+                                .permitAll()
 
-                // ---------------------------------------------
-                // System Administrator
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/system-admin/**"
-                ).hasRole("SYSTEM_ADMINISTRATOR")
+                                .requestMatchers(
+                                        "/api/auth/**"
+                                )
+                                .permitAll()
 
-                // ---------------------------------------------
-                // Employee
-                // ---------------------------------------------
-                .requestMatchers(
-                        "/api/employee/**"
-                ).hasRole("EMPLOYEE")
+                                // ---------------------------------
+                                // AI
+                                // ---------------------------------
 
-                // ---------------------------------------------
-                // Everything else requires login
-                // ---------------------------------------------
-                .anyRequest().authenticated()
-            )
+                                .requestMatchers(
+                                        "/api/ai/**"
+                                )
+                                .permitAll()
 
-            // =================================================
-            // JWT FILTER
-            // =================================================
-            .addFilterBefore(
-                    jwtAuthenticationFilter,
-                    UsernamePasswordAuthenticationFilter.class
-            );
+                                // ---------------------------------
+                                // Swagger
+                                // ---------------------------------
+
+                                .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                )
+                                .permitAll()
+
+                                // =================================
+                                // HR
+                                // =================================
+
+                                .requestMatchers(
+                                        "/api/hr/**"
+                                )
+                                .hasRole("HR")
+
+                                // =================================
+                                // MANAGER
+                                // =================================
+
+                                .requestMatchers(
+                                        "/api/manager/**"
+                                )
+                                .hasRole("MANAGER")
+
+                                // =================================
+                                // DEPARTMENT HEAD
+                                // =================================
+
+                                .requestMatchers(
+                                        "/api/department-head/**"
+                                )
+                                .hasRole("DEPARTMENT_HEAD")
+
+                                // =================================
+                                // SYSTEM ADMINISTRATOR
+                                // =================================
+
+                                .requestMatchers(
+                                        "/api/system-admin/**"
+                                )
+                                .hasRole("SYSTEM_ADMINISTRATOR")
+
+                                // =================================
+                                // EMPLOYEE
+                                // =================================
+
+                                .requestMatchers(
+                                        "/api/employee/**"
+                                )
+                                .hasRole("EMPLOYEE")
+
+                                // =================================
+                                // EVERYTHING ELSE
+                                // =================================
+
+                                .anyRequest()
+                                .authenticated()
+                )
+
+                // =================================================
+                // JWT FILTER
+                // =================================================
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }

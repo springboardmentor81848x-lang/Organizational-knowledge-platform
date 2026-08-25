@@ -3,7 +3,13 @@ package com.knowledgegap.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
@@ -14,7 +20,10 @@ import com.knowledgegap.service.AssessmentService;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "http://localhost:5174"
+})
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
@@ -26,11 +35,12 @@ public class AssessmentController {
     }
 
     // =========================================================
-    // GET ACTIVE ASSESSMENTS
+    // ACTIVE ASSESSMENTS
     // =========================================================
 
     @GetMapping("/assessments/active")
-    public ResponseEntity<List<Assessment>> getActiveAssessments() {
+    public ResponseEntity<List<Assessment>>
+    getActiveAssessments() {
 
         return ResponseEntity.ok(
                 assessmentService.getActiveAssessments()
@@ -38,11 +48,12 @@ public class AssessmentController {
     }
 
     // =========================================================
-    // GET ASSESSMENT BY ID
+    // ASSESSMENT BY ID
     // =========================================================
 
     @GetMapping("/assessments/{id}")
-    public ResponseEntity<Assessment> getAssessment(
+    public ResponseEntity<Assessment>
+    getAssessment(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
@@ -51,24 +62,35 @@ public class AssessmentController {
     }
 
     // =========================================================
-    // GET ASSESSMENT BY TARGET ROLE
+    // ASSESSMENT BY TARGET ROLE
+    // =========================================================
+    //
+    // Frontend calls:
+    //
+    // GET /api/assessments/role/{roleId}
+    //
+    // Example:
+    // GET /api/assessments/role/2
+    //
     // =========================================================
 
     @GetMapping("/assessments/role/{roleId}")
-    public ResponseEntity<Assessment> getAssessmentByRole(
+    public ResponseEntity<Assessment>
+    getAssessmentByRoleId(
             @PathVariable Long roleId) {
 
         return ResponseEntity.ok(
-                assessmentService.getAssessmentByTargetRole(roleId)
+                assessmentService.getAssessmentByRoleId(roleId)
         );
     }
 
     // =========================================================
-    // GET QUESTIONS BY ASSESSMENT
+    // QUESTIONS
     // =========================================================
 
     @GetMapping("/assessments/{assessmentId}/questions")
-    public ResponseEntity<List<AssessmentQuestion>> getQuestions(
+    public ResponseEntity<List<AssessmentQuestion>>
+    getQuestions(
             @PathVariable Long assessmentId) {
 
         return ResponseEntity.ok(
@@ -81,11 +103,33 @@ public class AssessmentController {
     // =========================================================
     // SUBMIT ASSESSMENT
     // =========================================================
+    //
+    // Kept for backward compatibility.
+    //
+    // Frontend should use:
+    // /employee/assessment/submit/{employeeIdentifier}
+    //
+    // =========================================================
+
+    @PostMapping("/employee/assessment/submit")
+    public ResponseEntity<AssessmentResultResponse>
+    submitAssessment(
+            @RequestBody AssessmentSubmitRequest request) {
+
+        throw new UnsupportedOperationException(
+                "Use /employee/assessment/submit/{employeeIdentifier}"
+        );
+    }
+
+    // =========================================================
+    // SUBMIT WITH EMPLOYEE IDENTIFIER
+    // =========================================================
 
     @PostMapping(
             "/employee/assessment/submit/{employeeIdentifier}"
     )
-    public ResponseEntity<AssessmentResultResponse> submitAssessment(
+    public ResponseEntity<AssessmentResultResponse>
+    submitAssessment(
             @PathVariable String employeeIdentifier,
             @RequestBody AssessmentSubmitRequest request) {
 
@@ -103,7 +147,7 @@ public class AssessmentController {
     // =========================================================
 
     @GetMapping(
-            "/employee/assessment/gaps/{attemptId}"
+            "/employee/assessment/result/{attemptId}"
     )
     public ResponseEntity<List<AssessmentGapResult>>
     getAssessmentGapResults(
