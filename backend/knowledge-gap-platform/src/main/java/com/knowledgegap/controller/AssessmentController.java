@@ -20,7 +20,10 @@ import com.knowledgegap.service.AssessmentService;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "http://localhost:5174"
+})
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
@@ -28,8 +31,7 @@ public class AssessmentController {
     public AssessmentController(
             AssessmentService assessmentService) {
 
-        this.assessmentService =
-                assessmentService;
+        this.assessmentService = assessmentService;
     }
 
     // =========================================================
@@ -41,8 +43,7 @@ public class AssessmentController {
     getActiveAssessments() {
 
         return ResponseEntity.ok(
-                assessmentService
-                        .getActiveAssessments()
+                assessmentService.getActiveAssessments()
         );
     }
 
@@ -56,8 +57,30 @@ public class AssessmentController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                assessmentService
-                        .getAssessmentById(id)
+                assessmentService.getAssessmentById(id)
+        );
+    }
+
+    // =========================================================
+    // ASSESSMENT BY TARGET ROLE
+    // =========================================================
+    //
+    // Frontend calls:
+    //
+    // GET /api/assessments/role/{roleId}
+    //
+    // Example:
+    // GET /api/assessments/role/2
+    //
+    // =========================================================
+
+    @GetMapping("/assessments/role/{roleId}")
+    public ResponseEntity<Assessment>
+    getAssessmentByRoleId(
+            @PathVariable Long roleId) {
+
+        return ResponseEntity.ok(
+                assessmentService.getAssessmentByRoleId(roleId)
         );
     }
 
@@ -65,28 +88,30 @@ public class AssessmentController {
     // QUESTIONS
     // =========================================================
 
-    @GetMapping(
-            "/assessments/{assessmentId}/questions"
-    )
+    @GetMapping("/assessments/{assessmentId}/questions")
     public ResponseEntity<List<AssessmentQuestion>>
     getQuestions(
             @PathVariable Long assessmentId) {
 
         return ResponseEntity.ok(
-                assessmentService
-                        .getQuestionsByAssessment(
-                                assessmentId
-                        )
+                assessmentService.getQuestionsByAssessment(
+                        assessmentId
+                )
         );
     }
 
     // =========================================================
     // SUBMIT ASSESSMENT
     // =========================================================
+    //
+    // Kept for backward compatibility.
+    //
+    // Frontend should use:
+    // /employee/assessment/submit/{employeeIdentifier}
+    //
+    // =========================================================
 
-    @PostMapping(
-            "/employee/assessment/submit"
-    )
+    @PostMapping("/employee/assessment/submit")
     public ResponseEntity<AssessmentResultResponse>
     submitAssessment(
             @RequestBody AssessmentSubmitRequest request) {
@@ -122,17 +147,16 @@ public class AssessmentController {
     // =========================================================
 
     @GetMapping(
-            "/employee/assessment/gaps/{attemptId}"
+            "/employee/assessment/result/{attemptId}"
     )
     public ResponseEntity<List<AssessmentGapResult>>
     getAssessmentGapResults(
             @PathVariable Long attemptId) {
 
         return ResponseEntity.ok(
-                assessmentService
-                        .getAssessmentGapResults(
-                                attemptId
-                        )
+                assessmentService.getAssessmentGapResults(
+                        attemptId
+                )
         );
     }
 }

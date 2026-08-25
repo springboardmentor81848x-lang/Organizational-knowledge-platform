@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   BookOpen,
   PlayCircle,
@@ -13,6 +14,7 @@ import {
   RefreshCw,
   CheckCircle,
 } from "lucide-react";
+
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 
@@ -23,43 +25,39 @@ function TrainingLearning() {
 
   const [courses, setCourses] = useState([]);
   const [knowledgeGaps, setKnowledgeGaps] = useState([]);
+  const [learningProgress, setLearningProgress] = useState({});
+  const [progressRecords, setProgressRecords] = useState({});
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const [loading, setLoading] = useState(true);
+  const [progressLoading, setProgressLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const [learningProgress, setLearningProgress] =
-    useState({});
 
   // =========================================================
   // LOCAL STORAGE
   // =========================================================
 
-  const employeeId =
-    localStorage.getItem("employeeId");
-
-  const token =
-    localStorage.getItem("token");
+  const employeeId = localStorage.getItem("employeeId");
+  const token = localStorage.getItem("token");
 
   // =========================================================
-  // AXIOS CONFIG
+  // AXIOS
   // =========================================================
 
-  const api = axios.create({
-    baseURL: "http://localhost:8080/api",
-    headers: {
-      Authorization: token
-        ? `Bearer ${token}`
-        : "",
-      "Content-Type": "application/json",
-    },
-  });
+  const api = useMemo(() => {
+    return axios.create({
+      baseURL: "http://localhost:8080/api",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json",
+      },
+    });
+  }, [token]);
 
   // =========================================================
-  // LOAD COURSES + KNOWLEDGE GAPS
+  // LOAD TRAINING DATA
   // =========================================================
 
   const loadTrainingData = async () => {
@@ -68,40 +66,65 @@ function TrainingLearning() {
       setError("");
 
       if (!employeeId) {
-        setError(
-          "Employee ID not found. Please login again."
-        );
+        setError("Employee ID not found. Please login again.");
         return;
       }
 
-      // -----------------------------------------------
-      // GET EMPLOYEE KNOWLEDGE GAPS
-      // -----------------------------------------------
+      // Get employee knowledge gaps
+      const gapsResponse = await api.get(
+        `/knowledge-gaps/employee/${employeeId}`
+      );
 
-      const gapsResponse =
-        await api.get(
-          `/knowledge-gaps/employee/${employeeId}`
+      // Get all courses
+      const coursesResponse = await api.get("/courses");
+
+      // Get employee learning progress
+      let progressData = [];
+
+      try {
+        const progressResponse = await api.get(
+          `/learning-progress/employee/${employeeId}`
         );
 
-      // -----------------------------------------------
-      // GET ALL COURSES
-      // -----------------------------------------------
+        progressData = progressResponse.data || [];
+      } catch (progressError) {
+        console.warn(
+          "Learning progress API not available:",
+          progressError
+        );
 
-      const coursesResponse =
-        await api.get("/courses");
+        progressData = [];
+      }
 
-      setKnowledgeGaps(
-        gapsResponse.data || []
-      );
+      setKnowledgeGaps(gapsResponse.data || []);
+      setCourses(coursesResponse.data || []);
 
-      setCourses(
-        coursesResponse.data || []
-      );
+      // Create progress maps
+      const progressMap = {};
+      const recordMap = {};
+
+      progressData.forEach((record) => {
+        const courseId =
+          record.course?.id ??
+          record.courseId;
+
+        if (courseId !== undefined && courseId !== null) {
+          const progressValue = Number(
+            record.progressPercentage ??
+              record.progress ??
+              record.completionPercentage ??
+              0
+          );
+
+          progressMap[courseId] = progressValue;
+          recordMap[courseId] = record.id;
+        }
+      });
+
+      setLearningProgress(progressMap);
+      setProgressRecords(recordMap);
     } catch (err) {
-      console.error(
-        "Training data error:",
-        err
-      );
+      console.error("Training data error:", err);
 
       setError(
         err.response?.data?.message ||
@@ -113,7 +136,7 @@ function TrainingLearning() {
   };
 
   // =========================================================
-  // LOAD DATA
+  // INITIAL LOAD
   // =========================================================
 
   useEffect(() => {
@@ -121,7 +144,7 @@ function TrainingLearning() {
   }, []);
 
   // =========================================================
-  // GAP MAP
+  // KNOWLEDGE GAP MAP
   // =========================================================
 
   const gapMap = useMemo(() => {
@@ -143,21 +166,18 @@ function TrainingLearning() {
   const recommendedCourses = useMemo(() => {
     return courses
       .filter((course) => {
-        // Course must have a skill
         if (!course.skill?.id) {
           return false;
         }
 
-        // Course skill must exist in employee gaps
-        return gapMap[course.skill.id];
+        return !!gapMap[course.skill.id];
       })
       .map((course) => {
         const gap = gapMap[course.skill.id];
 
-        const gapValue =
-          Number(gap?.gap || 0);
+        const gapValue = Number(gap?.gap || 0);
 
-        let priority = "NO GAP";
+        let priority = "LOW";
 
         if (gapValue >= 3) {
           priority = "CRITICAL";
@@ -170,10 +190,8 @@ function TrainingLearning() {
         return {
           ...course,
           gap: gapValue,
-          currentLevel:
-            gap?.currentLevel ?? 0,
-          requiredLevel:
-            gap?.requiredLevel ?? 0,
+          currentLevel: gap?.currentLevel ?? 0,
+          requiredLevel: gap?.requiredLevel ?? 0,
           priority,
         };
       })
@@ -183,7 +201,6 @@ function TrainingLearning() {
           HIGH: 2,
           MEDIUM: 3,
           LOW: 4,
-          "NO GAP": 5,
         };
 
         return (
@@ -198,37 +215,29 @@ function TrainingLearning() {
   // =========================================================
 
   const filteredCourses = useMemo(() => {
-    return recommendedCourses.filter(
-      (course) => {
-        const title =
-          course.title?.toLowerCase() || "";
+    return recommendedCourses.filter((course) => {
+      const title =
+        course.title?.toLowerCase() || "";
 
-        const skill =
-          course.skill?.skillName
-            ?.toLowerCase() || "";
+      const skill =
+        course.skill?.skillName?.toLowerCase() || "";
 
-        const platform =
-          course.platform?.toLowerCase() || "";
+      const platform =
+        course.platform?.toLowerCase() || "";
 
-        const search =
-          searchTerm.toLowerCase();
+      const search = searchTerm.toLowerCase();
 
-        const matchesSearch =
-          title.includes(search) ||
-          skill.includes(search) ||
-          platform.includes(search);
+      const matchesSearch =
+        title.includes(search) ||
+        skill.includes(search) ||
+        platform.includes(search);
 
-        const matchesCategory =
-          selectedCategory === "All" ||
-          course.skill?.skillName ===
-            selectedCategory;
+      const matchesCategory =
+        selectedCategory === "All" ||
+        course.skill?.skillName === selectedCategory;
 
-        return (
-          matchesSearch &&
-          matchesCategory
-        );
-      }
-    );
+      return matchesSearch && matchesCategory;
+    });
   }, [
     recommendedCourses,
     searchTerm,
@@ -240,13 +249,9 @@ function TrainingLearning() {
   // =========================================================
 
   const skillCategories = useMemo(() => {
-    const skills =
-      recommendedCourses
-        .map(
-          (course) =>
-            course.skill?.skillName
-        )
-        .filter(Boolean);
+    const skills = recommendedCourses
+      .map((course) => course.skill?.skillName)
+      .filter(Boolean);
 
     return [...new Set(skills)];
   }, [recommendedCourses]);
@@ -255,9 +260,7 @@ function TrainingLearning() {
   // PRIORITY STYLE
   // =========================================================
 
-  const getPriorityStyle = (
-    priority
-  ) => {
+  const getPriorityStyle = (priority) => {
     switch (priority) {
       case "CRITICAL":
         return "bg-red-100 text-red-700 border-red-200";
@@ -272,8 +275,16 @@ function TrainingLearning() {
         return "bg-blue-100 text-blue-700 border-blue-200";
 
       default:
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-slate-100 text-slate-700 border-slate-200";
     }
+  };
+
+  // =========================================================
+  // GET PROGRESS
+  // =========================================================
+
+  const getProgress = (courseId) => {
+    return Number(learningProgress[courseId] || 0);
   };
 
   // =========================================================
@@ -282,9 +293,7 @@ function TrainingLearning() {
 
   const openCourse = (url) => {
     if (!url) {
-      alert(
-        "Course URL is not available."
-      );
+      alert("Course URL is not available.");
       return;
     }
 
@@ -296,61 +305,169 @@ function TrainingLearning() {
   };
 
   // =========================================================
-  // UPDATE LOCAL PROGRESS
+  // SAVE PROGRESS TO DATABASE
   // =========================================================
 
-  const updateProgress = (courseId) => {
-    setLearningProgress(
-      (previous) => ({
+  const saveProgress = async (courseId, progressValue) => {
+    if (!employeeId) {
+      alert("Employee ID not found. Please login again.");
+      return false;
+    }
+
+    try {
+      setProgressLoading(true);
+
+      const progress = Math.min(
+        Math.max(Number(progressValue), 0),
+        100
+      );
+
+      const existingRecordId =
+        progressRecords[courseId];
+
+      // -------------------------------------------------------
+      // UPDATE EXISTING RECORD
+      // -------------------------------------------------------
+
+      if (existingRecordId) {
+        await api.put(
+          `/learning-progress/${existingRecordId}`,
+          {
+            progressPercentage: progress,
+          }
+        );
+      }
+
+      // -------------------------------------------------------
+      // CREATE NEW RECORD
+      // -------------------------------------------------------
+
+      else {
+        const response = await api.post(
+          "/learning-progress",
+          {
+            employeeId: employeeId,
+            courseId: courseId,
+            progressPercentage: progress,
+          }
+        );
+
+        if (response.data?.id) {
+          setProgressRecords((previous) => ({
+            ...previous,
+            [courseId]: response.data.id,
+          }));
+        }
+      }
+
+      // -------------------------------------------------------
+      // UPDATE UI
+      // -------------------------------------------------------
+
+      setLearningProgress((previous) => ({
         ...previous,
-        [courseId]: Math.min(
-          (previous[courseId] || 0) +
-            10,
-          100
-        ),
-      })
-    );
+        [courseId]: progress,
+      }));
+
+      return true;
+    } catch (err) {
+      console.error(
+        "Learning progress save error:",
+        err
+      );
+
+      alert(
+        err.response?.data?.message ||
+          "Unable to save learning progress."
+      );
+
+      return false;
+    } finally {
+      setProgressLoading(false);
+    }
   };
 
   // =========================================================
-  // PROGRESS
+  // START LEARNING
   // =========================================================
 
-  const getProgress = (courseId) => {
-    return learningProgress[courseId] || 0;
+  const startLearning = async (course) => {
+    const currentProgress =
+      getProgress(course.id);
+
+    // First time starting course
+    if (currentProgress === 0) {
+      const saved = await saveProgress(
+        course.id,
+        10
+      );
+
+      if (!saved) {
+        return;
+      }
+    }
+
+    openCourse(course.courseUrl);
+  };
+
+  // =========================================================
+  // MARK COURSE COMPLETED
+  // =========================================================
+
+  const markCourseCompleted = async (course) => {
+    const currentProgress =
+      getProgress(course.id);
+
+    if (currentProgress === 100) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Have you completed "${course.title}"?\n\nClick OK to mark this course as completed.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const saved = await saveProgress(
+      course.id,
+      100
+    );
+
+    if (saved) {
+      alert(
+        "Course completed successfully! Your learning progress has been saved."
+      );
+    }
   };
 
   // =========================================================
   // COUNTS
   // =========================================================
 
-  const criticalCourses =
+  const highPriorityCourses =
     recommendedCourses.filter(
       (course) =>
-        course.priority ===
-          "CRITICAL" ||
-        course.priority ===
-          "HIGH"
+        course.priority === "CRITICAL" ||
+        course.priority === "HIGH"
     ).length;
 
   const inProgressCourses =
-    recommendedCourses.filter(
-      (course) => {
-        const progress =
-          getProgress(course.id);
+    recommendedCourses.filter((course) => {
+      const progress =
+        getProgress(course.id);
 
-        return (
-          progress > 0 &&
-          progress < 100
-        );
-      }
-    ).length;
+      return (
+        progress > 0 &&
+        progress < 100
+      );
+    }).length;
 
   const completedCourses =
     recommendedCourses.filter(
       (course) =>
-        getProgress(course.id) ===
-        100
+        getProgress(course.id) === 100
     ).length;
 
   // =========================================================
@@ -391,15 +508,7 @@ function TrainingLearning() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
 
-      {/* =====================================================
-          EMPLOYEE SIDEBAR
-      ===================================================== */}
-
       <Sidebar role="EMPLOYEE" />
-
-      {/* =====================================================
-          MAIN CONTENT
-      ===================================================== */}
 
       <main className="flex-1 min-w-0">
 
@@ -412,28 +521,21 @@ function TrainingLearning() {
           <div className="px-5 md:px-8 py-5">
 
             <button
-              onClick={() =>
-                window.history.back()
-              }
+              onClick={() => window.history.back()}
               className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 mb-4"
             >
               <ArrowLeft size={18} />
-
               Back
             </button>
 
-            <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+              Training & Learning
+            </h1>
 
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-                Training & Learning
-              </h1>
-
-              <p className="text-slate-500 mt-1">
-                Personalized training recommendations
-                based on your knowledge gaps.
-              </p>
-
-            </div>
+            <p className="text-slate-500 mt-1">
+              Personalized training recommendations
+              based on your knowledge gaps.
+            </p>
 
           </div>
 
@@ -445,23 +547,17 @@ function TrainingLearning() {
 
         <div className="p-5 md:p-8 max-w-7xl mx-auto">
 
-          {/* =================================================
-              ERROR
-          ================================================= */}
+          {/* ERROR */}
 
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
 
               <div className="flex items-center justify-between gap-4">
 
-                <p>
-                  {error}
-                </p>
+                <p>{error}</p>
 
                 <button
-                  onClick={
-                    loadTrainingData
-                  }
+                  onClick={loadTrainingData}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
                   Retry
@@ -491,17 +587,13 @@ function TrainingLearning() {
                   </p>
 
                   <p className="text-3xl font-bold text-slate-800 mt-2">
-                    {
-                      recommendedCourses.length
-                    }
+                    {recommendedCourses.length}
                   </p>
 
                 </div>
 
                 <div className="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-
                   <BookOpen size={21} />
-
                 </div>
 
               </div>
@@ -521,15 +613,13 @@ function TrainingLearning() {
                   </p>
 
                   <p className="text-3xl font-bold text-orange-600 mt-2">
-                    {criticalCourses}
+                    {highPriorityCourses}
                   </p>
 
                 </div>
 
                 <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-
                   <AlertTriangle size={21} />
-
                 </div>
 
               </div>
@@ -555,9 +645,7 @@ function TrainingLearning() {
                 </div>
 
                 <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-
                   <BarChart3 size={21} />
-
                 </div>
 
               </div>
@@ -583,9 +671,7 @@ function TrainingLearning() {
                 </div>
 
                 <div className="w-11 h-11 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
-
                   <CheckCircle size={21} />
-
                 </div>
 
               </div>
@@ -627,9 +713,7 @@ function TrainingLearning() {
 
             </div>
 
-            {/* =================================================
-                SEARCH + FILTER
-            ================================================= */}
+            {/* SEARCH + FILTER */}
 
             <div className="bg-white border border-slate-200 rounded-xl p-4 mb-5">
 
@@ -687,12 +771,9 @@ function TrainingLearning() {
 
             </div>
 
-            {/* =================================================
-                NO COURSES
-            ================================================= */}
+            {/* NO COURSES */}
 
-            {filteredCourses.length ===
-              0 && (
+            {filteredCourses.length === 0 && (
               <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
 
                 <BookOpen
@@ -713,225 +794,250 @@ function TrainingLearning() {
               </div>
             )}
 
-            {/* =================================================
-                COURSE GRID
-            ================================================= */}
+            {/* COURSE GRID */}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {filteredCourses.map(
-                (course) => {
+              {filteredCourses.map((course) => {
 
-                  const progress =
-                    getProgress(
-                      course.id
-                    );
+                const progress =
+                  getProgress(course.id);
 
-                  return (
-                    <div
-                      key={course.id}
-                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition"
-                    >
+                const isStarted =
+                  progress > 0;
 
-                      {/* Header */}
+                const isCompleted =
+                  progress === 100;
 
-                      <div className="flex items-start justify-between gap-4">
+                return (
+                  <div
+                    key={course.id}
+                    className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition"
+                  >
 
-                        <div>
+                    {/* COURSE HEADER */}
 
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex items-start justify-between gap-4">
 
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
-                              {
-                                course.skill
-                                  ?.skillName
-                              }
-                            </span>
+                      <div>
 
-                            <span
-                              className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getPriorityStyle(
-                                course.priority
-                              )}`}
-                            >
-                              {course.priority}
-                            </span>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
 
-                          </div>
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                            {course.skill?.skillName}
+                          </span>
 
-                          <h3 className="text-lg font-bold text-slate-800">
-                            {course.title}
-                          </h3>
-
-                        </div>
-
-                      </div>
-
-                      {/* Description */}
-
-                      <p className="text-sm text-slate-500 mt-3 leading-6">
-                        {course.description}
-                      </p>
-
-                      {/* Gap Information */}
-
-                      <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
-
-                        <div className="flex items-center gap-2">
-
-                          <AlertTriangle
-                            size={16}
-                            className="text-red-600"
-                          />
-
-                          <span className="text-sm font-semibold text-red-700">
-                            Skill Gap:{" "}
-                            {course.gap}
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getPriorityStyle(
+                              course.priority
+                            )}`}
+                          >
+                            {course.priority}
                           </span>
 
                         </div>
 
-                        <p className="text-xs text-red-600 mt-1">
+                        <h3 className="text-lg font-bold text-slate-800">
+                          {course.title}
+                        </h3>
 
-                          Current Level:{" "}
-                          {course.currentLevel}
+                      </div>
 
-                          {" → "}
+                    </div>
 
-                          Required Level:{" "}
-                          {course.requiredLevel}
+                    {/* DESCRIPTION */}
 
+                    <p className="text-sm text-slate-500 mt-3 leading-6">
+                      {course.description}
+                    </p>
+
+                    {/* GAP INFORMATION */}
+
+                    <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
+
+                      <div className="flex items-center gap-2">
+
+                        <AlertTriangle
+                          size={16}
+                          className="text-red-600"
+                        />
+
+                        <span className="text-sm font-semibold text-red-700">
+                          Skill Gap: {course.gap}
+                        </span>
+
+                      </div>
+
+                      <p className="text-xs text-red-600 mt-1">
+                        Current Level:{" "}
+                        {course.currentLevel}
+                        {" → "}
+                        Required Level:{" "}
+                        {course.requiredLevel}
+                      </p>
+
+                    </div>
+
+                    {/* META */}
+
+                    <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
+
+                      <div className="flex items-center gap-1.5">
+                        <BookMarked size={16} />
+                        {course.level}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={16} />
+                        {course.duration}
+                      </div>
+
+                    </div>
+
+                    {/* PLATFORM */}
+
+                    <div className="mt-5 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+
+                      <div>
+
+                        <p className="text-xs text-slate-400">
+                          Learning Platform
+                        </p>
+
+                        <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                          {course.platform}
                         </p>
 
                       </div>
 
-                      {/* Meta */}
+                      <ExternalLink
+                        size={17}
+                        className="text-slate-400"
+                      />
 
-                      <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
+                    </div>
 
-                        <div className="flex items-center gap-1.5">
+                    {/* PROGRESS */}
 
-                          <BookMarked size={16} />
+                    {isStarted && (
+                      <div className="mt-4">
 
-                          {course.level}
+                        <div className="flex justify-between text-xs text-slate-500 mb-2">
 
-                        </div>
+                          <span>
+                            Learning Progress
+                          </span>
 
-                        <div className="flex items-center gap-1.5">
-
-                          <Clock size={16} />
-
-                          {course.duration}
-
-                        </div>
-
-                      </div>
-
-                      {/* Platform */}
-
-                      <div className="mt-5 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
-
-                        <div>
-
-                          <p className="text-xs text-slate-400">
-                            Learning Platform
-                          </p>
-
-                          <p className="text-sm font-semibold text-slate-700 mt-0.5">
-                            {course.platform}
-                          </p>
+                          <span className="font-semibold">
+                            {progress}%
+                          </span>
 
                         </div>
 
-                        <ExternalLink
-                          size={17}
-                          className="text-slate-400"
-                        />
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
 
-                      </div>
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              isCompleted
+                                ? "bg-green-500"
+                                : "bg-indigo-600"
+                            }`}
+                            style={{
+                              width: `${progress}%`,
+                            }}
+                          />
 
-                      {/* Progress */}
+                        </div>
 
-                      {progress > 0 && (
-                        <div className="mt-4">
+                        {isCompleted && (
+                          <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-green-600">
 
-                          <div className="flex justify-between text-xs text-slate-500 mb-2">
+                            <CheckCircle size={14} />
 
-                            <span>
-                              Learning Progress
-                            </span>
-
-                            <span className="font-semibold">
-                              {progress}%
-                            </span>
+                            Course completed
 
                           </div>
+                        )}
 
-                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      </div>
+                    )}
 
-                            <div
-                              className="h-full bg-indigo-600 rounded-full transition-all"
-                              style={{
-                                width: `${progress}%`,
-                              }}
-                            />
+                    {/* ACTIONS */}
 
-                          </div>
+                    <div className="flex gap-2 mt-4">
 
-                        </div>
-                      )}
+                      {/* START / CONTINUE */}
 
-                      {/* Actions */}
-
-                      <div className="flex gap-2 mt-4">
-
+                      {!isCompleted && (
                         <button
                           onClick={() =>
-                            openCourse(
-                              course.courseUrl
-                            )
+                            startLearning(course)
                           }
                           disabled={
+                            progressLoading ||
                             !course.courseUrl
                           }
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition disabled:bg-slate-300 disabled:cursor-not-allowed"
                         >
 
-                          <PlayCircle
-                            size={18}
-                          />
+                          <PlayCircle size={18} />
 
-                          Start Learning
+                          {isStarted
+                            ? "Continue Learning"
+                            : "Start Learning"}
 
-                          <ExternalLink
-                            size={15}
-                          />
+                          <ExternalLink size={15} />
 
                         </button>
+                      )}
 
-                        <button
-                          onClick={() =>
-                            updateProgress(
-                              course.id
-                            )
-                          }
-                          className="px-4 py-3 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
-                        >
-                          +10%
-                        </button>
+                      {/* MARK COMPLETED */}
 
-                      </div>
+                      {isStarted &&
+                        !isCompleted && (
+                          <button
+                            onClick={() =>
+                              markCourseCompleted(
+                                course
+                              )
+                            }
+                            disabled={
+                              progressLoading
+                            }
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:bg-slate-300 disabled:cursor-not-allowed"
+                          >
+
+                            <CheckCircle size={18} />
+
+                            Mark as Completed
+
+                          </button>
+                        )}
+
+                      {/* COMPLETED */}
+
+                      {isCompleted && (
+                        <div className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg font-semibold">
+
+                          <CheckCircle size={18} />
+
+                          Completed
+
+                        </div>
+                      )}
 
                     </div>
-                  );
-                }
-              )}
+
+                  </div>
+                );
+              })}
 
             </div>
 
           </section>
 
           {/* =================================================
-              AVAILABLE PLATFORMS
+              AVAILABLE LEARNING PLATFORMS
           ================================================= */}
 
           <section className="mb-8">
@@ -986,9 +1092,7 @@ function TrainingLearning() {
 
                         <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
 
-                          <GraduationCap
-                            size={21}
-                          />
+                          <GraduationCap size={21} />
 
                         </div>
 
@@ -1033,9 +1137,7 @@ function TrainingLearning() {
 
                 <div className="flex items-center gap-3">
 
-                  <GraduationCap
-                    size={25}
-                  />
+                  <GraduationCap size={25} />
 
                   <h2 className="text-xl font-bold">
                     Follow Your Personalized Learning Path
@@ -1044,12 +1146,10 @@ function TrainingLearning() {
                 </div>
 
                 <p className="text-indigo-100 mt-2 max-w-2xl">
-
                   Use your knowledge-gap results
                   and AI-generated recommendations
                   to follow a structured learning
                   roadmap.
-
                 </p>
 
               </div>

@@ -480,25 +480,6 @@ function Sidebar({ role }) {
               <CalendarDays size={20} />
               Knowledge Sessions
             </NavLink>
-
-            {/* My Trainings */}
-            <NavLink
-              to="/my-trainings"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              My Trainings
-            </NavLink>
-
-            {/* Training Details */}
-            <NavLink
-              to="/training-details"
-              className={navLinkClass}
-            >
-              <BookOpen size={20} />
-              Training Details
-            </NavLink>
-
             {/* Learning Progress */}
             <NavLink
               to="/learning-progress"

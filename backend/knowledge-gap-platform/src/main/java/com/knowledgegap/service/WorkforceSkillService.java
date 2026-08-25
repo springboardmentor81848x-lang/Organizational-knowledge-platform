@@ -1,7 +1,6 @@
+
 package com.knowledgegap.service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -41,68 +40,47 @@ public class WorkforceSkillService {
 
     public Map<String, Object> getWorkforceSkillInventory() {
 
-        Map<String, Object> response =
-                new LinkedHashMap<>();
+        // =====================================================
+        // EMPLOYEES
+        // =====================================================
 
-        /*
-         * =====================================================
-         * EMPLOYEES
-         * =====================================================
-         *
-         * IMPORTANT:
-         * Use exactly the same employee filter
-         * as HRDashboardService.
-         *
-         * Only EMPLOYEE and MANAGER are counted.
-         *
-         */
         List<Employee> employees =
                 employeeRepository.findByRoleRoleNameIn(
                         Arrays.asList("EMPLOYEE", "MANAGER")
                 );
 
-        int totalEmployees =
-                employees.size();
+        int totalEmployees = employees.size();
 
 
-        /*
-         * =====================================================
-         * SKILLS
-         * =====================================================
-         */
+        // =====================================================
+        // SKILLS
+        // =====================================================
 
         List<Skill> skills =
                 skillRepository.findAll();
 
-        int totalSkills =
-                skills.size();
+        int totalSkills = skills.size();
 
 
-        /*
-         * =====================================================
-         * EMPLOYEE SKILLS
-         * =====================================================
-         */
+        // =====================================================
+        // EMPLOYEE SKILLS
+        // =====================================================
 
         List<EmployeeSkill> employeeSkills =
                 employeeSkillRepository.findAll();
 
 
-        /*
-         * =====================================================
-         * KNOWLEDGE GAPS
-         * =====================================================
-         */
+        // =====================================================
+        // KNOWLEDGE GAPS
+        // =====================================================
 
         List<KnowledgeGap> knowledgeGaps =
                 knowledgeGapRepository.findAll();
 
 
-        /*
-         * =====================================================
-         * VARIABLES
-         * =====================================================
-         */
+        // =====================================================
+        // VARIABLES
+        // =====================================================
 
         int skillsWithGaps = 0;
 
@@ -114,11 +92,9 @@ public class WorkforceSkillService {
                 new ArrayList<>();
 
 
-        /*
-         * =====================================================
-         * PROCESS EACH SKILL
-         * =====================================================
-         */
+        // =====================================================
+        // PROCESS EACH SKILL
+        // =====================================================
 
         for (Skill skill : skills) {
 
@@ -126,9 +102,9 @@ public class WorkforceSkillService {
                     new LinkedHashMap<>();
 
 
-            /*
-             * Skill name
-             */
+            // =================================================
+            // SKILL NAME
+            // =================================================
 
             skillData.put(
                     "skill",
@@ -136,9 +112,9 @@ public class WorkforceSkillService {
             );
 
 
-            /*
-             * Skill category
-             */
+            // =================================================
+            // SKILL CATEGORY
+            // =================================================
 
             skillData.put(
                     "category",
@@ -146,16 +122,9 @@ public class WorkforceSkillService {
             );
 
 
-            /*
-             * =================================================
-             * EMPLOYEES HAVING THIS SKILL
-             * =================================================
-             *
-             * IMPORTANT:
-             * Only count EmployeeSkill records belonging
-             * to employees included in our filtered list.
-             *
-             */
+            // =================================================
+            // EMPLOYEES HAVING THIS SKILL
+            // =================================================
 
             int employeeCount = 0;
 
@@ -175,11 +144,9 @@ public class WorkforceSkillService {
             }
 
 
-            /*
-             * =================================================
-             * AVERAGE SKILL LEVEL
-             * =================================================
-             */
+            // =================================================
+            // AVERAGE SKILL LEVEL
+            // =================================================
 
             double levelTotal = 0;
 
@@ -190,11 +157,6 @@ public class WorkforceSkillService {
 
                 Employee employee =
                         employeeSkill.getEmployee();
-
-                /*
-                 * Only include employees counted
-                 * in the workforce.
-                 */
 
                 if (employee == null ||
                         !employees.contains(employee)) {
@@ -222,19 +184,16 @@ public class WorkforceSkillService {
             if (levelCount > 0) {
 
                 averageLevel =
-                        levelTotal /
-                        levelCount;
+                        levelTotal / levelCount;
             }
 
             averageLevel =
                     round(averageLevel, 2);
 
 
-            /*
-             * =================================================
-             * COVERAGE
-             * =================================================
-             */
+            // =================================================
+            // COVERAGE
+            // =================================================
 
             double coverage = 0;
 
@@ -249,11 +208,9 @@ public class WorkforceSkillService {
                     round(coverage, 2);
 
 
-            /*
-             * =================================================
-             * KNOWLEDGE GAPS
-             * =================================================
-             */
+            // =================================================
+            // KNOWLEDGE GAPS
+            // =================================================
 
             int gapCount = 0;
 
@@ -275,11 +232,6 @@ public class WorkforceSkillService {
                 }
 
 
-                /*
-                 * Only count gaps belonging to
-                 * employees in our workforce.
-                 */
-
                 Employee gapEmployee =
                         gap.getEmployee();
 
@@ -298,11 +250,9 @@ public class WorkforceSkillService {
             }
 
 
-            /*
-             * =================================================
-             * SKILLS WITH GAPS
-             * =================================================
-             */
+            // =================================================
+            // SKILLS WITH GAPS
+            // =================================================
 
             if (gapCount > 0) {
 
@@ -310,11 +260,9 @@ public class WorkforceSkillService {
             }
 
 
-            /*
-             * =================================================
-             * GAP STATUS
-             * =================================================
-             */
+            // =================================================
+            // GAP STATUS
+            // =================================================
 
             String gapStatus =
                     calculateGapStatus(
@@ -323,11 +271,19 @@ public class WorkforceSkillService {
                     );
 
 
-            /*
-             * =================================================
-             * ADD SKILL DATA
-             * =================================================
-             */
+            // =================================================
+            // ADD SKILL DATA
+            // =================================================
+
+            skillData.put(
+                    "skill",
+                    skill.getSkillName()
+            );
+
+            skillData.put(
+                    "category",
+                    skill.getCategory()
+            );
 
             skillData.put(
                     "employees",
@@ -345,20 +301,22 @@ public class WorkforceSkillService {
             );
 
             skillData.put(
+                    "gapCount",
+                    gapCount
+            );
+
+            skillData.put(
                     "gapStatus",
                     gapStatus
             );
-
 
             skillList.add(skillData);
         }
 
 
-        /*
-         * =====================================================
-         * AVERAGE WORKFORCE SKILL
-         * =====================================================
-         */
+        // =====================================================
+        // AVERAGE WORKFORCE SKILL
+        // =====================================================
 
         double averageWorkforceSkill = 0;
 
@@ -370,17 +328,15 @@ public class WorkforceSkillService {
         }
 
         averageWorkforceSkill =
-                round(
-                        averageWorkforceSkill,
-                        2
-                );
+                round(averageWorkforceSkill, 2);
 
 
-        /*
-         * =====================================================
-         * FINAL RESPONSE
-         * =====================================================
-         */
+        // =====================================================
+        // FINAL RESPONSE
+        // =====================================================
+
+        Map<String, Object> response =
+                new LinkedHashMap<>();
 
         response.put(
                 "totalEmployees",
@@ -407,74 +363,55 @@ public class WorkforceSkillService {
                 skillList
         );
 
-
         return response;
     }
 
 
-    /*
-     * =========================================================
-     * GAP STATUS
-     * =========================================================
-     */
+    // =========================================================
+    // ROUND DECIMAL VALUE
+    // =========================================================
+
+    private double round(double value, int places) {
+
+        double multiplier =
+                Math.pow(10, places);
+
+        return Math.round(
+                value * multiplier
+        ) / multiplier;
+    }
+
+
+    // =========================================================
+    // CALCULATE GAP STATUS
+    // =========================================================
 
     private String calculateGapStatus(
             int gapCount,
             int employeeCount) {
 
-        if (gapCount == 0) {
-
-            return "Low";
-        }
-
         if (employeeCount == 0) {
-
-            return "Low";
+            return "NO_DATA";
         }
 
-        double percentage =
+        double gapPercentage =
                 ((double) gapCount /
                         employeeCount) * 100;
 
 
-        if (percentage >= 75) {
-
-            return "Critical";
+        if (gapPercentage == 0) {
+            return "NO_GAP";
         }
 
-
-        if (percentage >= 50) {
-
-            return "High";
+        if (gapPercentage < 25) {
+            return "LOW";
         }
 
-
-        if (percentage >= 25) {
-
-            return "Medium";
+        if (gapPercentage < 50) {
+            return "MEDIUM";
         }
 
-
-        return "Low";
-    }
-
-
-    /*
-     * =========================================================
-     * ROUND
-     * =========================================================
-     */
-
-    private double round(
-            double value,
-            int places) {
-
-        return BigDecimal
-                .valueOf(value)
-                .setScale(
-                        places,
-                        RoundingMode.HALF_UP
-                )
-                .doubleValue();
+        return "HIGH";
     }
 }
+

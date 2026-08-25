@@ -50,6 +50,10 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
+        /*
+         * Allow both Vite development ports.
+         * This preserves your existing configuration.
+         */
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
