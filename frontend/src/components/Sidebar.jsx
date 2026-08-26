@@ -241,80 +241,62 @@ function Sidebar({ role }) {
             DEPARTMENT HEAD SIDEBAR
         ================================================== */}
         {normalizedRole === "DEPARTMENT HEAD" && (
-          <>
-            {/* Department Dashboard */}
-            <NavLink
-              to="/department-head"
-              className={navLinkClass}
-            >
-              <LayoutDashboard size={20} />
-              Department Dashboard
-            </NavLink>
+            <>
+              {/* Department Dashboard */}
+              <NavLink
+                to="/department-head"
+                className={navLinkClass}
+              >
+                <LayoutDashboard size={20} />
+                Department Dashboard
+              </NavLink>
 
-            {/* Team Gap Heatmap */}
-            <NavLink
-              to="/team-gap-heatmap"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              Team Gap Heatmap
-            </NavLink>
+              {/* Team Gap Heatmap */}
+              <NavLink
+                to="/team-gap-heatmap"
+                className={navLinkClass}
+              >
+                <BarChart3 size={20} />
+                Team Gap Heatmap
+              </NavLink>
 
-            {/* Skill Coverage */}
-            <NavLink
-              to="/department-skills"
-              className={navLinkClass}
-            >
-              <Users size={20} />
-              Skill Coverage
-            </NavLink>
+              {/* Skill Coverage */}
+              <NavLink
+                to="/department-skills"
+                className={navLinkClass}
+              >
+                <Users size={20} />
+                Skill Coverage
+              </NavLink>
 
-            {/* Training Adoption */}
-            <NavLink
-              to="/training-adoption"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training Adoption
-            </NavLink>
+              {/* Training Adoption */}
+              <NavLink
+                to="/training-adoption"
+                className={navLinkClass}
+              >
+                <GraduationCap size={20} />
+                Training Adoption
+              </NavLink>
 
-            {/* High Risk Gaps */}
-            <NavLink
-              to="/department-risk-gaps"
-              className={navLinkClass}
-            >
-              <AlertTriangle size={20} />
-              High-Risk Gaps
-            </NavLink>
+              {/* Reports */}
+              <NavLink
+                to="/reports"
+                className={navLinkClass}
+              >
+                <BarChart3 size={20} />
+                Reports
+              </NavLink>
 
-            {/* Individual Progress */}
-            <NavLink
-              to="/individual-progress"
-              className={navLinkClass}
-            >
-              <Activity size={20} />
-              Individual Progress
-            </NavLink>
-
-            {/* Reports */}
-            <NavLink
-              to="/reports"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              Reports
-            </NavLink>
-
-            {/* Notifications */}
-            <NavLink
-              to="/notifications"
-              className={navLinkClass}
-            >
-              <Bell size={20} />
-              Notifications
-            </NavLink>
-          </>
-        )}
+              {/* Notifications */}
+              <NavLink
+                to="/notifications"
+                className={navLinkClass}
+              >
+                <Bell size={20} />
+                Notifications
+              </NavLink>
+            </>
+          )}
 
         {/* ==================================================
             MENTOR SIDEBAR

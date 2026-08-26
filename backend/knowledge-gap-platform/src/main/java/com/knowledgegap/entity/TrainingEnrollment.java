@@ -30,7 +30,7 @@ public class TrainingEnrollment {
     private Course course;
 
     // =========================================================
-    // STATUS
+    // TRAINING STATUS
     // =========================================================
 
     @Enumerated(EnumType.STRING)
@@ -45,7 +45,7 @@ public class TrainingEnrollment {
     private Integer progressPercentage = 0;
 
     // =========================================================
-    // DATES
+    // TRAINING DATES
     // =========================================================
 
     private LocalDate startDate;
@@ -55,12 +55,29 @@ public class TrainingEnrollment {
     private LocalDate actualCompletionDate;
 
     // =========================================================
+    // CERTIFICATION
+    // =========================================================
+
+    private String certificationName;
+
+    private LocalDate certificationIssuedDate;
+
+    private LocalDate certificationExpiryDate;
+
+    @Column(length = 1000)
+    private String certificationUrl;
+
+    // =========================================================
     // CREATED / UPDATED
     // =========================================================
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // =========================================================
+    // PRE PERSIST
+    // =========================================================
 
     @PrePersist
     protected void onCreate() {
@@ -69,6 +86,10 @@ public class TrainingEnrollment {
 
         updatedAt = LocalDateTime.now();
     }
+
+    // =========================================================
+    // PRE UPDATE
+    // =========================================================
 
     @PreUpdate
     protected void onUpdate() {
@@ -131,8 +152,7 @@ public class TrainingEnrollment {
     public void setExpectedCompletionDate(
             LocalDate expectedCompletionDate) {
 
-        this.expectedCompletionDate =
-                expectedCompletionDate;
+        this.expectedCompletionDate = expectedCompletionDate;
     }
 
     public LocalDate getActualCompletionDate() {
@@ -142,9 +162,52 @@ public class TrainingEnrollment {
     public void setActualCompletionDate(
             LocalDate actualCompletionDate) {
 
-        this.actualCompletionDate =
-                actualCompletionDate;
+        this.actualCompletionDate = actualCompletionDate;
     }
+
+    // =========================================================
+    // CERTIFICATION GETTERS / SETTERS
+    // =========================================================
+
+    public String getCertificationName() {
+        return certificationName;
+    }
+
+    public void setCertificationName(String certificationName) {
+        this.certificationName = certificationName;
+    }
+
+    public LocalDate getCertificationIssuedDate() {
+        return certificationIssuedDate;
+    }
+
+    public void setCertificationIssuedDate(
+            LocalDate certificationIssuedDate) {
+
+        this.certificationIssuedDate = certificationIssuedDate;
+    }
+
+    public LocalDate getCertificationExpiryDate() {
+        return certificationExpiryDate;
+    }
+
+    public void setCertificationExpiryDate(
+            LocalDate certificationExpiryDate) {
+
+        this.certificationExpiryDate = certificationExpiryDate;
+    }
+
+    public String getCertificationUrl() {
+        return certificationUrl;
+    }
+
+    public void setCertificationUrl(String certificationUrl) {
+        this.certificationUrl = certificationUrl;
+    }
+
+    // =========================================================
+    // CREATED / UPDATED GETTERS
+    // =========================================================
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

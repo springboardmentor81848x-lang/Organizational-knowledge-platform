@@ -1,19 +1,17 @@
 package com.knowledgegap.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(
-    name = "learning_progress",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            columnNames = {"employee_id", "course_id"}
-        )
-    }
-)
-public class LearningProgress {
+@Table(name = "certifications")
+public class Certification {
+
+    // =========================================================
+    // ID
+    // =========================================================
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,19 +34,35 @@ public class LearningProgress {
     private Course course;
 
     // =========================================================
-    // OVERALL PROGRESS
+    // CERTIFICATE DETAILS
     // =========================================================
 
     @Column(nullable = false)
-    private Integer progressPercentage = 0;
+    private String certificateName;
+
+    @Column(unique = true)
+    private String certificateNumber;
 
     // =========================================================
     // DATES
     // =========================================================
 
-    private LocalDateTime startedAt;
+    @Column(nullable = false)
+    private LocalDate issueDate;
 
-    private LocalDateTime completedAt;
+    private LocalDate expiryDate;
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CertificationStatus status = CertificationStatus.ACTIVE;
+
+    // =========================================================
+    // CREATED / UPDATED
+    // =========================================================
 
     private LocalDateTime createdAt;
 
@@ -63,12 +77,6 @@ public class LearningProgress {
 
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-
-        if (progressPercentage == null) {
-            progressPercentage = 0;
-        }
-
-        updateDates();
     }
 
     // =========================================================
@@ -79,33 +87,6 @@ public class LearningProgress {
     protected void onUpdate() {
 
         updatedAt = LocalDateTime.now();
-
-        if (progressPercentage == null) {
-            progressPercentage = 0;
-        }
-
-        updateDates();
-    }
-
-    // =========================================================
-    // DATE LOGIC
-    // =========================================================
-
-    private void updateDates() {
-
-        if (
-            progressPercentage > 0 &&
-            startedAt == null
-        ) {
-            startedAt = LocalDateTime.now();
-        }
-
-        if (
-            progressPercentage == 100 &&
-            completedAt == null
-        ) {
-            completedAt = LocalDateTime.now();
-        }
     }
 
     // =========================================================
@@ -132,20 +113,44 @@ public class LearningProgress {
         this.course = course;
     }
 
-    public Integer getProgressPercentage() {
-        return progressPercentage;
+    public String getCertificateName() {
+        return certificateName;
     }
 
-    public void setProgressPercentage(Integer progressPercentage) {
-        this.progressPercentage = progressPercentage;
+    public void setCertificateName(String certificateName) {
+        this.certificateName = certificateName;
     }
 
-    public LocalDateTime getStartedAt() {
-        return startedAt;
+    public String getCertificateNumber() {
+        return certificateNumber;
     }
 
-    public LocalDateTime getCompletedAt() {
-        return completedAt;
+    public void setCertificateNumber(String certificateNumber) {
+        this.certificateNumber = certificateNumber;
+    }
+
+    public LocalDate getIssueDate() {
+        return issueDate;
+    }
+
+    public void setIssueDate(LocalDate issueDate) {
+        this.issueDate = issueDate;
+    }
+
+    public LocalDate getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public CertificationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CertificationStatus status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {

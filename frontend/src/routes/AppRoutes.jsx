@@ -53,7 +53,7 @@ import ManagerDashboard from "../pages/ManagerDashboard";
 // DEPARTMENT HEAD
 // ==================================================
 
-import DepartmentHeadDashboard from "../pages/DepartmentHeadDashboard";
+import DepartmentDashboard from "../pages/DepartmentDashboard";
 
 // ==================================================
 // MENTOR
@@ -708,33 +708,10 @@ function AppRoutes() {
           DEPARTMENT HEAD
       ================================================== */}
 
-      <Route
-        path="/department-head"
-        element={
-          <ProtectedRoute
-            allowedRoles={[
-              "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
-            ]}
-          >
-            <DepartmentHeadDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/department-head/dashboard"
-        element={
-          <ProtectedRoute
-            allowedRoles={[
-              "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
-            ]}
-          >
-            <DepartmentHeadDashboard />
-          </ProtectedRoute>
-        }
-      />
+              <Route
+          path="/department-head"
+          element={<DepartmentDashboard />}
+        />
 
       {/* ==================================================
           MENTOR

@@ -1,8 +1,8 @@
 package com.knowledgegap.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,196 +14,228 @@ import com.knowledgegap.service.TrainingEnrollmentService;
 @CrossOrigin(origins = "http://localhost:5173")
 public class TrainingEnrollmentController {
 
-
     private final TrainingEnrollmentService
-            enrollmentService;
-
-
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
+            trainingEnrollmentService;
 
     public TrainingEnrollmentController(
-            TrainingEnrollmentService enrollmentService) {
+            TrainingEnrollmentService trainingEnrollmentService) {
 
-        this.enrollmentService =
-                enrollmentService;
+        this.trainingEnrollmentService =
+                trainingEnrollmentService;
     }
 
-
     // =========================================================
-    // ENROLL
+    // ENROLL EMPLOYEE
     // =========================================================
 
     @PostMapping(
             "/employee/{employeeIdentifier}/course/{courseId}"
     )
-    public ResponseEntity<TrainingEnrollment>
-    enrollEmployee(
+    public ResponseEntity<TrainingEnrollment> enrollEmployee(
             @PathVariable String employeeIdentifier,
             @PathVariable Long courseId) {
 
-        TrainingEnrollment enrollment =
-                enrollmentService.enrollEmployee(
+        return ResponseEntity.ok(
+                trainingEnrollmentService.enrollEmployee(
                         employeeIdentifier,
                         courseId
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(enrollment);
+                )
+        );
     }
-
 
     // =========================================================
     // GET EMPLOYEE ENROLLMENTS
     // =========================================================
 
-    @GetMapping(
-            "/employee/{employeeIdentifier}"
-    )
+    @GetMapping("/employee/{employeeIdentifier}")
     public ResponseEntity<List<TrainingEnrollment>>
     getEmployeeEnrollments(
             @PathVariable String employeeIdentifier) {
 
         return ResponseEntity.ok(
-                enrollmentService
+                trainingEnrollmentService
                         .getEmployeeEnrollments(
                                 employeeIdentifier
                         )
         );
     }
 
-
     // =========================================================
-    // GET ENROLLMENT BY ID
+    // GET SINGLE ENROLLMENT
     // =========================================================
 
-    @GetMapping("/{enrollmentId}")
+    @GetMapping("/{id}")
     public ResponseEntity<TrainingEnrollment>
-    getEnrollment(
-            @PathVariable Long enrollmentId) {
+    getEnrollmentById(
+            @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                enrollmentService
-                        .getEnrollmentById(
-                                enrollmentId
-                        )
+                trainingEnrollmentService
+                        .getEnrollmentById(id)
         );
     }
-
 
     // =========================================================
     // START TRAINING
     // =========================================================
 
-    @PutMapping("/{enrollmentId}/start")
+    @PutMapping("/{id}/start")
     public ResponseEntity<TrainingEnrollment>
     startTraining(
-            @PathVariable Long enrollmentId) {
+            @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                enrollmentService
-                        .startTraining(
-                                enrollmentId
-                        )
+                trainingEnrollmentService
+                        .startTraining(id)
         );
     }
-
 
     // =========================================================
     // UPDATE PROGRESS
     // =========================================================
 
-    @PutMapping(
-            "/{enrollmentId}/progress"
-    )
+    @PutMapping("/{id}/progress")
     public ResponseEntity<TrainingEnrollment>
     updateProgress(
-            @PathVariable Long enrollmentId,
-            @RequestParam Integer progressPercentage) {
+            @PathVariable Long id,
+            @RequestBody ProgressUpdateRequest request) {
 
         return ResponseEntity.ok(
-                enrollmentService.updateProgress(
-                        enrollmentId,
-                        progressPercentage
+                trainingEnrollmentService.updateProgress(
+                        id,
+                        request.getProgressPercentage()
                 )
         );
     }
-
 
     // =========================================================
     // COMPLETE TRAINING
     // =========================================================
 
-    @PutMapping("/{enrollmentId}/complete")
+    @PutMapping("/{id}/complete")
     public ResponseEntity<TrainingEnrollment>
     completeTraining(
-            @PathVariable Long enrollmentId) {
+            @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                enrollmentService
-                        .completeTraining(
-                                enrollmentId
-                        )
+                trainingEnrollmentService
+                        .completeTraining(id)
         );
     }
 
-
     // =========================================================
-    // CERTIFY
+    // MARK CERTIFIED
     // =========================================================
 
-    @PutMapping("/{enrollmentId}/certify")
+    @PutMapping("/{id}/certify")
     public ResponseEntity<TrainingEnrollment>
     markCertified(
-            @PathVariable Long enrollmentId) {
+            @PathVariable Long id,
+            @RequestBody CertificationRequest request) {
 
         return ResponseEntity.ok(
-                enrollmentService
-                        .markCertified(
-                                enrollmentId
-                        )
+                trainingEnrollmentService.markCertified(
+                        id,
+                        request.getCertificationName(),
+                        request.getCertificationExpiryDate(),
+                        request.getCertificationUrl()
+                )
         );
     }
 
-
     // =========================================================
-    // EXPIRED / RENEWAL
+    // MARK EXPIRED / RENEWAL
     // =========================================================
 
-    @PutMapping(
-            "/{enrollmentId}/expired-renewal"
-    )
+    @PutMapping("/{id}/expire")
     public ResponseEntity<TrainingEnrollment>
-    markExpiredForRenewal(
-            @PathVariable Long enrollmentId) {
+    markExpired(
+            @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                enrollmentService
-                        .markExpiredForRenewal(
-                                enrollmentId
-                        )
+                trainingEnrollmentService
+                        .markExpired(id)
         );
     }
 
-
     // =========================================================
-    // DELETE
+    // DELETE ENROLLMENT
     // =========================================================
 
-    @DeleteMapping("/{enrollmentId}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void>
     deleteEnrollment(
-            @PathVariable Long enrollmentId) {
+            @PathVariable Long id) {
 
-        enrollmentService
-                .deleteEnrollment(
-                        enrollmentId
-                );
+        trainingEnrollmentService
+                .deleteEnrollment(id);
 
-        return ResponseEntity
-                .noContent()
-                .build();
+        return ResponseEntity.noContent().build();
+    }
+
+    // =========================================================
+    // PROGRESS DTO
+    // =========================================================
+
+    public static class ProgressUpdateRequest {
+
+        private Integer progressPercentage;
+
+        public Integer getProgressPercentage() {
+            return progressPercentage;
+        }
+
+        public void setProgressPercentage(
+                Integer progressPercentage) {
+
+            this.progressPercentage =
+                    progressPercentage;
+        }
+    }
+
+    // =========================================================
+    // CERTIFICATION DTO
+    // =========================================================
+
+    public static class CertificationRequest {
+
+        private String certificationName;
+
+        private LocalDate certificationExpiryDate;
+
+        private String certificationUrl;
+
+        public String getCertificationName() {
+            return certificationName;
+        }
+
+        public void setCertificationName(
+                String certificationName) {
+
+            this.certificationName =
+                    certificationName;
+        }
+
+        public LocalDate getCertificationExpiryDate() {
+            return certificationExpiryDate;
+        }
+
+        public void setCertificationExpiryDate(
+                LocalDate certificationExpiryDate) {
+
+            this.certificationExpiryDate =
+                    certificationExpiryDate;
+        }
+
+        public String getCertificationUrl() {
+            return certificationUrl;
+        }
+
+        public void setCertificationUrl(
+                String certificationUrl) {
+
+            this.certificationUrl =
+                    certificationUrl;
+        }
     }
 }

@@ -24,6 +24,12 @@ public class TrainingEnrollmentService {
     private final EmployeeMilestoneProgressService
             employeeMilestoneProgressService;
 
+    private final LearningProgressService
+            learningProgressService;
+
+    private final LearningProgressHistoryService
+            learningProgressHistoryService;
+
     // =========================================================
     // CONSTRUCTOR
     // =========================================================
@@ -33,19 +39,21 @@ public class TrainingEnrollmentService {
             EmployeeService employeeService,
             CourseService courseService,
             EmployeeMilestoneProgressService
-                    employeeMilestoneProgressService) {
+                    employeeMilestoneProgressService,
+            LearningProgressService
+                    learningProgressService,
+            LearningProgressHistoryService
+                    learningProgressHistoryService) {
 
-        this.enrollmentRepository =
-                enrollmentRepository;
-
-        this.employeeService =
-                employeeService;
-
-        this.courseService =
-                courseService;
-
+        this.enrollmentRepository = enrollmentRepository;
+        this.employeeService = employeeService;
+        this.courseService = courseService;
         this.employeeMilestoneProgressService =
                 employeeMilestoneProgressService;
+        this.learningProgressService =
+                learningProgressService;
+        this.learningProgressHistoryService =
+                learningProgressHistoryService;
     }
 
     // =========================================================
@@ -56,10 +64,6 @@ public class TrainingEnrollmentService {
     public TrainingEnrollment enrollEmployee(
             String employeeIdentifier,
             Long courseId) {
-
-        // -----------------------------------------------------
-        // FIND EMPLOYEE
-        // -----------------------------------------------------
 
         Employee employee =
                 employeeService
@@ -73,27 +77,19 @@ public class TrainingEnrollmentService {
                                 )
                         );
 
-        // -----------------------------------------------------
-        // FIND COURSE
-        // -----------------------------------------------------
-
         Course course =
-                courseService.getCourseById(
-                        courseId
-                );
+                courseService.getCourseById(courseId);
 
         // -----------------------------------------------------
         // CHECK DUPLICATE
         // -----------------------------------------------------
 
-        if (
-            enrollmentRepository
-                    .findByEmployeeAndCourse(
-                            employee,
-                            course
-                    )
-                    .isPresent()
-        ) {
+        if (enrollmentRepository
+                .findByEmployeeAndCourse(
+                        employee,
+                        course
+                )
+                .isPresent()) {
 
             throw new IllegalStateException(
                     "Employee is already enrolled in this course."
@@ -108,7 +104,6 @@ public class TrainingEnrollmentService {
                 new TrainingEnrollment();
 
         enrollment.setEmployee(employee);
-
         enrollment.setCourse(course);
 
         enrollment.setStatus(
@@ -117,42 +112,21 @@ public class TrainingEnrollmentService {
 
         enrollment.setProgressPercentage(0);
 
-        // -----------------------------------------------------
-        // EXPECTED COMPLETION DATE
-        // -----------------------------------------------------
-        /*
-         * Course duration is currently stored as String
-         * in the Course entity.
-         *
-         * Therefore expected completion date is not
-         * automatically calculated here.
-         *
-         * It can be supplied or updated later.
-         */
-
-        // -----------------------------------------------------
-        // SAVE ENROLLMENT
-        // -----------------------------------------------------
-
         TrainingEnrollment savedEnrollment =
-                enrollmentRepository.save(
-                        enrollment
-                );
+                enrollmentRepository.save(enrollment);
+
+        // -----------------------------------------------------
+        // INITIALIZE LEARNING PROGRESS
+        // -----------------------------------------------------
+
+        learningProgressService.initializeProgress(
+                employee,
+                course
+        );
 
         // -----------------------------------------------------
         // INITIALIZE EMPLOYEE MILESTONES
         // -----------------------------------------------------
-        /*
-         * Create an employee-specific progress record
-         * for every milestone belonging to this course.
-         *
-         * Example:
-         *
-         * Core Java       -> 0%
-         * Collections     -> 0%
-         * Multithreading  -> 0%
-         * Spring Boot     -> 0%
-         */
 
         employeeMilestoneProgressService
                 .initializeEmployeeMilestones(
@@ -215,20 +189,14 @@ public class TrainingEnrollmentService {
             Long enrollmentId) {
 
         TrainingEnrollment enrollment =
-                getEnrollmentById(
-                        enrollmentId
-                );
-
-        // -----------------------------------------------------
-        // ALREADY COMPLETED / CERTIFIED
-        // -----------------------------------------------------
+                getEnrollmentById(enrollmentId);
 
         if (
-            enrollment.getStatus() ==
-                    TrainingStatus.COMPLETED
-            ||
-            enrollment.getStatus() ==
-                    TrainingStatus.CERTIFIED
+                enrollment.getStatus() ==
+                        TrainingStatus.COMPLETED
+                        ||
+                enrollment.getStatus() ==
+                        TrainingStatus.CERTIFIED
         ) {
 
             throw new IllegalStateException(
@@ -236,13 +204,36 @@ public class TrainingEnrollmentService {
             );
         }
 
+        Employee employee =
+                enrollment.getEmployee();
+
+        Course course =
+                enrollment.getCourse();
+
+        // -----------------------------------------------------
+        // ENSURE MILESTONES EXIST
+        // -----------------------------------------------------
+
+        employeeMilestoneProgressService
+                .initializeEmployeeMilestones(
+                        employee,
+                        course
+                );
+
+        // -----------------------------------------------------
+        // ENSURE LEARNING PROGRESS EXISTS
+        // -----------------------------------------------------
+
+        learningProgressService.initializeProgress(
+                employee,
+                course
+        );
+
         // -----------------------------------------------------
         // SET START DATE
         // -----------------------------------------------------
 
-        if (
-            enrollment.getStartDate() == null
-        ) {
+        if (enrollment.getStartDate() == null) {
 
             enrollment.setStartDate(
                     LocalDate.now()
@@ -257,9 +248,21 @@ public class TrainingEnrollmentService {
                 TrainingStatus.IN_PROGRESS
         );
 
-        return enrollmentRepository.save(
-                enrollment
+        TrainingEnrollment savedEnrollment =
+                enrollmentRepository.save(enrollment);
+
+        // -----------------------------------------------------
+        // RECORD INITIAL LEARNING HISTORY
+        // -----------------------------------------------------
+
+        learningProgressHistoryService.recordProgress(
+                employee,
+                course,
+                savedEnrollment,
+                savedEnrollment.getProgressPercentage()
         );
+
+        return savedEnrollment;
     }
 
     // =========================================================
@@ -271,10 +274,6 @@ public class TrainingEnrollmentService {
             Long enrollmentId,
             Integer progressPercentage) {
 
-        // -----------------------------------------------------
-        // VALIDATE
-        // -----------------------------------------------------
-
         if (progressPercentage == null) {
 
             throw new IllegalArgumentException(
@@ -283,8 +282,8 @@ public class TrainingEnrollmentService {
         }
 
         if (
-            progressPercentage < 0 ||
-            progressPercentage > 100
+                progressPercentage < 0 ||
+                progressPercentage > 100
         ) {
 
             throw new IllegalArgumentException(
@@ -292,28 +291,24 @@ public class TrainingEnrollmentService {
             );
         }
 
-        // -----------------------------------------------------
-        // GET ENROLLMENT
-        // -----------------------------------------------------
-
         TrainingEnrollment enrollment =
-                getEnrollmentById(
-                        enrollmentId
-                );
-
-        // -----------------------------------------------------
-        // CERTIFIED CANNOT CHANGE
-        // -----------------------------------------------------
+                getEnrollmentById(enrollmentId);
 
         if (
-            enrollment.getStatus() ==
-                    TrainingStatus.CERTIFIED
+                enrollment.getStatus() ==
+                        TrainingStatus.CERTIFIED
         ) {
 
             throw new IllegalStateException(
                     "Certified training cannot be modified."
             );
         }
+
+        Employee employee =
+                enrollment.getEmployee();
+
+        Course course =
+                enrollment.getCourse();
 
         // -----------------------------------------------------
         // SET PROGRESS
@@ -324,7 +319,7 @@ public class TrainingEnrollmentService {
         );
 
         // -----------------------------------------------------
-        // AUTOMATIC STATUS
+        // COMPLETED
         // -----------------------------------------------------
 
         if (progressPercentage == 100) {
@@ -336,32 +331,52 @@ public class TrainingEnrollmentService {
             enrollment.setActualCompletionDate(
                     LocalDate.now()
             );
+        }
 
-        } else if (progressPercentage > 0) {
+        // -----------------------------------------------------
+        // IN PROGRESS
+        // -----------------------------------------------------
+
+        else if (progressPercentage > 0) {
 
             enrollment.setStatus(
                     TrainingStatus.IN_PROGRESS
             );
 
-            if (
-                enrollment.getStartDate() == null
-            ) {
+            if (enrollment.getStartDate() == null) {
 
                 enrollment.setStartDate(
                         LocalDate.now()
                 );
             }
+        }
 
-        } else {
+        // -----------------------------------------------------
+        // NOT STARTED
+        // -----------------------------------------------------
+
+        else {
 
             enrollment.setStatus(
                     TrainingStatus.NOT_STARTED
             );
         }
 
-        return enrollmentRepository.save(
-                enrollment
+        TrainingEnrollment savedEnrollment =
+                enrollmentRepository.save(enrollment);
+
+        // -----------------------------------------------------
+        // RECORD LEARNING HISTORY
+        // -----------------------------------------------------
+
+        learningProgressHistoryService.recordProgress(
+                employee,
+                course,
+                savedEnrollment,
+                progressPercentage
         );
+
+        return savedEnrollment;
     }
 
     // =========================================================
@@ -373,17 +388,11 @@ public class TrainingEnrollmentService {
             Long enrollmentId) {
 
         TrainingEnrollment enrollment =
-                getEnrollmentById(
-                        enrollmentId
-                );
-
-        // -----------------------------------------------------
-        // CERTIFIED CHECK
-        // -----------------------------------------------------
+                getEnrollmentById(enrollmentId);
 
         if (
-            enrollment.getStatus() ==
-                    TrainingStatus.CERTIFIED
+                enrollment.getStatus() ==
+                        TrainingStatus.CERTIFIED
         ) {
 
             throw new IllegalStateException(
@@ -391,46 +400,48 @@ public class TrainingEnrollmentService {
             );
         }
 
-        // -----------------------------------------------------
-        // SET 100%
-        // -----------------------------------------------------
+        Employee employee =
+                enrollment.getEmployee();
 
-        enrollment.setProgressPercentage(
-                100
-        );
+        Course course =
+                enrollment.getCourse();
 
         // -----------------------------------------------------
-        // SET STATUS
+        // SET COMPLETION
         // -----------------------------------------------------
+
+        enrollment.setProgressPercentage(100);
 
         enrollment.setStatus(
                 TrainingStatus.COMPLETED
         );
 
-        // -----------------------------------------------------
-        // SET START DATE
-        // -----------------------------------------------------
-
-        if (
-            enrollment.getStartDate() == null
-        ) {
+        if (enrollment.getStartDate() == null) {
 
             enrollment.setStartDate(
                     LocalDate.now()
             );
         }
 
-        // -----------------------------------------------------
-        // SET COMPLETION DATE
-        // -----------------------------------------------------
-
         enrollment.setActualCompletionDate(
                 LocalDate.now()
         );
 
-        return enrollmentRepository.save(
-                enrollment
+        TrainingEnrollment savedEnrollment =
+                enrollmentRepository.save(enrollment);
+
+        // -----------------------------------------------------
+        // RECORD COMPLETION HISTORY
+        // -----------------------------------------------------
+
+        learningProgressHistoryService.recordProgress(
+                employee,
+                course,
+                savedEnrollment,
+                100
         );
+
+        return savedEnrollment;
     }
 
     // =========================================================
@@ -439,20 +450,21 @@ public class TrainingEnrollmentService {
 
     @Transactional
     public TrainingEnrollment markCertified(
-            Long enrollmentId) {
+            Long enrollmentId,
+            String certificationName,
+            LocalDate certificationExpiryDate,
+            String certificationUrl) {
 
         TrainingEnrollment enrollment =
-                getEnrollmentById(
-                        enrollmentId
-                );
+                getEnrollmentById(enrollmentId);
 
         // -----------------------------------------------------
         // MUST BE COMPLETED FIRST
         // -----------------------------------------------------
 
         if (
-            enrollment.getStatus() !=
-                    TrainingStatus.COMPLETED
+                enrollment.getStatus() !=
+                        TrainingStatus.COMPLETED
         ) {
 
             throw new IllegalStateException(
@@ -461,42 +473,92 @@ public class TrainingEnrollmentService {
         }
 
         // -----------------------------------------------------
-        // CERTIFY
+        // CERTIFICATION NAME
+        // -----------------------------------------------------
+
+        if (
+                certificationName == null ||
+                certificationName.trim().isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Certification name is required."
+            );
+        }
+
+        // -----------------------------------------------------
+        // EXPIRY DATE VALIDATION
+        // -----------------------------------------------------
+
+        if (
+                certificationExpiryDate != null &&
+                certificationExpiryDate.isBefore(
+                        LocalDate.now()
+                )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Certification expiry date cannot be in the past."
+            );
+        }
+
+        // -----------------------------------------------------
+        // SET CERTIFICATION DETAILS
+        // -----------------------------------------------------
+
+        enrollment.setCertificationName(
+                certificationName
+        );
+
+        enrollment.setCertificationIssuedDate(
+                LocalDate.now()
+        );
+
+        enrollment.setCertificationExpiryDate(
+                certificationExpiryDate
+        );
+
+        enrollment.setCertificationUrl(
+                certificationUrl
+        );
+
+        // -----------------------------------------------------
+        // SET STATUS
         // -----------------------------------------------------
 
         enrollment.setStatus(
                 TrainingStatus.CERTIFIED
         );
 
-        return enrollmentRepository.save(
-                enrollment
-        );
+        return enrollmentRepository.save(enrollment);
     }
 
     // =========================================================
-    // MARK EXPIRED / RENEWAL
+    // MARK EXPIRED
     // =========================================================
 
     @Transactional
-    public TrainingEnrollment markExpiredForRenewal(
+    public TrainingEnrollment markExpired(
             Long enrollmentId) {
 
         TrainingEnrollment enrollment =
-                getEnrollmentById(
-                        enrollmentId
-                );
+                getEnrollmentById(enrollmentId);
 
-        // -----------------------------------------------------
-        // MARK EXPIRED
-        // -----------------------------------------------------
+        if (
+                enrollment.getStatus() !=
+                        TrainingStatus.CERTIFIED
+        ) {
+
+            throw new IllegalStateException(
+                    "Only certified training can expire."
+            );
+        }
 
         enrollment.setStatus(
                 TrainingStatus.EXPIRED_RENEWAL
         );
 
-        return enrollmentRepository.save(
-                enrollment
-        );
+        return enrollmentRepository.save(enrollment);
     }
 
     // =========================================================
@@ -508,8 +570,8 @@ public class TrainingEnrollmentService {
             Long enrollmentId) {
 
         if (
-            !enrollmentRepository
-                    .existsById(enrollmentId)
+                !enrollmentRepository
+                        .existsById(enrollmentId)
         ) {
 
             throw new RuntimeException(
