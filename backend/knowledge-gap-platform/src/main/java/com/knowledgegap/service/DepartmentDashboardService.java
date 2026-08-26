@@ -1,6 +1,7 @@
 package com.knowledgegap.service;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.knowledgegap.dto.DepartmentDashboardDTO;
+import com.knowledgegap.dto.DepartmentDashboardDTO.EmployeeSkillGapDTO;
+import com.knowledgegap.dto.DepartmentDashboardDTO.TeamSkillGapDTO;
 import com.knowledgegap.entity.Department;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.KnowledgeGap;
@@ -24,11 +27,9 @@ public class DepartmentDashboardService {
 
     private final EmployeeRepository employeeRepository;
 
-    private final TrainingEnrollmentRepository
-            trainingEnrollmentRepository;
+    private final TrainingEnrollmentRepository trainingEnrollmentRepository;
 
-    private final KnowledgeGapRepository
-            knowledgeGapRepository;
+    private final KnowledgeGapRepository knowledgeGapRepository;
 
     // =========================================================
     // CONSTRUCTOR
@@ -159,7 +160,7 @@ public class DepartmentDashboardService {
                         .filter(enrollment ->
                                 enrollment.getStatus() ==
                                         TrainingStatus.COMPLETED
-                                ||
+                                        ||
                                 enrollment.getStatus() ==
                                         TrainingStatus.CERTIFIED
                         )
@@ -191,7 +192,6 @@ public class DepartmentDashboardService {
                             .orElse(0.0);
         }
 
-        // Round to 2 decimal places
         averageProgress =
                 Math.round(
                         averageProgress * 100.0
@@ -204,19 +204,6 @@ public class DepartmentDashboardService {
         // =====================================================
         // CRITICAL SKILL GAPS
         // =====================================================
-
-        /*
-         * Gap scale:
-         *
-         * 0 = No gap
-         * 1 = Low
-         * 2 = Moderate
-         * 3 = High
-         * 4+ = Critical
-         *
-         * Therefore we consider gap >= 3
-         * as a critical/high-risk gap.
-         */
 
         long criticalGaps =
                 knowledgeGaps.stream()
@@ -272,9 +259,9 @@ public class DepartmentDashboardService {
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // DEFAULT TOP GAP
-        // -----------------------------------------------------
+        // =====================================================
 
         if (dashboard.getTopGap() == null) {
 
@@ -285,6 +272,157 @@ public class DepartmentDashboardService {
             dashboard.setTopGapCount(0);
         }
 
+        // =====================================================
+        // TEAM SKILL GAP HEATMAP
+        // =====================================================
+
+        List<TeamSkillGapDTO> teamSkillGapMap =
+                buildTeamSkillGapMap(
+                        employees,
+                        knowledgeGaps
+                );
+
+        dashboard.setTeamSkillGapMap(
+                teamSkillGapMap
+        );
+
+        // =====================================================
+        // RETURN DASHBOARD
+        // =====================================================
+
         return dashboard;
+    }
+
+    // =========================================================
+    // BUILD TEAM SKILL GAP MAP
+    // =========================================================
+
+    private List<TeamSkillGapDTO> buildTeamSkillGapMap(
+            List<Employee> employees,
+            List<KnowledgeGap> knowledgeGaps) {
+
+        // -----------------------------------------------------
+        // Create lookup:
+        //
+        // skill -> employee -> gap
+        // -----------------------------------------------------
+
+        Map<String, Map<String, Integer>> gapMap =
+                new LinkedHashMap<>();
+
+        for (KnowledgeGap knowledgeGap : knowledgeGaps) {
+
+            if (knowledgeGap.getSkill() == null
+                    || knowledgeGap.getSkill().getSkillName() == null
+                    || knowledgeGap.getEmployee() == null) {
+
+                continue;
+            }
+
+            String skillName =
+                    knowledgeGap.getSkill().getSkillName();
+
+            String employeeId =
+                    knowledgeGap.getEmployee().getEmployeeId();
+
+            Integer gap =
+                    knowledgeGap.getGap();
+
+            if (gap == null) {
+                gap = 0;
+            }
+
+            gapMap
+                    .computeIfAbsent(
+                            skillName,
+                            key -> new LinkedHashMap<>()
+                    )
+                    .put(
+                            employeeId,
+                            gap
+                    );
+        }
+
+        // -----------------------------------------------------
+        // Convert to DTO
+        // -----------------------------------------------------
+
+        return gapMap.entrySet()
+                .stream()
+                .sorted(
+                        Map.Entry.comparingByKey()
+                )
+                .map(skillEntry -> {
+
+                    String skillName =
+                            skillEntry.getKey();
+
+                    Map<String, Integer> employeeGaps =
+                            skillEntry.getValue();
+
+                    List<EmployeeSkillGapDTO> employeeData =
+                            employees.stream()
+                                    .map(employee -> {
+
+                                        String employeeId =
+                                                employee.getEmployeeId();
+
+                                        String employeeName =
+                                                buildEmployeeName(
+                                                        employee
+                                                );
+
+                                        Integer gap =
+                                                employeeGaps
+                                                        .getOrDefault(
+                                                                employeeId,
+                                                                0
+                                                        );
+
+                                        return new EmployeeSkillGapDTO(
+                                                employeeId,
+                                                employeeName,
+                                                gap
+                                        );
+                                    })
+                                    .collect(
+                                            Collectors.toList()
+                                    );
+
+                    return new TeamSkillGapDTO(
+                            skillName,
+                            employeeData
+                    );
+                })
+                .collect(
+                        Collectors.toList()
+                );
+    }
+
+    // =========================================================
+    // BUILD EMPLOYEE NAME
+    // =========================================================
+
+    private String buildEmployeeName(
+            Employee employee) {
+
+        String firstName =
+                employee.getFirstName() == null
+                        ? ""
+                        : employee.getFirstName();
+
+        String lastName =
+                employee.getLastName() == null
+                        ? ""
+                        : employee.getLastName();
+
+        String fullName =
+                (firstName + " " + lastName).trim();
+
+        if (fullName.isEmpty()) {
+            return employee.getEmployeeId();
+        }
+
+        return fullName;
     }
 }

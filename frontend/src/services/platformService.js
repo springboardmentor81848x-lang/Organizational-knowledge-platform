@@ -93,3 +93,16 @@ export const askAIQuestion = async (
     learningPath,
   });
 };
+
+
+// =========================================================
+// DEPARTMENT HEAD - TRAINING ADOPTION
+// =========================================================
+
+export const getTrainingAdoption = async (
+  employeeIdentifier
+) => {
+  return await api.get(
+    `/department-head/training-adoption/${employeeIdentifier}`
+  );
+};

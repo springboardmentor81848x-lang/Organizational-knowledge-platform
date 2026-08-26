@@ -9,9 +9,7 @@ public class DepartmentDashboardDTO {
     // =========================================================
 
     private Long departmentId;
-
     private String departmentName;
-
     private String departmentDescription;
 
     // =========================================================
@@ -25,9 +23,7 @@ public class DepartmentDashboardDTO {
     // =========================================================
 
     private long trainingEnrolled;
-
     private long trainingCompleted;
-
     private double averageLearningProgress;
 
     // =========================================================
@@ -35,10 +31,14 @@ public class DepartmentDashboardDTO {
     // =========================================================
 
     private long criticalSkillGaps;
-
     private String topGap;
-
     private long topGapCount;
+
+    // =========================================================
+    // TEAM SKILL GAP HEATMAP
+    // =========================================================
+
+    private List<TeamSkillGapDTO> teamSkillGapMap;
 
     // =========================================================
     // CONSTRUCTOR
@@ -71,11 +71,8 @@ public class DepartmentDashboardDTO {
         return departmentDescription;
     }
 
-    public void setDepartmentDescription(
-            String departmentDescription) {
-
-        this.departmentDescription =
-                departmentDescription;
+    public void setDepartmentDescription(String departmentDescription) {
+        this.departmentDescription = departmentDescription;
     }
 
     public long getTotalEmployees() {
@@ -106,11 +103,8 @@ public class DepartmentDashboardDTO {
         return averageLearningProgress;
     }
 
-    public void setAverageLearningProgress(
-            double averageLearningProgress) {
-
-        this.averageLearningProgress =
-                averageLearningProgress;
+    public void setAverageLearningProgress(double averageLearningProgress) {
+        this.averageLearningProgress = averageLearningProgress;
     }
 
     public long getCriticalSkillGaps() {
@@ -135,5 +129,100 @@ public class DepartmentDashboardDTO {
 
     public void setTopGapCount(long topGapCount) {
         this.topGapCount = topGapCount;
+    }
+
+    public List<TeamSkillGapDTO> getTeamSkillGapMap() {
+        return teamSkillGapMap;
+    }
+
+    public void setTeamSkillGapMap(List<TeamSkillGapDTO> teamSkillGapMap) {
+        this.teamSkillGapMap = teamSkillGapMap;
+    }
+
+    // =========================================================
+    // TEAM SKILL GAP DTO
+    // =========================================================
+
+    public static class TeamSkillGapDTO {
+
+        private String skillName;
+        private List<EmployeeSkillGapDTO> employees;
+
+        public TeamSkillGapDTO() {
+        }
+
+        public TeamSkillGapDTO(
+                String skillName,
+                List<EmployeeSkillGapDTO> employees) {
+
+            this.skillName = skillName;
+            this.employees = employees;
+        }
+
+        public String getSkillName() {
+            return skillName;
+        }
+
+        public void setSkillName(String skillName) {
+            this.skillName = skillName;
+        }
+
+        public List<EmployeeSkillGapDTO> getEmployees() {
+            return employees;
+        }
+
+        public void setEmployees(
+                List<EmployeeSkillGapDTO> employees) {
+
+            this.employees = employees;
+        }
+    }
+
+    // =========================================================
+    // EMPLOYEE SKILL GAP DTO
+    // =========================================================
+
+    public static class EmployeeSkillGapDTO {
+
+        private String employeeId;
+        private String employeeName;
+        private Integer gap;
+
+        public EmployeeSkillGapDTO() {
+        }
+
+        public EmployeeSkillGapDTO(
+                String employeeId,
+                String employeeName,
+                Integer gap) {
+
+            this.employeeId = employeeId;
+            this.employeeName = employeeName;
+            this.gap = gap;
+        }
+
+        public String getEmployeeId() {
+            return employeeId;
+        }
+
+        public void setEmployeeId(String employeeId) {
+            this.employeeId = employeeId;
+        }
+
+        public String getEmployeeName() {
+            return employeeName;
+        }
+
+        public void setEmployeeName(String employeeName) {
+            this.employeeName = employeeName;
+        }
+
+        public Integer getGap() {
+            return gap;
+        }
+
+        public void setGap(Integer gap) {
+            this.gap = gap;
+        }
     }
 }
