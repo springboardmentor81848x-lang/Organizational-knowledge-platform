@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0fdfc;
+  --color-primary-100: #e6f7f5;
+  --color-primary-200: #c2ede8;
+  --color-primary-300: #8ee0d6;
+  --color-primary-400: #4ec2b5;
+  --color-primary-500: #0f9d95;
+  --color-primary-600: #087f78;
+  --color-primary-700: #086661;
+  --color-primary-800: #0a514e;
+  --color-primary-900: #0c4341;
+  --color-primary-950: #042726;
+
+  /* Teal Palette */
+  --color-teal-50: #f0fdfc;
+  --color-teal-100: #e6f7f5;
+  --color-teal-200: #c2ede8;
+  --color-teal-300: #8ee0d6;
+  --color-teal-400: #4ec2b5;
+  --color-teal-500: #0f9d95;
+  --color-teal-600: #087f78;
+  --color-teal-700: #086661;
+  --color-teal-800: #0a514e;
+  --color-teal-900: #0c4341;
+  --color-teal-950: #042726;
+
+  /* Emerald mapped directly to teal system for universal consistency */
+  --color-emerald-50: #f0fdfc;
+  --color-emerald-100: #e6f7f5;
+  --color-emerald-200: #c2ede8;
+  --color-emerald-300: #8ee0d6;
+  --color-emerald-400: #4ec2b5;
+  --color-emerald-500: #0f9d95;
+  --color-emerald-600: #087f78;
+  --color-emerald-700: #086661;
+  --color-emerald-800: #0a514e;
+  --color-emerald-900: #0c4341;
+  --color-emerald-950: #042726;
+
+  /* Cyan Mappings */
+  --color-cyan-50: #f0fdfa;
+  --color-cyan-100: #e6f7f5;
+  --color-cyan-200: #bbf0ea;
+  --color-cyan-300: #7ae4d9;
+  --color-cyan-400: #33cdc0;
+  --color-cyan-500: #0f9d95;
+  --color-cyan-600: #087f78;
+
+  /* Slate & Text Primary Mappings */
+  --color-slate-900: #17324d;
+  --color-slate-800: #1e3a58;
+  --color-slate-700: #334e68;
+  --color-slate-600: #486581;
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-200: #e2e8f0;
+  --color-slate-100: #f1f5f9;
+  --color-slate-50: #f7fbfb;
+}
+
+body {
+  background-color: #f7fbfb;
+  color: #17324d;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Dark mode theme overrides */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body,
+html.dark #root {
+  background-color: #0b151e !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark header,
+html.dark aside,
+html.dark .bg-white,
+html.dark .bg-white\/90 {
+  background-color: #11202e !important;
+  border-color: #1c3245 !important;
+  color: #f8fafc !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/50 {
+  background-color: #152738 !important;
+  border-color: #1c3245 !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/80 {
+  background-color: #1b3044 !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-200\/90,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-100 {
+  border-color: #1c3245 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #1b3044 !important;
+  color: #f8fafc !important;
+  border-color: #2b4760 !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/80,
+html.dark .bg-emerald-50\/50,
+html.dark .bg-emerald-50\/40,
+html.dark .bg-teal-50,
+html.dark .bg-teal-50\/80 {
+  background-color: rgba(15, 157, 149, 0.15) !important;
+  border-color: rgba(15, 157, 149, 0.35) !important;
+}
+
+html.dark .text-emerald-800,
+html.dark .text-emerald-700,
+html.dark .text-teal-800,
+html.dark .text-teal-700 {
+  color: #8ee0d6 !important;
+}
+
+html.dark .bg-emerald-100,
+html.dark .bg-teal-100 {
+  background-color: rgba(15, 157, 149, 0.3) !important;
+  color: #e6f7f5 !important;
+}
+
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100\/80:hover {
+  background-color: #1b3044 !important;
+}
+
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1c3245 !important;
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.05);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #0f9d95;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #087f78;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
