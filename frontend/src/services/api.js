@@ -7,13 +7,54 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
+// =========================================================
+// ADD JWT TOKEN TO EVERY REQUEST
+// =========================================================
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// =========================================================
+// HANDLE COMMON API ERRORS
+// =========================================================
+
+api.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error("Unauthorized API request");
+
+      // Do not immediately redirect here if your
+      // Spring Security/JWT configuration handles it.
+    }
+
+    if (error.response?.status === 403) {
+      console.error("Forbidden API request");
+    }
+
+    if (error.response?.status === 404) {
+      console.error(
+        "API endpoint not found:",
+        error.config?.url
+      );
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;
