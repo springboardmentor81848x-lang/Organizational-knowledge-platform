@@ -1,26 +1,26 @@
 package com.knowledgegap.config;
 
-import java.util.List;
+import com.knowledgegap.security.JWTAuthenticationFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.knowledgegap.security.JWTAuthenticationFilter;
+import java.util.List;
 
 @Configuration
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
@@ -28,22 +28,126 @@ public class SecurityConfig {
     public SecurityConfig(
             JWTAuthenticationFilter jwtAuthenticationFilter) {
 
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // =========================================================
+    // ============================================================
+    // SECURITY FILTER CHAIN
+    // ============================================================
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
+
+        http
+            // ----------------------------------------------------
+            // CORS
+            // ----------------------------------------------------
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+            // ----------------------------------------------------
+            // CSRF
+            // ----------------------------------------------------
+            .csrf(csrf -> csrf.disable())
+
+            // ----------------------------------------------------
+            // SESSION
+            // ----------------------------------------------------
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(
+                    SessionCreationPolicy.STATELESS
+                )
+            )
+
+            // ----------------------------------------------------
+            // AUTHORIZATION
+            // ----------------------------------------------------
+            .authorizeHttpRequests(auth -> auth
+
+                // Authentication APIs
+                .requestMatchers(
+                    "/api/auth/**"
+                ).permitAll()
+
+                // Swagger
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
+                // ------------------------------------------------
+                // MANAGER DASHBOARD
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/manager-dashboard/**"
+                ).hasRole("MANAGER")
+
+                // ------------------------------------------------
+                // MANAGER APIs
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/manager/**"
+                ).hasRole("MANAGER")
+
+                // ------------------------------------------------
+                // HR APIs
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/hr/**"
+                ).hasRole("HR")
+
+                // ------------------------------------------------
+                // MENTOR APIs
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/mentor/**"
+                ).hasRole("MENTOR")
+
+                // ------------------------------------------------
+                // DEPARTMENT HEAD APIs
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/department-head/**"
+                ).hasRole("DEPARTMENT_HEAD")
+
+                // ------------------------------------------------
+                // SYSTEM ADMINISTRATOR APIs
+                // ------------------------------------------------
+                .requestMatchers(
+                    "/api/admin/**"
+                ).hasRole("SYSTEM_ADMINISTRATOR")
+
+                // ------------------------------------------------
+                // EVERYTHING ELSE
+                // ------------------------------------------------
+                .anyRequest().authenticated()
+            )
+
+            // ----------------------------------------------------
+            // JWT FILTER
+            // ----------------------------------------------------
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
+
+        return http.build();
+    }
+
+    // ============================================================
     // PASSWORD ENCODER
-    // =========================================================
+    // ============================================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 
-    // =========================================================
+    // ============================================================
     // CORS CONFIGURATION
-    // =========================================================
+    // ============================================================
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -51,29 +155,36 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * Allow both Vite development ports.
-         * This preserves your existing configuration.
-         */
         configuration.setAllowedOrigins(
-                List.of(
-                        "http://localhost:5173",
-                        "http://localhost:5174"
-                )
+            List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:5174"
+            )
         );
 
         configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS"
-                )
+            List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "PATCH",
+                "OPTIONS"
+            )
         );
 
         configuration.setAllowedHeaders(
-                List.of("*")
+            List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept"
+            )
+        );
+
+        configuration.setExposedHeaders(
+            List.of("Authorization")
         );
 
         configuration.setAllowCredentials(true);
@@ -82,175 +193,10 @@ public class SecurityConfig {
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration(
-                "/**",
-                configuration
+            "/**",
+            configuration
         );
 
         return source;
-    }
-
-    // =========================================================
-    // SECURITY FILTER CHAIN
-    // =========================================================
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http)
-            throws Exception {
-
-        http
-
-                // =================================================
-                // CORS
-                // =================================================
-
-                .cors(cors ->
-                        cors.configurationSource(
-                                corsConfigurationSource()
-                        )
-                )
-
-                // =================================================
-                // CSRF
-                // Disabled because JWT authentication is used
-                // =================================================
-
-                .csrf(
-                        AbstractHttpConfigurer::disable
-                )
-
-                // =================================================
-                // SESSION MANAGEMENT
-                // Stateless JWT authentication
-                // =================================================
-
-                .sessionManagement(
-                        session ->
-                                session.sessionCreationPolicy(
-                                        SessionCreationPolicy.STATELESS
-                                )
-                )
-
-                // =================================================
-                // AUTHORIZATION
-                // =================================================
-
-                .authorizeHttpRequests(
-                        auth -> auth
-
-                                // ---------------------------------
-                                // CORS preflight
-                                // ---------------------------------
-
-                                .requestMatchers(
-                                        HttpMethod.OPTIONS,
-                                        "/**"
-                                )
-                                .permitAll()
-
-                                // ---------------------------------
-                                // Authentication
-                                // ---------------------------------
-
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/auth/login"
-                                )
-                                .permitAll()
-
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/auth/signup"
-                                )
-                                .permitAll()
-
-                                .requestMatchers(
-                                        "/api/auth/**"
-                                )
-                                .permitAll()
-
-                                // ---------------------------------
-                                // AI
-                                // ---------------------------------
-
-                                .requestMatchers(
-                                        "/api/ai/**"
-                                )
-                                .permitAll()
-
-                                // ---------------------------------
-                                // Swagger
-                                // ---------------------------------
-
-                                .requestMatchers(
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/v3/api-docs/**"
-                                )
-                                .permitAll()
-
-                                // =================================
-                                // HR
-                                // =================================
-
-                                .requestMatchers(
-                                        "/api/hr/**"
-                                )
-                                .hasRole("HR")
-
-                                // =================================
-                                // MANAGER
-                                // =================================
-
-                                .requestMatchers(
-                                        "/api/manager/**"
-                                )
-                                .hasRole("MANAGER")
-
-                                // =================================
-                                // DEPARTMENT HEAD
-                                // =================================
-
-                                .requestMatchers(
-                                        "/api/department-head/**"
-                                )
-                                .hasRole("DEPARTMENT_HEAD")
-
-                                // =================================
-                                // SYSTEM ADMINISTRATOR
-                                // =================================
-
-                                .requestMatchers(
-                                        "/api/system-admin/**"
-                                )
-                                .hasRole("SYSTEM_ADMINISTRATOR")
-
-                                // =================================
-                                // EMPLOYEE
-                                // =================================
-
-                                .requestMatchers(
-                                        "/api/employee/**"
-                                )
-                                .hasRole("EMPLOYEE")
-
-                                // =================================
-                                // EVERYTHING ELSE
-                                // =================================
-
-                                .anyRequest()
-                                .authenticated()
-                )
-
-                // =================================================
-                // JWT FILTER
-                // =================================================
-
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                );
-
-        return http.build();
     }
 }

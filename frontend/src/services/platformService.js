@@ -26,7 +26,6 @@ export const getTargetRole = async (
   );
 };
 
-
 // =========================================================
 // COMPETENCIES
 // =========================================================
@@ -45,7 +44,6 @@ export const getCompetenciesByDesignation = async (
   );
 };
 
-
 // =========================================================
 // EMPLOYEE SKILLS
 // =========================================================
@@ -57,7 +55,6 @@ export const getEmployeeSkills = async (
     `/employee-skills/employee/${employeeId}`
   );
 };
-
 
 // =========================================================
 // AI LEARNING PATH
@@ -79,7 +76,6 @@ export const getAIRecommendation = (
   });
 };
 
-
 // =========================================================
 // ASK AI
 // =========================================================
@@ -94,7 +90,6 @@ export const askAIQuestion = async (
   });
 };
 
-
 // =========================================================
 // DEPARTMENT HEAD - TRAINING ADOPTION
 // =========================================================
@@ -104,5 +99,28 @@ export const getTrainingAdoption = async (
 ) => {
   return await api.get(
     `/department-head/training-adoption/${employeeIdentifier}`
+  );
+};
+
+// =========================================================
+// MANAGER ASSESSMENT
+// =========================================================
+
+// Get employee skills for Manager Assessment
+export const getEmployeeSkillsForManagerAssessment = async (
+  employeeIdentifier
+) => {
+  return await api.get(
+    `/manager-assessment/employee/${employeeIdentifier}/skills`
+  );
+};
+
+// Submit Manager Assessment
+export const submitManagerAssessment = async (
+  request
+) => {
+  return await api.post(
+    "/manager-assessment/submit",
+    request
   );
 };

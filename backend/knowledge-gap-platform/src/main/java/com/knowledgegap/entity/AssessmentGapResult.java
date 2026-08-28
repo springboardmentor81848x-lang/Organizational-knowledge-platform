@@ -29,6 +29,19 @@ public class AssessmentGapResult {
     @Column(name = "gap_severity")
     private String gapSeverity;
 
+    // =========================================================
+    // MODULE 5 - HISTORICAL COMPARISON
+    // =========================================================
+
+    @Column(name = "previous_level")
+    private Integer previousLevel;
+
+    @Column(name = "assessed_level")
+    private Integer assessedLevel;
+
+    @Column(name = "improvement")
+    private Integer improvement;
+
     public AssessmentGapResult() {
     }
 
@@ -86,5 +99,29 @@ public class AssessmentGapResult {
 
     public void setGapSeverity(String gapSeverity) {
         this.gapSeverity = gapSeverity;
+    }
+
+    public Integer getPreviousLevel() {
+        return previousLevel;
+    }
+
+    public void setPreviousLevel(Integer previousLevel) {
+        this.previousLevel = previousLevel;
+    }
+
+    public Integer getAssessedLevel() {
+        return assessedLevel;
+    }
+
+    public void setAssessedLevel(Integer assessedLevel) {
+        this.assessedLevel = assessedLevel;
+    }
+
+    public Integer getImprovement() {
+        return improvement;
+    }
+
+    public void setImprovement(Integer improvement) {
+        this.improvement = improvement;
     }
 }

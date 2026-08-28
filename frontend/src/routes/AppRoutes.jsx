@@ -25,6 +25,8 @@ import Skills from "../pages/Skills";
 import EmployeeSkillAssessment from "../pages/EmployeeSkillAssessment";
 import Assessment from "../pages/Assessment";
 import AssessmentResult from "../pages/AssessmentResult";
+import Reassessment from "../pages/Reassessment";
+import PeerAssessment from "../pages/PeerAssessment";
 import KnowledgeGap from "../pages/KnowledgeGap";
 import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
@@ -48,6 +50,8 @@ import MentorAllocation from "../pages/MentorAllocation";
 // ==================================================
 
 import ManagerDashboard from "../pages/ManagerDashboard";
+import TeamCoverage from "../pages/TeamCoverage";
+import ManagerAssessment from "../pages/ManagerAssessment";
 
 // ==================================================
 // DEPARTMENT HEAD
@@ -74,38 +78,31 @@ import CourseCatalog from "../pages/CourseCatalog";
 
 import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
 
-
 // ==================================================
 // GET ROLE FROM JWT
 // ==================================================
 
 const getRoleFromToken = () => {
-
   try {
-
-    const token =
-      localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     if (!token) {
       return "";
     }
 
-    const parts =
-      token.split(".");
+    const parts = token.split(".");
 
     if (parts.length !== 3) {
       return "";
     }
 
-    const base64Payload =
-      parts[1]
-        .replace(/-/g, "+")
-        .replace(/_/g, "/");
+    const base64Payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
 
-    const payload =
-      JSON.parse(
-        atob(base64Payload)
-      );
+    const payload = JSON.parse(
+      atob(base64Payload)
+    );
 
     let role =
       payload.role ||
@@ -113,30 +110,17 @@ const getRoleFromToken = () => {
       payload.authorities ||
       "";
 
-
     if (Array.isArray(role)) {
-      role =
-        role.length > 0
-          ? role[0]
-          : "";
+      role = role.length > 0 ? role[0] : "";
     }
 
-
     if (
-      Array.isArray(
-        payload.authorities
-      ) &&
+      Array.isArray(payload.authorities) &&
       payload.authorities.length > 0
     ) {
+      const authority = payload.authorities[0];
 
-      const authority =
-        payload.authorities[0];
-
-      if (
-        typeof authority ===
-        "object"
-      ) {
-
+      if (typeof authority === "object") {
         role =
           authority.authority ||
           role;
@@ -156,7 +140,6 @@ const getRoleFromToken = () => {
   }
 };
 
-
 // ==================================================
 // NORMALIZE ROLE
 // ==================================================
@@ -167,24 +150,19 @@ const normalizeRole = (role) => {
     return "";
   }
 
-
   if (Array.isArray(role)) {
-    role =
-      role[0] || "";
+    role = role[0] || "";
   }
-
 
   if (
     typeof role === "object" &&
     role !== null
   ) {
-
     role =
       role.authority ||
       role.role ||
       "";
   }
-
 
   return String(role)
     .toUpperCase()
@@ -192,7 +170,6 @@ const normalizeRole = (role) => {
     .replace(/_/g, " ")
     .trim();
 };
-
 
 // ==================================================
 // GET CURRENT ROLE
@@ -205,21 +182,16 @@ const getRole = () => {
     localStorage.getItem("userRole") ||
     "";
 
-
   if (
     !role ||
     role === "null" ||
     role === "undefined"
   ) {
-
-    role =
-      getRoleFromToken();
+    role = getRoleFromToken();
   }
-
 
   return normalizeRole(role);
 };
-
 
 // ==================================================
 // PROTECTED ROUTE
@@ -233,9 +205,7 @@ function ProtectedRoute({
   const token =
     localStorage.getItem("token");
 
-  const role =
-    getRole();
-
+  const role = getRole();
 
   if (!token) {
 
@@ -247,31 +217,21 @@ function ProtectedRoute({
     );
   }
 
-
   if (
     !allowedRoles ||
     allowedRoles.length === 0
   ) {
-
     return children;
   }
-
 
   const normalizedAllowedRoles =
-    allowedRoles.map(
-      normalizeRole
-    );
-
+    allowedRoles.map(normalizeRole);
 
   if (
-    normalizedAllowedRoles.includes(
-      role
-    )
+    normalizedAllowedRoles.includes(role)
   ) {
-
     return children;
   }
-
 
   return (
     <Navigate
@@ -280,7 +240,6 @@ function ProtectedRoute({
     />
   );
 }
-
 
 // ==================================================
 // APP ROUTES
@@ -306,7 +265,6 @@ function AppRoutes() {
         element={<Signup />}
       />
 
-
       {/* ==================================================
           COMMON
       ================================================== */}
@@ -320,12 +278,8 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           COMMON NOTIFICATIONS
-          
-          Employee / HR / Manager / Mentor /
-          System Administrator
       ================================================== */}
 
       <Route
@@ -347,7 +301,6 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           EMPLOYEE
       ================================================== */}
@@ -356,9 +309,7 @@ function AppRoutes() {
         path="/employee"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <EmployeeDashboard />
           </ProtectedRoute>
@@ -369,35 +320,37 @@ function AppRoutes() {
         path="/employee-dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <EmployeeDashboard />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          SKILL INVENTORY
+      ================================================== */}
+
       <Route
         path="/skills"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <Skills />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          ORIGINAL SKILL ASSESSMENT
+      ================================================== */}
+
       <Route
         path="/employee-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <EmployeeSkillAssessment />
           </ProtectedRoute>
@@ -408,9 +361,7 @@ function AppRoutes() {
         path="/employee/skill-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <EmployeeSkillAssessment />
           </ProtectedRoute>
@@ -421,22 +372,22 @@ function AppRoutes() {
         path="/skill-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <EmployeeSkillAssessment />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          ASSESSMENT
+      ================================================== */}
+
       <Route
         path="/employee/assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <Assessment />
           </ProtectedRoute>
@@ -447,48 +398,104 @@ function AppRoutes() {
         path="/employee/assessment/result"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <AssessmentResult />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          REASSESSMENT
+      ================================================== */}
+
+      <Route
+        path="/reassessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Reassessment />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/reassessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Reassessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          PEER ASSESSMENT
+      ================================================== */}
+
+      <Route
+        path="/peer-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <PeerAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/peer-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <PeerAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          KNOWLEDGE GAP
+      ================================================== */}
+
       <Route
         path="/knowledge-gap"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <KnowledgeGap />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          LEARNING PATH
+      ================================================== */}
+
       <Route
         path="/learning-path"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <LearningPath />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          TRAINING & LEARNING
+      ================================================== */}
+
       <Route
         path="/training-learning"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <TrainingLearning />
           </ProtectedRoute>
@@ -499,22 +506,22 @@ function AppRoutes() {
         path="/employee/training-learning"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <TrainingLearning />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          LEARNING PROGRESS
+      ================================================== */}
+
       <Route
         path="/learning-progress"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <LearningProgress />
           </ProtectedRoute>
@@ -525,14 +532,16 @@ function AppRoutes() {
         path="/employee/learning-progress"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <LearningProgress />
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          KNOWLEDGE SESSIONS
+      ================================================== */}
 
       <Route
         path="/knowledge-sessions"
@@ -548,13 +557,15 @@ function AppRoutes() {
         }
       />
 
+      {/* ==================================================
+          MENTORSHIP
+      ================================================== */}
+
       <Route
         path="/mentorship"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <Mentorship />
           </ProtectedRoute>
@@ -565,14 +576,16 @@ function AppRoutes() {
         path="/employee/mentorship"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <Mentorship />
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          EXPERT DIRECTORY
+      ================================================== */}
 
       <Route
         path="/expert-directory"
@@ -599,15 +612,12 @@ function AppRoutes() {
         path="/employee/expert-directory"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <ExpertDirectory />
           </ProtectedRoute>
         }
       />
-
 
       {/* ==================================================
           HR
@@ -617,9 +627,7 @@ function AppRoutes() {
         path="/hr"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <HRDashboard />
           </ProtectedRoute>
@@ -630,9 +638,7 @@ function AppRoutes() {
         path="/hr/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <HRDashboard />
           </ProtectedRoute>
@@ -643,9 +649,7 @@ function AppRoutes() {
         path="/hr/gap-intelligence"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <GapIntelligence />
           </ProtectedRoute>
@@ -656,9 +660,7 @@ function AppRoutes() {
         path="/hr/workforce-skills"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <WorkforceSkillInventory />
           </ProtectedRoute>
@@ -669,9 +671,7 @@ function AppRoutes() {
         path="/competency-framework"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <CompetencyFramework />
           </ProtectedRoute>
@@ -682,27 +682,24 @@ function AppRoutes() {
         path="/hr/mentor-allocation"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <MentorAllocation />
           </ProtectedRoute>
         }
       />
 
-
       {/* ==================================================
           MANAGER
       ================================================== */}
+
+      {/* Manager Dashboard */}
 
       <Route
         path="/manager"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MANAGER",
-            ]}
+            allowedRoles={["MANAGER"]}
           >
             <ManagerDashboard />
           </ProtectedRoute>
@@ -713,15 +710,139 @@ function AppRoutes() {
         path="/manager/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MANAGER",
-            ]}
+            allowedRoles={["MANAGER"]}
           >
             <ManagerDashboard />
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          TEAM SKILL COVERAGE
+      ================================================== */}
+
+      <Route
+        path="/team-skills"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <TeamCoverage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          TEAM SKILL GAPS
+          Will be implemented separately
+      ================================================== */}
+
+      <Route
+        path="/team-gaps"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          HIGH RISK GAPS
+          Will be implemented separately
+      ================================================== */}
+
+      <Route
+        path="/high-risk-gaps"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          EMPLOYEE PROGRESS
+          Will be implemented separately
+      ================================================== */}
+
+      <Route
+        path="/employee-progress"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          MANAGER ASSESSMENT
+      ================================================== */}
+
+      <Route
+        path="/manager-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          MANAGER REPORTS
+      ================================================== */}
+
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "MANAGER",
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+            ]}
+          >
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          MANAGER TRAINING
+      ================================================== */}
+
+      <Route
+        path="/training"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <TrainingLearning />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          MANAGER LEARNING INTERVENTIONS
+      ================================================== */}
+
+      <Route
+        path="/learning-interventions"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ==================================================
           DEPARTMENT HEAD
@@ -797,13 +918,12 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           DEPARTMENT HEAD REPORTS
       ================================================== */}
 
       <Route
-        path="/reports"
+        path="/department-head/reports"
         element={
           <ProtectedRoute
             allowedRoles={[
@@ -816,12 +936,8 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           DEPARTMENT HEAD NOTIFICATIONS
-          
-          IMPORTANT:
-          This is NOT /notifications.
       ================================================== */}
 
       <Route
@@ -838,7 +954,6 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           MENTOR
       ================================================== */}
@@ -847,9 +962,7 @@ function AppRoutes() {
         path="/mentor"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <MentorDashboard />
           </ProtectedRoute>
@@ -860,9 +973,7 @@ function AppRoutes() {
         path="/mentor/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <MentorDashboard />
           </ProtectedRoute>
@@ -873,9 +984,7 @@ function AppRoutes() {
         path="/learning-analytics"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <LearningAnalytics />
           </ProtectedRoute>
@@ -886,9 +995,7 @@ function AppRoutes() {
         path="/training-management"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <TrainingManagement />
           </ProtectedRoute>
@@ -899,25 +1006,23 @@ function AppRoutes() {
         path="/mentor-management"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <MentorManagement />
           </ProtectedRoute>
         }
       />
-      <Route
-          path="/training-catalog"
-          element={
-            <ProtectedRoute
-              allowedRoles={["MENTOR"]}
-            >
-              <CourseCatalog />
-            </ProtectedRoute>
-          }
-        />
 
+      <Route
+        path="/training-catalog"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MENTOR"]}
+          >
+            <CourseCatalog />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ==================================================
           SYSTEM ADMINISTRATOR
@@ -953,7 +1058,6 @@ function AppRoutes() {
         }
       />
 
-
       {/* ==================================================
           UNAUTHORIZED
       ================================================== */}
@@ -987,7 +1091,6 @@ function AppRoutes() {
           </div>
         }
       />
-
 
       {/* ==================================================
           DEFAULT

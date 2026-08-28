@@ -21,13 +21,18 @@ import com.knowledgegap.entity.AssessmentAnswer;
 import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.AssessmentQuestion;
+import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.Skill;
 
 import com.knowledgegap.repository.AssessmentAnswerRepository;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.AssessmentQuestionRepository;
 import com.knowledgegap.repository.AssessmentRepository;
+import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.SkillRepository;
 
 @Service
 public class AssessmentService {
@@ -46,6 +51,12 @@ public class AssessmentService {
 
     private final EmployeeSkillService employeeSkillService;
 
+    private final EmployeeSkillRepository employeeSkillRepository;
+
+    private final SkillRepository skillRepository;
+
+    private final KnowledgeGapService knowledgeGapService;
+
 
     // =========================================================
     // CONSTRUCTOR
@@ -58,7 +69,10 @@ public class AssessmentService {
             AssessmentAnswerRepository assessmentAnswerRepository,
             AssessmentGapResultRepository assessmentGapResultRepository,
             EmployeeService employeeService,
-            EmployeeSkillService employeeSkillService) {
+            EmployeeSkillService employeeSkillService,
+            EmployeeSkillRepository employeeSkillRepository,
+            SkillRepository skillRepository,
+            KnowledgeGapService knowledgeGapService) {
 
         this.assessmentRepository =
                 assessmentRepository;
@@ -80,6 +94,15 @@ public class AssessmentService {
 
         this.employeeSkillService =
                 employeeSkillService;
+
+        this.employeeSkillRepository =
+                employeeSkillRepository;
+
+        this.skillRepository =
+                skillRepository;
+
+        this.knowledgeGapService =
+                knowledgeGapService;
     }
 
 
@@ -133,15 +156,6 @@ public class AssessmentService {
     // =========================================================
     // GET ASSESSMENT BY ROLE ID
     // =========================================================
-    //
-    // Used by:
-    //
-    // GET /api/assessments/role/{roleId}
-    //
-    // This method reuses the existing
-    // getAssessmentByTargetRole() functionality.
-    //
-    // =========================================================
 
     public Assessment getAssessmentByRoleId(
             Long roleId) {
@@ -166,6 +180,26 @@ public class AssessmentService {
 
     // =========================================================
     // SUBMIT ASSESSMENT
+    // =========================================================
+    //
+    // MODULE 5:
+    //
+    // SELF
+    // PEER
+    // MANAGER
+    //
+    // Also handles:
+    //
+    // 1. Assessment attempt
+    // 2. Evaluator
+    // 3. Skill score
+    // 4. Previous skill level
+    // 5. Assessed skill level
+    // 6. Improvement
+    // 7. Employee skill update
+    // 8. Gap calculation
+    // 9. Automatic knowledge gap recalculation
+    //
     // =========================================================
 
     @Transactional
@@ -193,6 +227,22 @@ public class AssessmentService {
 
 
         // -----------------------------------------------------
+        // VALIDATE ASSESSMENT TYPE
+        // -----------------------------------------------------
+
+        AssessmentType assessmentType =
+                request.getAssessmentType();
+
+        if (assessmentType == null) {
+
+            throw new IllegalArgumentException(
+                    "Assessment type is required. "
+                            + "Use SELF, PEER or MANAGER."
+            );
+        }
+
+
+        // -----------------------------------------------------
         // GET ASSESSMENT
         // -----------------------------------------------------
 
@@ -211,7 +261,7 @@ public class AssessmentService {
 
 
         // -----------------------------------------------------
-        // GET EMPLOYEE
+        // GET EMPLOYEE BEING ASSESSED
         // -----------------------------------------------------
 
         Employee employee =
@@ -225,6 +275,67 @@ public class AssessmentService {
                                                 + employeeIdentifier
                                 )
                         );
+
+
+        // =====================================================
+        // GET EVALUATOR
+        // =====================================================
+
+        Employee evaluator = null;
+
+        if (assessmentType ==
+                AssessmentType.SELF) {
+
+            /*
+             * In self assessment, the employee is
+             * the evaluator.
+             */
+            evaluator = employee;
+
+        } else {
+
+            /*
+             * PEER and MANAGER assessments require
+             * another employee to be the evaluator.
+             */
+
+            if (request.getEvaluatorId() == null ||
+                    request.getEvaluatorId().isBlank()) {
+
+                throw new IllegalArgumentException(
+                        "Evaluator ID is required for "
+                                + assessmentType
+                                + " assessment."
+                );
+            }
+
+            evaluator =
+                    employeeService
+                            .getEmployeeByIdentifier(
+                                    request.getEvaluatorId()
+                            )
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Evaluator not found: "
+                                                    + request.getEvaluatorId()
+                                    )
+                            );
+
+
+            /*
+             * An employee cannot evaluate themselves
+             * as PEER or MANAGER.
+             */
+            if (evaluator.getId()
+                    .equals(employee.getId())) {
+
+                throw new IllegalArgumentException(
+                        "Employee cannot be their own "
+                                + assessmentType
+                                + " evaluator."
+                );
+            }
+        }
 
 
         // -----------------------------------------------------
@@ -246,7 +357,7 @@ public class AssessmentService {
 
 
         // =====================================================
-        // CREATE ATTEMPT
+        // CREATE ASSESSMENT ATTEMPT
         // =====================================================
 
         AssessmentAttempt attempt =
@@ -255,6 +366,14 @@ public class AssessmentService {
         attempt.setEmployee(employee);
 
         attempt.setAssessment(assessment);
+
+        attempt.setAssessmentType(
+                assessmentType
+        );
+
+        attempt.setEvaluator(
+                evaluator
+        );
 
         attempt.setCompletedAt(
                 LocalDateTime.now()
@@ -349,7 +468,9 @@ public class AssessmentService {
             // -------------------------------------------------
 
             String correctAnswer =
-                    getCorrectAnswerText(question);
+                    getCorrectAnswerText(
+                            question
+                    );
 
 
             // -------------------------------------------------
@@ -502,6 +623,10 @@ public class AssessmentService {
                 new ArrayList<>();
 
 
+        // =====================================================
+        // PROCESS EACH SKILL
+        // =====================================================
+
         for (
                 Map.Entry<String, Integer> entry :
                 skillTotalMarks.entrySet()
@@ -541,7 +666,7 @@ public class AssessmentService {
 
 
             // -------------------------------------------------
-            // GAP
+            // PERCENTAGE GAP
             // -------------------------------------------------
 
             int gap =
@@ -562,7 +687,94 @@ public class AssessmentService {
 
 
             // =================================================
-            // SAVE GAP RESULT
+            // FIND SKILL
+            // =================================================
+
+            Optional<Skill> skillOptional =
+                    skillRepository
+                            .findBySkillNameIgnoreCase(
+                                    skillName
+                            );
+
+
+            // =================================================
+            // GET PREVIOUS LEVEL
+            // =================================================
+            //
+            // IMPORTANT:
+            //
+            // We read the employee's CURRENT level
+            // BEFORE updating it.
+            //
+            // Example:
+            //
+            // Java = 2
+            //
+            // Assessment score = 80
+            //
+            // Assessed level = 4
+            //
+            // Improvement = 4 - 2 = +2
+            //
+            // =================================================
+
+            int previousLevel = 1;
+
+            if (skillOptional.isPresent()) {
+
+                Skill skill =
+                        skillOptional.get();
+
+                Optional<EmployeeSkill>
+                        existingEmployeeSkill =
+                        employeeSkillRepository
+                                .findByEmployeeAndSkill(
+                                        employee,
+                                        skill
+                                );
+
+                if (existingEmployeeSkill.isPresent() &&
+                        existingEmployeeSkill.get()
+                                .getCurrentLevel() != null) {
+
+                    previousLevel =
+                            normalizeLevel(
+                                    existingEmployeeSkill
+                                            .get()
+                                            .getCurrentLevel()
+                            );
+                }
+            }
+
+
+            // =================================================
+            // CONVERT SCORE TO EXISTING 1-5 LEVEL
+            // =================================================
+            //
+            // 90-100 = 5 Expert
+            // 75-89  = 4 Advanced
+            // 60-74  = 3 Competent
+            // 40-59  = 2 Intermediate
+            // 0-39   = 1 Beginner
+            //
+            // =================================================
+
+            int assessedLevel =
+                    convertScoreToLevel(
+                            actualScore
+                    );
+
+
+            // =================================================
+            // CALCULATE IMPROVEMENT
+            // =================================================
+
+            int improvement =
+                    assessedLevel - previousLevel;
+
+
+            // =================================================
+            // SAVE ASSESSMENT GAP RESULT
             // =================================================
 
             AssessmentGapResult gapResult =
@@ -592,6 +804,22 @@ public class AssessmentService {
                     gapSeverity
             );
 
+            // -------------------------------------------------
+            // MODULE 5 HISTORICAL COMPARISON
+            // -------------------------------------------------
+
+            gapResult.setPreviousLevel(
+                    previousLevel
+            );
+
+            gapResult.setAssessedLevel(
+                    assessedLevel
+            );
+
+            gapResult.setImprovement(
+                    improvement
+            );
+
             assessmentGapResultRepository.save(
                     gapResult
             );
@@ -616,12 +844,48 @@ public class AssessmentService {
         // =====================================================
         // UPDATE EMPLOYEE SKILL INVENTORY
         // =====================================================
+        //
+        // This updates existing skills and adds new skills.
+        //
+        // It does NOT delete the employee's other skills.
+        //
+        // =====================================================
 
         employeeSkillService
                 .replaceSkillsFromAssessment(
                         employee,
                         skillResults
                 );
+
+
+        // =====================================================
+        // AUTOMATIC KNOWLEDGE GAP RECALCULATION
+        // =====================================================
+        //
+        // After EmployeeSkill is updated, recalculate the
+        // employee's KnowledgeGap records.
+        //
+        // =====================================================
+
+        try {
+
+            knowledgeGapService
+                    .detectAndSaveGaps(
+                            employee
+                    );
+
+            System.out.println(
+                    "Knowledge gaps recalculated automatically "
+                            + "after assessment."
+            );
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "WARNING: Knowledge gap recalculation failed: "
+                            + e.getMessage()
+            );
+        }
 
 
         // =====================================================
@@ -667,7 +931,7 @@ public class AssessmentService {
     // GET CORRECT ANSWER TEXT
     // =========================================================
     //
-    // Supports BOTH:
+    // Supports:
     //
     // 1. Full answer text
     // 2. A / B / C / D option letter
@@ -691,7 +955,6 @@ public class AssessmentService {
         answer =
                 answer.trim();
 
-
         switch (answer.toUpperCase()) {
 
             case "A":
@@ -709,6 +972,73 @@ public class AssessmentService {
             default:
                 return answer;
         }
+    }
+
+
+    // =========================================================
+    // CONVERT SCORE TO EXISTING 1-5 LEVEL
+    // =========================================================
+    //
+    // YOUR EXISTING PROJECT SCALE
+    //
+    // 1 = Beginner
+    // 2 = Intermediate
+    // 3 = Competent
+    // 4 = Advanced
+    // 5 = Expert
+    //
+    // =========================================================
+
+    private int convertScoreToLevel(
+            int score) {
+
+        score =
+                Math.max(
+                        0,
+                        Math.min(
+                                100,
+                                score
+                        )
+                );
+
+        if (score >= 90) {
+            return 5;
+        }
+
+        if (score >= 75) {
+            return 4;
+        }
+
+        if (score >= 60) {
+            return 3;
+        }
+
+        if (score >= 40) {
+            return 2;
+        }
+
+        return 1;
+    }
+
+
+    // =========================================================
+    // NORMALIZE LEVEL
+    // =========================================================
+
+    private int normalizeLevel(
+            Integer level) {
+
+        if (level == null) {
+            return 1;
+        }
+
+        return Math.max(
+                1,
+                Math.min(
+                        5,
+                        level
+                )
+        );
     }
 
 

@@ -1,921 +1,1015 @@
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import {
+  LayoutDashboard,
   Users,
-  Target,
+  BarChart3,
   AlertTriangle,
+  Activity,
+  ClipboardCheck,
   GraduationCap,
-  TrendingUp,
-  BookOpen,
-  UserCheck,
   Lightbulb,
-  Flame,
+  Bell,
+  LogOut,
+  User,
+  RefreshCw,
 } from "lucide-react";
 
+import axios from "axios";
+
 function ManagerDashboard() {
-  // Temporary frontend data
-  // These can be replaced with backend API data later
+  const navigate = useNavigate();
 
-  const teamMembers = [
-    {
-      name: "Rahul",
-      role: "Java Developer",
-      skillCoverage: 85,
-      progress: 82,
-      training: 75,
-      status: "On Track",
-    },
-    {
-      name: "Anjali",
-      role: "Frontend Developer",
-      skillCoverage: 72,
-      progress: 76,
-      training: 80,
-      status: "On Track",
-    },
-    {
-      name: "Kiran",
-      role: "Backend Developer",
-      skillCoverage: 55,
-      progress: 58,
-      training: 45,
-      status: "Needs Attention",
-    },
-    {
-      name: "Priya",
-      role: "Software Engineer",
-      skillCoverage: 92,
-      progress: 91,
-      training: 90,
-      status: "Excellent",
-    },
-  ];
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const skillCoverage = [
-    { skill: "Java", coverage: 85 },
-    { skill: "Spring Boot", coverage: 72 },
-    { skill: "SQL", coverage: 78 },
-    { skill: "React", coverage: 65 },
-    { skill: "Git", coverage: 88 },
-  ];
+  // =========================================================
+  // LOGIN INFORMATION
+  // =========================================================
 
-  const highRiskGaps = [
-    {
-      skill: "Spring Boot",
-      employees: 5,
-      severity: "Critical",
-    },
-    {
-      skill: "React",
-      employees: 4,
-      severity: "High",
-    },
-    {
-      skill: "SQL",
-      employees: 3,
-      severity: "High",
-    },
-  ];
+  const employeeId = localStorage.getItem("employeeId");
+  const token = localStorage.getItem("token");
 
-  const heatmap = [
-    {
-      name: "Rahul",
-      skills: ["strong", "medium", "strong", "weak", "strong"],
-    },
-    {
-      name: "Anjali",
-      skills: ["strong", "strong", "medium", "strong", "strong"],
-    },
-    {
-      name: "Kiran",
-      skills: ["weak", "weak", "medium", "strong", "medium"],
-    },
-    {
-      name: "Priya",
-      skills: ["strong", "strong", "strong", "strong", "strong"],
-    },
-  ];
+  // =========================================================
+  // NAVIGATION LINK STYLE
+  // =========================================================
 
-  const heatmapColors = {
-    strong: "bg-emerald-500",
-    medium: "bg-amber-400",
-    weak: "bg-red-500",
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+      isActive
+        ? "bg-gray-700 text-white"
+        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+    }`;
+
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
   };
 
+  // =========================================================
+  // SIDEBAR
+  // =========================================================
+
+  const Sidebar = () => {
+    return (
+      <aside className="w-64 bg-gray-900 text-white flex flex-col fixed left-0 top-0 bottom-0 z-20">
+        {/* ===================================================
+            SIDEBAR HEADER
+        =================================================== */}
+
+        <div className="px-6 py-6 border-b border-gray-700">
+          <h1 className="text-xl font-bold">
+            Knowledge Gap
+          </h1>
+
+          <p className="text-sm text-gray-400 mt-1">
+            Manager Portal
+          </p>
+        </div>
+
+        {/* ===================================================
+            NAVIGATION
+        =================================================== */}
+
+        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+          <NavLink
+            to="/manager"
+            className={navLinkClass}
+          >
+            <LayoutDashboard size={20} />
+            <span>Manager Dashboard</span>
+          </NavLink>
+
+          <NavLink
+            to="/team-skills"
+            className={navLinkClass}
+          >
+            <Users size={20} />
+            <span>Team Skill Coverage</span>
+          </NavLink>
+
+          <NavLink
+            to="/team-gaps"
+            className={navLinkClass}
+          >
+            <BarChart3 size={20} />
+            <span>Team Skill Gaps</span>
+          </NavLink>
+
+          <NavLink
+            to="/high-risk-gaps"
+            className={navLinkClass}
+          >
+            <AlertTriangle size={20} />
+            <span>High-Risk Gaps</span>
+          </NavLink>
+
+          <NavLink
+            to="/employee-progress"
+            className={navLinkClass}
+          >
+            <Activity size={20} />
+            <span>Employee Progress</span>
+          </NavLink>
+
+          <NavLink
+            to="/manager-assessment"
+            className={navLinkClass}
+          >
+            <ClipboardCheck size={20} />
+            <span>Manager Assessment</span>
+          </NavLink>
+
+          <NavLink
+            to="/training"
+            className={navLinkClass}
+          >
+            <GraduationCap size={20} />
+            <span>Training & Learning</span>
+          </NavLink>
+
+          <NavLink
+            to="/learning-interventions"
+            className={navLinkClass}
+          >
+            <Lightbulb size={20} />
+            <span>Learning Interventions</span>
+          </NavLink>
+
+          <NavLink
+            to="/notifications"
+            className={navLinkClass}
+          >
+            <Bell size={20} />
+            <span>Notifications</span>
+          </NavLink>
+        </nav>
+
+        {/* ===================================================
+            USER + LOGOUT
+        =================================================== */}
+
+        <div className="border-t border-gray-700 p-3">
+          <div className="flex items-center gap-3 px-4 py-3 mb-2">
+            <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center">
+              <User size={18} />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                Manager
+              </p>
+
+              <p className="text-xs text-gray-400 truncate">
+                {employeeId || "Manager"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition"
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
+      </aside>
+    );
+  };
+
+  // =========================================================
+  // LOAD MANAGER DASHBOARD
+  // =========================================================
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // -------------------------------------------------------
+      // CHECK LOGIN
+      // -------------------------------------------------------
+
+      if (!token) {
+        setError("Your session has expired. Please login again.");
+        return;
+      }
+
+      // -------------------------------------------------------
+      // CHECK EMPLOYEE ID
+      // -------------------------------------------------------
+
+      if (!employeeId) {
+        setError(
+          "Manager employee ID not found. Please login again."
+        );
+        return;
+      }
+
+      console.log("====================================");
+      console.log("MANAGER DASHBOARD REQUEST");
+      console.log("Employee ID:", employeeId);
+      console.log("Token exists:", !!token);
+      console.log("====================================");
+
+      // -------------------------------------------------------
+      // API REQUEST
+      // -------------------------------------------------------
+      // IMPORTANT:
+      // employeeId = business ID such as EMP1001
+      //
+      // userId = database primary key such as 43
+      //
+      // Manager Dashboard endpoint expects employeeId.
+      // -------------------------------------------------------
+
+      const response = await axios.get(
+        `http://localhost:8080/api/manager-dashboard/manager/${employeeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(
+        "Manager Dashboard Response:",
+        response.data
+      );
+
+      setDashboard(response.data);
+    } catch (err) {
+      console.error(
+        "Error loading manager dashboard:",
+        err
+      );
+
+      // -------------------------------------------------------
+      // UNAUTHORIZED
+      // -------------------------------------------------------
+
+      if (err.response?.status === 401) {
+        console.error(
+          "JWT token is invalid or expired."
+        );
+
+        localStorage.clear();
+
+        alert(
+          "Your session has expired. Please login again."
+        );
+
+        navigate("/login");
+        return;
+      }
+
+      // -------------------------------------------------------
+      // FORBIDDEN
+      // -------------------------------------------------------
+
+      if (err.response?.status === 403) {
+        setError(
+          "You do not have permission to access the Manager Dashboard."
+        );
+        return;
+      }
+
+      // -------------------------------------------------------
+      // OTHER SERVER ERROR
+      // -------------------------------------------------------
+
+      if (err.response?.data?.message) {
+        setError(
+          err.response.data.message
+        );
+      } else if (typeof err.response?.data === "string") {
+        setError(
+          err.response.data
+        );
+      } else {
+        setError(
+          "Unable to load manager dashboard."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================================================
+  // LOAD DASHBOARD ON PAGE LOAD
+  // =========================================================
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  // =========================================================
+  // HELPERS
+  // =========================================================
+
+  const getSeverityClass = (severity) => {
+    switch (severity?.toUpperCase()) {
+      case "CRITICAL":
+        return "bg-red-100 text-red-700";
+
+      case "HIGH":
+        return "bg-orange-100 text-orange-700";
+
+      case "MEDIUM":
+        return "bg-yellow-100 text-yellow-700";
+
+      case "LOW":
+        return "bg-blue-100 text-blue-700";
+
+      default:
+        return "bg-green-100 text-green-700";
+    }
+  };
+
+  const getGapBarClass = (percentage) => {
+    if (percentage >= 50) {
+      return "bg-red-500";
+    }
+
+    if (percentage >= 30) {
+      return "bg-orange-500";
+    }
+
+    if (percentage >= 15) {
+      return "bg-yellow-500";
+    }
+
+    return "bg-green-500";
+  };
+
+  // =========================================================
+  // LOADING STATE
+  // =========================================================
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+
+        <main className="ml-64 flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw
+              size={35}
+              className="animate-spin mx-auto text-gray-600"
+            />
+
+            <p className="mt-4 text-gray-600">
+              Loading Manager Dashboard...
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // ERROR STATE
+  // =========================================================
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+
+        <main className="ml-64 flex-1 p-8">
+          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8">
+            <div className="flex items-center gap-3 text-red-600">
+              <AlertTriangle size={28} />
+
+              <h2 className="text-xl font-bold">
+                Unable to Load Dashboard
+              </h2>
+            </div>
+
+            <p className="mt-4 text-gray-600">
+              {error}
+            </p>
+
+            <button
+              onClick={loadDashboard}
+              className="mt-6 flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition"
+            >
+              <RefreshCw size={18} />
+              Try Again
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // SAFE DATA
+  // =========================================================
+
+  const teamGapHeatmap =
+    dashboard?.teamGapHeatmap || [];
+
+  const skillCoverage =
+    dashboard?.skillCoverage || [];
+
+  const highRiskAlerts =
+    dashboard?.highRiskAlerts || [];
+
+  const employeeProgress =
+    dashboard?.employeeProgress || [];
+
+  const trainingAdoption =
+    dashboard?.trainingAdoption || {};
+
+  // =========================================================
+  // TRAINING VALUES
+  // =========================================================
+
+  const enrolled =
+    Number(trainingAdoption.enrolled) || 0;
+
+  const inProgress =
+    Number(trainingAdoption.inProgress) || 0;
+
+  const completed =
+    Number(trainingAdoption.completed) || 0;
+
+  const completionRate =
+    enrolled > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (completed / enrolled) * 100
+          )
+        )
+      : 0;
+
+  // =========================================================
+  // MAIN DASHBOARD
+  // =========================================================
+
   return (
-    <div className="flex bg-slate-100 min-h-screen">
+    <div className="min-h-screen bg-gray-100">
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
 
-      {/* Sidebar */}
-      <Sidebar role="MANAGER" />
+      <Sidebar />
 
-      <div className="flex-1">
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
 
-        {/* Navbar */}
-        <Navbar title="Manager Dashboard" />
+      <main className="ml-64 p-8">
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
-        <div className="p-8">
-
-          {/* ============================= */}
-          {/* HEADER */}
-          {/* ============================= */}
-
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
               Manager Dashboard
             </h1>
 
-            <p className="text-slate-500 mt-2">
-              Monitor your team's skills, knowledge gaps,
-              training and learning progress.
+            <p className="text-gray-500 mt-1">
+              Monitor your team's skills, knowledge gaps
+              and learning progress.
             </p>
           </div>
 
-
-          {/* ============================= */}
-          {/* SUMMARY CARDS */}
-          {/* ============================= */}
-
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
-
-            {/* Team Members */}
-            <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-                  <p className="text-indigo-100">
-                    Team Members
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-2">
-                    18
-                  </h2>
-
-                  <p className="text-sm text-indigo-100 mt-2">
-                    Active team members
-                  </p>
-                </div>
-
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <Users size={34} />
-                </div>
-
-              </div>
-            </div>
-
-
-            {/* Skill Coverage */}
-            <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-                  <p className="text-blue-100">
-                    Team Skill Coverage
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-2">
-                    76%
-                  </h2>
-
-                  <p className="text-sm text-blue-100 mt-2">
-                    ↑ 6% this month
-                  </p>
-                </div>
-
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <Target size={34} />
-                </div>
-
-              </div>
-            </div>
-
-
-            {/* High Risk Gaps */}
-            <div className="bg-gradient-to-br from-red-500 to-rose-600 text-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-                  <p className="text-red-100">
-                    High-Risk Gaps
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-2">
-                    7
-                  </h2>
-
-                  <p className="text-sm text-red-100 mt-2">
-                    Requires attention
-                  </p>
-                </div>
-
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <AlertTriangle size={34} />
-                </div>
-
-              </div>
-            </div>
-
-
-            {/* Training Adoption */}
-            <div className="bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-                  <p className="text-purple-100">
-                    Training Adoption
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-2">
-                    68%
-                  </h2>
-
-                  <p className="text-sm text-purple-100 mt-2">
-                    ↑ 10% this month
-                  </p>
-                </div>
-
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <GraduationCap size={34} />
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-
-
-          {/* ============================= */}
-          {/* TEAM GAP HEATMAP */}
-          {/* ============================= */}
-
-          <div className="bg-white rounded-2xl shadow-lg mt-8 p-6">
-
-            <div className="flex justify-between items-center mb-6">
-
-              <div className="flex items-center gap-3">
-
-                <div className="bg-orange-100 text-orange-600 p-3 rounded-xl">
-                  <Flame size={24} />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">
-                    Team Gap Heatmap
-                  </h2>
-
-                  <p className="text-sm text-slate-500">
-                    Skill proficiency across team members
-                  </p>
-                </div>
-
-              </div>
-
-
-              {/* Heatmap Legend */}
-              <div className="flex gap-4 text-sm">
-
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 bg-emerald-500 rounded-sm"></span>
-                  Strong
-                </span>
-
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 bg-amber-400 rounded-sm"></span>
-                  Moderate
-                </span>
-
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 bg-red-500 rounded-sm"></span>
-                  Gap
-                </span>
-
-              </div>
-
-            </div>
-
-
-            <div className="overflow-x-auto">
-
-              <table className="w-full">
-
-                <thead>
-
-                  <tr className="border-b">
-
-                    <th className="text-left py-4 px-3 text-slate-600">
-                      Employee
-                    </th>
-
-                    {[
-                      "Java",
-                      "Spring Boot",
-                      "SQL",
-                      "React",
-                      "Git",
-                    ].map((skill) => (
-
-                      <th
-                        key={skill}
-                        className="text-center py-4 px-3 text-slate-600"
-                      >
-                        {skill}
-                      </th>
-
-                    ))}
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  {heatmap.map((member) => (
-
-                    <tr
-                      key={member.name}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="py-4 px-3 font-semibold text-slate-700">
-                        {member.name}
-                      </td>
-
-                      {member.skills.map((level, index) => (
-
-                        <td
-                          key={index}
-                          className="text-center py-4 px-3"
-                        >
-
-                          <div
-                            className={`w-10 h-10 mx-auto rounded-lg ${heatmapColors[level]} shadow-sm`}
-                          ></div>
-
-                        </td>
-
-                      ))}
-
-                    </tr>
-
-                  ))}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          </div>
-
-
-          {/* ============================= */}
-          {/* SKILL COVERAGE + HIGH RISK */}
-          {/* ============================= */}
-
-          <div className="grid xl:grid-cols-2 gap-6 mt-8">
-
-            {/* Team Skill Coverage */}
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex items-center gap-3 mb-6">
-
-                <div className="bg-blue-100 text-blue-600 p-3 rounded-xl">
-                  <Target size={24} />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">
-                    Team Skill Coverage
-                  </h2>
-
-                  <p className="text-sm text-slate-500">
-                    Current coverage by skill
-                  </p>
-                </div>
-
-              </div>
-
-
-              {skillCoverage.map((item) => (
-
-                <div
-                  key={item.skill}
-                  className="mb-6"
-                >
-
-                  <div className="flex justify-between mb-2">
-
-                    <span className="font-medium text-slate-700">
-                      {item.skill}
-                    </span>
-
-                    <span className="font-semibold text-slate-600">
-                      {item.coverage}%
-                    </span>
-
-                  </div>
-
-
-                  <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
-
-                    <div
-                      className={`h-3 rounded-full ${
-                        item.coverage >= 80
-                          ? "bg-gradient-to-r from-emerald-400 to-green-600"
-                          : item.coverage >= 60
-                          ? "bg-gradient-to-r from-yellow-400 to-orange-500"
-                          : "bg-gradient-to-r from-red-400 to-red-600"
-                      }`}
-                      style={{
-                        width: `${item.coverage}%`,
-                      }}
-                    ></div>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
-
-
-            {/* High Risk Gaps */}
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-
-              <div className="flex items-center gap-3 mb-6">
-
-                <div className="bg-red-100 text-red-600 p-3 rounded-xl">
-                  <AlertTriangle size={24} />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">
-                    High-Risk Skill Gaps
-                  </h2>
-
-                  <p className="text-sm text-slate-500">
-                    Skills requiring immediate attention
-                  </p>
-                </div>
-
-              </div>
-
-
-              <div className="space-y-4">
-
-                {highRiskGaps.map((gap) => (
-
-                  <div
-                    key={gap.skill}
-                    className={`p-4 rounded-xl border-l-4 ${
-                      gap.severity === "Critical"
-                        ? "bg-red-50 border-red-500"
-                        : "bg-orange-50 border-orange-500"
-                    }`}
-                  >
-
-                    <div className="flex justify-between items-center">
-
-                      <div>
-
-                        <h3 className="font-bold text-slate-800">
-                          {gap.skill}
-                        </h3>
-
-                        <p className="text-sm text-slate-500 mt-1">
-                          {gap.employees} employees below
-                          required level
-                        </p>
-
-                      </div>
-
-
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          gap.severity === "Critical"
-                            ? "bg-red-500 text-white"
-                            : "bg-orange-500 text-white"
-                        }`}
-                      >
-                        {gap.severity}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* ============================= */}
-          {/* TRAINING ADOPTION */}
-          {/* ============================= */}
-
-          <div className="bg-white rounded-2xl shadow-lg mt-8 p-6">
-
-            <div className="flex items-center gap-3 mb-6">
-
-              <div className="bg-purple-100 text-purple-600 p-3 rounded-xl">
-                <GraduationCap size={24} />
-              </div>
-
+          <button
+            onClick={loadDashboard}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          >
+            <RefreshCw size={18} />
+            Refresh
+          </button>
+        </div>
+
+        {/* ===================================================
+            OVERVIEW CARDS
+        =================================================== */}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+          {/* TEAM SIZE */}
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-500">
+                  Team Size
+                </p>
 
-                <h2 className="text-xl font-bold text-slate-800">
-                  Training Adoption
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  {dashboard?.teamSize ?? 0}
                 </h2>
 
-                <p className="text-sm text-slate-500">
-                  Team participation in recommended learning
+                <p className="text-xs text-gray-500 mt-2">
+                  Employees in your department
                 </p>
-
               </div>
 
+              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                <Users
+                  size={24}
+                  className="text-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SKILL GAPS */}
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">
+                  Skill Gaps
+                </p>
+
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  {dashboard?.skillGaps ?? 0}
+                </h2>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Identified skill gaps
+                </p>
+              </div>
+
+              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                <BarChart3
+                  size={24}
+                  className="text-orange-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* IN TRAINING */}
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">
+                  In Training
+                </p>
+
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  {dashboard?.inTraining ?? 0}
+                </h2>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Employees currently learning
+                </p>
+              </div>
+
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                <GraduationCap
+                  size={24}
+                  className="text-blue-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* HIGH RISK GAPS */}
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">
+                  High Risk Gaps
+                </p>
+
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  {dashboard?.highRiskGaps ?? 0}
+                </h2>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  High or critical gaps
+                </p>
+              </div>
+
+              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
+                <AlertTriangle
+                  size={24}
+                  className="text-red-600"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ===================================================
+            TEAM GAP HEATMAP
+        =================================================== */}
+
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              Team Gap Heatmap
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Average knowledge gap by skill across your team
+            </p>
+          </div>
+
+          {teamGapHeatmap.length === 0 ? (
+            <div className="py-10 text-center text-gray-500">
+              No skill gap data available.
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {teamGapHeatmap.map((item, index) => {
+                const gapPercentage =
+                  Number(item.gapPercentage) || 0;
+
+                return (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-800">
+                        {item.skillName}
+                      </span>
+
+                      <span className="text-sm font-semibold text-gray-700">
+                        {gapPercentage}%
+                      </span>
+                    </div>
+
+                    <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${getGapBarClass(
+                          gapPercentage
+                        )}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              gapPercentage
+                            )
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-1 text-xs text-gray-500">
+                      Severity: {item.severity || "LOW"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* ===================================================
+            SKILL COVERAGE + TRAINING ADOPTION
+        =================================================== */}
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+          {/* =================================================
+              DEPARTMENT SKILL COVERAGE
+          ================================================= */}
+
+          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                Department Skill Coverage
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Average current skill level against required level
+              </p>
             </div>
 
+            {skillCoverage.length === 0 ? (
+              <div className="py-10 text-center text-gray-500">
+                No skill coverage data available.
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {skillCoverage.map((item, index) => {
+                  const coveragePercentage =
+                    Number(
+                      item.coveragePercentage
+                    ) || 0;
 
-            <div className="grid md:grid-cols-3 gap-6">
+                  return (
+                    <div key={index}>
+                      <div className="flex justify-between mb-2">
+                        <span className="font-medium text-gray-800">
+                          {item.skillName}
+                        </span>
 
-              {/* Completed */}
+                        <span className="font-semibold text-gray-700">
+                          {coveragePercentage}%
+                        </span>
+                      </div>
 
-              <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-6 border border-green-200">
+                      <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-800 rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                coveragePercentage
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-                <p className="text-green-700 font-medium">
-                  Completed
+          {/* =================================================
+              TRAINING ADOPTION
+          ================================================= */}
+
+          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                Training Adoption
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Training enrollment and completion overview
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {/* ENROLLED */}
+
+              <div className="bg-gray-50 rounded-xl p-5 text-center">
+                <p className="text-sm text-gray-500">
+                  Enrolled
                 </p>
 
-                <h3 className="text-3xl font-bold text-green-800 mt-2">
-                  45%
-                </h3>
-
-                <div className="mt-4 bg-green-200 rounded-full h-2">
-
-                  <div
-                    className="bg-green-600 h-2 rounded-full"
-                    style={{ width: "45%" }}
-                  ></div>
-
-                </div>
-
+                <p className="text-3xl font-bold text-gray-900 mt-2">
+                  {enrolled}
+                </p>
               </div>
 
+              {/* IN PROGRESS */}
 
-              {/* In Progress */}
-
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-100 rounded-xl p-6 border border-blue-200">
-
-                <p className="text-blue-700 font-medium">
+              <div className="bg-blue-50 rounded-xl p-5 text-center">
+                <p className="text-sm text-blue-600">
                   In Progress
                 </p>
 
-                <h3 className="text-3xl font-bold text-blue-800 mt-2">
-                  23%
-                </h3>
-
-                <div className="mt-4 bg-blue-200 rounded-full h-2">
-
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: "23%" }}
-                  ></div>
-
-                </div>
-
+                <p className="text-3xl font-bold text-blue-700 mt-2">
+                  {inProgress}
+                </p>
               </div>
 
+              {/* COMPLETED */}
 
-              {/* Not Started */}
-
-              <div className="bg-gradient-to-br from-red-50 to-rose-100 rounded-xl p-6 border border-red-200">
-
-                <p className="text-red-700 font-medium">
-                  Not Started
+              <div className="bg-green-50 rounded-xl p-5 text-center">
+                <p className="text-sm text-green-600">
+                  Completed
                 </p>
 
-                <h3 className="text-3xl font-bold text-red-800 mt-2">
-                  32%
-                </h3>
-
-                <div className="mt-4 bg-red-200 rounded-full h-2">
-
-                  <div
-                    className="bg-red-500 h-2 rounded-full"
-                    style={{ width: "32%" }}
-                  ></div>
-
-                </div>
-
+                <p className="text-3xl font-bold text-green-700 mt-2">
+                  {completed}
+                </p>
               </div>
-
             </div>
 
+            {/* COMPLETION RATE */}
+
+            <div className="mt-8">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-500">
+                  Completion Rate
+                </span>
+
+                <span className="font-semibold text-gray-700">
+                  {completionRate}%
+                </span>
+              </div>
+
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 rounded-full transition-all"
+                  style={{
+                    width: `${completionRate}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* ===================================================
+            HIGH-RISK SKILL GAP ALERTS
+        =================================================== */}
+
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                High-Risk Skill Gap Alerts
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Employees requiring immediate skill development attention
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertTriangle size={20} />
+
+              <span className="font-semibold">
+                {highRiskAlerts.length} Alerts
+              </span>
+            </div>
           </div>
 
-
-          {/* ============================= */}
-          {/* INDIVIDUAL PROGRESS */}
-          {/* ============================= */}
-
-          <div className="bg-white rounded-2xl shadow-lg mt-8 p-6">
-
-            <div className="flex items-center gap-3 mb-6">
-
-              <div className="bg-green-100 text-green-600 p-3 rounded-xl">
-                <TrendingUp size={24} />
+          {highRiskAlerts.length === 0 ? (
+            <div className="py-10 text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <span className="text-green-600 text-xl">
+                  ✓
+                </span>
               </div>
 
-              <div>
+              <p className="mt-3 font-medium text-gray-700">
+                No high-risk skill gaps detected.
+              </p>
 
-                <h2 className="text-xl font-bold text-slate-800">
-                  Individual Progress
-                </h2>
-
-                <p className="text-sm text-slate-500">
-                  Monitor team member learning progress
-                </p>
-
-              </div>
-
+              <p className="text-sm text-gray-500 mt-1">
+                Your team is currently in a healthy state.
+              </p>
             </div>
-
-
+          ) : (
             <div className="overflow-x-auto">
-
               <table className="w-full">
-
                 <thead>
-
-                  <tr className="border-b bg-slate-50">
-
-                    <th className="text-left py-4 px-3">
+                  <tr className="border-b border-gray-200 text-left">
+                    <th className="pb-3 text-sm font-semibold text-gray-600">
                       Employee
                     </th>
 
-                    <th className="text-left">
-                      Role
+                    <th className="pb-3 text-sm font-semibold text-gray-600">
+                      Employee ID
                     </th>
 
-                    <th className="text-left">
-                      Skill Coverage
+                    <th className="pb-3 text-sm font-semibold text-gray-600">
+                      Skill
                     </th>
 
-                    <th className="text-left">
-                      Learning Progress
+                    <th className="pb-3 text-sm font-semibold text-gray-600">
+                      Gap
                     </th>
 
-                    <th className="text-left">
-                      Training
+                    <th className="pb-3 text-sm font-semibold text-gray-600">
+                      Severity
                     </th>
-
-                    <th className="text-left">
-                      Status
-                    </th>
-
                   </tr>
-
                 </thead>
 
-
                 <tbody>
+                  {highRiskAlerts.map(
+                    (alert, index) => {
+                      const gapPercentage =
+                        Number(
+                          alert.gapPercentage
+                        ) || 0;
 
-                  {teamMembers.map((member) => (
-
-                    <tr
-                      key={member.name}
-                      className="border-b hover:bg-indigo-50/50 transition"
-                    >
-
-                      <td className="py-4 px-3">
-
-                        <div className="flex items-center gap-3">
-
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold">
-                            {member.name.charAt(0)}
-                          </div>
-
-                          <span className="font-semibold text-slate-700">
-                            {member.name}
-                          </span>
-
-                        </div>
-
-                      </td>
-
-
-                      <td className="text-slate-500">
-                        {member.role}
-                      </td>
-
-
-                      <td>
-
-                        <div className="flex items-center gap-2">
-
-                          <div className="w-20 bg-slate-200 rounded-full h-2">
-
-                            <div
-                              className="bg-gradient-to-r from-blue-400 to-indigo-600 h-2 rounded-full"
-                              style={{
-                                width: `${member.skillCoverage}%`,
-                              }}
-                            ></div>
-
-                          </div>
-
-                          <span className="text-sm font-medium">
-                            {member.skillCoverage}%
-                          </span>
-
-                        </div>
-
-                      </td>
-
-
-                      <td>
-
-                        <div className="flex items-center gap-2">
-
-                          <div className="w-20 bg-slate-200 rounded-full h-2">
-
-                            <div
-                              className="bg-gradient-to-r from-emerald-400 to-green-600 h-2 rounded-full"
-                              style={{
-                                width: `${member.progress}%`,
-                              }}
-                            ></div>
-
-                          </div>
-
-                          <span className="text-sm font-medium">
-                            {member.progress}%
-                          </span>
-
-                        </div>
-
-                      </td>
-
-
-                      <td>
-
-                        <span className="font-semibold text-purple-600">
-                          {member.training}%
-                        </span>
-
-                      </td>
-
-
-                      <td>
-
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            member.status === "Excellent"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : member.status === "On Track"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-amber-100 text-amber-700"
-                          }`}
+                      return (
+                        <tr
+                          key={index}
+                          className="border-b border-gray-100 last:border-0"
                         >
-                          {member.status}
-                        </span>
+                          <td className="py-4 font-medium text-gray-800">
+                            {alert.employeeName}
+                          </td>
 
-                      </td>
+                          <td className="py-4 text-gray-500">
+                            {alert.employeeId}
+                          </td>
 
-                    </tr>
+                          <td className="py-4 text-gray-700">
+                            {alert.skillName}
+                          </td>
 
-                  ))}
+                          <td className="py-4 font-semibold text-red-600">
+                            {gapPercentage}%
+                          </td>
 
+                          <td className="py-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${getSeverityClass(
+                                alert.severity
+                              )}`}
+                            >
+                              {alert.severity}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
                 </tbody>
-
               </table>
-
             </div>
+          )}
+        </section>
 
+        {/* ===================================================
+            EMPLOYEE PROGRESS
+        =================================================== */}
+
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              Employee Progress
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Training progress across your team
+            </p>
           </div>
 
-
-          {/* ============================= */}
-          {/* LEARNING INTERVENTIONS */}
-          {/* ============================= */}
-
-          <div className="bg-gradient-to-br from-slate-800 to-indigo-950 rounded-2xl shadow-lg mt-8 p-6 text-white">
-
-            <div className="flex items-center gap-3 mb-6">
-
-              <div className="bg-yellow-400/20 text-yellow-300 p-3 rounded-xl">
-                <Lightbulb size={24} />
-              </div>
-
-              <div>
-
-                <h2 className="text-xl font-bold">
-                  Recommended Learning Interventions
-                </h2>
-
-                <p className="text-slate-300 text-sm">
-                  Suggested actions based on team skill gaps
-                </p>
-
-              </div>
-
+          {employeeProgress.length === 0 ? (
+            <div className="py-10 text-center text-gray-500">
+              No employee training progress available.
             </div>
+          ) : (
+            <div className="space-y-5">
+              {employeeProgress.map(
+                (employee, index) => {
+                  const progressPercentage =
+                    Number(
+                      employee.progressPercentage
+                    ) || 0;
 
+                  return (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-xl p-5"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {employee.employeeName}
+                          </p>
 
-            <div className="grid md:grid-cols-3 gap-5">
+                          <p className="text-xs text-gray-500 mt-1">
+                            {employee.employeeId}
+                          </p>
+                        </div>
 
-              {/* Spring Boot */}
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">
+                            {progressPercentage}%
+                          </p>
 
-              <div className="bg-white/10 backdrop-blur rounded-xl p-5 border border-white/10 hover:bg-white/15 transition">
+                          <p className="text-xs text-gray-500">
+                            Overall Progress
+                          </p>
+                        </div>
+                      </div>
 
-                <BookOpen
-                  size={28}
-                  className="text-cyan-300 mb-4"
-                />
-
-                <h3 className="font-semibold text-lg">
-                  Spring Boot Training
-                </h3>
-
-                <p className="text-sm text-slate-300 mt-2">
-                  5 team members have significant Spring Boot
-                  knowledge gaps.
-                </p>
-
-                <button className="mt-5 bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                  Recommend Training
-                </button>
-
-              </div>
-
-
-              {/* React */}
-
-              <div className="bg-white/10 backdrop-blur rounded-xl p-5 border border-white/10 hover:bg-white/15 transition">
-
-                <GraduationCap
-                  size={28}
-                  className="text-purple-300 mb-4"
-                />
-
-                <h3 className="font-semibold text-lg">
-                  React Learning Path
-                </h3>
-
-                <p className="text-sm text-slate-300 mt-2">
-                  4 employees would benefit from React
-                  development training.
-                </p>
-
-                <button className="mt-5 bg-purple-500 hover:bg-purple-400 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                  Recommend Learning
-                </button>
-
-              </div>
-
-
-              {/* Mentoring */}
-
-              <div className="bg-white/10 backdrop-blur rounded-xl p-5 border border-white/10 hover:bg-white/15 transition">
-
-                <UserCheck
-                  size={28}
-                  className="text-emerald-300 mb-4"
-                />
-
-                <h3 className="font-semibold text-lg">
-                  Individual Mentoring
-                </h3>
-
-                <p className="text-sm text-slate-300 mt-2">
-                  3 employees may require additional mentoring
-                  support.
-                </p>
-
-                <button className="mt-5 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                  View Employees
-                </button>
-
-              </div>
-
+                      <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-800 rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                progressPercentage
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+              )}
             </div>
-
-          </div>
-
-        </div>
-      </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

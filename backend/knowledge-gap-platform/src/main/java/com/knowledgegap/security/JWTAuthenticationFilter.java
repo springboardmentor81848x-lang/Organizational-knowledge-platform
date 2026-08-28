@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-public class JWTAuthenticationFilter extends OncePerRequestFilter {
+public class JWTAuthenticationFilter
+        extends OncePerRequestFilter {
 
     private final JWTService jwtService;
     private final CustomUserDetailsService userDetailsService;
@@ -35,35 +36,59 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        System.out.println("==============================================");
+        System.out.println(
+                "================================================"
+        );
+
         System.out.println("JWT FILTER");
-        System.out.println("Request: "
-                + request.getMethod()
-                + " "
-                + request.getRequestURI());
+        System.out.println(
+                "Request: "
+                        + request.getMethod()
+                        + " "
+                        + request.getRequestURI()
+        );
 
         String authHeader =
                 request.getHeader("Authorization");
 
+        // -----------------------------------------------------
+        // NO TOKEN
+        // -----------------------------------------------------
+
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
 
-            System.out.println("No Bearer token found.");
+            System.out.println(
+                    "No Bearer token found."
+            );
 
             filterChain.doFilter(request, response);
             return;
         }
 
-        System.out.println("Bearer token found.");
+        System.out.println(
+                "Bearer token found."
+        );
 
-        String jwt = authHeader.substring(7);
+        String jwt =
+                authHeader.substring(7);
 
         try {
+
+            // -------------------------------------------------
+            // EXTRACT EMAIL
+            // -------------------------------------------------
 
             String email =
                     jwtService.extractUsername(jwt);
 
-            System.out.println("JWT Email: " + email);
+            System.out.println(
+                    "JWT Email: " + email
+            );
+
+            // -------------------------------------------------
+            // AUTHENTICATE USER
+            // -------------------------------------------------
 
             if (email != null &&
                     SecurityContextHolder
@@ -74,29 +99,50 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                         userDetailsService
                                 .loadUserByUsername(email);
 
+                System.out.println(
+                        "User loaded: "
+                                + userDetails.getUsername()
+                );
+
+                System.out.println(
+                        "User authorities: "
+                                + userDetails.getAuthorities()
+                );
+
+                // ---------------------------------------------
+                // VALIDATE TOKEN
+                // ---------------------------------------------
+
                 if (jwtService.validateToken(
                         jwt,
                         userDetails.getUsername())) {
 
                     UsernamePasswordAuthenticationToken
-                            authToken =
+                            authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
                                     null,
                                     userDetails.getAuthorities()
                             );
 
-                    authToken.setDetails(
+                    authentication.setDetails(
                             new WebAuthenticationDetailsSource()
                                     .buildDetails(request)
                     );
 
                     SecurityContextHolder
                             .getContext()
-                            .setAuthentication(authToken);
+                            .setAuthentication(
+                                    authentication
+                            );
 
                     System.out.println(
-                            "Authentication successful."
+                            "JWT authentication SUCCESS"
+                    );
+
+                    System.out.println(
+                            "Authenticated user: "
+                                    + userDetails.getUsername()
                     );
 
                     System.out.println(
@@ -107,7 +153,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 } else {
 
                     System.out.println(
-                            "JWT validation failed."
+                            "JWT validation FAILED"
                     );
                 }
             }
@@ -115,7 +161,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
 
             System.out.println(
-                    "JWT authentication error: "
+                    "JWT authentication ERROR: "
                             + e.getMessage()
             );
         }

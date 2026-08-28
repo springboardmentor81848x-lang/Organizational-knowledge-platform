@@ -1,6 +1,7 @@
 package com.knowledgegap.security;
 
 import com.knowledgegap.entity.Employee;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,10 +18,29 @@ public class CustomUserDetails implements UserDetails {
     }
 
     @Override
-        public Collection<? extends GrantedAuthority> getAuthorities() {
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+
+        if (employee.getRole() == null ||
+                employee.getRole().getRoleName() == null) {
+
+            return List.of();
+        }
+
+        String roleName =
+                employee.getRole()
+                        .getRoleName()
+                        .trim()
+                        .toUpperCase();
+
+        System.out.println(
+                "Creating authority: ROLE_" + roleName
+        );
+
         return List.of(
-            new SimpleGrantedAuthority("ROLE_" + employee.getRole().getRoleName().toUpperCase())
-    );
+                new SimpleGrantedAuthority(
+                        "ROLE_" + roleName
+                )
+        );
     }
 
     @Override

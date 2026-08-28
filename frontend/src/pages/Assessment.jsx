@@ -41,7 +41,7 @@ function Assessment() {
       setError("");
 
       // -------------------------------------------------------
-      // Get selected target role
+      // Get target role selected during signup
       // -------------------------------------------------------
 
       const targetRoleId =
@@ -51,12 +51,12 @@ function Assessment() {
         localStorage.getItem("targetRole");
 
       console.log(
-        "Assessment page - Target Role ID:",
+        "Assessment - Target Role ID:",
         targetRoleId
       );
 
       console.log(
-        "Assessment page - Target Role:",
+        "Assessment - Target Role:",
         targetRole
       );
 
@@ -64,6 +64,7 @@ function Assessment() {
         setError(
           "Target role was not selected. Please select a role first."
         );
+
         return;
       }
 
@@ -71,10 +72,9 @@ function Assessment() {
       // Get role-specific assessment
       // -------------------------------------------------------
 
-      const assessmentResponse =
-        await api.get(
-          `/assessments/role/${targetRoleId}`
-        );
+      const assessmentResponse = await api.get(
+        `/assessments/role/${targetRoleId}`
+      );
 
       console.log(
         "Role-specific assessment response:",
@@ -85,18 +85,31 @@ function Assessment() {
         assessmentResponse.data;
 
       // -------------------------------------------------------
-      // Safety: handle array response if backend returns array
+      // Handle array response
       // -------------------------------------------------------
 
       if (Array.isArray(selectedAssessment)) {
         selectedAssessment =
-          selectedAssessment[0];
+          selectedAssessment.length > 0
+            ? selectedAssessment[0]
+            : null;
       }
 
       if (!selectedAssessment) {
         setError(
-          `No assessment is available for ${targetRole || "this role"}.`
+          `No assessment is available for ${
+            targetRole || "this role"
+          }.`
         );
+
+        return;
+      }
+
+      if (!selectedAssessment.id) {
+        setError(
+          "Assessment ID was not returned by the server."
+        );
+
         return;
       }
 
@@ -106,23 +119,23 @@ function Assessment() {
       );
 
       // -------------------------------------------------------
-      // Get questions for THIS assessment
+      // Get questions for selected assessment
       // -------------------------------------------------------
 
-      const questionsResponse =
-        await api.get(
-          `/assessments/${selectedAssessment.id}/questions`
-        );
+      const questionsResponse = await api.get(
+        `/assessments/${selectedAssessment.id}/questions`
+      );
 
       console.log(
-        "Role-specific questions:",
+        "Assessment questions:",
         questionsResponse.data
       );
 
-      const questions =
-        Array.isArray(questionsResponse.data)
-          ? questionsResponse.data
-          : [];
+      const questions = Array.isArray(
+        questionsResponse.data
+      )
+        ? questionsResponse.data
+        : [];
 
       if (questions.length === 0) {
         setError(
@@ -130,6 +143,7 @@ function Assessment() {
             targetRole || "the selected role"
           } assessment.`
         );
+
         return;
       }
 
@@ -137,7 +151,7 @@ function Assessment() {
       // Store assessment
       // -------------------------------------------------------
 
-      setAssessment({
+      const assessmentData = {
         ...selectedAssessment,
 
         id: selectedAssessment.id,
@@ -148,11 +162,20 @@ function Assessment() {
 
         targetRole: targetRole,
 
-        questions,
-      });
+        // -----------------------------------------------------
+        // This assessment is taken by the employee themselves.
+        // Therefore the assessment type is SELF.
+        // -----------------------------------------------------
+
+        assessmentType: "SELF",
+
+        questions: questions,
+      };
+
+      setAssessment(assessmentData);
 
       // -------------------------------------------------------
-      // Store selected assessment ID
+      // Store assessment ID temporarily
       // -------------------------------------------------------
 
       sessionStorage.setItem(
@@ -161,20 +184,37 @@ function Assessment() {
       );
 
       // -------------------------------------------------------
-      // Start timer
+      // Store assessment type temporarily
       // -------------------------------------------------------
 
-      if (selectedAssessment.durationMinutes) {
-        setTimeLeft(
-          Number(
-            selectedAssessment.durationMinutes
-          ) * 60
+      sessionStorage.setItem(
+        "assessmentType",
+        "SELF"
+      );
+
+      // -------------------------------------------------------
+      // Start assessment timer
+      // -------------------------------------------------------
+
+      const duration =
+        Number(
+          selectedAssessment.durationMinutes
         );
+
+      if (duration > 0) {
+        setTimeLeft(duration * 60);
+      } else {
+        setTimeLeft(null);
       }
     } catch (err) {
       console.error(
-        "Error loading role-specific assessment:",
+        "Error loading assessment:",
         err
+      );
+
+      console.error(
+        "Status:",
+        err.response?.status
       );
 
       console.error(
@@ -184,7 +224,10 @@ function Assessment() {
 
       setError(
         err.response?.data?.message ||
-          err.response?.data ||
+          err.response?.data?.error ||
+          (typeof err.response?.data === "string"
+            ? err.response.data
+            : null) ||
           `Unable to load assessment. Status: ${
             err.response?.status || "Unknown"
           }`
@@ -222,6 +265,32 @@ function Assessment() {
   }, [timeLeft, submitting]);
 
   // =========================================================
+  // AUTO SUBMIT WHEN TIMER ENDS
+  // =========================================================
+
+  useEffect(() => {
+    if (
+      timeLeft === 0 &&
+      assessment &&
+      !submitting
+    ) {
+      handleTimeExpired();
+    }
+  }, [timeLeft, assessment, submitting]);
+
+  const handleTimeExpired = async () => {
+    const shouldSubmit = window.confirm(
+      "Time is over. Your assessment will be submitted now."
+    );
+
+    if (!shouldSubmit) {
+      return;
+    }
+
+    await submitAssessment(true);
+  };
+
+  // =========================================================
   // FORMAT TIME
   // =========================================================
 
@@ -230,9 +299,17 @@ function Assessment() {
       return "--:--";
     }
 
-    const minutes = Math.floor(seconds / 60);
+    const safeSeconds = Math.max(
+      Number(seconds) || 0,
+      0
+    );
 
-    const remainingSeconds = seconds % 60;
+    const minutes = Math.floor(
+      safeSeconds / 60
+    );
+
+    const remainingSeconds =
+      safeSeconds % 60;
 
     return `${String(minutes).padStart(
       2,
@@ -248,16 +325,22 @@ function Assessment() {
   // =========================================================
 
   const selectAnswer = (answer) => {
-    if (!assessment?.questions) {
+    if (
+      !assessment?.questions ||
+      submitting
+    ) {
       return;
     }
 
     const question =
       assessment.questions[currentQuestion];
 
+    if (!question?.id) {
+      return;
+    }
+
     setAnswers((previous) => ({
       ...previous,
-
       [question.id]: answer,
     }));
 
@@ -269,6 +352,10 @@ function Assessment() {
   // =========================================================
 
   const nextQuestion = () => {
+    if (!assessment?.questions) {
+      return;
+    }
+
     if (
       currentQuestion <
       assessment.questions.length - 1
@@ -305,15 +392,20 @@ function Assessment() {
   // SUBMIT ASSESSMENT
   // =========================================================
 
-  const submitAssessment = async () => {
+  const submitAssessment = async (
+    autoSubmit = false
+  ) => {
     if (submitting) {
       return;
     }
 
-    if (!assessment?.questions?.length) {
+    if (
+      !assessment?.questions?.length
+    ) {
       setError(
         "Assessment questions are not available."
       );
+
       return;
     }
 
@@ -327,23 +419,29 @@ function Assessment() {
           !answers[question.id]
       );
 
-    if (unanswered.length > 0) {
-      const shouldSubmit =
-        window.confirm(
-          `You have ${unanswered.length} unanswered question(s). Do you want to submit anyway?`
-        );
+    // -------------------------------------------------------
+    // Confirmation
+    // -------------------------------------------------------
 
-      if (!shouldSubmit) {
-        return;
-      }
-    } else {
-      const shouldSubmit =
-        window.confirm(
-          "Are you sure you want to submit the assessment?"
-        );
+    if (!autoSubmit) {
+      if (unanswered.length > 0) {
+        const shouldSubmit =
+          window.confirm(
+            `You have ${unanswered.length} unanswered question(s). Do you want to submit anyway?`
+          );
 
-      if (!shouldSubmit) {
-        return;
+        if (!shouldSubmit) {
+          return;
+        }
+      } else {
+        const shouldSubmit =
+          window.confirm(
+            "Are you sure you want to submit the assessment?"
+          );
+
+        if (!shouldSubmit) {
+          return;
+        }
       }
     }
 
@@ -358,6 +456,7 @@ function Assessment() {
       setError(
         "Employee ID was not found. Please log in again."
       );
+
       return;
     }
 
@@ -373,8 +472,26 @@ function Assessment() {
       setError(
         "Assessment ID was not found."
       );
+
       return;
     }
+
+    // -------------------------------------------------------
+    // Assessment type
+    //
+    // This is an employee's own assessment.
+    // Backend accepts:
+    // SELF, PEER, MANAGER
+    //
+    // Therefore we MUST send SELF.
+    // -------------------------------------------------------
+
+    const assessmentType =
+      assessment.assessmentType ||
+      sessionStorage.getItem(
+        "assessmentType"
+      ) ||
+      "SELF";
 
     try {
       setSubmitting(true);
@@ -390,16 +507,24 @@ function Assessment() {
             questionId: question.id,
 
             selectedAnswer:
-              answers[question.id] || null,
+              answers[question.id] ||
+              null,
           })
         );
 
       // -----------------------------------------------------
-      // Request body
+      // Request payload
       // -----------------------------------------------------
 
       const payload = {
-        assessmentId: Number(assessmentId),
+        assessmentId: Number(
+          assessmentId
+        ),
+
+        // IMPORTANT:
+        // Backend requires this field.
+        assessmentType:
+          assessmentType.toUpperCase(),
 
         answers: submittedAnswers,
       };
@@ -433,6 +558,24 @@ function Assessment() {
       );
 
       console.log(
+        "Assessment Type:",
+        assessmentType
+      );
+
+      console.log(
+        "Answered:",
+        submittedAnswers.filter(
+          (answer) =>
+            answer.selectedAnswer
+        ).length
+      );
+
+      console.log(
+        "Total Questions:",
+        assessment.questions.length
+      );
+
+      console.log(
         "Payload:",
         payload
       );
@@ -457,12 +600,14 @@ function Assessment() {
       );
 
       // -----------------------------------------------------
-      // Save result
+      // Store result
       // -----------------------------------------------------
 
       sessionStorage.setItem(
         "assessmentResult",
-        JSON.stringify(response.data)
+        JSON.stringify(
+          response.data
+        )
       );
 
       // -----------------------------------------------------
@@ -473,8 +618,12 @@ function Assessment() {
         "selectedAssessmentId"
       );
 
+      sessionStorage.removeItem(
+        "assessmentType"
+      );
+
       // -----------------------------------------------------
-      // Navigate to result
+      // Navigate to result page
       // -----------------------------------------------------
 
       navigate(
@@ -516,7 +665,8 @@ function Assessment() {
             ? err.response.data
             : null) ||
           `Unable to submit assessment. Status: ${
-            err.response?.status || "Unknown"
+            err.response?.status ||
+            "Unknown"
           }`
       );
 
@@ -616,7 +766,9 @@ function Assessment() {
   // =========================================================
 
   const question =
-    assessment.questions[currentQuestion];
+    assessment.questions[
+      currentQuestion
+    ];
 
   const selectedAnswer =
     answers[question.id];
@@ -633,6 +785,10 @@ function Assessment() {
           totalQuestions) *
         100
       : 0;
+
+  // =========================================================
+  // QUESTION OPTIONS
+  // =========================================================
 
   const options = [
     {
@@ -670,6 +826,8 @@ function Assessment() {
 
           <div className="flex items-center justify-between gap-4">
 
+            {/* ASSESSMENT INFO */}
+
             <div>
 
               <div className="flex items-center gap-2 mb-1">
@@ -679,6 +837,12 @@ function Assessment() {
                     {assessment.targetRole}
                   </span>
                 )}
+
+                {/* SELF ASSESSMENT LABEL */}
+
+                <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                  Self Assessment
+                </span>
 
               </div>
 
@@ -723,7 +887,9 @@ function Assessment() {
 
       <main className="max-w-5xl mx-auto px-5 md:px-8 py-8">
 
-        {/* DESCRIPTION */}
+        {/* ===================================================
+            DESCRIPTION
+        =================================================== */}
 
         {assessment.description && (
           <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
@@ -735,7 +901,9 @@ function Assessment() {
           </div>
         )}
 
-        {/* PROGRESS */}
+        {/* ===================================================
+            PROGRESS
+        =================================================== */}
 
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
 
@@ -767,11 +935,13 @@ function Assessment() {
 
         </div>
 
-        {/* QUESTION CARD */}
+        {/* ===================================================
+            QUESTION CARD
+        =================================================== */}
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
 
-          {/* Question Information */}
+          {/* QUESTION INFORMATION */}
 
           <div className="flex flex-wrap items-center gap-2 mb-6">
 
@@ -790,28 +960,41 @@ function Assessment() {
             {question.marks !== null &&
               question.marks !== undefined && (
                 <span className="px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+
                   {question.marks}{" "}
-                  {Number(question.marks) === 1
+
+                  {Number(
+                    question.marks
+                  ) === 1
                     ? "mark"
                     : "marks"}
+
                 </span>
               )}
 
           </div>
 
-          {/* Question */}
+          {/* QUESTION */}
 
           <h2 className="text-xl md:text-2xl font-semibold text-slate-800 leading-relaxed mb-8">
             {question.question}
           </h2>
 
-          {/* OPTIONS */}
+          {/* =================================================
+              OPTIONS
+          ================================================= */}
 
           <div className="space-y-4">
 
             {options.map((option) => {
 
-              if (!option.value) {
+              if (
+                option.value ===
+                  null ||
+                option.value ===
+                  undefined ||
+                option.value === ""
+              ) {
                 return null;
               }
 
@@ -836,6 +1019,8 @@ function Assessment() {
                   }
                 >
 
+                  {/* OPTION LETTER */}
+
                   <div
                     className={
                       selected
@@ -846,6 +1031,8 @@ function Assessment() {
                     {option.key}
                   </div>
 
+                  {/* OPTION TEXT */}
+
                   <span
                     className={
                       selected
@@ -855,6 +1042,8 @@ function Assessment() {
                   >
                     {option.value}
                   </span>
+
+                  {/* SELECTED ICON */}
 
                   {selected && (
                     <CheckCircle
@@ -869,7 +1058,9 @@ function Assessment() {
 
           </div>
 
-          {/* ERROR */}
+          {/* =================================================
+              ERROR
+          ================================================= */}
 
           {error && (
             <div className="mt-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -877,7 +1068,9 @@ function Assessment() {
             </div>
           )}
 
-          {/* NAVIGATION */}
+          {/* =================================================
+              NAVIGATION
+          ================================================= */}
 
           <div className="flex flex-col sm:flex-row justify-between gap-3 mt-10">
 
@@ -885,16 +1078,23 @@ function Assessment() {
 
             <button
               type="button"
-              onClick={previousQuestion}
+              onClick={
+                previousQuestion
+              }
               disabled={
-                currentQuestion === 0 ||
+                currentQuestion ===
+                  0 ||
                 submitting
               }
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={18} />
+
+              <ChevronLeft
+                size={18}
+              />
 
               Previous
+
             </button>
 
             {/* NEXT / SUBMIT */}
@@ -904,32 +1104,50 @@ function Assessment() {
 
               <button
                 type="button"
-                onClick={nextQuestion}
-                disabled={submitting}
+                onClick={
+                  nextQuestion
+                }
+                disabled={
+                  submitting
+                }
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
+
                 Next
 
-                <ChevronRight size={18} />
+                <ChevronRight
+                  size={18}
+                />
+
               </button>
 
             ) : (
 
               <button
                 type="button"
-                onClick={submitAssessment}
-                disabled={submitting}
+                onClick={() =>
+                  submitAssessment(
+                    false
+                  )
+                }
+                disabled={
+                  submitting
+                }
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
               >
 
                 {submitting ? (
                   <>
                     <Spinner />
+
                     Submitting...
                   </>
                 ) : (
                   <>
-                    <Send size={18} />
+                    <Send
+                      size={18}
+                    />
+
                     Submit Assessment
                   </>
                 )}
@@ -942,7 +1160,9 @@ function Assessment() {
 
         </div>
 
-        {/* QUESTION NAVIGATOR */}
+        {/* ===================================================
+            QUESTION NAVIGATOR
+        =================================================== */}
 
         <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6">
 
@@ -968,7 +1188,9 @@ function Assessment() {
                   <button
                     key={item.id}
                     type="button"
-                    disabled={submitting}
+                    disabled={
+                      submitting
+                    }
                     onClick={() =>
                       setCurrentQuestion(
                         index
@@ -987,6 +1209,36 @@ function Assessment() {
                 );
               }
             )}
+
+          </div>
+
+          {/* LEGEND */}
+
+          <div className="flex flex-wrap gap-4 mt-5 text-xs text-slate-500">
+
+            <div className="flex items-center gap-2">
+
+              <span className="w-3 h-3 rounded bg-indigo-600" />
+
+              Current
+
+            </div>
+
+            <div className="flex items-center gap-2">
+
+              <span className="w-3 h-3 rounded bg-green-100 border border-green-200" />
+
+              Answered
+
+            </div>
+
+            <div className="flex items-center gap-2">
+
+              <span className="w-3 h-3 rounded bg-slate-100 border border-slate-200" />
+
+              Not Answered
+
+            </div>
 
           </div>
 

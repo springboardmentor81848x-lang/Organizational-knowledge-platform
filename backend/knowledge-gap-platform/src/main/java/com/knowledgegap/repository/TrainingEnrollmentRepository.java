@@ -12,6 +12,10 @@ import com.knowledgegap.entity.TrainingEnrollment;
 public interface TrainingEnrollmentRepository
         extends JpaRepository<TrainingEnrollment, Long> {
 
+    // =========================================================
+    // EMPLOYEE TRAINING
+    // =========================================================
+
     List<TrainingEnrollment> findByEmployee(Employee employee);
 
     List<TrainingEnrollment> findByCourse(Course course);
@@ -22,10 +26,10 @@ public interface TrainingEnrollmentRepository
     );
 
     // =========================================================
-    // DEPARTMENT HEAD DASHBOARD
+    // DEPARTMENT / MANAGER DASHBOARD
     // =========================================================
 
-    // Find all training enrollments for employees
+    // Get all training enrollments for employees
     // belonging to a particular department
     List<TrainingEnrollment> findByEmployeeDepartmentId(
             Long departmentId

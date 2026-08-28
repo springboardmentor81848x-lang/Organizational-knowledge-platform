@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -8,6 +7,10 @@ import {
   GraduationCap,
   TrendingUp,
   AlertTriangle,
+  History,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
 
 import {
@@ -15,29 +18,20 @@ import {
   getKnowledgeGapsByEmployee,
 } from "../services/platformService";
 
+import axios from "axios";
 
 function EmployeeDashboard() {
-
   // =========================================================
   // EMPLOYEE INFORMATION
   // =========================================================
 
-  const firstName =
-    localStorage.getItem("firstName") || "";
+  const firstName = localStorage.getItem("firstName") || "";
+  const lastName = localStorage.getItem("lastName") || "";
+  const employeeId = localStorage.getItem("employeeId");
 
-  const lastName =
-    localStorage.getItem("lastName") || "";
-
-  const employeeId =
-    localStorage.getItem("employeeId");
-
-  const fullName = [
-    firstName,
-    lastName,
-  ]
+  const fullName = [firstName, lastName]
     .filter(Boolean)
     .join(" ");
-
 
   // =========================================================
   // STATE
@@ -45,13 +39,10 @@ function EmployeeDashboard() {
 
   const [skills, setSkills] = useState([]);
   const [gaps, setGaps] = useState([]);
+  const [historicalComparison, setHistoricalComparison] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // =========================================================
   // SKILL LEVEL NAMES
@@ -65,54 +56,40 @@ function EmployeeDashboard() {
     5: "Expert",
   };
 
-
   // =========================================================
   // LOAD DASHBOARD DATA
   // =========================================================
 
   useEffect(() => {
-
     loadDashboardData();
-
   }, []);
 
-
   const loadDashboardData = async () => {
-
     try {
-
       setLoading(true);
       setError("");
 
       if (!employeeId) {
-
-        setError(
-          "Employee ID not found. Please login again."
-        );
-
+        setError("Employee ID not found. Please login again.");
         return;
       }
-
 
       // =====================================================
       // 1. CURRENT SKILL INVENTORY
       // =====================================================
 
-      const skillResponse =
-        await getEmployeeSkills(employeeId);
+      const skillResponse = await getEmployeeSkills(employeeId);
 
       console.log(
         "Current Skill Inventory:",
         skillResponse.data
       );
 
-      const currentSkills =
-        Array.isArray(skillResponse.data)
-          ? skillResponse.data
-          : [];
+      const currentSkills = Array.isArray(skillResponse.data)
+        ? skillResponse.data
+        : [];
 
       setSkills(currentSkills);
-
 
       // =====================================================
       // 2. STORED KNOWLEDGE GAPS
@@ -126,16 +103,61 @@ function EmployeeDashboard() {
         gapResponse.data
       );
 
-      const storedGaps =
-        Array.isArray(gapResponse.data)
-          ? gapResponse.data
-          : [];
+      const storedGaps = Array.isArray(gapResponse.data)
+        ? gapResponse.data
+        : [];
 
       setGaps(storedGaps);
 
+      // =====================================================
+      // 3. PERSISTENT HISTORICAL COMPARISON
+      // =====================================================
+      //
+      // This data MUST come from the database.
+      // No sessionStorage/localStorage is used.
+      //
+      // The backend endpoint should return the MOST RECENT
+      // persisted reassessment comparison for this employee.
+      //
+      // =====================================================
 
+      try {
+        const token = localStorage.getItem("token");
+
+        const historicalResponse = await axios.get(
+          `http://localhost:8080/api/employee/assessment/history/${employeeId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log(
+          "Persistent Historical Assessment:",
+          historicalResponse.data
+        );
+
+        const result = historicalResponse.data;
+
+        if (
+          result &&
+          Array.isArray(result.skillResults) &&
+          result.skillResults.length > 0
+        ) {
+          setHistoricalComparison(result);
+        } else {
+          setHistoricalComparison(null);
+        }
+      } catch (historyError) {
+        console.error(
+          "Historical assessment loading error:",
+          historyError
+        );
+
+        setHistoricalComparison(null);
+      }
     } catch (err) {
-
       console.error(
         "Dashboard loading error:",
         err
@@ -143,82 +165,64 @@ function EmployeeDashboard() {
 
       setError(
         err.response?.data?.message ||
-        "Unable to load dashboard data."
+          "Unable to load dashboard data."
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
 
   // =========================================================
   // AVERAGE SKILL LEVEL
   // =========================================================
 
   const calculateAverageLevel = () => {
-
     if (skills.length === 0) {
       return 0;
     }
 
-    const totalLevel =
-      skills.reduce(
-        (total, item) =>
-          total +
-          Number(item.currentLevel || 0),
-        0
-      );
+    const totalLevel = skills.reduce(
+      (total, item) =>
+        total + Number(item.currentLevel || 0),
+      0
+    );
 
     return totalLevel / skills.length;
   };
 
-
-  const averageLevel =
-    calculateAverageLevel();
-
+  const averageLevel = calculateAverageLevel();
 
   // =========================================================
   // SKILL SCORE
   // =========================================================
 
-  const skillScore =
-    Math.round(
-      (averageLevel / 5) * 100
-    );
-
+  const skillScore = Math.round(
+    (averageLevel / 5) * 100
+  );
 
   // =========================================================
   // GET SKILL NAME
   // =========================================================
 
   const getSkillName = (item) => {
-
     return (
       item?.skill?.skillName ||
       item?.skillName ||
       item?.skill ||
       ""
     );
-
   };
-
 
   // =========================================================
   // FIND MATCHING KNOWLEDGE GAP
   // =========================================================
 
   const getMatchingGap = (skillName) => {
-
     if (!skillName) {
       return null;
     }
 
     return gaps.find((gap) => {
-
       const gapSkillName =
         gap?.skill?.skillName ||
         gap?.skillName ||
@@ -228,13 +232,10 @@ function EmployeeDashboard() {
       return (
         gapSkillName &&
         gapSkillName.toLowerCase() ===
-        skillName.toLowerCase()
+          skillName.toLowerCase()
       );
-
     });
-
   };
-
 
   // =========================================================
   // GET REQUIRED LEVEL
@@ -244,69 +245,34 @@ function EmployeeDashboard() {
     currentLevel,
     matchingGap
   ) => {
-
-    /*
-     * If there is no stored gap,
-     * we do not know of any requirement
-     * above the current level.
-     *
-     * Therefore there is NO GAP.
-     */
-
     if (!matchingGap) {
-
       return currentLevel;
-
     }
 
-
-    // -------------------------------------------------------
-    // First try the required level stored by backend
-    // -------------------------------------------------------
-
-    const backendRequiredLevel =
-      Number(
-        matchingGap.requiredLevel || 0
-      );
-
+    const backendRequiredLevel = Number(
+      matchingGap.requiredLevel || 0
+    );
 
     if (backendRequiredLevel > 0) {
-
       return Math.min(
-        Math.max(
-          backendRequiredLevel,
-          1
-        ),
+        Math.max(backendRequiredLevel, 1),
         5
       );
-
     }
 
-
-    // -------------------------------------------------------
-    // Fallback if backend only stores gap value
-    // -------------------------------------------------------
-
-    const backendGap =
-      Number(
-        matchingGap.gap || 0
-      );
-
+    const backendGap = Number(
+      matchingGap.gap || 0
+    );
 
     if (backendGap > 0) {
-
       return Math.min(
         currentLevel + backendGap,
         5
       );
-
     }
 
-
     return currentLevel;
-
   };
-
 
   // =========================================================
   // GET SKILL GAP
@@ -316,74 +282,36 @@ function EmployeeDashboard() {
     currentLevel,
     requiredLevel
   ) => {
-
-    /*
-     * IMPORTANT:
-     *
-     * Always calculate the gap using:
-     *
-     * Required Level - Current Level
-     *
-     * This makes the dashboard reflect the
-     * employee's latest assessment result.
-     */
-
     return Math.max(
       requiredLevel - currentLevel,
       0
     );
-
   };
 
-
   // =========================================================
-  // CALCULATE ACTUAL CURRENT KNOWLEDGE GAPS
-  // =========================================================
-  //
-  // DO NOT use:
-  //
-  //     gaps.length
-  //
-  // because the backend may still contain an old
-  // gap record.
-  //
-  // Instead:
-  //
-  //     Current Level < Required Level
-  //
-  // means there is an actual gap.
-  //
+  // CALCULATE ACTUAL KNOWLEDGE GAPS
   // =========================================================
 
   const getActualKnowledgeGaps = () => {
-
     if (!skills || skills.length === 0) {
       return [];
     }
 
-
     const actualGaps = [];
 
-
     skills.forEach((skill) => {
-
-      const skillName =
-        getSkillName(skill);
+      const skillName = getSkillName(skill);
 
       if (!skillName) {
         return;
       }
 
-
-      const currentLevel =
-        Number(
-          skill.currentLevel || 0
-        );
-
+      const currentLevel = Number(
+        skill.currentLevel || 0
+      );
 
       const matchingGap =
         getMatchingGap(skillName);
-
 
       const requiredLevel =
         getRequiredLevel(
@@ -391,71 +319,38 @@ function EmployeeDashboard() {
           matchingGap
         );
 
-
       const actualGap =
         getSkillGap(
           currentLevel,
           requiredLevel
         );
 
-
-      /*
-       * ONLY add this skill if there is
-       * an actual current gap.
-       */
-
       if (actualGap > 0) {
-
         actualGaps.push({
-
-          ...matchingGap,
-
+          ...(matchingGap || {}),
           skillName,
-
           currentLevel,
-
           requiredLevel,
-
           gap: actualGap,
-
         });
-
       }
-
     });
 
-
     return actualGaps;
-
   };
-
-
-  // =========================================================
-  // ACTUAL CURRENT KNOWLEDGE GAPS
-  // =========================================================
 
   const actualKnowledgeGaps =
     getActualKnowledgeGaps();
 
-
-  // =========================================================
-  // ACTUAL GAP COUNT
-  // =========================================================
-
   const knowledgeGapCount =
     actualKnowledgeGaps.length;
-
 
   // =========================================================
   // GAP SEVERITY
   // =========================================================
 
-  const getGapSeverity = (
-    gap
-  ) => {
-
+  const getGapSeverity = (gap) => {
     if (gap === 0) {
-
       return {
         label: "No Gap",
         badge:
@@ -465,12 +360,9 @@ function EmployeeDashboard() {
         background:
           "bg-green-50",
       };
-
     }
 
-
     if (gap === 1) {
-
       return {
         label: "Low Gap",
         badge:
@@ -480,12 +372,9 @@ function EmployeeDashboard() {
         background:
           "bg-yellow-50",
       };
-
     }
 
-
     if (gap === 2) {
-
       return {
         label: "Moderate Gap",
         badge:
@@ -495,121 +384,80 @@ function EmployeeDashboard() {
         background:
           "bg-orange-50",
       };
-
     }
 
-
     return {
-
       label: "High Gap",
-
       badge:
         "bg-red-100 text-red-700",
-
       border:
         "border-red-200",
-
       background:
         "bg-red-50",
-
     };
-
   };
-
 
   // =========================================================
   // LOADING
   // =========================================================
 
   if (loading) {
-
     return (
-
       <div className="flex min-h-screen">
-
         <Sidebar role="EMPLOYEE" />
 
         <div className="flex-1">
-
           <Navbar title="Employee Dashboard" />
 
           <div className="p-8">
-
             <div className="bg-white rounded-xl shadow p-6">
-
               <p className="text-gray-600">
                 Loading your skills and knowledge gaps...
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     );
-
   }
-
 
   // =========================================================
   // MAIN UI
   // =========================================================
 
   return (
-
     <div className="flex min-h-screen">
-
       <Sidebar role="EMPLOYEE" />
 
-
       <div className="flex-1">
-
         <Navbar title="Employee Dashboard" />
 
-
         <main className="p-8">
-
 
           {/* =================================================
               WELCOME
           ================================================= */}
 
           {fullName && (
-
             <div className="mb-6">
-
               <p className="text-lg text-gray-600">
-
                 Welcome{" "}
-
                 <span className="font-semibold text-slate-800">
                   {fullName}
                 </span>
-
               </p>
-
             </div>
-
           )}
-
 
           {/* =================================================
               ERROR
           ================================================= */}
 
           {error && (
-
             <div className="mb-6 bg-red-100 border border-red-200 text-red-700 p-4 rounded-lg">
-
               {error}
-
             </div>
-
           )}
-
 
           {/* =================================================
               STATISTICS
@@ -617,15 +465,11 @@ function EmployeeDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-
             {/* TOTAL SKILLS */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Total Skills
                   </p>
@@ -633,61 +477,45 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {skills.length}
                   </h2>
-
                 </div>
 
                 <BookOpen
                   size={45}
                   className="text-indigo-600"
                 />
-
               </div>
-
             </div>
-
 
             {/* AVERAGE LEVEL */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Average Skill Level
                   </p>
 
                   <h2 className="text-3xl font-bold mt-3">
-
                     {averageLevel.toFixed(1)}
 
                     <span className="text-lg text-gray-500">
                       {" "}/ 5
                     </span>
-
                   </h2>
-
                 </div>
 
                 <GraduationCap
                   size={45}
                   className="text-green-600"
                 />
-
               </div>
-
             </div>
-
 
             {/* SKILL SCORE */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Skill Score
                   </p>
@@ -695,27 +523,20 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {skillScore}%
                   </h2>
-
                 </div>
 
                 <TrendingUp
                   size={45}
                   className="text-orange-500"
                 />
-
               </div>
-
             </div>
-
 
             {/* KNOWLEDGE GAPS */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Knowledge Gaps
                   </p>
@@ -723,20 +544,16 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {knowledgeGapCount}
                   </h2>
-
                 </div>
 
                 <AlertTriangle
                   size={45}
                   className="text-red-500"
                 />
-
               </div>
-
             </div>
 
           </div>
-
 
           {/* =================================================
               SKILL GAP HEATMAP
@@ -747,7 +564,6 @@ function EmployeeDashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
 
               <div>
-
                 <h2 className="text-2xl font-bold text-slate-800">
                   Skill Gap Heatmap
                 </h2>
@@ -756,14 +572,9 @@ function EmployeeDashboard() {
                   Current skill proficiency compared with
                   the required proficiency.
                 </p>
-
               </div>
 
-
-              {/* KNOWLEDGE GAP COUNT */}
-
               <div className="mt-4 md:mt-0 bg-red-50 border border-red-100 rounded-xl px-5 py-3">
-
                 <p className="text-sm text-red-600 font-medium">
                   Knowledge Gaps
                 </p>
@@ -771,486 +582,367 @@ function EmployeeDashboard() {
                 <p className="text-2xl font-bold text-red-700">
                   {knowledgeGapCount}
                 </p>
-
               </div>
 
             </div>
 
-
             {skills.length === 0 ? (
-
               <div className="text-center py-10">
-
                 <p className="text-gray-500">
                   No skill data available.
                 </p>
-
               </div>
-
             ) : (
-
               <div className="space-y-6">
 
-                {skills.map(
-                  (item, index) => {
+                {skills.map((item, index) => {
 
-                    const skillName =
-                      getSkillName(item) ||
-                      "Unknown Skill";
+                  const skillName =
+                    getSkillName(item) ||
+                    "Unknown Skill";
 
+                  const currentLevel =
+                    Number(
+                      item.currentLevel || 0
+                    );
 
-                    const currentLevel =
-                      Number(
-                        item.currentLevel || 0
-                      );
+                  const matchingGap =
+                    getMatchingGap(skillName);
 
+                  const requiredLevel =
+                    getRequiredLevel(
+                      currentLevel,
+                      matchingGap
+                    );
 
-                    /*
-                     * Find stored knowledge gap
-                     * for this skill.
-                     */
+                  const skillGap =
+                    getSkillGap(
+                      currentLevel,
+                      requiredLevel
+                    );
 
-                    const matchingGap =
-                      getMatchingGap(
-                        skillName
-                      );
+                  const severity =
+                    getGapSeverity(skillGap);
 
+                  const currentPercentage =
+                    Math.round(
+                      (currentLevel / 5) * 100
+                    );
 
-                    /*
-                     * Determine required level.
-                     */
+                  const requiredPercentage =
+                    Math.round(
+                      (requiredLevel / 5) * 100
+                    );
 
-                    const requiredLevel =
-                      getRequiredLevel(
-                        currentLevel,
-                        matchingGap
-                      );
+                  const levelStyles = {
+                    1: {
+                      solid:
+                        "bg-red-500 text-white",
+                      faded:
+                        "bg-red-100 text-red-500 border-2 border-dashed border-red-400",
+                    },
 
+                    2: {
+                      solid:
+                        "bg-orange-500 text-white",
+                      faded:
+                        "bg-orange-100 text-orange-600 border-2 border-dashed border-orange-400",
+                    },
 
-                    /*
-                     * Calculate ACTUAL gap.
-                     */
+                    3: {
+                      solid:
+                        "bg-yellow-400 text-white",
+                      faded:
+                        "bg-yellow-100 text-yellow-600 border-2 border-dashed border-yellow-400",
+                    },
 
-                    const skillGap =
-                      getSkillGap(
-                        currentLevel,
-                        requiredLevel
-                      );
+                    4: {
+                      solid:
+                        "bg-blue-500 text-white",
+                      faded:
+                        "bg-blue-100 text-blue-600 border-2 border-dashed border-blue-400",
+                    },
 
+                    5: {
+                      solid:
+                        "bg-green-500 text-white",
+                      faded:
+                        "bg-green-100 text-green-600 border-2 border-dashed border-green-400",
+                    },
+                  };
 
-                    const severity =
-                      getGapSeverity(
-                        skillGap
-                      );
+                  return (
+                    <div
+                      key={item.id || index}
+                      className={`border ${severity.border} rounded-xl p-5`}
+                    >
 
+                      {/* SKILL HEADER */}
 
-                    const currentPercentage =
-                      Math.round(
-                        (currentLevel / 5) *
-                          100
-                      );
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
+                        <div>
+                          <h3 className="font-semibold text-lg text-slate-800">
+                            {skillName}
+                          </h3>
 
-                    const requiredPercentage =
-                      Math.round(
-                        (requiredLevel / 5) *
-                          100
-                      );
-
-
-                    /*
-                     * Fixed level colors.
-                     */
-
-                    const levelStyles = {
-
-                      1: {
-                        solid:
-                          "bg-red-500 text-white",
-                        faded:
-                          "bg-red-100 text-red-500 border-2 border-dashed border-red-400",
-                      },
-
-                      2: {
-                        solid:
-                          "bg-orange-500 text-white",
-                        faded:
-                          "bg-orange-100 text-orange-600 border-2 border-dashed border-orange-400",
-                      },
-
-                      3: {
-                        solid:
-                          "bg-yellow-400 text-white",
-                        faded:
-                          "bg-yellow-100 text-yellow-600 border-2 border-dashed border-yellow-400",
-                      },
-
-                      4: {
-                        solid:
-                          "bg-blue-500 text-white",
-                        faded:
-                          "bg-blue-100 text-blue-600 border-2 border-dashed border-blue-400",
-                      },
-
-                      5: {
-                        solid:
-                          "bg-green-500 text-white",
-                        faded:
-                          "bg-green-100 text-green-600 border-2 border-dashed border-green-400",
-                      },
-
-                    };
-
-
-                    return (
-
-                      <div
-                        key={
-                          item.id || index
-                        }
-                        className={`border ${severity.border} rounded-xl p-5`}
-                      >
-
-                        {/* ==============================
-                            SKILL HEADER
-                        ============================== */}
-
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-                          <div>
-
-                            <h3 className="font-semibold text-lg text-slate-800">
-                              {skillName}
-                            </h3>
-
-                            <p className="text-sm text-gray-500 mt-1">
-
-                              Current proficiency vs
-                              required proficiency
-
-                            </p>
-
-                          </div>
-
-
-                          <div
-                            className={`px-4 py-2 rounded-full text-sm font-semibold ${severity.badge}`}
-                          >
-
-                            {severity.label}
-
-                            {skillGap > 0 &&
-                              ` · Gap ${skillGap} level${
-                                skillGap !== 1
-                                  ? "s"
-                                  : ""
-                              }`}
-
-                          </div>
-
+                          <p className="text-sm text-gray-500 mt-1">
+                            Current proficiency vs required proficiency
+                          </p>
                         </div>
 
+                        <div
+                          className={`px-4 py-2 rounded-full text-sm font-semibold ${severity.badge}`}
+                        >
+                          {severity.label}
 
-                        {/* ==============================
-                            THREE CARDS
-                        ============================== */}
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-
-
-                          {/* CURRENT */}
-
-                          <div className="bg-indigo-50 rounded-xl p-4">
-
-                            <p className="text-sm text-indigo-600 font-medium">
-                              Current Level
-                            </p>
-
-                            <p className="text-2xl font-bold text-indigo-700 mt-1">
-
-                              {currentLevel}
-
-                              <span className="text-sm font-normal">
-                                {" "}/ 5
-                              </span>
-
-                            </p>
-
-                            <p className="text-xs text-indigo-500 mt-1">
-
-                              {levelNames[currentLevel] ||
-                                "Not Rated"}
-
-                            </p>
-
-                          </div>
-
-
-                          {/* REQUIRED */}
-
-                          <div className="bg-purple-50 rounded-xl p-4">
-
-                            <p className="text-sm text-purple-600 font-medium">
-                              Required Level
-                            </p>
-
-                            <p className="text-2xl font-bold text-purple-700 mt-1">
-
-                              {requiredLevel}
-
-                              <span className="text-sm font-normal">
-                                {" "}/ 5
-                              </span>
-
-                            </p>
-
-                            <p className="text-xs text-purple-500 mt-1">
-
-                              {levelNames[requiredLevel] ||
-                                "Not Defined"}
-
-                            </p>
-
-                          </div>
-
-
-                          {/* GAP */}
-
-                          <div
-                            className={`${severity.background} rounded-xl p-4`}
-                          >
-
-                            <p className="text-sm font-medium">
-                              Skill Gap
-                            </p>
-
-                            <p className="text-2xl font-bold mt-1">
-
-                              {skillGap}
-
-                              <span className="text-sm font-normal">
-                                {" "}level
-                                {skillGap !== 1
-                                  ? "s"
-                                  : ""}
-                              </span>
-
-                            </p>
-
-                            <p className="text-xs mt-1">
-
-                              {skillGap === 0
-                                ? "Requirement achieved"
-                                : "Needs improvement"}
-
-                            </p>
-
-                          </div>
-
+                          {skillGap > 0 &&
+                            ` · Gap ${skillGap} level${
+                              skillGap !== 1
+                                ? "s"
+                                : ""
+                            }`}
                         </div>
 
+                      </div>
 
-                        {/* ==============================
-                            FIVE LEVEL HEATMAP
-                        ============================== */}
+                      {/* THREE CARDS */}
 
-                        <div className="mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
 
-                          <div className="grid grid-cols-5 gap-2">
+                        {/* CURRENT */}
 
-                            {[1, 2, 3, 4, 5].map(
-                              (cell) => {
+                        <div className="bg-indigo-50 rounded-xl p-4">
+                          <p className="text-sm text-indigo-600 font-medium">
+                            Current Level
+                          </p>
 
-                                const isCurrent =
-                                  cell <=
-                                  currentLevel;
+                          <p className="text-2xl font-bold text-indigo-700 mt-1">
+                            {currentLevel}
 
-                                const isRequired =
-                                  cell <=
-                                  requiredLevel;
+                            <span className="text-sm font-normal">
+                              {" "}/ 5
+                            </span>
+                          </p>
 
-                                const isGap =
-                                  !isCurrent &&
-                                  isRequired;
+                          <p className="text-xs text-indigo-500 mt-1">
+                            {levelNames[currentLevel] ||
+                              "Not Rated"}
+                          </p>
+                        </div>
 
-                                const style =
-                                  levelStyles[cell];
+                        {/* REQUIRED */}
 
-                                let cellClass =
-                                  "bg-slate-100 text-slate-400 border border-slate-200";
+                        <div className="bg-purple-50 rounded-xl p-4">
+                          <p className="text-sm text-purple-600 font-medium">
+                            Required Level
+                          </p>
 
+                          <p className="text-2xl font-bold text-purple-700 mt-1">
+                            {requiredLevel}
 
-                                if (isCurrent) {
+                            <span className="text-sm font-normal">
+                              {" "}/ 5
+                            </span>
+                          </p>
 
-                                  cellClass =
-                                    `${style.solid} border-2 border-transparent shadow-md`;
+                          <p className="text-xs text-purple-500 mt-1">
+                            {levelNames[requiredLevel] ||
+                              "Not Defined"}
+                          </p>
+                        </div>
 
-                                }
+                        {/* GAP */}
 
+                        <div
+                          className={`${severity.background} rounded-xl p-4`}
+                        >
+                          <p className="text-sm font-medium">
+                            Skill Gap
+                          </p>
 
-                                if (isGap) {
+                          <p className="text-2xl font-bold mt-1">
+                            {skillGap}
 
-                                  cellClass =
-                                    `${style.faded} shadow-inner`;
+                            <span className="text-sm font-normal">
+                              {" "}level
+                              {skillGap !== 1
+                                ? "s"
+                                : ""}
+                            </span>
+                          </p>
 
-                                }
+                          <p className="text-xs mt-1">
+                            {skillGap === 0
+                              ? "Requirement achieved"
+                              : "Needs improvement"}
+                          </p>
+                        </div>
 
+                      </div>
 
-                                return (
+                      {/* FIVE LEVEL HEATMAP */}
 
-                                  <div
-                                    key={cell}
-                                    className={`
-                                      h-16
-                                      rounded-lg
-                                      flex
-                                      flex-col
-                                      items-center
-                                      justify-center
-                                      ${cellClass}
-                                    `}
-                                  >
+                      <div className="mt-6">
 
-                                    <span className="font-bold text-lg">
-                                      {cell}
-                                    </span>
+                        <div className="grid grid-cols-5 gap-2">
 
-                                    <span className="text-[10px] mt-1">
-                                      {levelNames[cell]}
-                                    </span>
+                          {[1, 2, 3, 4, 5].map(
+                            (cell) => {
 
+                              const isCurrent =
+                                cell <=
+                                currentLevel;
 
-                                    {isGap && (
+                              const isRequired =
+                                cell <=
+                                requiredLevel;
 
-                                      <span className="text-[9px] font-bold mt-1">
-                                        GAP
-                                      </span>
+                              const isGap =
+                                !isCurrent &&
+                                isRequired;
 
-                                    )}
+                              const style =
+                                levelStyles[cell];
 
-                                  </div>
+                              let cellClass =
+                                "bg-slate-100 text-slate-400 border border-slate-200";
 
-                                );
-
+                              if (isCurrent) {
+                                cellClass =
+                                  `${style.solid} border-2 border-transparent shadow-md`;
                               }
-                            )}
 
-                          </div>
+                              if (isGap) {
+                                cellClass =
+                                  `${style.faded} shadow-inner`;
+                              }
 
+                              return (
+                                <div
+                                  key={cell}
+                                  className={`
+                                    h-16
+                                    rounded-lg
+                                    flex
+                                    flex-col
+                                    items-center
+                                    justify-center
+                                    ${cellClass}
+                                  `}
+                                >
 
-                          {/* HEATMAP LEGEND */}
+                                  <span className="font-bold text-lg">
+                                    {cell}
+                                  </span>
 
-                          <div className="mt-4 flex flex-wrap gap-5 text-sm">
+                                  <span className="text-[10px] mt-1">
+                                    {levelNames[cell]}
+                                  </span>
 
-                            <div className="flex items-center gap-2">
+                                  {isGap && (
+                                    <span className="text-[9px] font-bold mt-1">
+                                      GAP
+                                    </span>
+                                  )}
 
-                              <span className="w-4 h-4 rounded bg-indigo-500"></span>
-
-                              <span className="text-gray-600">
-                                Current proficiency
-                              </span>
-
-                            </div>
-
-
-                            <div className="flex items-center gap-2">
-
-                              <span className="w-4 h-4 rounded bg-slate-100 border-2 border-dashed border-red-400"></span>
-
-                              <span className="text-gray-600">
-                                Required but not achieved
-                              </span>
-
-                            </div>
-
-
-                            <div className="flex items-center gap-2">
-
-                              <span className="w-4 h-4 rounded bg-slate-100 border border-slate-200"></span>
-
-                              <span className="text-gray-600">
-                                Not required
-                              </span>
-
-                            </div>
-
-                          </div>
+                                </div>
+                              );
+                            }
+                          )}
 
                         </div>
 
+                        {/* HEATMAP LEGEND */}
 
-                        {/* ==============================
-                            ACHIEVEMENT BAR
-                        ============================== */}
+                        <div className="mt-4 flex flex-wrap gap-5 text-sm">
 
-                        <div className="mt-6">
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded bg-indigo-500"></span>
 
-                          <div className="flex justify-between text-xs text-gray-500 mb-2">
-
-                            <span>
-                              Skill achievement
+                            <span className="text-gray-600">
+                              Current proficiency
                             </span>
-
-                            <span>
-                              Current {currentPercentage}%
-                              {" / "}
-                              Required {requiredPercentage}%
-                            </span>
-
                           </div>
 
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded bg-slate-100 border-2 border-dashed border-red-400"></span>
 
-                          <div className="relative w-full bg-gray-200 rounded-full h-3">
-
-                            <div
-                              className="bg-indigo-500 h-3 rounded-full"
-                              style={{
-                                width:
-                                  `${currentPercentage}%`,
-                              }}
-                            />
-
-
-                            <div
-                              className="absolute top-0 w-1 h-3 bg-purple-700"
-                              style={{
-                                left:
-                                  `calc(${requiredPercentage}% - 2px)`,
-                              }}
-                            />
-
+                            <span className="text-gray-600">
+                              Required but not achieved
+                            </span>
                           </div>
 
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded bg-slate-100 border border-slate-200"></span>
 
-                          <div className="flex justify-between mt-2 text-xs">
-
-                            <span className="text-indigo-600">
-                              ● Current level
+                            <span className="text-gray-600">
+                              Not required
                             </span>
-
-                            <span className="text-purple-700">
-                              │ Required level
-                            </span>
-
                           </div>
 
                         </div>
 
                       </div>
 
-                    );
+                      {/* ACHIEVEMENT BAR */}
 
-                  }
-                )}
+                      <div className="mt-6">
+
+                        <div className="flex justify-between text-xs text-gray-500 mb-2">
+                          <span>
+                            Skill achievement
+                          </span>
+
+                          <span>
+                            Current {currentPercentage}%
+                            {" / "}
+                            Required {requiredPercentage}%
+                          </span>
+                        </div>
+
+                        <div className="relative w-full bg-gray-200 rounded-full h-3">
+
+                          <div
+                            className="bg-indigo-500 h-3 rounded-full"
+                            style={{
+                              width:
+                                `${currentPercentage}%`,
+                            }}
+                          />
+
+                          <div
+                            className="absolute top-0 w-1 h-3 bg-purple-700"
+                            style={{
+                              left:
+                                `calc(${requiredPercentage}% - 2px)`,
+                            }}
+                          />
+
+                        </div>
+
+                        <div className="flex justify-between mt-2 text-xs">
+
+                          <span className="text-indigo-600">
+                            ● Current level
+                          </span>
+
+                          <span className="text-purple-700">
+                            │ Required level
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
 
               </div>
-
             )}
 
-
-            {/* ==============================
-                GAP SEVERITY LEGEND
-            ============================== */}
+            {/* GAP SEVERITY LEGEND */}
 
             <div className="mt-8 pt-6 border-t">
 
@@ -1261,46 +953,31 @@ function EmployeeDashboard() {
               <div className="flex flex-wrap gap-3">
 
                 <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-green-500" />
-
                   <span className="text-sm text-green-700">
                     No Gap
                   </span>
-
                 </div>
 
-
                 <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-yellow-500" />
-
                   <span className="text-sm text-yellow-700">
                     Low Gap
                   </span>
-
                 </div>
 
-
                 <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-orange-500" />
-
                   <span className="text-sm text-orange-700">
                     Moderate Gap
                   </span>
-
                 </div>
 
-
                 <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-red-500" />
-
                   <span className="text-sm text-red-700">
                     High Gap
                   </span>
-
                 </div>
 
               </div>
@@ -1309,6 +986,345 @@ function EmployeeDashboard() {
 
           </div>
 
+          {/* =================================================
+              PERSISTENT HISTORICAL ASSESSMENT COMPARISON
+          ================================================= */}
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
+
+            {/* HEADER */}
+
+            <div className="flex items-start gap-4 mb-6">
+
+              <div className="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <History
+                  size={30}
+                  className="text-purple-600"
+                />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">
+                  Historical Assessment Comparison
+                </h2>
+
+                <p className="text-gray-500 mt-1">
+                  Compare your skill levels before and after reassessment.
+                </p>
+              </div>
+
+            </div>
+
+            {/* =================================================
+                NO HISTORICAL DATA
+            ================================================= */}
+
+            {!historicalComparison ||
+            !Array.isArray(
+              historicalComparison.skillResults
+            ) ||
+            historicalComparison.skillResults.length === 0 ? (
+
+              <div className="border border-slate-200 bg-slate-50 rounded-xl py-12 text-center">
+
+                <History
+                  size={52}
+                  className="text-slate-400 mx-auto mb-4"
+                />
+
+                <h3 className="text-xl font-semibold text-slate-700">
+                  No historical assessment data available.
+                </h3>
+
+                <p className="text-slate-400 mt-2">
+                  Complete a reassessment to see your skill improvement here.
+                </p>
+
+              </div>
+
+            ) : (
+
+              <>
+                {/* =================================================
+                    LATEST ASSESSMENT INFORMATION
+                ================================================= */}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+
+                  {/* OVERALL SCORE */}
+
+                  <div className="bg-indigo-50 rounded-xl p-5">
+
+                    <p className="text-sm text-indigo-600 font-medium">
+                      Latest Overall Score
+                    </p>
+
+                    <p className="text-3xl font-bold text-indigo-700 mt-2">
+                      {Number(
+                        historicalComparison.overallScore || 0
+                      ).toFixed(1)}
+                      %
+                    </p>
+
+                  </div>
+
+                  {/* PERFORMANCE LEVEL */}
+
+                  <div className="bg-green-50 rounded-xl p-5">
+
+                    <p className="text-sm text-green-600 font-medium">
+                      Performance Level
+                    </p>
+
+                    <p className="text-2xl font-bold text-green-700 mt-3">
+                      {historicalComparison.performanceLevel ||
+                        "Calculated"}
+                    </p>
+
+                  </div>
+
+                  {/* ASSESSMENT DATE */}
+
+                  <div className="bg-purple-50 rounded-xl p-5">
+
+                    <p className="text-sm text-purple-600 font-medium">
+                      Latest Reassessment
+                    </p>
+
+                    <p className="text-lg font-bold text-purple-700 mt-3">
+                      {historicalComparison.assessmentDate
+                        ? new Date(
+                            historicalComparison.assessmentDate
+                          ).toLocaleString()
+                        : "Recently completed"}
+                    </p>
+
+                  </div>
+
+                </div>
+
+                {/* =================================================
+                    COMPARISON TABLE
+                ================================================= */}
+
+                <div className="overflow-x-auto">
+
+                  <table className="w-full">
+
+                    <thead>
+
+                      <tr className="border-b border-slate-200">
+
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">
+                          Skill
+                        </th>
+
+                        <th className="text-center py-4 px-4 text-sm font-semibold text-slate-600">
+                          Previous Level
+                        </th>
+
+                        <th className="text-center py-4 px-4 text-sm font-semibold text-slate-600">
+                          Current Level
+                        </th>
+
+                        <th className="text-center py-4 px-4 text-sm font-semibold text-slate-600">
+                          Improvement
+                        </th>
+
+                        <th className="text-center py-4 px-4 text-sm font-semibold text-slate-600">
+                          Remaining Gap
+                        </th>
+
+                      </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                      {historicalComparison.skillResults.map(
+                        (skill, index) => {
+
+                          const improvement =
+                            Number(
+                              skill.improvement || 0
+                            );
+
+                          const remainingGap =
+                            Number(
+                              skill.remainingGap || 0
+                            );
+
+                          return (
+                            <tr
+                              key={
+                                skill.skillName ||
+                                index
+                              }
+                              className="border-b border-slate-100 hover:bg-slate-50"
+                            >
+
+                              {/* SKILL */}
+
+                              <td className="py-4 px-4">
+
+                                <span className="font-semibold text-slate-800">
+                                  {skill.skillName ||
+                                    "Unknown Skill"}
+                                </span>
+
+                              </td>
+
+                              {/* PREVIOUS LEVEL */}
+
+                              <td className="py-4 px-4 text-center">
+
+                                <div className="flex flex-col items-center">
+
+                                  <span className="font-semibold text-slate-700">
+                                    {skill.previousLevelName ||
+                                      skill.previousLevel ||
+                                      "Not Rated"}
+                                  </span>
+
+                                  {skill.previousLevel !==
+                                    null &&
+                                    skill.previousLevel !==
+                                      undefined && (
+                                      <span className="text-xs text-slate-400 mt-1">
+                                        Level{" "}
+                                        {skill.previousLevel}
+                                        {" / 5"}
+                                      </span>
+                                    )}
+
+                                </div>
+
+                              </td>
+
+                              {/* CURRENT LEVEL */}
+
+                              <td className="py-4 px-4 text-center">
+
+                                <div className="flex flex-col items-center">
+
+                                  <span className="font-semibold text-indigo-600">
+                                    {skill.currentLevelName ||
+                                      skill.currentLevel ||
+                                      "Not Rated"}
+                                  </span>
+
+                                  {skill.currentLevel !==
+                                    null &&
+                                    skill.currentLevel !==
+                                      undefined && (
+                                      <span className="text-xs text-indigo-400 mt-1">
+                                        Level{" "}
+                                        {skill.currentLevel}
+                                        {" / 5"}
+                                      </span>
+                                    )}
+
+                                </div>
+
+                              </td>
+
+                              {/* IMPROVEMENT */}
+
+                              <td className="py-4 px-4 text-center">
+
+                                {improvement > 0 ? (
+
+                                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+
+                                    <ArrowUp size={15} />
+
+                                    +{improvement}
+
+                                  </span>
+
+                                ) : improvement < 0 ? (
+
+                                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
+
+                                    <ArrowDown size={15} />
+
+                                    {improvement}
+
+                                  </span>
+
+                                ) : (
+
+                                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-sm">
+
+                                    <Minus size={15} />
+
+                                    0
+
+                                  </span>
+
+                                )}
+
+                              </td>
+
+                              {/* REMAINING GAP */}
+
+                              <td className="py-4 px-4 text-center">
+
+                                {remainingGap === 0 ? (
+
+                                  <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+                                    No Gap
+                                  </span>
+
+                                ) : (
+
+                                  <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 font-semibold text-sm">
+
+                                    {remainingGap}{" "}
+
+                                    {remainingGap === 1
+                                      ? "level"
+                                      : "levels"}
+
+                                  </span>
+
+                                )}
+
+                              </td>
+
+                            </tr>
+                          );
+                        }
+                      )}
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+                {/* INFORMATION */}
+
+                <div className="mt-6 bg-purple-50 border border-purple-100 rounded-xl p-4">
+
+                  <p className="text-sm text-purple-700">
+
+                    <span className="font-semibold">
+                      Comparison:
+                    </span>{" "}
+
+                    Previous level represents your proficiency
+                    before reassessment, while Current level
+                    represents your latest reassessment result.
+
+                  </p>
+
+                </div>
+
+              </>
+            )}
+
+          </div>
 
           {/* =================================================
               RECOMMENDED LEARNING
@@ -1319,7 +1335,6 @@ function EmployeeDashboard() {
             <h2 className="text-xl font-bold mb-5">
               Recommended Learning
             </h2>
-
 
             {knowledgeGapCount === 0 ? (
 
@@ -1333,40 +1348,33 @@ function EmployeeDashboard() {
 
                 {actualKnowledgeGaps
                   .slice(0, 4)
-                  .map(
-                    (gap, index) => {
+                  .map((gap, index) => {
 
-                      const skillName =
-                        gap.skillName ||
-                        "Unknown Skill";
+                    const skillName =
+                      gap.skillName ||
+                      "Unknown Skill";
 
+                    return (
+                      <div
+                        key={
+                          gap.id ||
+                          index
+                        }
+                        className="border rounded-lg p-4"
+                      >
 
-                      return (
+                        <span className="font-medium">
+                          Learn {skillName}
+                        </span>
 
-                        <div
-                          key={
-                            gap.id || index
-                          }
-                          className="border rounded-lg p-4"
-                        >
-
-                          <span className="font-medium">
-                            Learn {skillName}
-                          </span>
-
-                        </div>
-
-                      );
-
-                    }
-                  )}
+                      </div>
+                    );
+                  })}
 
               </div>
-
             )}
 
           </div>
-
 
           {/* =================================================
               RECENT ACTIVITY
@@ -1386,13 +1394,9 @@ function EmployeeDashboard() {
           </div>
 
         </main>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default EmployeeDashboard;
