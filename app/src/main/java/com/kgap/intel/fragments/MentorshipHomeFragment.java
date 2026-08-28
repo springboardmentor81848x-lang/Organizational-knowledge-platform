@@ -20,7 +20,15 @@ import com.kgap.intel.databinding.ItemMentorshipSessionBinding;
 import com.kgap.intel.databinding.LayoutSummaryCardCompactBinding;
 import com.kgap.intel.utils.SharedPrefManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.kgap.intel.repository.MentorAssignmentRepository;
+import com.kgap.intel.repository.MentorshipRequestRepository;
+import com.kgap.intel.repository.EmployeeRepository;
+import com.kgap.intel.models.MentorshipRequest;
+import com.kgap.intel.models.EmployeeResponse;
 
 public class MentorshipHomeFragment extends Fragment {
     private FragmentMentorshipHomeBinding binding;
@@ -39,12 +47,15 @@ public class MentorshipHomeFragment extends Fragment {
         setupHub();
         setupSummaryCards();
         setupMyMentor();
+        setupRequestedMentors();
+        setupMyMentees();
         setupUpcomingSessions();
         setupRecommendedMentors();
         setupRecentKnowledge();
     }
 
     private void setupHub() {
+        String role = SharedPrefManager.getInstance(requireContext()).getUserRole();
         // 1. Find Mentor
         ItemHubButtonBinding find = binding.hubFindMentor;
         find.ivIcon.setImageResource(android.R.drawable.ic_menu_search);
@@ -61,32 +72,23 @@ public class MentorshipHomeFragment extends Fragment {
         myMentors.tvLabel.setText("Community Q&A");
         myMentors.getRoot().setOnClickListener(v -> navigateTo(new CommunityQaFragment()));
 
-        // 3. Sessions
-        ItemHubButtonBinding sessions = binding.hubSessions;
-        sessions.ivIcon.setImageResource(android.R.drawable.ic_menu_today);
-        sessions.ivIcon.setColorFilter(Color.parseColor("#EF6C00"));
-        sessions.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FFF3E0"));
-        sessions.tvLabel.setText("Sessions");
-        sessions.getRoot().setOnClickListener(v -> navigateTo(new MentorshipSessionsFragment()));
+        // 3. Knowledge Hub (replacing Sessions card)
+        ItemHubButtonBinding knowledgeHub = binding.hubSessions;
+        knowledgeHub.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
+        knowledgeHub.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
+        knowledgeHub.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
+        knowledgeHub.tvLabel.setText("Knowledge Hub");
+        knowledgeHub.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeHubFragment()));
 
-        // 4. Resources
-        ItemHubButtonBinding resources = binding.hubResources;
-        String role = SharedPrefManager.getInstance(requireContext()).getUserRole();
-        if ("MENTOR".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role) || "LD_ADMIN".equalsIgnoreCase(role)) {
-            resources.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
-            resources.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
-            resources.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
-            resources.tvLabel.setText("Host Session");
-            resources.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeSessionCreateFragment()));
-        } else {
-            resources.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
-            resources.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
-            resources.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
-            resources.tvLabel.setText("Resources");
-            resources.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeHubFragment()));
-        }
+        // 4. Host Session (replacing Resources card)
+        ItemHubButtonBinding hostSession = binding.hubResources;
+        hostSession.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
+        hostSession.ivIcon.setColorFilter(Color.parseColor("#009688"));
+        hostSession.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
+        hostSession.tvLabel.setText("Host Session");
+        hostSession.getRoot().setOnClickListener(v -> navigateTo(new KnowledgeSessionCreateFragment()));
 
-        // 5. Received Requests
+        // 5. Received Requests (Incoming)
         ItemHubButtonBinding received = binding.hubRequestsReceived;
         received.ivIcon.setImageResource(android.R.drawable.ic_menu_info_details);
         received.ivIcon.setColorFilter(Color.parseColor("#E91E63"));
@@ -102,9 +104,35 @@ public class MentorshipHomeFragment extends Fragment {
         sent.tvLabel.setText("Sent");
         sent.getRoot().setOnClickListener(v -> navigateTo(MentorshipRequestsListFragment.newInstance(false)));
 
+        // 7. Knowledge Sessions (Row 4 Card 1)
+        ItemHubButtonBinding knowledgeSessions = binding.hubKnowledgeSessions;
+        knowledgeSessions.ivIcon.setImageResource(android.R.drawable.ic_menu_today);
+        knowledgeSessions.ivIcon.setColorFilter(Color.parseColor("#EF6C00"));
+        knowledgeSessions.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FFF3E0"));
+        knowledgeSessions.tvLabel.setText("Sessions");
+        knowledgeSessions.getRoot().setOnClickListener(v -> navigateTo(new MentorshipSessionsFragment()));
+
+        // 8. Mentorship Sessions (Row 4 Card 2)
+        ItemHubButtonBinding mentorshipSessions = binding.hubMentorshipSessions;
+        mentorshipSessions.ivIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
+        mentorshipSessions.ivIcon.setColorFilter(Color.parseColor("#1976D2"));
+        mentorshipSessions.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+        mentorshipSessions.tvLabel.setText("Mentorship");
+        mentorshipSessions.getRoot().setOnClickListener(v -> navigateTo(new MentorshipSessionsFragment()));
+
+        // Remove Mentorship card as we already have other options
+        binding.gridHub.removeView(binding.hubMentorshipSessions.getRoot());
+
+        // Remove Host Session for Employees
+        if ("EMPLOYEE".equalsIgnoreCase(role)) {
+            binding.gridHub.removeView(binding.hubResources.getRoot());
+        }
+
         if ("LD_ADMIN".equalsIgnoreCase(role) || "LEARNING_DEVELOPMENT_ADMIN".equalsIgnoreCase(role)) {
-            received.getRoot().setVisibility(View.GONE);
-            sent.getRoot().setVisibility(View.GONE);
+            binding.gridHub.removeView(received.getRoot());
+            binding.gridHub.removeView(sent.getRoot());
+            find.tvLabel.setText("Assign Mentors");
+            find.getRoot().setOnClickListener(v -> navigateTo(new AssignMentorsFragment()));
         }
 
         binding.tvSeeAllMentors.setOnClickListener(v -> navigateTo(new FindMentorFragment()));
@@ -146,17 +174,230 @@ public class MentorshipHomeFragment extends Fragment {
     }
 
     private void setupMyMentor() {
-        ItemMentorCardModernBinding b = binding.cardMyMentor;
-        b.tvMentorName.setText("Michael Chen");
-        b.tvMentorExpertise.setText("Architect at Google");
-        b.tvMentorRating.setText("5.0 (210 reviews)");
-        b.tvMentorExperience.setText("15 Years Experience");
-        b.tvAvailabilityBadge.setText("Connected");
-        b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
-        b.btnRequestMentorship.setText("Message");
+        String role = SharedPrefManager.getInstance(requireContext()).getUserRole();
+        if (!"EMPLOYEE".equalsIgnoreCase(role)) {
+            binding.tvCurrentMentorTitle.setVisibility(View.GONE);
+            binding.cardMyMentor.getRoot().setVisibility(View.GONE);
+            return;
+        }
 
-        b.btnViewProfile.setOnClickListener(v -> openMentorProfile("Michael Chen", 16L));
-        b.btnRequestMentorship.setOnClickListener(v -> Toast.makeText(getContext(), "Opening chat with Michael Chen...", Toast.LENGTH_SHORT).show());
+        ItemMentorCardModernBinding b = binding.cardMyMentor;
+        binding.tvCurrentMentorTitle.setVisibility(View.VISIBLE);
+        b.getRoot().setVisibility(View.VISIBLE);
+
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId == -1L) {
+            userId = 4L; // Default Aarav Sharma
+        }
+
+        new MentorAssignmentRepository(requireContext()).getCurrentAssignmentForEmployee(userId).observe(getViewLifecycleOwner(), assignment -> {
+            Long rawMentorId = (assignment != null && "ACTIVE".equalsIgnoreCase(assignment.getStatus())) ? assignment.getMentorId() : 16L;
+            Long mentorId = (rawMentorId != null && rawMentorId != 3L && rawMentorId > 0) ? rawMentorId : 16L;
+
+            new EmployeeRepository(requireContext()).getEmployeeById(mentorId).observe(getViewLifecycleOwner(), emp -> {
+                if (emp != null && !"LD_ADMIN".equalsIgnoreCase(emp.getRole()) && !"LEARNING_DEVELOPMENT_ADMIN".equalsIgnoreCase(emp.getRole()) && !"ADMIN".equalsIgnoreCase(emp.getRole()) && !"L&D".equalsIgnoreCase(emp.getFirstName())) {
+                    String mentorName = emp.getFirstName() + " " + emp.getLastName();
+                    b.tvMentorName.setText(mentorName);
+                    String roleStr = (emp.getRole() != null && !"EMPLOYEE".equalsIgnoreCase(emp.getRole())) ? emp.getRole() : "Senior Engineer & Mentor";
+                    if (emp.getDepartment() != null && !emp.getDepartment().isEmpty()) {
+                        roleStr += " • " + emp.getDepartment();
+                    }
+                    b.tvMentorExpertise.setText(roleStr);
+                    b.tvMentorExperience.setText(emp.getExperience() != null && !emp.getExperience().isEmpty() ? emp.getExperience() + " Experience" : "11+ Years Experience");
+                    b.tvMentorRating.setText("5.0");
+                    b.tvAvailabilityBadge.setText("Assigned Mentor");
+                    b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
+                    b.btnRequestMentorship.setText("Message");
+                    b.btnViewProfile.setVisibility(View.VISIBLE);
+                    b.btnRequestMentorship.setVisibility(View.VISIBLE);
+                    b.btnViewProfile.setOnClickListener(v -> openMentorProfile(mentorName, mentorId));
+                    b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(mentorName, mentorId)));
+                } else {
+                    b.tvMentorName.setText("Michael Chen");
+                    b.tvMentorExpertise.setText("Principal Architect • Engineering");
+                    b.tvMentorExperience.setText("11 Years Experience");
+                    b.tvMentorRating.setText("5.0");
+                    b.tvAvailabilityBadge.setText("Assigned Mentor");
+                    b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
+                    b.btnRequestMentorship.setText("Message");
+                    b.btnViewProfile.setVisibility(View.VISIBLE);
+                    b.btnRequestMentorship.setVisibility(View.VISIBLE);
+                    b.btnViewProfile.setOnClickListener(v -> openMentorProfile("Michael Chen", 16L));
+                    b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance("Michael Chen", 16L)));
+                }
+            });
+        });
+    }
+
+    private void setupRequestedMentors() {
+        binding.rvRequestedMentors.setLayoutManager(new LinearLayoutManager(getContext()));
+        List<RequestedMentorItem> requestedMentorsList = new ArrayList<>();
+
+        GenericAdapter<RequestedMentorItem> adapter = new GenericAdapter<RequestedMentorItem>(requestedMentorsList) {
+            @Override
+            public void onBind(View view, RequestedMentorItem item) {
+                ItemMentorCardModernBinding b = ItemMentorCardModernBinding.bind(view);
+                b.tvMentorName.setText(item.mentorName);
+                b.tvMentorExpertise.setText(item.role);
+                b.tvMentorExperience.setText(item.experience);
+                b.tvMentorRating.setText("5.0");
+
+                boolean isAccepted = "ACCEPTED".equalsIgnoreCase(item.status);
+                b.tvAvailabilityBadge.setText(isAccepted ? "Connected Mentor" : "Request Pending");
+                b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                        Color.parseColor(isAccepted ? "#E8F5E9" : "#FFF8E1")));
+                b.tvAvailabilityBadge.setTextColor(Color.parseColor(isAccepted ? "#2E7D32" : "#F57F17"));
+
+                b.btnViewProfile.setVisibility(View.VISIBLE);
+                b.btnViewProfile.setText("Profile");
+                b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.mentorName, item.mentorId));
+
+                b.btnRequestMentorship.setVisibility(View.VISIBLE);
+                if (isAccepted) {
+                    b.btnRequestMentorship.setText("💬 Message");
+                    b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(item.mentorName, item.mentorId)));
+                } else {
+                    b.btnRequestMentorship.setText("Pending");
+                    b.btnRequestMentorship.setOnClickListener(v -> Toast.makeText(getContext(), "Mentorship request is pending approval.", Toast.LENGTH_SHORT).show());
+                }
+            }
+
+            @Override
+            public int getLayout() { return R.layout.item_mentor_card_modern; }
+        };
+        binding.rvRequestedMentors.setAdapter(adapter);
+
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId == -1L) userId = 4L;
+
+        new MentorshipRequestRepository(requireContext()).getRequestsForMentee(userId).observe(getViewLifecycleOwner(), requests -> {
+            if (requests != null && !requests.isEmpty()) {
+                new EmployeeRepository(requireContext()).getAllEmployees().observe(getViewLifecycleOwner(), employees -> {
+                    if (employees != null) {
+                        requestedMentorsList.clear();
+                        Map<Long, EmployeeResponse> empMap = new HashMap<>();
+                        for (EmployeeResponse emp : employees) {
+                            if (emp.getId() != null) empMap.put(emp.getId(), emp);
+                        }
+
+                        for (MentorshipRequest req : requests) {
+                            if (req.getMentorId() != null) {
+                                EmployeeResponse emp = empMap.get(req.getMentorId());
+                                String name = emp != null ? ((emp.getFirstName() != null ? emp.getFirstName() : "") + " " + (emp.getLastName() != null ? emp.getLastName() : "")).trim() : "Mentor #" + req.getMentorId();
+                                String role = emp != null && emp.getRole() != null ? emp.getRole() + (emp.getDepartment() != null ? " • " + emp.getDepartment() : "") : "Domain Mentor";
+                                String exp = emp != null && emp.getExperience() != null ? emp.getExperience() + " Exp." : "Senior Technical Lead";
+
+                                requestedMentorsList.add(new RequestedMentorItem(
+                                        req.getMentorId(),
+                                        name,
+                                        role,
+                                        exp,
+                                        req.getStatus() != null ? req.getStatus() : "PENDING"
+                                ));
+                            }
+                        }
+
+                        if (requestedMentorsList.isEmpty()) {
+                            binding.tvRequestedMentorsTitle.setVisibility(View.GONE);
+                            binding.rvRequestedMentors.setVisibility(View.GONE);
+                        } else {
+                            binding.tvRequestedMentorsTitle.setVisibility(View.VISIBLE);
+                            binding.rvRequestedMentors.setVisibility(View.VISIBLE);
+                            adapter.notifyDataSetChanged();
+                        }
+                    }
+                });
+            } else {
+                binding.tvRequestedMentorsTitle.setVisibility(View.GONE);
+                binding.rvRequestedMentors.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private static class RequestedMentorItem {
+        final Long mentorId;
+        final String mentorName;
+        final String role;
+        final String experience;
+        final String status;
+
+        RequestedMentorItem(Long mentorId, String mentorName, String role, String experience, String status) {
+            this.mentorId = mentorId;
+            this.mentorName = mentorName;
+            this.role = role;
+            this.experience = experience;
+            this.status = status;
+        }
+    }
+
+    private void setupMyMentees() {
+        binding.rvMyMentees.setLayoutManager(new LinearLayoutManager(getContext()));
+        List<EmployeeResponse> menteesList = new ArrayList<>();
+        
+        GenericAdapter<EmployeeResponse> adapter = new GenericAdapter<EmployeeResponse>(menteesList) {
+            @Override
+            public void onBind(View view, EmployeeResponse item) {
+                ItemMentorCardModernBinding b = ItemMentorCardModernBinding.bind(view);
+                String menteeName = item.getFirstName() + " " + item.getLastName();
+                b.tvMentorName.setText(menteeName);
+                b.tvMentorExpertise.setText(item.getRole() != null ? item.getRole() : "Software Engineer");
+                b.tvMentorExperience.setText(item.getExperience() != null && !item.getExperience().isEmpty() ? item.getExperience() + " Experience" : "2 Years Experience");
+                b.tvMentorRating.setText("Mentee");
+                b.tvAvailabilityBadge.setText("Connected");
+                b.tvAvailabilityBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
+                
+                b.btnViewProfile.setVisibility(View.VISIBLE);
+                b.btnViewProfile.setText("Profile");
+                b.btnViewProfile.setOnClickListener(v -> openMenteeProfile(item));
+
+                b.btnRequestMentorship.setText("Chat");
+                b.btnRequestMentorship.setVisibility(View.VISIBLE);
+                b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(menteeName, item.getId())));
+            }
+            @Override
+            public int getLayout() { return R.layout.item_mentor_card_modern; }
+        };
+        binding.rvMyMentees.setAdapter(adapter);
+
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId == -1L) userId = 4L;
+
+        new MentorshipRequestRepository(requireContext()).getRequestsForMentor(userId).observe(getViewLifecycleOwner(), requests -> {
+            if (requests != null && !requests.isEmpty()) {
+                List<Long> menteeIds = new ArrayList<>();
+                for (MentorshipRequest req : requests) {
+                    if ("ACCEPTED".equalsIgnoreCase(req.getStatus())) {
+                        menteeIds.add(req.getMenteeId());
+                    }
+                }
+                if (!menteeIds.isEmpty()) {
+                    new EmployeeRepository(requireContext()).getAllEmployees().observe(getViewLifecycleOwner(), employees -> {
+                        if (employees != null) {
+                            menteesList.clear();
+                            for (EmployeeResponse emp : employees) {
+                                if (menteeIds.contains(emp.getId())) {
+                                    menteesList.add(emp);
+                                }
+                            }
+                            if (menteesList.isEmpty()) {
+                                binding.tvMenteesTitle.setVisibility(View.GONE);
+                                binding.rvMyMentees.setVisibility(View.GONE);
+                            } else {
+                                binding.tvMenteesTitle.setVisibility(View.VISIBLE);
+                                binding.rvMyMentees.setVisibility(View.VISIBLE);
+                                adapter.notifyDataSetChanged();
+                            }
+                        }
+                    });
+                } else {
+                    binding.tvMenteesTitle.setVisibility(View.GONE);
+                    binding.rvMyMentees.setVisibility(View.GONE);
+                }
+            } else {
+                binding.tvMenteesTitle.setVisibility(View.GONE);
+                binding.rvMyMentees.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void setupUpcomingSessions() {
@@ -193,7 +434,8 @@ public class MentorshipHomeFragment extends Fragment {
                 b.tvAvailabilityBadge.setText(item.getAvailability());
 
                 b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
-                b.btnRequestMentorship.setOnClickListener(v -> openMentorshipRequest(item.getDisplayName(), item.getEffectiveMentorId()));
+                b.btnRequestMentorship.setText("💬 Chat");
+                b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(item.getDisplayName(), item.getEffectiveMentorId())));
                 view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
             }
             @Override
@@ -216,6 +458,22 @@ public class MentorshipHomeFragment extends Fragment {
 
     private void openMentorProfile(String mentorName, Long mentorId) {
         navigateTo(MentorProfileFragment.newInstance(mentorName, mentorId));
+    }
+
+    private void openMenteeProfile(EmployeeResponse item) {
+        if (item == null) return;
+        String name = item.getFirstName() + " " + item.getLastName();
+        com.kgap.intel.models.ExpertItem expertItem = new com.kgap.intel.models.ExpertItem(
+            item.getId(),
+            name,
+            "Mentee Guidance",
+            "Active Mentee",
+            item.getDepartment() != null ? item.getDepartment() : "Engineering",
+            item.getRole() != null ? item.getRole() : "Software Engineer",
+            item.getBio() != null && !item.getBio().isEmpty() ? item.getBio() : "Active mentee receiving technical and domain guidance."
+        );
+        ExpertProfileBottomSheet bottomSheet = ExpertProfileBottomSheet.newInstance(expertItem);
+        bottomSheet.show(getChildFragmentManager(), "MenteeProfile");
     }
 
     private void openMentorshipRequest(String mentorName, Long mentorId) {

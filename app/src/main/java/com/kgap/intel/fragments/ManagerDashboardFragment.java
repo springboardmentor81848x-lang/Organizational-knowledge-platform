@@ -21,6 +21,14 @@ import com.kgap.intel.viewmodel.ManagerViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.kgap.intel.models.EmployeeResponse;
 
 public class ManagerDashboardFragment extends Fragment {
     private FragmentManagerDashboardBinding binding;
@@ -55,7 +63,21 @@ public class ManagerDashboardFragment extends Fragment {
         binding.tvGreeting.setText("Welcome back, " + name + " 👋");
 
         binding.btnNotifications.setOnClickListener(v -> navigateToFragment(new NotificationsFragment()));
-        binding.btnProfileAvatar.setOnClickListener(v -> navigateToFragment(new MoreFragment()));
+        binding.btnSearch.setOnClickListener(v -> new QuickServiceSearchBottomSheet().show(getParentFragmentManager(), "quick_service_search"));
+        setupNotificationBadge();
+    }
+
+    private void setupNotificationBadge() {
+        Long userId = com.kgap.intel.utils.SharedPrefManager.getInstance(requireContext()).getUserId();
+        com.kgap.intel.repository.NotificationRepository notifRepo = new com.kgap.intel.repository.NotificationRepository(requireContext());
+        notifRepo.getUnreadCount(userId).observe(getViewLifecycleOwner(), unreadCount -> {
+            if (unreadCount != null && unreadCount > 0) {
+                binding.tvNotifBadge.setVisibility(View.VISIBLE);
+                binding.tvNotifBadge.setText(unreadCount > 9 ? "9+" : String.valueOf(unreadCount));
+            } else {
+                binding.tvNotifBadge.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void setupBanner() {
@@ -139,9 +161,72 @@ public class ManagerDashboardFragment extends Fragment {
             binding.tvAdoption.setText(adoption));
 
         viewModel.getLearningProgress().observe(getViewLifecycleOwner(), progress -> {
-            binding.tvProgressLabel.setText(progress + "% Courses Completed");
-            binding.pbLearningProgress.setProgress(progress);
+            if (progress == null || progress == -1) {
+                binding.tvProgressLabel.setText("–");
+                binding.pbLearningProgress.setProgress(0);
+            } else {
+                binding.tvProgressLabel.setText(progress + "% Avg Course Progress");
+                binding.pbLearningProgress.setProgress(progress);
+            }
         });
+
+        viewModel.getEmployeeProgressMap().observe(getViewLifecycleOwner(), progressMap -> {
+            List<EmployeeResponse> members = viewModel.getTeamMembers().getValue();
+            if (members != null && !members.isEmpty()) {
+                setupTeamProgressChart(members, progressMap);
+            }
+        });
+
+        viewModel.getTeamMembers().observe(getViewLifecycleOwner(), members -> {
+            Map<Long, Integer> progressMap = viewModel.getEmployeeProgressMap().getValue();
+            if (members != null && !members.isEmpty()) {
+                setupTeamProgressChart(members, progressMap != null ? progressMap : new java.util.HashMap<>());
+            }
+        });
+    }
+
+    private void setupTeamProgressChart(List<EmployeeResponse> members, Map<Long, Integer> progressMap) {
+        List<BarEntry> entries = new ArrayList<>();
+        final List<String> labels = new ArrayList<>();
+        
+        for (int i = 0; i < members.size(); i++) {
+            EmployeeResponse emp = members.get(i);
+            float progress = progressMap != null && progressMap.containsKey(emp.getId()) ? progressMap.get(emp.getId()).floatValue() : 0f;
+            entries.add(new BarEntry(i, progress));
+            labels.add(emp.getFirstName());
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "Progress %");
+        dataSet.setColor(Color.parseColor("#00C853"));
+        dataSet.setValueTextColor(Color.parseColor("#333333"));
+        dataSet.setValueTextSize(9f);
+
+        BarData barData = new BarData(dataSet);
+        binding.barChartLearning.setData(barData);
+        binding.barChartLearning.getDescription().setEnabled(false);
+        binding.barChartLearning.getLegend().setEnabled(false);
+        
+        XAxis xAxis = binding.barChartLearning.getXAxis();
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int idx = (int) value;
+                if (idx >= 0 && idx < labels.size()) {
+                    return labels.get(idx);
+                }
+                return "";
+            }
+        });
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+        xAxis.setTextColor(Color.parseColor("#666666"));
+
+        binding.barChartLearning.getAxisLeft().setAxisMinimum(0f);
+        binding.barChartLearning.getAxisLeft().setAxisMaximum(100f);
+        binding.barChartLearning.getAxisRight().setEnabled(false);
+        binding.barChartLearning.animateY(1000);
+        binding.barChartLearning.invalidate();
     }
 
     private void navigateToFragment(Fragment fragment) {

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/RoundedCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    app:cardElevation="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_path_icon"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#E8EAF6">
+
+                <ImageView
+                    android:id="@+id/iv_path_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_compass"
+                    app:tint="#3949AB" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_path_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cloud Native Backend Architect"
+                    android:textColor="@color/text_dark"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:id="@+id/tv_path_stages"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4 Progressive Stages • 8 Milestones"
+                    android:textColor="@color/gray_700"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_active_learners_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_rounded"
+                android:backgroundTint="#E8F5E9"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="6 Learners"
+                android:textColor="#2E7D32"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-black" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_path_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Guides junior to senior backend engineers through Spring Boot, microservices decomposition, Docker containerization, and AWS ECS deployment."
+            android:textColor="@color/text_dark"
+            android:textSize="13sp" />
+
+        <!-- Stage progression dots / steps -->
+        <LinearLayout
+            android:id="@+id/layout_stages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="#F8FAFC"
+            android:padding="10dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_stage1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1️⃣ Foundational: Java Core &amp; RESTful API Standards"
+                android:textColor="@color/text_dark"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tv_stage2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="2️⃣ Intermediate: Database Transactions &amp; HikariCP Caching"
+                android:textColor="@color/text_dark"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tv_stage3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="3️⃣ Advanced: Kafka Event Streams &amp; Microservice Resiliency"
+                android:textColor="@color/text_dark"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_support_mentees"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Support Path"
+                android:textSize="12sp"
+                app:cornerRadius="8dp"
+                android:minHeight="36dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_curriculum"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="View Details →"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

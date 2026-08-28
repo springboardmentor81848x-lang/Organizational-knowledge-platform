@@ -39,6 +39,14 @@ public class MockDepartmentHeadRepository implements DepartmentHeadRepository {
     }
 
     @Override
+    public LiveData<List<HeatmapRow>> getDepartmentHeatmapRows() {
+        MutableLiveData<List<HeatmapRow>> data = new MutableLiveData<>();
+        List<HeatmapRow> rows = new ArrayList<>();
+        data.setValue(rows);
+        return data;
+    }
+
+    @Override
     public LiveData<TrainingAdoption> getTrainingAdoptionRates() {
         MutableLiveData<TrainingAdoption> data = new MutableLiveData<>();
         data.setValue(new TrainingAdoption(120, 45, 65, 68.5));
@@ -65,6 +73,13 @@ public class MockDepartmentHeadRepository implements DepartmentHeadRepository {
         list.add(new EmployeeProgress("Charlie Day", 75, 80, 4));
         list.add(new EmployeeProgress("Diana Prince", 95, 100, 8));
         data.setValue(list);
+        return data;
+    }
+
+    @Override
+    public LiveData<String> getDepartmentName() {
+        MutableLiveData<String> data = new MutableLiveData<>();
+        data.setValue("Engineering");
         return data;
     }
 }

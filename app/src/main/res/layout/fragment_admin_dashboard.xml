@@ -16,29 +16,65 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
             <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/app_logo" tools:ignore="ContentDescription" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="KGap Admin Dashboard" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="System Admin Center" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_notifications"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:layout_marginEnd="8dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                android:padding="10dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                android:layout_marginEnd="8dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/btn_notifications"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                <TextView
+                    android:id="@+id/tv_notif_badge"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="@drawable/circle_green_dot"
+                    android:backgroundTint="#FF3B30"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_profile_avatar"
+                android:id="@+id/btn_profile"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="end"
                 android:layout_marginEnd="12dp"
-                android:src="@drawable/app_logo"
-                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/btn_search"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:src="@android:drawable/ic_menu_search"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -65,8 +101,8 @@
                 android:paddingHorizontal="24dp"
                 android:paddingTop="20dp"
                 android:paddingBottom="16dp">
-                <TextView android:id="@+id/tv_greeting" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Welcome back, Admin! 👋" android:textColor="@color/text_dark" android:textSize="24sp" android:fontFamily="sans-serif-black" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="System Administration &amp; Security" android:textColor="@color/gray_700" android:textSize="14sp" />
+                <TextView android:id="@+id/tv_greeting" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Welcome back, System Admin! 👋" android:textColor="@color/text_dark" android:textSize="24sp" android:fontFamily="sans-serif-black" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Access Governance &amp; Security Control Center" android:textColor="@color/gray_700" android:textSize="14sp" />
             </LinearLayout>
 
             <androidx.viewpager2.widget.ViewPager2
@@ -75,13 +111,13 @@
                 android:layout_height="180dp"
                 android:layout_marginBottom="16dp" />
 
-            <!-- Navigation Hub Section -->
+            <!-- Control Hub (6 Core Pillars) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="8dp"
-                android:text="Control Hub"
+                android:text="System Administration Hub"
                 android:textColor="@color/gray_700"
                 android:textSize="12sp"
                 android:textAllCaps="true"
@@ -95,10 +131,18 @@
                 android:paddingHorizontal="8dp"
                 android:columnCount="2">
 
+                <!-- 1. User Management -->
                 <include android:id="@+id/hub_users" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <!-- 2. Role Management -->
+                <include android:id="@+id/hub_roles" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <!-- 3. Access Control -->
                 <include android:id="@+id/hub_access" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <!-- 4. JWT & Auth Engine -->
+                <include android:id="@+id/hub_auth" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <!-- 5. System Monitoring -->
                 <include android:id="@+id/hub_monitoring" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_more" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <!-- 6. Security & Audit Logs -->
+                <include android:id="@+id/hub_security" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
             </GridLayout>
 
             <LinearLayout
@@ -108,8 +152,8 @@
                 android:paddingHorizontal="24dp"
                 android:paddingTop="28dp">
 
-                <!-- 1. System Overview Section -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Insights" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+                <!-- System Telemetry & Insights -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Live System Telemetry" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
 
                 <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:columnCount="2">
                     <com.google.android.material.card.MaterialCardView
@@ -125,10 +169,11 @@
                         app:cardBackgroundColor="@color/white"
                         app:cardElevation="2dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total Users" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total System Accounts" android:textSize="12sp" android:textColor="@color/gray_700"/>
                             <TextView android:id="@+id/tv_total_users" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_purple"/>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
+
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_system_status"
                         style="@style/RoundedCard"
@@ -142,13 +187,13 @@
                         app:cardBackgroundColor="@color/white"
                         app:cardElevation="2dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Status" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                            <TextView android:id="@+id/tv_system_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Checking..." android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Server Health" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                            <TextView android:id="@+id/tv_system_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Operational" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald"/>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </GridLayout>
 
-                <!-- Detailed Stats Card -->
+                <!-- Detailed Account Status Bar -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_user_summary"
                     style="@style/RoundedCard"
@@ -162,62 +207,56 @@
                     app:cardElevation="2dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingVertical="18dp" android:gravity="center_vertical">
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Active" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
-                            <TextView android:id="@+id/tv_active_users" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="0" android:textSize="16sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Active Users" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
+                            <TextView android:id="@+id/tv_active_users" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="14" android:textSize="16sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald" />
                         </LinearLayout>
                         <View android:layout_width="1dp" android:layout_height="24dp" android:background="@color/gray_200" />
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Inactive" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Suspended" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
                             <TextView android:id="@+id/tv_inactive_users" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="0" android:textSize="16sp" android:fontFamily="sans-serif-black" android:textColor="@color/gray_500" />
                         </LinearLayout>
                         <View android:layout_width="1dp" android:layout_height="24dp" android:background="@color/gray_200" />
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Roles" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
-                            <TextView android:id="@+id/tv_role_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="0" android:textSize="16sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_purple" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Roles Defined" android:textSize="11sp" android:textColor="@color/gray_700" android:textAllCaps="true" />
+                            <TextView android:id="@+id/tv_role_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="7" android:textSize="16sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_purple" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 2. Security Alerts Section -->
+                <!-- Security & Live Audits Banner -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginTop="28dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Security Alerts" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Live Monitor" android:textColor="@color/primary_purple" android:textSize="12sp" android:gravity="end" android:fontFamily="sans-serif-medium" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Security Governance" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+                    <TextView android:id="@+id/tv_view_audit_logs" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Full Audit Logs →" android:textColor="@color/primary_purple" android:textSize="13sp" android:gravity="end" android:fontFamily="sans-serif-bold" />
                 </LinearLayout>
 
-                <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardBackgroundColor="@color/white" app:cardElevation="2dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:gravity="center_vertical">
-                        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_dialog_info" app:tint="@color/primary_emerald" />
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="No critical security alerts detected." android:textSize="13sp" android:textColor="@color/gray_700" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- 3. Recent Login Activity -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Recent Activity" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
-                <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardBackgroundColor="@color/white" app:cardElevation="2dp">
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_security_banner"
+                    style="@style/RoundedCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardElevation="2dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                            <View android:layout_width="8dp" android:layout_height="8dp" android:background="@color/primary_emerald" />
-                            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="admin@kgap.com - Successful login" android:textSize="13sp" android:textColor="@color/text_dark" />
+                            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_lock_lock" app:tint="@color/primary_emerald" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="JWT RS256 Auth &amp; 2FA Protection Active" android:textSize="14sp" android:textColor="@color/text_dark" android:fontFamily="sans-serif-bold" />
                         </LinearLayout>
-                        <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="12dp" android:background="@color/neutral_bg" />
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                            <View android:layout_width="8dp" android:layout_height="8dp" android:background="@color/primary_emerald" />
-                            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="manager_it@kgap.com - Successful login" android:textSize="13sp" android:textColor="@color/text_dark" />
-                        </LinearLayout>
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="All API endpoints protected by Spring Security filters. Zero unauthorized breaches recorded." android:textSize="12sp" android:textColor="@color/gray_700" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 4. Quick Actions Section -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Tools &amp; Actions" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+                <!-- Quick Administrative Tools -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="Administrative Tools" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
-                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_add_user" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="6dp" android:text="Add User" android:textSize="11sp" app:cornerRadius="12dp" />
-                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_audit_logs" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginHorizontal="3dp" android:text="Audit Logs" android:textSize="11sp" app:cornerRadius="12dp" />
-                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_sys_settings" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="Settings" android:textSize="11sp" app:cornerRadius="12dp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_add_user" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="6dp" android:text="User Directory" android:textSize="11sp" app:cornerRadius="12dp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_audit_logs" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginHorizontal="3dp" android:text="Live Audits" android:textSize="11sp" app:cornerRadius="12dp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/qa_sys_settings" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="Auth Config" android:textSize="11sp" app:cornerRadius="12dp" />
                 </LinearLayout>
 
             </LinearLayout>

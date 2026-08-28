@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/RoundedCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    app:cardElevation="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_avatar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#E0F2F1">
+
+                <TextView
+                    android:id="@+id/tv_initials"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="AS"
+                    android:textColor="#00897B"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-black" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_learner_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Aarav Sharma"
+                    android:textColor="@color/text_dark"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:id="@+id/tv_learner_dept"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Backend Engineering • Java Track"
+                    android:textColor="@color/gray_700"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_status_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_rounded"
+                android:backgroundTint="#E8F5E9"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="ACTIVE LEARNER"
+                android:textColor="#2E7D32"
+                android:textSize="10sp"
+                android:fontFamily="sans-serif-black" />
+        </LinearLayout>
+
+        <!-- Progress bar and attendance stats -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_attendance_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Participation &amp; Attendance Rate"
+                android:textColor="@color/gray_700"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_attendance_pct"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="94%"
+                android:textColor="@color/primary_emerald"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-black" />
+        </LinearLayout>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress_attendance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:progress="94"
+            app:indicatorColor="@color/primary_emerald"
+            app:trackColor="#E2E8F0"
+            app:trackCornerRadius="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_last_active"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⚡ Last Active: Today in Kafka Module"
+                android:textColor="@color/gray_700"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_nudge"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Nudge 🔔"
+                android:textSize="11sp"
+                app:cornerRadius="8dp"
+                android:minHeight="34dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

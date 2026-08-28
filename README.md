@@ -1,41 +1,76 @@
-# KGap Intel - Android Application (Frontend)
+# KGap Intel — Android Native Mobile Client
 
-KGap Intel is an enterprise Android application built for **Infosys Springboard** that serves as an intelligent hub for skill gap resolution, employee upskilling, mentorship, and knowledge sharing.
-
----
-
-## 🌟 Key Application Features
-
-- **Personalized Dashboard**: Real-time overview of skill gaps, active learning paths, mentorship status, and achievements.
-- **Skill Gap & Heatmap**: Visual gap categorization (High, Medium, Low) and organizational risk heatmaps.
-- **Training Catalog & Course Discovery**: Search, level filter (Beginner, Intermediate, Advanced), and direct enrollment into courses.
-- **Learning Progress & Structured Paths**: Step-by-step learning progression with milestone status updates (0% to 100%).
-- **Dynamic Achievements & Badges**: Real-time calculated levels (Level 1–5), badge unlocks (*First Step*, *Skill Master*, *Learning Explorer*, *Completion Champion*), and milestone timelines.
-- **Mentorship Hub**: Real-time mentor matching, request dispatch, and incoming/outgoing request management.
-- **Knowledge Sharing Sessions**: Host and attend scheduled knowledge sessions with registration, attendance tracking, and 5-star feedback submission.
-- **Skill Assessments**: Interactive competency assessments that dynamically grade and resolve employee skill deficits.
+Native Android mobile application built with Java, Material Design 3, Retrofit 2, and Android Jetpack Architecture Components for the KGap Intel Enterprise Knowledge Platform.
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## 📱 Features & Highlights
 
-- **Language**: Java
-- **Architecture Pattern**: MVVM (Model-View-ViewModel) + Repository Pattern
-- **UI Framework**: Material Design 3 (M3) with ConstraintLayout and ViewBinding
-- **Networking**: Retrofit 2 with OkHttp 3 and JWT Bearer Token Interceptor
-- **State Management**: Android Jetpack LiveData & ViewModel
-- **Session Storage**: SharedPreferences (`SharedPrefManager`)
-- **Min SDK**: 24 (Android 7.0+)
-- **Target / Compile SDK**: 34 (Android 14)
+- **Dynamic Role-Based Dashboards**: Custom-tailored dashboard experiences for Employee, Manager, HR, L&D Admin, Department Head, Mentor, and System Administrator.
+- **Unread Notification Badging**: Real-time unread badge counts (`tv_notif_badge`) on the bell icon for every role dashboard.
+- **Role-Aware Notification Privacy**: L&D Admins receive enterprise training/session/milestone alerts with private chat messages filtered out.
+- **Interactive Knowledge Hub**:
+  - Live session schedules with one-tap Google Meet launcher (`Intent.ACTION_VIEW`).
+  - Searchable mentor selection with live `TextWatcher` filtering across name and expertise.
+  - Multi-tier assessments (Self, Peer, Manager) with real-time scoring.
+  - Direct 1-on-1 employee-to-mentor messaging.
 
 ---
 
-## 🚀 Building & Running
+## 🛠️ Technology Stack & Libraries
 
-1. Open `Frontend/` in **Android Studio**.
-2. Ensure the Spring Boot backend is running on `localhost:8080`.
-3. Build and run the app:
-   ```powershell
-   .\gradlew.bat assembleDebug
-   ```
-4. Deploy to an emulator or physical device.
+- **Language & Platform**: Java 8 / 17 / 21, Android SDK (Min API 24, Target API 34)
+- **UI & Components**: Material Design 3, View Binding, ConstraintLayout, NestedScrollView
+- **Architecture**: MVVM (Model-View-ViewModel), Repository Pattern, LiveData
+- **Networking**: Retrofit 2, OkHttp 3, Gson Converter
+- **Visuals & Charts**: MPAndroidChart (radar charts, heatmaps, progress analytics)
+- **Local Storage**: Encrypted / SharedPreferences via `SharedPrefManager`
+
+---
+
+## 📁 Project Structure
+
+```
+Frontend/app/src/main/
+├── java/com/kgap/intel/
+│   ├── activities/      # MainActivity, LoginActivity, RegisterActivity
+│   ├── adapters/        # BannerAdapter, CatalogAdapter, MentorAdapter, NotificationAdapter
+│   ├── api/             # Retrofit ApiService interfaces & ApiClient configuration
+│   ├── fragments/       # Role Dashboards, Skills, Gaps, Catalog, Chat, Notifications
+│   ├── models/          # POJO models mapped with @SerializedName
+│   ├── repository/      # LiveData repository layer handling API calls & caching
+│   ├── utils/           # SharedPrefManager, Constants, UI formatters
+│   └── viewmodel/       # AndroidX ViewModels managing state & observables
+└── res/
+    ├── layout/          # XML Layout definitions & Data Binding layouts
+    ├── drawable/        # Vector icons, shape backgrounds, badge drawables
+    └── values/          # Colors, strings, themes, styles
+```
+
+---
+
+## 🔧 Building & Installing
+
+### Prerequisites
+- Android Studio Ladybug / Meerkat or Gradle CLI
+- Android Virtual Device (AVD) or physical device running Android 7.0+ (API 24+)
+
+### Build APK via Gradle
+```bash
+# Windows
+cmd /c gradlew.bat assembleDebug
+
+# macOS / Linux
+./gradlew assembleDebug
+```
+
+Output APK will be generated at:
+`Frontend/app/build/outputs/apk/debug/app-debug.apk`
+
+---
+
+## 📡 Backend Network Configuration
+
+When running locally with the Spring Boot backend:
+- **Android Emulator**: Set base URL to `http://10.0.2.2:8080/`
+- **Physical Device**: Set base URL to your computer's local Wi-Fi IP address (e.g. `http://192.168.1.X:8080/`) in `ApiClient.java`.

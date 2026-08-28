@@ -88,4 +88,23 @@ public class TrainingEnrollment implements Serializable {
     public void setCompletedAt(String completedAt) {
         this.completedAt = completedAt;
     }
+
+    public String getTrainingTitle() {
+        if (trainingId == null) return "Enterprise Skills Training Program";
+        switch (trainingId.intValue()) {
+            case 1: return "Full Stack Java & Spring Boot Mastery";
+            case 2: return "PostgreSQL Database Administration & Tuning";
+            case 3: return "React 18 & Modern Frontend Engineering";
+            case 4: return "Generative AI & LLM Application Building";
+            case 5: return "Docker Containerization & Microservice Ops";
+            case 6: return "Kubernetes Cloud Infrastructure & Helm";
+            case 7: return "Enterprise REST API Design Standards";
+            case 8: return "Technical Documentation & Architecture Specs";
+            case 9: return "Product Lifecycle Management & Strategy";
+            case 10: return "Cyber Risk Assessment & Security Best Practices";
+            case 11: return "Data Pipelines & BigQuery Analytics";
+            case 12: return "UI/UX Design Systems & Prototyping";
+            default: return "Enterprise Skill Training Program #" + trainingId;
+        }
+    }
 }

@@ -39,23 +39,34 @@ public class MainActivity extends AppCompatActivity {
     private Fragment getHomeFragment() {
         if (userRole == null) return new HomeFragment();
         
-        switch (userRole.toUpperCase()) {
-            case "MANAGER":
-                return new ManagerDashboardFragment();
-            case "HR":
+        String cleanRole = userRole.toUpperCase().trim();
+        switch (cleanRole) {
             case "ADMIN":
+            case "SYSTEM_ADMIN":
+            case "ROLE_ADMIN":
+            case "ROLE_SYSTEM_ADMIN":
+            case "SYS_ADMIN":
+                return new AdminDashboardFragment();
+            case "HR":
+            case "ROLE_HR":
+            case "HUMAN_RESOURCES":
                 return new HRDashboardFragment();
+            case "MANAGER":
+            case "ROLE_MANAGER":
+                return new ManagerDashboardFragment();
             case "LD_ADMIN":
             case "LEARNING_DEVELOPMENT_ADMIN":
+            case "ROLE_LEARNING_DEVELOPMENT_ADMIN":
                 return new LDDashboardFragment();
             case "MENTOR":
+            case "ROLE_MENTOR":
                 return new MentorDashboardFragment();
             case "DEPT_HEAD":
             case "DEPARTMENT_HEAD":
+            case "ROLE_DEPARTMENT_HEAD":
                 return new DeptHeadDashboardFragment();
-            case "SYSTEM_ADMIN":
-                return new AdminDashboardFragment(); // Using AdminDashboard for System Admin
             case "EMPLOYEE":
+            case "ROLE_EMPLOYEE":
             default:
                 return new HomeFragment();
         }

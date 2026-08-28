@@ -19,18 +19,10 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/iv_profile_avatar"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_user_profile_circle"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
+                android:layout_gravity="start"
                 android:fontFamily="sans-serif-black"
                 android:text="Mentorship Hub"
                 android:textColor="@color/text_dark"
@@ -72,6 +64,7 @@
                 android:textSize="18sp" />
 
             <GridLayout
+                android:id="@+id/grid_hub"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -83,6 +76,8 @@
                 <include android:id="@+id/hub_resources" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_requests_received" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_requests_sent" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_knowledge_sessions" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_mentorship_sessions" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
             </GridLayout>
 
             <!-- Summary Cards Row (Horizontal scroll) -->
@@ -137,6 +132,7 @@
 
             <!-- My Mentor Section -->
             <TextView
+                android:id="@+id/tv_current_mentor_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
@@ -151,6 +147,45 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp" />
+
+            <!-- My Requested & Connected Mentors Section -->
+            <TextView
+                android:id="@+id/tv_requested_mentors_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-black"
+                android:text="My Requested &amp; Connected Mentors"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_requested_mentors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                tools:listitem="@layout/item_mentor_card_modern" />
+
+            <!-- Mentees I am Guiding Section -->
+            <TextView
+                android:id="@+id/tv_mentees_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-black"
+                android:text="Mentees I am Guiding"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_my_mentees"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false" />
 
             <!-- Upcoming Sessions -->
             <TextView

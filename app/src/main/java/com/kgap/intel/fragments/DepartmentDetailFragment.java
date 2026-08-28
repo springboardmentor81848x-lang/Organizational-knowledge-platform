@@ -7,22 +7,23 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.kgap.intel.R;
 import com.kgap.intel.adapters.TeamMemberAdapter;
+import com.kgap.intel.api.ApiClient;
 import com.kgap.intel.databinding.FragmentDepartmentDetailBinding;
 import com.kgap.intel.databinding.ItemTeamMemberBinding;
 import com.kgap.intel.models.EmployeeResponse;
-import com.kgap.intel.viewmodel.ManagerViewModel;
+import com.kgap.intel.viewmodel.HRViewModel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DepartmentDetailFragment extends Fragment {
     private static final String ARG_DEPT_NAME = "dept_name";
     private FragmentDepartmentDetailBinding binding;
-    private ManagerViewModel viewModel;
     private String departmentName;
 
     public static DepartmentDetailFragment newInstance(String deptName) {
@@ -51,74 +52,102 @@ public class DepartmentDetailFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(requireActivity()).get(ManagerViewModel.class);
 
-        binding.toolbar.setTitle(departmentName);
+        String canonicalDept = HRViewModel.normalizeDepartmentName(departmentName, null);
+        binding.toolbar.setTitle(canonicalDept);
         binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
         
         binding.rvDeptEmployees.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        viewModel.getTeamMembers().observe(getViewLifecycleOwner(), allEmployees -> {
-            if (allEmployees != null && departmentName != null) {
-                List<EmployeeResponse> deptEmployees = allEmployees.stream()
-                    .filter(e -> e.getDepartment() != null && departmentName.equalsIgnoreCase(e.getDepartment()))
-                    .collect(Collectors.toList());
-
-                updateUI(deptEmployees);
-            }
-        });
-
-        viewModel.loadTeamDashboard();
+        loadDepartmentPersonnel(canonicalDept);
     }
 
-    private void updateUI(List<EmployeeResponse> employees) {
-        if (employees.isEmpty()) {
-            binding.tvNoEmployees.setVisibility(View.VISIBLE);
-            binding.rvDeptEmployees.setVisibility(View.GONE);
-            binding.cardDeptHead.setVisibility(View.GONE);
-            binding.tvNoHead.setVisibility(View.VISIBLE);
-            return;
-        }
+    private void loadDepartmentPersonnel(String canonicalDept) {
+        ApiClient.getEmployeeApiService(requireContext()).getAllEmployees().enqueue(new Callback<List<EmployeeResponse>>() {
+            @Override
+            public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> response) {
+                if (response.isSuccessful() && response.body() != null && binding != null) {
+                    List<EmployeeResponse> all = response.body();
+                    List<EmployeeResponse> deptStaff = new ArrayList<>();
+                    EmployeeResponse deptHead = null;
 
-        binding.tvNoEmployees.setVisibility(View.GONE);
-        binding.rvDeptEmployees.setVisibility(View.VISIBLE);
+                    for (EmployeeResponse emp : all) {
+                        if (emp.getId() == null || emp.getId() == 1L) continue; // Exclude admin
+                        String empName = ((emp.getFirstName() != null ? emp.getFirstName() : "") + " " +
+                                          (emp.getLastName() != null ? emp.getLastName() : "")).toLowerCase();
+                        if (empName.contains("admin")) continue;
 
-        // Find Dept Head
-        EmployeeResponse head = null;
-        for (EmployeeResponse e : employees) {
-            if ("ROLE_DEPARTMENT_HEAD".equalsIgnoreCase(e.getRole()) || "DEPARTMENT_HEAD".equalsIgnoreCase(e.getRole())) {
-                head = e;
-                break;
+                        String empDept = resolveEmployeeDepartment(emp);
+                        if (canonicalDept.equalsIgnoreCase(empDept)) {
+                            boolean isHead = isDepartmentHead(emp, canonicalDept);
+                            if (isHead) {
+                                deptHead = emp;
+                            } else if (emp.getRole() != null && "EMPLOYEE".equalsIgnoreCase(emp.getRole())) {
+                                // Only show actual employees working under this department
+                                deptStaff.add(emp);
+                            }
+                        }
+                    }
+
+                    updateUI(deptHead, deptStaff);
+                }
             }
-        }
 
+            @Override
+            public void onFailure(Call<List<EmployeeResponse>> call, Throwable t) {
+                if (binding != null) {
+                    binding.tvNoEmployees.setVisibility(View.VISIBLE);
+                    binding.tvNoHead.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+    }
+
+    private String resolveEmployeeDepartment(EmployeeResponse emp) {
+        String email = emp.getEmail() != null ? emp.getEmail().toLowerCase() : "";
+        if (email.contains("backend")) return "Backend Engineering";
+        if (email.contains("frontend")) return "Frontend Engineering";
+        if (email.contains("data")) return "Data Science & AI";
+        if (email.contains("devops") || email.contains("cloud")) return "Cloud & DevOps";
+        if (email.contains("security") || email.contains("cyber")) return "Cybersecurity";
+        if (email.contains("product")) return "Product & Operations";
+
+        return HRViewModel.normalizeDepartmentName(emp.getDepartment(), emp.getJobRoleId());
+    }
+
+    private boolean isDepartmentHead(EmployeeResponse emp, String canonicalDept) {
+        String email = emp.getEmail() != null ? emp.getEmail().toLowerCase() : "";
+        String role = emp.getRole() != null ? emp.getRole().toUpperCase() : "";
+
+        if (role.contains("HEAD")) return true;
+        if (email.contains("depthead")) {
+            return true;
+        }
+        return false;
+    }
+
+    private void updateUI(EmployeeResponse head, List<EmployeeResponse> staff) {
         if (head != null) {
             binding.cardDeptHead.setVisibility(View.VISIBLE);
             binding.tvNoHead.setVisibility(View.GONE);
             setupHeadItem(head);
-            
-            // Remove head from employees list for the recycler view
-            final EmployeeResponse finalHead = head;
-            List<EmployeeResponse> staff = employees.stream()
-                .filter(e -> !e.getId().equals(finalHead.getId()))
-                .collect(Collectors.toList());
-            
+        } else {
+            binding.cardDeptHead.setVisibility(View.GONE);
+            binding.tvNoHead.setVisibility(View.VISIBLE);
+        }
+
+        if (staff != null && !staff.isEmpty()) {
+            binding.tvNoEmployees.setVisibility(View.GONE);
+            binding.rvDeptEmployees.setVisibility(View.VISIBLE);
             binding.rvDeptEmployees.setAdapter(new TeamMemberAdapter(staff, e -> {
-                // Navigate to profile
                 getParentFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, UserDetailsFragment.newInstance(e.getId()))
                     .addToBackStack(null)
                     .commit();
             }));
         } else {
-            binding.cardDeptHead.setVisibility(View.GONE);
-            binding.tvNoHead.setVisibility(View.VISIBLE);
-            binding.rvDeptEmployees.setAdapter(new TeamMemberAdapter(employees, e -> {
-                getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, UserDetailsFragment.newInstance(e.getId()))
-                    .addToBackStack(null)
-                    .commit();
-            }));
+            binding.tvNoEmployees.setVisibility(View.VISIBLE);
+            binding.rvDeptEmployees.setVisibility(View.GONE);
         }
     }
 

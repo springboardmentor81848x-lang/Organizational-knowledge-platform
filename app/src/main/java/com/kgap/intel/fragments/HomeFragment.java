@@ -16,6 +16,7 @@ import com.kgap.intel.activities.MainActivity;
 import com.kgap.intel.adapters.BannerAdapter;
 import com.kgap.intel.databinding.FragmentHomeBinding;
 import com.kgap.intel.databinding.ItemHubButtonBinding;
+import com.kgap.intel.api.ApiClient;
 import com.kgap.intel.utils.SharedPrefManager;
 import com.kgap.intel.viewmodel.HomeViewModel;
 import java.util.ArrayList;
@@ -49,9 +50,15 @@ public class HomeFragment extends Fragment {
         String name = prefManager.getUserName();
         updateGreeting(name);
 
-        // Tool Bar Actions
+        // Tool Bar Actions & Shortcuts
         binding.btnNotifications.setOnClickListener(v -> navigateToFragment(new NotificationsFragment()));
-        binding.btnProfileAvatar.setOnClickListener(v -> navigateToFragment(new ProfileFragment()));
+        binding.btnChat.setOnClickListener(v -> openMentorChat());
+
+        View.OnClickListener launchSearch = v -> {
+            QuickServiceSearchBottomSheet sheet = new QuickServiceSearchBottomSheet();
+            sheet.show(getParentFragmentManager(), "QuickServiceSearch");
+        };
+        binding.btnSearchShortcut.setOnClickListener(launchSearch);
 
         // Quick Actions
         binding.qaAssess.setOnClickListener(v -> navigateToFragment(new SkillsFragment()));
@@ -60,7 +67,48 @@ public class HomeFragment extends Fragment {
 
         // Path & Achievements
         binding.tvViewAchievements.setOnClickListener(v -> navigateToFragment(new AchievementsFragment()));
-        binding.cardContinueLearning.setOnClickListener(v -> navigateToFragment(new LearningFragment()));
+        binding.cardContinueLearning.setOnClickListener(v -> navigateToFragment(new MyProgressFragment()));
+        binding.cardNotifSummary.setOnClickListener(v -> navigateToFragment(new NotificationsFragment()));
+    }
+
+    private void openMentorChat() {
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId <= 0) userId = 4L;
+
+        ApiClient.getMentorAssignmentApiService(requireContext()).getCurrentAssignmentForEmployee(userId)
+                .enqueue(new retrofit2.Callback<com.kgap.intel.models.MentorAssignment>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.kgap.intel.models.MentorAssignment> call, retrofit2.Response<com.kgap.intel.models.MentorAssignment> response) {
+                        Long mentorId = (response.isSuccessful() && response.body() != null && response.body().getMentorId() != null) ?
+                                response.body().getMentorId() : 17L;
+
+                        ApiClient.getEmployeeApiService(requireContext()).getEmployeeById(mentorId)
+                                .enqueue(new retrofit2.Callback<com.kgap.intel.models.EmployeeResponse>() {
+                                    @Override
+                                    public void onResponse(retrofit2.Call<com.kgap.intel.models.EmployeeResponse> c, retrofit2.Response<com.kgap.intel.models.EmployeeResponse> r) {
+                                        String mentorName = "Michael Chen";
+                                        if (r.isSuccessful() && r.body() != null) {
+                                            String first = r.body().getFirstName() != null ? r.body().getFirstName() : "";
+                                            String last = r.body().getLastName() != null ? r.body().getLastName() : "";
+                                            if (!first.isEmpty()) {
+                                                mentorName = (first + " " + last).trim();
+                                            }
+                                        }
+                                        navigateToFragment(ChatFragment.newInstance(mentorName, mentorId));
+                                    }
+
+                                    @Override
+                                    public void onFailure(retrofit2.Call<com.kgap.intel.models.EmployeeResponse> c, Throwable t) {
+                                        navigateToFragment(ChatFragment.newInstance("Michael Chen", mentorId));
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.kgap.intel.models.MentorAssignment> call, Throwable t) {
+                        navigateToFragment(ChatFragment.newInstance("Michael Chen", 17L));
+                    }
+                });
     }
 
     private void updateGreeting(String name) {
@@ -156,6 +204,71 @@ public class HomeFragment extends Fragment {
 
         viewModel.getLowGapsCount().observe(getViewLifecycleOwner(), count -> {
             binding.tvLowGaps.setText(String.valueOf(count));
+        });
+
+        // Live Notifications Badge & Summary
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        com.kgap.intel.repository.NotificationRepository notifRepo = new com.kgap.intel.repository.NotificationRepository(requireContext());
+        notifRepo.getUnreadCount(userId).observe(getViewLifecycleOwner(), unreadCount -> {
+            if (unreadCount != null && unreadCount > 0) {
+                binding.tvNotifBadge.setVisibility(View.VISIBLE);
+                binding.tvNotifBadge.setText(unreadCount > 9 ? "9+" : String.valueOf(unreadCount));
+            } else {
+                binding.tvNotifBadge.setVisibility(View.GONE);
+            }
+        });
+
+        notifRepo.getNotifications(userId).observe(getViewLifecycleOwner(), notifs -> {
+            if (notifs != null && !notifs.isEmpty()) {
+                binding.tvHomeNotif1.setText("• " + notifs.get(0).getMessage());
+                if (notifs.size() > 1) {
+                    binding.tvHomeNotif2.setVisibility(View.VISIBLE);
+                    binding.tvHomeNotif2.setText("• " + notifs.get(1).getMessage());
+                } else {
+                    binding.tvHomeNotif2.setVisibility(View.GONE);
+                }
+            } else {
+                binding.tvHomeNotif1.setText("• No new notifications.");
+                binding.tvHomeNotif2.setVisibility(View.GONE);
+            }
+        });
+
+        // Real Training Progress from Backend
+        ApiClient.getTrainingApiService(requireContext()).getEmployeeEnrollments(userId).enqueue(new retrofit2.Callback<List<com.kgap.intel.models.TrainingEnrollment>>() {
+            @Override
+            public void onResponse(retrofit2.Call<List<com.kgap.intel.models.TrainingEnrollment>> call, retrofit2.Response<List<com.kgap.intel.models.TrainingEnrollment>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    com.kgap.intel.models.TrainingEnrollment active = response.body().get(0);
+                    binding.tvHomeTrainingTitle.setText(active.getTrainingTitle());
+                    String status = active.getStatus() != null ? active.getStatus() : "IN_PROGRESS";
+                    int pct = active.getProgressPercentage() != null ? active.getProgressPercentage() : 0;
+                    binding.tvHomeTrainingSub.setText(status.replace("_", " ") + " • " + pct + "%");
+                } else {
+                    binding.tvHomeTrainingTitle.setText("No Active Enrollments");
+                    binding.tvHomeTrainingSub.setText("Explore courses in Learning Hub →");
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<List<com.kgap.intel.models.TrainingEnrollment>> call, Throwable t) {
+                binding.tvHomeTrainingTitle.setText("Continuous Learning Program");
+                binding.tvHomeTrainingSub.setText("Tap to explore skills & progress →");
+            }
+        });
+
+        // Real Achievements & Skill Level from Backend
+        new com.kgap.intel.repository.SkillRepository(requireActivity().getApplication()).getEmployeeSkills(userId).observe(getViewLifecycleOwner(), skills -> {
+            if (skills != null && !skills.isEmpty()) {
+                long totalProf = 0;
+                for (com.kgap.intel.models.SkillItem s : skills) {
+                    totalProf += s.getProficiency();
+                }
+                long avg = totalProf / skills.size();
+                String level = avg >= 75 ? "Expert Performer" : (avg >= 50 ? "Advanced Practitioner" : "Growing Learner");
+                binding.tvHomeAchievementText.setText(level + " • " + skills.size() + " Skills Acquired (" + avg + "% Avg)");
+            } else {
+                binding.tvHomeAchievementText.setText("Take assessments to earn skill achievements!");
+            }
         });
     }
 

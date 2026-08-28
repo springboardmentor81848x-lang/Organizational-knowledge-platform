@@ -56,7 +56,15 @@ public class ApiClient {
         return getRetrofit(context).create(SkillApiService.class);
     }
 
+    public static Retrofit getClient(android.content.Context context) {
+        return getRetrofit(context);
+    }
+
     public static GapApiService getGapApiService(android.content.Context context) {
+        return getRetrofit(context).create(GapApiService.class);
+    }
+
+    public static GapApiService getSkillGapApiService(android.content.Context context) {
         return getRetrofit(context).create(GapApiService.class);
     }
 
@@ -102,5 +110,25 @@ public class ApiClient {
 
     public static TrainingApiService getTrainingApiService(android.content.Context context) {
         return getRetrofit(context).create(TrainingApiService.class);
+    }
+
+    public static MentorshipSessionApiService getMentorshipSessionApiService(android.content.Context context) {
+        return getRetrofit(context).create(MentorshipSessionApiService.class);
+    }
+
+    public static NotificationApiService getNotificationApiService(android.content.Context context) {
+        return getRetrofit(context).create(NotificationApiService.class);
+    }
+
+    public static ReportApiService getReportApiService(android.content.Context context) {
+        return getRetrofit(context).create(ReportApiService.class);
+    }
+
+    public static MentorAssignmentApiService getMentorAssignmentApiService(android.content.Context context) {
+        return getRetrofit(context).create(MentorAssignmentApiService.class);
+    }
+
+    public static ChatApiService getChatApiService(android.content.Context context) {
+        return getRetrofit(context).create(ChatApiService.class);
     }
 }

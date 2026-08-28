@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/neutral_bg">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@android:drawable/ic_menu_revert"
+            app:title="Authentication &amp; JWT Engine"
+            app:titleTextColor="@color/text_dark" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="60dp">
+
+            <!-- 1. JWT Configuration Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_lock_lock"
+                            app:tint="@color/primary_emerald" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="JWT Token Configuration"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Cryptographic signing algorithm, token lifetimes, and refresh rotation."
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#ECEFF1" android:layout_marginVertical="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Signature Algorithm" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HMAC-SHA256 (RS256)" android:textColor="@color/primary_purple" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Access Token Expiry" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="24 Hours (86,400s)" android:textColor="@color/gray_700" android:textSize="13sp"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Refresh Token Rotation" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_refresh_rotation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. OAuth2 & SSO Integrations Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_share"
+                            app:tint="#1976D2" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="OAuth2 &amp; SSO Federation"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Identity Provider integration for enterprise single sign-on."
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#ECEFF1" android:layout_marginVertical="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Google Workspace SSO" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-medium"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_chip_rounded" android:backgroundTint="#E8F5E9" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:text="ENABLED" android:textColor="#2E7D32" android:textSize="11sp" android:fontFamily="sans-serif-black"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Microsoft Entra ID (Azure AD)" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-medium"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_chip_rounded" android:backgroundTint="#E8F5E9" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:text="ENABLED" android:textColor="#2E7D32" android:textSize="11sp" android:fontFamily="sans-serif-black"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="SAML 2.0 Identity Federation" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-medium"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_chip_rounded" android:backgroundTint="#ECEFF1" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:text="STANDBY" android:textColor="#546E7A" android:textSize="11sp" android:fontFamily="sans-serif-black"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. Active Session Management Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_myplaces"
+                            app:tint="#7B1FA2" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="Active User Sessions"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="14 Active JWT tokens currently authenticated across the enterprise."
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_revoke_all_sessions"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Revoke All Inactive Sessions"
+                        android:textColor="#D32F2F"
+                        app:cornerRadius="12dp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

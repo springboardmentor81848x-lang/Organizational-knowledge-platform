@@ -66,14 +66,88 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Employee Management & Development Card -->
+            <TextView
+                android:id="@+id/tv_dev_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Employee Management &amp; Development"
+                android:textStyle="bold"
+                android:textColor="@color/text_dark" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_dev_actions"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_view_skill_gaps"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="View Skill Gaps"
+                        android:gravity="start|center_vertical"
+                        app:icon="@android:drawable/ic_menu_compass"
+                        app:iconGravity="start"
+                        android:paddingHorizontal="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_view_training_progress"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Training Enrolled &amp; Progress"
+                        android:gravity="start|center_vertical"
+                        app:icon="@android:drawable/ic_menu_slideshow"
+                        app:iconGravity="start"
+                        android:paddingHorizontal="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_generate_report"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Generate Skill &amp; Gap Report"
+                        android:gravity="start|center_vertical"
+                        app:icon="@android:drawable/ic_menu_save"
+                        app:iconGravity="start"
+                        android:paddingHorizontal="16dp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Activity Logs -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Activity History" android:textStyle="bold" android:textColor="@color/text_dark" />
             <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Last Login: Today at 09:45 AM" android:textSize="13sp" android:textColor="@color/gray_700" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Created: Jan 12, 2024" android:textSize="13sp" android:textColor="@color/gray_700" />
+                    <TextView android:id="@+id/tv_last_login" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Last Login: Today at 09:45 AM" android:textSize="13sp" android:textColor="@color/gray_700" />
+                    <TextView android:id="@+id/tv_created_date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Created: Jan 12, 2024" android:textSize="13sp" android:textColor="@color/gray_700" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Manager Assessment Action -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_manager_assess"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Assess Employee Skills"
+                android:textColor="@color/white"
+                android:visibility="gone"
+                app:backgroundTint="@color/primary_emerald"
+                app:icon="@android:drawable/ic_menu_agenda" />
 
             <!-- Danger Zone -->
             <com.google.android.material.button.MaterialButton
@@ -81,7 +155,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="16dp"
                 android:text="Reset Password"
                 app:strokeColor="@color/gap_high"
                 android:textColor="@color/gap_high" />

@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.kgap.intel.activities.MainActivity;
 import com.kgap.intel.adapters.DeptHeadEmployeesAdapter;
 import com.kgap.intel.databinding.FragmentDeptHeadEmployeesBinding;
 import com.kgap.intel.viewmodel.DepartmentHeadViewModel;
@@ -34,7 +35,11 @@ public class DeptHeadEmployeesFragment extends Fragment {
 
         viewModel.getEmployeeProgress().observe(getViewLifecycleOwner(), progress -> {
             if (progress != null) {
-                binding.rvEmployees.setAdapter(new DeptHeadEmployeesAdapter(progress));
+                binding.rvEmployees.setAdapter(new DeptHeadEmployeesAdapter(progress, employee -> {
+                    if (employee.getEmployeeId() != null && getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).switchFragment(UserDetailsFragment.newInstance(employee.getEmployeeId()));
+                    }
+                }));
             }
         });
     }

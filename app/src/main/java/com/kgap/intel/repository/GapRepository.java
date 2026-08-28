@@ -57,23 +57,54 @@ public class GapRepository {
                 // Here we perform local calculations for demonstration.
                 int totalGaps = gaps.size();
                 int highRisk = (int) gaps.stream().filter(g -> "HIGH".equalsIgnoreCase(g.getGapLevel())).count();
-                
+
                 employeeApiService.getAllEmployees().enqueue(new Callback<List<EmployeeResponse>>() {
                     @Override
                     public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> response) {
                         int members = response.isSuccessful() && response.body() != null ? response.body().size() : 0;
-                        int coverage = 75; // Placeholder for aggregate proficiency calculation
-                        int learning = 62; // Placeholder for aggregate training progress
-                        callback.onMetricsLoaded(members, totalGaps, highRisk, coverage, learning);
+
+                        // Compute real team skill coverage from employee-skill proficiency scores.
+                        // GET /employee-skills returns all EmployeeSkill records with proficiencyScore (0–100).
+                        // Average across all records gives the organisation-wide skill coverage percentage.
+                        // NOTE: A manager-scoped endpoint does not exist; this uses org-wide data as proxy.
+                        skillApiService.getAllEmployeeSkills().enqueue(new Callback<List<com.kgap.intel.models.EmployeeSkillResponse>>() {
+                            @Override
+                            public void onResponse(Call<List<com.kgap.intel.models.EmployeeSkillResponse>> call,
+                                                   Response<List<com.kgap.intel.models.EmployeeSkillResponse>> skillResp) {
+                                int coverage = 0;
+                                if (skillResp.isSuccessful() && skillResp.body() != null && !skillResp.body().isEmpty()) {
+                                    double sum = 0;
+                                    int count = 0;
+                                    for (com.kgap.intel.models.EmployeeSkillResponse es : skillResp.body()) {
+                                        if (es.getProficiencyScore() != null) {
+                                            sum += es.getProficiencyScore();
+                                            count++;
+                                        }
+                                    }
+                                    coverage = count > 0 ? (int) Math.round(sum / count) : 0;
+                                }
+                                // learning = -1 is a sentinel meaning "no backend source available".
+                                // No team-scoped aggregate learning-progress endpoint exists yet.
+                                // The UI layer (ManagerDashboardFragment) displays "–" for -1.
+                                int learning = -1;
+                                callback.onMetricsLoaded(members, totalGaps, highRisk, coverage, learning);
+                            }
+
+                            @Override
+                            public void onFailure(Call<List<com.kgap.intel.models.EmployeeSkillResponse>> call, Throwable t) {
+                                // Coverage unavailable on network error; learning still has no backend source.
+                                callback.onMetricsLoaded(members, totalGaps, highRisk, 0, -1);
+                            }
+                        });
                     }
 
                     @Override
                     public void onFailure(Call<List<EmployeeResponse>> call, Throwable t) {
-                        callback.onMetricsLoaded(0, totalGaps, highRisk, 0, 0);
+                        callback.onMetricsLoaded(0, totalGaps, highRisk, 0, -1);
                     }
                 });
             } else {
-                callback.onMetricsLoaded(0, 0, 0, 0, 0);
+                callback.onMetricsLoaded(0, 0, 0, 0, -1);
             }
         });
     }

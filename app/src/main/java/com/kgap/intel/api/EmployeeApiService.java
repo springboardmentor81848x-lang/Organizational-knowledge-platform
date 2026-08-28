@@ -8,4 +8,13 @@ import retrofit2.http.GET;
 public interface EmployeeApiService {
     @GET("employees")
     Call<List<EmployeeResponse>> getAllEmployees();
+
+    @GET("employees/{id}")
+    Call<EmployeeResponse> getEmployeeById(@retrofit2.http.Path("id") Long id);
+
+    @retrofit2.http.PUT("employees/{id}/role/{newRole}")
+    Call<EmployeeResponse> updateEmployeeRole(
+        @retrofit2.http.Path("id") Long id,
+        @retrofit2.http.Path("newRole") String newRole
+    );
 }

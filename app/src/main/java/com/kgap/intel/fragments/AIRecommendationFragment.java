@@ -29,6 +29,12 @@ public class AIRecommendationFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AIRecommendationViewModel.class);
 
+        String role = com.kgap.intel.utils.SharedPrefManager.getInstance(getContext()).getUserRole();
+        if ("HR".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
+            binding.toolbar.setTitle("Strategic Skill Forecasting");
+        }
+
+        binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
         binding.rvRecommendations.setLayoutManager(new LinearLayoutManager(getContext()));
         
         viewModel.getRecommendations().observe(getViewLifecycleOwner(), recs -> {

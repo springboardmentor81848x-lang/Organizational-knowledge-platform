@@ -44,8 +44,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:text="Label"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:fontFamily="sans-serif-black"
+            android:gravity="center"
+            android:textAlignment="center"
             android:textColor="@color/text_dark" />
 
     </LinearLayout>

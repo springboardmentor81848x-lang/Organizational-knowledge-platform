@@ -16,27 +16,80 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
+            
             <ImageView
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/app_logo"
                 tools:ignore="ContentDescription" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="HR Dashboard"
+                android:text="HR Talent Hub"
                 android:textColor="@color/text_dark"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-black" />
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/btn_notifications"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:padding="9dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/tv_notif_badge"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/circle_green_dot"
+                    android:backgroundTint="#FF3B30"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
+
             <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_profile_avatar"
+                android:id="@+id/btn_profile"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="end"
                 android:layout_marginEnd="12dp"
-                android:src="@drawable/app_logo"
-                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/btn_search"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:src="@android:drawable/ic_menu_search"
+                android:padding="9dp"
+                app:tint="@color/text_dark"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -56,37 +109,86 @@
             android:orientation="vertical"
             android:padding="20dp">
 
+            <!-- Greeting & Subtitle -->
             <TextView
                 android:id="@+id/tv_greeting"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Welcome, HR 👋"
                 android:textColor="@color/text_dark"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-black" />
 
             <TextView
                 android:id="@+id/tv_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="HR &amp; Organizational Talent Analytics"
+                android:layout_marginTop="2dp"
+                android:text="Enterprise Talent Intelligence &amp; Workforce Planning"
                 android:textColor="@color/gray_700"
-                android:textSize="14sp" />
+                android:textSize="13sp" />
 
+            <!-- Strategic Banner Carousel -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/viewPagerBanner"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
+                android:layout_height="160dp"
                 android:layout_marginTop="16dp" />
 
-            <!-- HR Summary Cards -->
+            <!-- HR CONTROL HUB (6 Core Pillars Grid) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="⚡ HR Leadership Control Hub"
+                android:textColor="@color/text_dark"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
+
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:columnCount="2"
-                android:rowCount="2">
+                android:layout_marginTop="10dp"
+                android:columnCount="2">
+
+                <!-- 1. Gap Intelligence -->
+                <include android:id="@+id/hub_gap_intelligence" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 2. Skill Inventory -->
+                <include android:id="@+id/hub_skill_inventory" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 3. Training Effectiveness -->
+                <include android:id="@+id/hub_training_effectiveness" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 4. Strategic Skill Forecasting -->
+                <include android:id="@+id/hub_skill_forecasting" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 5. User Management -->
+                <include android:id="@+id/hub_user_management" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 6. Reports Management -->
+                <include android:id="@+id/hub_reports" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+            </GridLayout>
+
+            <!-- Section Header: Workforce KPIs -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="📊 Strategic Workforce Overview"
+                android:textColor="@color/text_dark"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
+
+            <!-- HR Summary Metric Cards (2x2 Grid) -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:columnCount="2">
+
+                <!-- 1. Total Employees -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_total_employees"
                     style="@style/RoundedCard"
@@ -102,10 +204,13 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total Employees" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_total_employees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👥 Total Headcount" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                        <TextView android:id="@+id/tv_total_employees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/text_dark"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Full Directory →" android:textSize="11sp" android:textColor="@color/primary_emerald"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- 2. Total Departments -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_total_departments"
                     style="@style/RoundedCard"
@@ -121,10 +226,13 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Departments" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_total_departments" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🏢 Departments" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                        <TextView android:id="@+id/tv_total_departments" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/text_dark"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Org Structure →" android:textSize="11sp" android:textColor="@color/primary_purple"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. Critical Skill Gaps -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_critical_gaps"
                     style="@style/RoundedCard"
@@ -140,10 +248,13 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Critical Skill Gaps" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_total_critical_gaps" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/gap_critical"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⚠️ Critical Gaps" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                        <TextView android:id="@+id/tv_total_critical_gaps" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="#E53935"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="High-Risk Radar →" android:textSize="11sp" android:textColor="#E53935"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- 4. Training Adoption / ROI -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_training_needs"
                     style="@style/RoundedCard"
@@ -159,22 +270,57 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Training Needs" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_total_training_needs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/accent_teal"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📈 Training Adoption" android:textSize="12sp" android:textColor="@color/gray_700"/>
+                        <TextView android:id="@+id/tv_training_adoption" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0%" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="#1E88E5"/>
+                        <TextView android:id="@+id/tv_training_sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Active Programs →" android:textSize="11sp" android:textColor="#1E88E5"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
             </GridLayout>
 
-            <!-- Department Health -->
+            <!-- Department Health & Skill Gap Distribution Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:text="Department Skill Health"
+                android:layout_marginTop="26dp"
+                android:text="🏢 Department Skill Health Distribution"
                 android:textColor="@color/text_dark"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
 
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Skill Gap Share by Department"
+                        android:fontFamily="sans-serif-black"
+                        android:textColor="@color/text_dark"
+                        android:textSize="14sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Visualizing competency deficit proportions across business units"
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/pie_chart_dept_health"
+                        android:layout_width="match_parent"
+                        android:layout_height="220dp"
+                        android:layout_marginTop="10dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Department Breakdown List -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/RoundedCard"
                 android:layout_width="match_parent"
@@ -188,79 +334,123 @@
                     android:nestedScrollingEnabled="false" />
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Org Heatmap Link -->
+            <!-- Organization Skill Heatmap Banner Link -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_org_heatmap_banner"
                 style="@style/RoundedCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp">
+                android:layout_marginTop="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Organization Skill Heatmap" android:textColor="@color/text_dark" android:textSize="16sp" android:textStyle="bold" />
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@android:drawable/ic_menu_sort_by_size"
+                            app:tint="@color/primary_purple"
+                            tools:ignore="ContentDescription" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Organization-Wide Skill Heatmap"
+                                android:textColor="@color/text_dark"
+                                android:textSize="15sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Interactive matrix of all skills across entire workforce"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_view_org_heatmap"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_gravity="end"
-                        android:text="View Organization Heatmap →" />
+                        android:layout_marginTop="12dp"
+                        android:text="Open Company Heatmap Matrix →" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Quick Actions -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:text="Quick HR Actions"
-                android:textColor="@color/text_dark"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <HorizontalScrollView
+            <!-- Strategic Skill Forecasting / AI Recommendation Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_strategic_forecasting"
+                style="@style/RoundedCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:scrollbars="none">
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_action_employees"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="Employees Directory" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@android:drawable/ic_menu_compass"
+                            app:tint="#D84315"
+                            tools:ignore="ContentDescription" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Strategic Skill Forecasting &amp; AI Radar"
+                                android:textColor="@color/text_dark"
+                                android:textSize="15sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Predictive shortage warnings &amp; talent development suggestions"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_action_gaps"
+                        android:id="@+id/btn_action_forecast"
                         style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="Skill Gap Analytics" />
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_action_recommend"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="AI Recommendations" />
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_action_reports"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Reports" />
+                        android:layout_marginTop="12dp"
+                        android:text="Explore Strategic AI Forecasts →" />
                 </LinearLayout>
-            </HorizontalScrollView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <View android:layout_width="match_parent" android:layout_height="100dp" />
+            <View android:layout_width="match_parent" android:layout_height="80dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

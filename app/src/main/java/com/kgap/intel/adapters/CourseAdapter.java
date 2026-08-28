@@ -9,7 +9,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.kgap.intel.databinding.ItemCourseBinding;
+import com.kgap.intel.fragments.TrainingDetailsFragment;
 import com.kgap.intel.models.LearningPathResponse;
+import com.kgap.intel.models.TrainingEnrollment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,53 +65,24 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.ViewHolder
         holder.binding.tvProgressPercent.setText(detailText);
 
         holder.itemView.setOnClickListener(v -> {
-            CharSequence[] options;
-            if (item.getCourseLink() != null && !item.getCourseLink().isEmpty()) {
-                options = new CharSequence[]{"Update Learning Progress", "Open Course Link"};
-            } else {
-                options = new CharSequence[]{"Update Learning Progress"};
+            if (v.getContext() instanceof androidx.fragment.app.FragmentActivity) {
+                androidx.fragment.app.FragmentActivity activity = (androidx.fragment.app.FragmentActivity) v.getContext();
+                
+                TrainingEnrollment enrollment = new TrainingEnrollment();
+                enrollment.setId(item.getId());
+                enrollment.setTrainingId(item.getSkillId());
+                enrollment.setEmployeeId(item.getEmployeeId());
+                enrollment.setStatus(item.getStatus());
+                enrollment.setProgressPercentage(item.getCompletionPercentage());
+                enrollment.setEnrolledAt(item.getCreatedAt());
+                
+                activity.getSupportFragmentManager().beginTransaction()
+                        .replace(com.kgap.intel.R.id.fragment_container, 
+                                TrainingDetailsFragment.newInstance(enrollment, item.getCourseTitle(), item.getSkillName() + " Training Course"))
+                        .addToBackStack(null)
+                        .commit();
             }
-
-            new AlertDialog.Builder(v.getContext())
-                    .setTitle(title)
-                    .setItems(options, (dialog, which) -> {
-                        if (which == 0) {
-                            showProgressUpdateDialog(v, item);
-                        } else if (which == 1 && item.getCourseLink() != null) {
-                            try {
-                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getCourseLink()));
-                                v.getContext().startActivity(intent);
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    })
-                    .show();
         });
-    }
-
-    private void showProgressUpdateDialog(View view, LearningPathResponse item) {
-        String[] progressOptions = {"0% - Not Started", "25% - In Progress", "50% - In Progress", "75% - In Progress", "100% - Completed"};
-        int[] progressValues = {0, 25, 50, 75, 100};
-        String[] statusValues = {"NOT_STARTED", "IN_PROGRESS", "IN_PROGRESS", "IN_PROGRESS", "COMPLETED"};
-
-        int currentPercent = item.getCompletionPercentage() != null ? item.getCompletionPercentage() : 0;
-        int defaultSelection = 0;
-        for (int i = 0; i < progressValues.length; i++) {
-            if (currentPercent >= progressValues[i]) {
-                defaultSelection = i;
-            }
-        }
-
-        new AlertDialog.Builder(view.getContext())
-                .setTitle("Update Progress: " + item.getSkillName())
-                .setSingleChoiceItems(progressOptions, defaultSelection, (dialog, which) -> {
-                    if (progressUpdateListener != null && item.getId() != null) {
-                        progressUpdateListener.onUpdateProgress(item, progressValues[which], statusValues[which]);
-                    }
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     @Override

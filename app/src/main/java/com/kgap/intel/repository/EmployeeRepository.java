@@ -73,9 +73,20 @@ public class EmployeeRepository {
             @Override
             public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // In a real scenario, the backend should handle team filtering.
-                    // For now, we filter by department as a proxy for the manager's team.
-                    data.setValue(response.body()); // Returning all for now, filter logic can be added
+                    java.util.List<EmployeeResponse> filtered = new java.util.ArrayList<>();
+                    for (EmployeeResponse e : response.body()) {
+                        boolean isEmployee = e.getRole() != null && "EMPLOYEE".equalsIgnoreCase(e.getRole());
+                        if (isEmployee) {
+                            String dept = e.getDepartment();
+                            if (dept != null) {
+                                String lower = dept.toLowerCase();
+                                if (lower.contains("engineering") || lower.contains("devops") || lower.contains("science") || lower.contains("security")) {
+                                    filtered.add(e);
+                                }
+                            }
+                        }
+                    }
+                    data.setValue(filtered);
                 } else {
                     data.setValue(null);
                 }
@@ -143,6 +154,26 @@ public class EmployeeRepository {
 
             @Override
             public void onFailure(Call<List<EmployeeResponse>> call, Throwable t) {
+                data.setValue(null);
+            }
+        });
+        return data;
+    }
+
+    public LiveData<EmployeeResponse> getEmployeeById(Long id) {
+        MutableLiveData<EmployeeResponse> data = new MutableLiveData<>();
+        employeeApiService.getEmployeeById(id).enqueue(new Callback<EmployeeResponse>() {
+            @Override
+            public void onResponse(Call<EmployeeResponse> call, Response<EmployeeResponse> response) {
+                if (response.isSuccessful()) {
+                    data.setValue(response.body());
+                } else {
+                    data.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<EmployeeResponse> call, Throwable t) {
                 data.setValue(null);
             }
         });

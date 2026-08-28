@@ -6,9 +6,11 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="text_dark">#2D3436</color>
-    <color name="gray_500">#B2BEC3</color>
-    <color name="gray_700">#636E72</color>
     <color name="gray_200">#E2E8F0</color>
+    <color name="gray_500">#B2BEC3</color>
+    <color name="gray_600">#718096</color>
+    <color name="gray_700">#636E72</color>
+    <color name="gray_800">#2D3436</color>
     <color name="text_secondary">#636E72</color>
     <color name="overlay_emerald">#1A00B894</color>
 

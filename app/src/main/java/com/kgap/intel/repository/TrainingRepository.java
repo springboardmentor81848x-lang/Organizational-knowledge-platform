@@ -7,7 +7,9 @@ import com.kgap.intel.api.ApiClient;
 import com.kgap.intel.api.TrainingApiService;
 import com.kgap.intel.models.ExternalCourse;
 import com.kgap.intel.models.TrainingEnrollment;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -174,6 +176,48 @@ public class TrainingRepository {
 
             @Override
             public void onFailure(Call<List<TrainingEnrollment>> call, Throwable t) {
+                liveData.setValue(null);
+            }
+        });
+        return liveData;
+    }
+
+    public LiveData<TrainingEnrollment> updateProgress(Long enrollmentId, int progressPercentage) {
+        MutableLiveData<TrainingEnrollment> liveData = new MutableLiveData<>();
+        java.util.Map<String, Integer> body = new java.util.HashMap<>();
+        body.put("progressPercentage", progressPercentage);
+        apiService.updateProgress(enrollmentId, body).enqueue(new Callback<TrainingEnrollment>() {
+            @Override
+            public void onResponse(Call<TrainingEnrollment> call, Response<TrainingEnrollment> response) {
+                if (response.isSuccessful()) {
+                    liveData.setValue(response.body());
+                } else {
+                    liveData.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TrainingEnrollment> call, Throwable t) {
+                liveData.setValue(null);
+            }
+        });
+        return liveData;
+    }
+
+    public LiveData<TrainingEnrollment> markComplete(Long enrollmentId) {
+        MutableLiveData<TrainingEnrollment> liveData = new MutableLiveData<>();
+        apiService.markComplete(enrollmentId).enqueue(new Callback<TrainingEnrollment>() {
+            @Override
+            public void onResponse(Call<TrainingEnrollment> call, Response<TrainingEnrollment> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    liveData.setValue(response.body());
+                } else {
+                    liveData.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TrainingEnrollment> call, Throwable t) {
                 liveData.setValue(null);
             }
         });

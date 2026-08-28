@@ -9,8 +9,11 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import com.kgap.intel.models.SkillItem;
 import com.kgap.intel.models.EmployeeResponse;
+import com.kgap.intel.models.AssessmentResultItem;
+import com.kgap.intel.models.SkillImprovement;
 import com.kgap.intel.repository.SkillRepository;
 import com.kgap.intel.api.ApiClient;
+import com.kgap.intel.api.AssessmentApiService;
 import com.kgap.intel.utils.SharedPrefManager;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -109,6 +112,7 @@ public class SkillsViewModel extends AndroidViewModel {
                     }
                     allSkillsList = new ArrayList<>(skills);
                     applyFilter();
+                    loadSkillImprovements(employeeId, allSkillsList);
                 } else {
                     Log.e("SkillsViewModel", "Failed to fetch skills (null response)");
                     allSkillsList = new ArrayList<>();
@@ -117,6 +121,31 @@ public class SkillsViewModel extends AndroidViewModel {
                 repoLiveData.removeObserver(this);
             }
         });
+    }
+
+    private void loadSkillImprovements(Long employeeId, List<SkillItem> skills) {
+        if (employeeId == null || skills == null || skills.isEmpty()) return;
+        AssessmentApiService apiService = ApiClient.getAssessmentApiService(getApplication());
+        for (SkillItem s : skills) {
+            try {
+                Long skillId = Long.parseLong(s.getId());
+                apiService.getHistoricalResults(employeeId, skillId).enqueue(new Callback<List<AssessmentResultItem>>() {
+                    @Override
+                    public void onResponse(Call<List<AssessmentResultItem>> call, Response<List<AssessmentResultItem>> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            SkillImprovement imp = SkillImprovement.calculate(response.body());
+                            s.setImprovement(imp);
+                            applyFilter();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<AssessmentResultItem>> call, Throwable t) {
+                        // Keep improvement null so indicator remains hidden
+                    }
+                });
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     public LiveData<List<SkillItem>> getSkills() {

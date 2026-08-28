@@ -25,17 +25,26 @@ public class LearningHubFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
+        // Section 1: Discover
         binding.cardRecommended.setOnClickListener(v -> switchFragment(new StructuredLearningPathFragment()));
         binding.btnOpenPath.setOnClickListener(v -> switchFragment(new StructuredLearningPathFragment()));
 
         binding.cardBrowse.setOnClickListener(v -> switchFragment(new CourseCatalogFragment()));
         binding.btnOpenBrowse.setOnClickListener(v -> switchFragment(new CourseCatalogFragment()));
 
-        binding.cardEnrolled.setOnClickListener(v -> switchFragment(new LearningFragment()));
-        binding.btnOpenEnrolled.setOnClickListener(v -> switchFragment(new LearningFragment()));
+        // Section 2: Progress & Courses
+        binding.cardMyProgress.setOnClickListener(v -> switchFragment(new MyProgressFragment()));
+        binding.btnOpenMyProgress.setOnClickListener(v -> switchFragment(new MyProgressFragment()));
 
-        binding.cardCompleted.setOnClickListener(v -> switchFragment(new LearningFragment()));
-        binding.btnOpenCompleted.setOnClickListener(v -> switchFragment(new LearningFragment()));
+        binding.cardEnrolled.setOnClickListener(v -> switchFragment(LearningFragment.newInstance("ENROLLED")));
+        binding.btnOpenEnrolled.setOnClickListener(v -> switchFragment(LearningFragment.newInstance("ENROLLED")));
+
+        binding.cardCompleted.setOnClickListener(v -> switchFragment(LearningFragment.newInstance("COMPLETED")));
+        binding.btnOpenCompleted.setOnClickListener(v -> switchFragment(LearningFragment.newInstance("COMPLETED")));
+
+        // Section 3: Reports & Downloads
+        binding.cardReports.setOnClickListener(v -> switchFragment(new ReportsFragment()));
+        binding.btnOpenReports.setOnClickListener(v -> switchFragment(new ReportsFragment()));
     }
 
     private void switchFragment(Fragment fragment) {

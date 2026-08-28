@@ -14,6 +14,7 @@ public class SkillItem {
     private String experience;
     private String lastUpdated;
     private Long employeeSkillId;
+    private SkillImprovement improvement;
 
     public SkillItem(String id, String name, String category, int proficiency, String level, String experience, String lastUpdated) {
         this(id, name, category, proficiency, level, experience, lastUpdated, null);
@@ -38,4 +39,6 @@ public class SkillItem {
     public String getExperience() { return experience; }
     public String getLastUpdated() { return lastUpdated; }
     public Long getEmployeeSkillId() { return employeeSkillId; }
+    public SkillImprovement getImprovement() { return improvement; }
+    public void setImprovement(SkillImprovement improvement) { this.improvement = improvement; }
 }

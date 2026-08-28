@@ -37,7 +37,7 @@ public class ManagerSkillsHubFragment extends Fragment {
     private void setupListeners() {
         binding.cardHeatmap.setOnClickListener(v -> navigateToFragment(new HeatmapFragment()));
         binding.cardGapAnalysis.setOnClickListener(v -> navigateToFragment(new SkillGapFragment()));
-        binding.cardDistribution.setOnClickListener(v -> navigateToFragment(new SkillGapFragment())); // Sharing for now
+        binding.cardDistribution.setOnClickListener(v -> navigateToFragment(new SkillDistributionFragment()));
     }
 
     private void observeViewModel() {

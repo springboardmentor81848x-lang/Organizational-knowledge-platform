@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@android:drawable/ic_menu_revert"
-            app:title="System Monitoring"
+            app:title="System Monitoring &amp; Telemetry"
             app:titleTextColor="@color/text_dark" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -28,25 +28,161 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp"
+            android:paddingBottom="60dp">
 
-            <!-- System Health -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Infrastructure Health" android:textStyle="bold" android:textColor="@color/text_dark" />
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <!-- 1. Live Diagnostic Summary Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_sort_by_size"
+                            app:tint="@color/primary_emerald" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="10dp"
+                            android:text="System Uptime &amp; Health"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-black" />
+
+                        <TextView
+                            android:id="@+id/tv_health_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_chip_rounded"
+                            android:backgroundTint="#E8F5E9"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:text="99.98% UPTIME"
+                            android:textColor="#2E7D32"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_diagnostic_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="All microservices and database engines running normally. Latency: 18ms."
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_run_diagnostics"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="⚡ Run Live Health Diagnostics"
+                        app:cornerRadius="12dp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. Infrastructure Services -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Infrastructure Services"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-black" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
                     <include android:id="@+id/status_api" layout="@layout/item_status" />
                     <include android:id="@+id/status_db" layout="@layout/item_status" />
                     <include android:id="@+id/status_server" layout="@layout/item_status" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Monitoring Modules -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Monitoring Logs" android:textStyle="bold" android:textColor="@color/text_dark" />
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="8dp">
-                    <include android:id="@+id/opt_audit_logs" layout="@layout/view_profile_row" />
-                    <include android:id="@+id/opt_login_activity" layout="@layout/view_profile_row" />
-                    <include android:id="@+id/opt_security_events" layout="@layout/view_profile_row" />
+            <!-- 3. Resource & Memory Telemetry -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Server Resources"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-black" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="2dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="JVM Heap Memory" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="342 MB / 1024 MB (33%)" android:textColor="@color/primary_emerald" android:textSize="12sp" android:fontFamily="sans-serif-bold"/>
+                    </LinearLayout>
+                    <ProgressBar
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:layout_marginTop="6dp"
+                        android:progress="33"
+                        android:progressTint="@color/primary_emerald" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="API Request Rate" android:textColor="@color/text_dark" android:textSize="13sp" android:fontFamily="sans-serif-bold"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="142 req/min" android:textColor="@color/primary_purple" android:textSize="12sp" android:fontFamily="sans-serif-bold"/>
+                    </LinearLayout>
+                    <ProgressBar
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:layout_marginTop="6dp"
+                        android:progress="28"
+                        android:progressTint="@color/primary_purple" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

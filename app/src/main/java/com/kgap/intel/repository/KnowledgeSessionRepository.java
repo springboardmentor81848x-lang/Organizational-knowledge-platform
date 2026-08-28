@@ -20,6 +20,26 @@ public class KnowledgeSessionRepository {
         apiService = ApiClient.getKnowledgeSessionApiService(context);
     }
 
+    public LiveData<List<KnowledgeSession>> getAllSessions() {
+        MutableLiveData<List<KnowledgeSession>> liveData = new MutableLiveData<>();
+        apiService.getAllSessions().enqueue(new Callback<List<KnowledgeSession>>() {
+            @Override
+            public void onResponse(Call<List<KnowledgeSession>> call, Response<List<KnowledgeSession>> response) {
+                if (response.isSuccessful()) {
+                    liveData.setValue(response.body());
+                } else {
+                    liveData.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<KnowledgeSession>> call, Throwable t) {
+                liveData.setValue(null);
+            }
+        });
+        return liveData;
+    }
+
     public LiveData<KnowledgeSession> createSession(KnowledgeSession session) {
         MutableLiveData<KnowledgeSession> sessionData = new MutableLiveData<>();
         apiService.createSession(session).enqueue(new Callback<KnowledgeSession>() {

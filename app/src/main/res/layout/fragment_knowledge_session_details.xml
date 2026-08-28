@@ -251,6 +251,20 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <TextView
+                    android:id="@+id/tv_registered_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_chip_rounded"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="✓ Registered"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_join_session"
                     style="@style/Widget.Material3.Button"

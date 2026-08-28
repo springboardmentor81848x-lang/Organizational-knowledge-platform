@@ -15,28 +15,62 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
-            <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/app_logo" tools:ignore="ContentDescription" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Department Head Dashboard" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/app_logo"
+                tools:ignore="ContentDescription" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Department Head"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-black" />
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_notifications"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:layout_marginEnd="8dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                android:padding="10dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                android:layout_marginEnd="8dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/btn_notifications"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                <TextView
+                    android:id="@+id/tv_notif_badge"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="@drawable/circle_green_dot"
+                    android:backgroundTint="#FF3B30"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_profile_avatar"
+                android:id="@+id/btn_search"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="end"
                 android:layout_marginEnd="12dp"
-                android:src="@drawable/app_logo"
-                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_search"
+                android:padding="9dp"
+                app:tint="@color/text_dark"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -53,19 +87,65 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="20dp">
 
-            <TextView android:id="@+id/tv_greeting" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Welcome, Dept Head! 👋" android:textColor="@color/text_dark" android:textSize="24sp" android:fontFamily="sans-serif-black" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Engineering Department Overview" android:textColor="@color/gray_700" android:textSize="14sp" />
+            <!-- Greeting & Subtitle -->
+            <TextView
+                android:id="@+id/tv_greeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome, Dept Head! 👋"
+                android:textColor="@color/text_dark"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-black" />
 
+            <TextView
+                android:id="@+id/tv_dept_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Loading Department Overview..."
+                android:textColor="@color/gray_700"
+                android:textSize="13sp" />
+
+            <!-- Strategic Banner Carousel -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/viewPagerBanner"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
+                android:layout_height="160dp"
                 android:layout_marginTop="16dp" />
 
-            <!-- Summary Cards -->
-            <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:columnCount="2">
+            <!-- DEPARTMENT CONTROL HUB (Cards directly under banner) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="⚡ Department Control Hub"
+                android:textColor="@color/text_dark"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:columnCount="2">
+                <include android:id="@+id/hub_skills" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_learning" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_employees" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_reports" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_profile" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_more" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+            </GridLayout>
+
+            <!-- 4 Summary Metric Cards (2x2 Grid) -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:columnCount="2">
+
+                <!-- 1. Skill Coverage -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_dept_coverage"
                     style="@style/RoundedCard"
@@ -76,11 +156,57 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Skill Coverage" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_avg_coverage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="65%" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_purple"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardBackgroundColor="#E0F2F1"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_compass"
+                                    app:tint="#00897B" />
+                            </com.google.android.material.card.MaterialCardView>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Coverage"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tv_avg_coverage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="--"
+                            android:textColor="@color/text_dark"
+                            android:textSize="22sp"
+                            android:fontFamily="sans-serif-black" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Target: 85%+"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- 2. Training Adoption -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_dept_adoption"
                     style="@style/RoundedCard"
@@ -91,29 +217,485 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Training Adoption" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_adoption_rate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="68%" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardBackgroundColor="#E8EAF6"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_directions"
+                                    app:tint="#3949AB" />
+                            </com.google.android.material.card.MaterialCardView>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Adoption"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tv_adoption_rate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="--"
+                            android:textColor="@color/text_dark"
+                            android:textSize="22sp"
+                            android:fontFamily="sans-serif-black" />
+                        <TextView
+                            android:id="@+id/tv_adoption_sub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active Tracking"
+                            android:textColor="@color/gray_600"
+                            android:textSize="11sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. High-Risk Skill Gaps Alert -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_high_risk_summary"
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardBackgroundColor="#FFEBEE"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/stat_notify_error"
+                                    app:tint="#D32F2F" />
+                            </com.google.android.material.card.MaterialCardView>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="High-Risk"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tv_high_risk_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="--"
+                            android:textColor="#D32F2F"
+                            android:textSize="22sp"
+                            android:fontFamily="sans-serif-black" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Requires Action"
+                            android:textColor="#D32F2F"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 4. Team Members -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_team_members"
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardBackgroundColor="#E8F5E9"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_myplaces"
+                                    app:tint="#43A047" />
+                            </com.google.android.material.card.MaterialCardView>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Team"
+                                android:textColor="@color/gray_700"
+                                android:textSize="12sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tv_total_members"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="--"
+                            android:textColor="@color/text_dark"
+                            android:textSize="22sp"
+                            android:fontFamily="sans-serif-black" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Department Scope"
+                            android:textColor="@color/gray_600"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </GridLayout>
 
-            <!-- Navigation Hub -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Control Hub" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
-            <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:paddingHorizontal="8dp" android:columnCount="2">
-                <include android:id="@+id/hub_skills" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_learning" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_employees" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_more" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-            </GridLayout>
+            <!-- SECTION 1: Team Gap Heatmap Preview Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="📊 Team Gap Heatmap"
+                    android:textColor="@color/text_dark"
+                    android:textSize="17sp"
+                    android:fontFamily="sans-serif-black" />
 
-            <!-- High Risk Gaps Summary -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="High-Risk Skill Gaps" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-                <LinearLayout android:id="@+id/layout_risk_summary" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <!-- Dynamic content will be added here -->
+                <TextView
+                    android:id="@+id/btn_view_full_heatmap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View Full Matrix →"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/primary_purple"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_heatmap_preview"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Competency Gap Distribution"
+                        android:textColor="@color/text_dark"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif-bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Active department skill evaluations breakdown by severity:"
+                        android:textColor="@color/gray_600"
+                        android:textSize="12sp" />
+
+                    <!-- Distribution Pills Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:weightSum="4">
+
+                        <!-- Critical -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_badge_light_red"
+                            android:paddingVertical="8dp"
+                            android:layout_marginEnd="4dp">
+                            <TextView
+                                android:id="@+id/tv_heat_critical"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#D32F2F"
+                                android:textSize="16sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Critical"
+                                android:textColor="#D32F2F"
+                                android:textSize="10sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+
+                        <!-- High -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_badge_light_red"
+                            android:paddingVertical="8dp"
+                            android:layout_marginHorizontal="2dp">
+                            <TextView
+                                android:id="@+id/tv_heat_high"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#E65100"
+                                android:textSize="16sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="High"
+                                android:textColor="#E65100"
+                                android:textSize="10sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+
+                        <!-- Medium -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_badge_light_red"
+                            android:paddingVertical="8dp"
+                            android:layout_marginHorizontal="2dp">
+                            <TextView
+                                android:id="@+id/tv_heat_medium"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#F57C00"
+                                android:textSize="16sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Medium"
+                                android:textColor="#F57C00"
+                                android:textSize="10sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+
+                        <!-- Low / Met -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_badge_light_red"
+                            android:paddingVertical="8dp"
+                            android:layout_marginStart="4dp">
+                            <TextView
+                                android:id="@+id/tv_heat_low"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#388E3C"
+                                android:textSize="16sp"
+                                android:fontFamily="sans-serif-black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Low / Met"
+                                android:textColor="#388E3C"
+                                android:textSize="10sp"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_open_heatmap"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Explore Department Heatmap Grid"
+                        android:textColor="@color/primary_emerald"
+                        app:icon="@android:drawable/ic_menu_search"
+                        app:iconTint="@color/primary_emerald" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- SECTION 2: High-Risk Skill Gap Alerts -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🚨 High-Risk Skill Gap Alerts"
+                    android:textColor="@color/text_dark"
+                    android:textSize="17sp"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:id="@+id/btn_view_all_gaps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View All →"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/primary_purple"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_empty_risk_gaps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="No high-risk skill gaps identified in your department. 🎉"
+                android:textColor="@color/gray_600"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_high_risk_alerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:nestedScrollingEnabled="false" />
+
+            <!-- SECTION 3: Department Skill Coverage -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🎯 Department Skill Coverage"
+                    android:textColor="@color/text_dark"
+                    android:textSize="17sp"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:id="@+id/btn_view_all_skills"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Details →"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/primary_purple"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_skill_coverage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:nestedScrollingEnabled="false" />
+
+            <!-- SECTION 4: Individual Progress Snapshots -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="👤 Individual Progress Snapshots"
+                    android:textColor="@color/text_dark"
+                    android:textSize="17sp"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:id="@+id/btn_view_all_employees"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All Team →"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/primary_purple"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_employee_snapshots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:nestedScrollingEnabled="false" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="32dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

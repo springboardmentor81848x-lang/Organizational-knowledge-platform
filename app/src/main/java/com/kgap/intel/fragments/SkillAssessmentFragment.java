@@ -27,6 +27,7 @@ public class SkillAssessmentFragment extends Fragment {
     private static final String ARG_SKILL_NAME = "skill_name";
     private static final String ARG_TARGET_EMPLOYEE_ID = "target_employee_id";
     private static final String ARG_TARGET_EMPLOYEE_NAME = "target_employee_name";
+    private static final String ARG_ASSESSMENT_TYPE = "assessment_type";
 
     private FragmentSkillAssessmentBinding binding;
     private AssessmentViewModel viewModel;
@@ -34,20 +35,26 @@ public class SkillAssessmentFragment extends Fragment {
     private String skillName;
     private Long targetEmployeeId;
     private String targetEmployeeName;
+    private String assessmentType = "SELF";
     
     private List<AssessmentQuestion> questionList;
     private int currentQuestionIndex = 0;
     private final Map<Long, String> selectedAnswers = new HashMap<>();
 
     public static SkillAssessmentFragment newInstance(String skillId, String skillName) {
-        return newInstance(skillId, skillName, null, null);
+        return newInstance(skillId, skillName, null, null, "SELF");
     }
 
     public static SkillAssessmentFragment newInstance(String skillId, String skillName, Long targetEmployeeId, String targetEmployeeName) {
+        return newInstance(skillId, skillName, targetEmployeeId, targetEmployeeName, "PEER");
+    }
+
+    public static SkillAssessmentFragment newInstance(String skillId, String skillName, Long targetEmployeeId, String targetEmployeeName, String assessmentType) {
         SkillAssessmentFragment fragment = new SkillAssessmentFragment();
         Bundle args = new Bundle();
         args.putString(ARG_SKILL_ID, skillId);
         args.putString(ARG_SKILL_NAME, skillName);
+        args.putString(ARG_ASSESSMENT_TYPE, assessmentType != null ? assessmentType : "SELF");
         if (targetEmployeeId != null) {
             args.putLong(ARG_TARGET_EMPLOYEE_ID, targetEmployeeId);
             args.putString(ARG_TARGET_EMPLOYEE_NAME, targetEmployeeName);
@@ -62,6 +69,7 @@ public class SkillAssessmentFragment extends Fragment {
         if (getArguments() != null) {
             skillId = getArguments().getString(ARG_SKILL_ID);
             skillName = getArguments().getString(ARG_SKILL_NAME);
+            assessmentType = getArguments().getString(ARG_ASSESSMENT_TYPE, "SELF");
             if (getArguments().containsKey(ARG_TARGET_EMPLOYEE_ID)) {
                 targetEmployeeId = getArguments().getLong(ARG_TARGET_EMPLOYEE_ID);
                 targetEmployeeName = getArguments().getString(ARG_TARGET_EMPLOYEE_NAME);
@@ -81,18 +89,21 @@ public class SkillAssessmentFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AssessmentViewModel.class);
 
-        if (targetEmployeeName != null) {
-            binding.toolbar.setTitle("Assessing: " + targetEmployeeName);
+        if ("MANAGER".equalsIgnoreCase(assessmentType) && targetEmployeeName != null) {
+            binding.toolbar.setTitle("Manager Assessment: " + targetEmployeeName);
+            binding.toolbar.setSubtitle("Skill: " + skillName);
+        } else if ("PEER".equalsIgnoreCase(assessmentType) && targetEmployeeName != null) {
+            binding.toolbar.setTitle("Peer Assessment: " + targetEmployeeName);
             binding.toolbar.setSubtitle("Skill: " + skillName);
         } else {
-            binding.toolbar.setTitle("Assess: " + skillName);
+            binding.toolbar.setTitle("Self Assessment: " + skillName);
         }
         binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         observeViewModel();
         
         if (skillId != null) {
-            viewModel.loadQuestions(skillId);
+            viewModel.loadQuestions(skillId, assessmentType);
         }
 
         binding.btnNext.setOnClickListener(v -> handleNext());
@@ -135,12 +146,55 @@ public class SkillAssessmentFragment extends Fragment {
     }
 
     private void navigateToResult(AssessmentApiService.AssessmentResult result) {
+        Long currentUserId = SharedPrefManager.getInstance(getContext()).getUserId();
+        if (currentUserId == null || currentUserId <= 0) {
+            currentUserId = 4L;
+        }
+        Long targetId = targetEmployeeId != null ? targetEmployeeId : currentUserId;
+        com.kgap.intel.repository.NotificationRepository notifRepo = new com.kgap.intel.repository.NotificationRepository(requireContext());
+
+        if ("PEER".equalsIgnoreCase(assessmentType)) {
+            notifRepo.createNotification(
+                    targetId,
+                    "ASSESSMENT_REMINDER",
+                    "🎉 Peer assessment completed for " + skillName + " (" + Math.round(result.getScore()) + "%). Combined proficiency updated to " + result.getLevel() + "!"
+            );
+            if (!currentUserId.equals(targetId)) {
+                notifRepo.createNotification(
+                        currentUserId,
+                        "ACHIEVEMENT",
+                        "✅ You successfully submitted a Peer Assessment for " + (targetEmployeeName != null ? targetEmployeeName : "peer") + " on " + skillName + " (" + Math.round(result.getScore()) + "%)."
+                );
+            }
+        } else if ("MANAGER".equalsIgnoreCase(assessmentType)) {
+            notifRepo.createNotification(
+                    targetId,
+                    "ASSESSMENT_REMINDER",
+                    "📋 Manager assessment submitted for " + skillName + " (" + Math.round(result.getScore()) + "%). Combined proficiency updated to " + result.getLevel() + "!"
+            );
+            if (!currentUserId.equals(targetId)) {
+                notifRepo.createNotification(
+                        currentUserId,
+                        "ACHIEVEMENT",
+                        "✅ You successfully submitted a Manager Assessment for " + (targetEmployeeName != null ? targetEmployeeName : "employee") + " on " + skillName + " (" + Math.round(result.getScore()) + "%)."
+                );
+            }
+        } else {
+            notifRepo.createNotification(
+                    currentUserId,
+                    "ACHIEVEMENT",
+                    "🎉 Self assessment completed for " + skillName + " (" + Math.round(result.getScore()) + "%). Proficiency level: " + result.getLevel() + "!"
+            );
+        }
+
         AssessmentResultFragment resultFragment = AssessmentResultFragment.newInstance(
                 skillName,
                 result.getScore(),
                 result.getLevel(),
                 result.getCorrectAnswers(),
-                result.getTotalQuestions()
+                result.getTotalQuestions(),
+                skillId,
+                targetId
         );
 
         getParentFragmentManager().beginTransaction()
@@ -164,7 +218,9 @@ public class SkillAssessmentFragment extends Fragment {
             rb.setPadding(0, 16, 0, 16);
             binding.rgOptions.addView(rb);
             
-            if (selectedAnswers.containsKey(q.getId()) && selectedAnswers.get(q.getId()).equals(optionText)) {
+            String selectedChoice = selectedAnswers.get(q.getId());
+            char expectedChar = (char) ('A' + i);
+            if (selectedChoice != null && selectedChoice.equalsIgnoreCase(String.valueOf(expectedChar))) {
                 rb.setChecked(true);
             }
         }
@@ -184,8 +240,8 @@ public class SkillAssessmentFragment extends Fragment {
         }
 
         AssessmentQuestion currentQ = questionList.get(currentQuestionIndex);
-        RadioButton selectedRb = binding.rgOptions.findViewById(selectedId);
-        selectedAnswers.put(currentQ.getId(), selectedRb.getText().toString());
+        char choiceLetter = (char) ('A' + selectedId);
+        selectedAnswers.put(currentQ.getId(), String.valueOf(choiceLetter));
 
         if (currentQuestionIndex < questionList.size() - 1) {
             showQuestion(currentQuestionIndex + 1);
@@ -211,7 +267,7 @@ public class SkillAssessmentFragment extends Fragment {
             answers.add(new AssessmentSubmission.Answer(entry.getKey(), entry.getValue()));
         }
 
-        AssessmentSubmission submission = new AssessmentSubmission(employeeId, answers);
+        AssessmentSubmission submission = new AssessmentSubmission(employeeId, answers, assessmentType);
         viewModel.submitAssessment(assessmentId, submission);
     }
 

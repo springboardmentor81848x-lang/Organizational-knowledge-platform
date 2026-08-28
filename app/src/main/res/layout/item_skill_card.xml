@@ -32,6 +32,22 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
+            android:id="@+id/tv_improvement_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/glass_card"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text=""
+            android:textColor="@color/primary_emerald"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintStart_toEndOf="@id/tv_category_badge"
+            app:layout_constraintTop_toTopOf="@id/tv_category_badge" />
+
+        <TextView
             android:id="@+id/tv_skill_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

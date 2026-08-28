@@ -4,46 +4,104 @@
     style="@style/RoundedCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp">
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tv_skill_name"
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_employee_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Employee Name"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/text_dark" />
+
+                <TextView
+                    android:id="@+id/tv_skill_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Skill: Java &amp; Spring Boot"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/primary_purple" />
+            </LinearLayout>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_risk"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Skill Name"
-                android:textStyle="bold"
-                android:textColor="@color/text_dark" />
-
-            <TextView
-                android:id="@+id/tv_coverage_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Coverage: 30/95%"
-                android:textSize="12sp"
-                android:textColor="@color/gray_700" />
+                android:text="HIGH RISK"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-black"
+                app:chipBackgroundColor="@color/gap_critical"
+                android:textColor="@color/white"
+                app:chipStrokeWidth="0dp" />
         </LinearLayout>
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_risk"
+        <TextView
+            android:id="@+id/tv_coverage_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CRITICAL"
-            app:chipBackgroundColor="@color/gap_critical"
-            android:textColor="@color/white"
-            app:chipStrokeWidth="0dp" />
+            android:layout_marginTop="8dp"
+            android:text="Current: Unaware ➔ Target: Advanced"
+            android:textSize="12sp"
+            android:textColor="@color/gray_700" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_recommend_training"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="Recommend"
+                android:textSize="11sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:strokeColor="@color/primary_purple"
+                android:textColor="@color/primary_purple"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_assign_mentor"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="Assign Mentor"
+                android:textSize="11sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:backgroundTint="@color/primary_emerald"
+                android:textColor="@color/white"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

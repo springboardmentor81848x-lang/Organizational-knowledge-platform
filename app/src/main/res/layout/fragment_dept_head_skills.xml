@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/neutral_bg">
+    android:background="@color/cream_bg">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@android:drawable/ic_menu_revert"
-            app:title="Skills Analysis"
+            app:title="Skills &amp; Heatmap Analysis"
             app:titleTextColor="@color/text_dark" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -30,27 +30,74 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- Heatmap -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Team Gap Heatmap" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <!-- Section 1: Team Gap Heatmap Matrix -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 Team Gap Heatmap"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-black" />
 
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <!-- Horizontal scroll for heatmap -->
-                    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
-                        <TableLayout android:id="@+id/table_heatmap" android:layout_width="wrap_content" android:layout_height="wrap_content" android:stretchColumns="*" />
-                    </HorizontalScrollView>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Real-time skill proficiency &amp; gap matrix across team members"
+                android:textColor="@color/gray_700"
+                android:textSize="12sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Heatmap RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_heatmap"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
 
                     <!-- Legend -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="horizontal" android:gravity="center">
-                        <include layout="@layout/view_legend_item" android:id="@+id/legend_low" />
-                        <include layout="@layout/view_legend_item" android:id="@+id/legend_med" android:layout_marginStart="16dp" />
-                        <include layout="@layout/view_legend_item" android:id="@+id/legend_high" android:layout_marginStart="16dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <include layout="@layout/view_legend_item" android:id="@+id/legend_critical" />
+                        <include layout="@layout/view_legend_item" android:id="@+id/legend_high" android:layout_marginStart="12dp" />
+                        <include layout="@layout/view_legend_item" android:id="@+id/legend_med" android:layout_marginStart="12dp" />
+                        <include layout="@layout/view_legend_item" android:id="@+id/legend_low" android:layout_marginStart="12dp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Skill Coverage -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Department Skill Coverage" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <!-- Section 2: Department Skill Coverage -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:text="🎯 Department Skill Coverage"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Aggregate proficiency vs 85% benchmark coverage"
+                android:textColor="@color/gray_700"
+                android:textSize="12sp" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_skill_coverage"
                 android:layout_width="match_parent"
@@ -58,14 +105,26 @@
                 android:layout_marginTop="12dp"
                 android:nestedScrollingEnabled="false" />
 
-            <!-- High Risk Gaps -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="High-Risk Alerts" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <!-- Section 3: High-Risk Alerts -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:text="🚨 High-Risk Skill Gap Alerts"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-black" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_high_risk_gaps"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:nestedScrollingEnabled="false" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="32dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

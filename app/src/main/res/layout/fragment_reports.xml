@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/neutral_bg">
+    android:background="@color/cream_bg">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@android:drawable/ic_menu_revert"
-            app:title="Reports &amp; Analytics"
+            app:title="Reports &amp; Analytics Hub"
             app:titleTextColor="@color/text_dark" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -30,24 +30,284 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Downloadable Reports" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="16sp" />
+            <!-- Employee / Scope Selector Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_employee_selector"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            <!-- Report List -->
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="8dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_myplaces"
+                            app:tint="@color/primary_emerald" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Select Report Target"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_dark"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
 
-                    <include android:id="@+id/rep_gap" layout="@layout/view_profile_row" />
-                    <include android:id="@+id/rep_proficiency" layout="@layout/view_profile_row" />
-                    <include android:id="@+id/rep_training" layout="@layout/view_profile_row" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="10dp"
+                        android:text="Select yourself or a team member to download their report:"
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/gray_200"
+                        app:strokeWidth="1dp"
+                        app:cardBackgroundColor="@color/white">
+                        <Spinner
+                            android:id="@+id/spinner_employees"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:paddingHorizontal="8dp"
+                            android:spinnerMode="dropdown" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Active Target Info Pill -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_badge_light_red"
+                        android:backgroundTint="#E0F2F1"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active Target: "
+                            android:textColor="#00796B"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tv_active_target_label"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Loading..."
+                            android:textColor="#004D40"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Analytics Insights" android:textStyle="bold" android:textColor="@color/text_dark" android:textSize="16sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report &amp; Analytics Export Options"
+                android:textStyle="bold"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-black" />
 
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="40dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-                    <TextView android:id="@+id/tv_insight_text" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Calculating latest team performance trends based on actual records..." android:textColor="@color/gray_700" android:textSize="14sp" />
+            <!-- Option 1: Live In-App Preview -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_rep_preview"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_view"
+                        app:tint="@color/primary_emerald" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View Live Report (In-App Preview)"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_dark"
+                            android:textSize="15sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Review full performance &amp; gap matrix directly in app"
+                            android:textColor="@color/gray_700"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="@color/primary_emerald" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Option 2: Download PDF Report -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_rep_pdf"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_save"
+                        app:tint="@color/primary_emerald" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Download Official PDF Report"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_dark"
+                            android:textSize="15sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Generate &amp; save printable PDF file to device Downloads"
+                            android:textColor="@color/gray_700"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="@color/primary_emerald" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Option 3: Export CSV Spreadsheet -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_rep_csv"
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_agenda"
+                        app:tint="@color/primary_emerald" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Export CSV Spreadsheet"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_dark"
+                            android:textSize="15sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Export raw competency matrix data to Excel .csv format"
+                            android:textColor="@color/gray_700"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="@color/primary_emerald" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Analytics Insights"
+                android:textStyle="bold"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-black" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="40dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:id="@+id/tv_insight_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Calculating latest team performance trends based on actual records..."
+                        android:textColor="@color/gray_700"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -25,6 +25,10 @@ public class DepartmentHeadViewModel extends AndroidViewModel {
         return repository.getTeamGapHeatmap();
     }
 
+    public LiveData<List<HeatmapRow>> getHeatmapRows() {
+        return repository.getDepartmentHeatmapRows();
+    }
+
     public LiveData<TrainingAdoption> getAdoptionRates() {
         return repository.getTrainingAdoptionRates();
     }
@@ -35,5 +39,9 @@ public class DepartmentHeadViewModel extends AndroidViewModel {
 
     public LiveData<List<EmployeeProgress>> getEmployeeProgress() {
         return repository.getIndividualProgressSnapshots();
+    }
+
+    public LiveData<String> getDepartmentName() {
+        return repository.getDepartmentName();
     }
 }

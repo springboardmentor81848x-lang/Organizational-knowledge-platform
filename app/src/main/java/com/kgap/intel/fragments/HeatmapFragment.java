@@ -21,6 +21,14 @@ import com.kgap.intel.viewmodel.GapViewModel;
 
 import java.util.List;
 
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import android.graphics.Color;
+import java.util.ArrayList;
+
 public class HeatmapFragment extends Fragment {
 
     private FragmentHeatmapBinding binding;
@@ -55,10 +63,17 @@ public class HeatmapFragment extends Fragment {
         switch (role != null ? role : "EMPLOYEE") {
             case "HR":
             case "ADMIN":
+            case "SYSTEM_ADMIN":
+            case "LEARNING_DEVELOPMENT_ADMIN":
+            case "LD_ADMIN":
                 subtitle = "Organization Skill Gap Overview";
                 break;
             case "MANAGER":
                 subtitle = "Team Skill Gap Overview";
+                break;
+            case "DEPARTMENT_HEAD":
+            case "DEPT_HEAD":
+                subtitle = "Department Skill Gap Overview";
                 break;
             default:
                 subtitle = "Your Skill Overview";
@@ -109,12 +124,75 @@ public class HeatmapFragment extends Fragment {
                 binding.rvHeatmap.setAdapter(new HeatmapAdapter(rows, this::showCellDetails));
                 
                 updateSummary(rows);
+                setupGapChart(rows);
             } else if (rows != null) {
                 binding.layoutHeatmapContainer.setVisibility(View.GONE);
                 binding.layoutSummary.setVisibility(View.GONE);
                 binding.tvEmpty.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    private void setupGapChart(List<com.kgap.intel.models.HeatmapRow> rows) {
+        java.util.Map<String, Float> skillGaps = new java.util.HashMap<>();
+        for (com.kgap.intel.models.HeatmapRow row : rows) {
+            for (HeatmapResponse cell : row.getCells()) {
+                String skillName = cell.getSkillName();
+                if (skillName != null) {
+                    float currentGap = cell.getGapScore() != null ? cell.getGapScore().floatValue() : 0f;
+                    skillGaps.put(skillName, skillGaps.getOrDefault(skillName, 0f) + currentGap);
+                }
+            }
+        }
+
+        List<BarEntry> entries = new ArrayList<>();
+        final List<String> labels = new ArrayList<>();
+        int i = 0;
+        for (java.util.Map.Entry<String, Float> entry : skillGaps.entrySet()) {
+            if (entry.getValue() > 0) {
+                entries.add(new BarEntry(i, entry.getValue()));
+                labels.add(entry.getKey());
+                i++;
+            }
+        }
+
+        if (entries.isEmpty()) {
+            binding.chartSkillGaps.setVisibility(View.GONE);
+            return;
+        } else {
+            binding.chartSkillGaps.setVisibility(View.VISIBLE);
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "Total Gap Score");
+        dataSet.setColor(Color.parseColor("#FF5722"));
+        dataSet.setValueTextColor(Color.parseColor("#333333"));
+        dataSet.setValueTextSize(9f);
+
+        BarData barData = new BarData(dataSet);
+        binding.chartSkillGaps.setData(barData);
+        binding.chartSkillGaps.getDescription().setEnabled(false);
+        binding.chartSkillGaps.getLegend().setEnabled(false);
+
+        XAxis xAxis = binding.chartSkillGaps.getXAxis();
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int idx = (int) value;
+                if (idx >= 0 && idx < labels.size()) {
+                    return labels.get(idx);
+                }
+                return "";
+            }
+        });
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+        xAxis.setTextColor(Color.parseColor("#666666"));
+
+        binding.chartSkillGaps.getAxisLeft().setAxisMinimum(0f);
+        binding.chartSkillGaps.getAxisRight().setEnabled(false);
+        binding.chartSkillGaps.animateY(1000);
+        binding.chartSkillGaps.invalidate();
     }
 
     private void updateSummary(List<com.kgap.intel.models.HeatmapRow> rows) {

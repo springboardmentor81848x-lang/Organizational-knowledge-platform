@@ -4,7 +4,11 @@
     style="@style/RoundedCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp">
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,62 +16,121 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tv_employee_name"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Employee Name"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_dark" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_avatar"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:src="@drawable/app_logo"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_employee_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Employee Name"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/text_dark" />
+
+                <TextView
+                    android:id="@+id/tv_employee_role"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Software Engineer"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray_700" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_active_gaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2 Gaps"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#C62828"
+                android:background="@drawable/bg_badge_light_red"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:baselineAligned="false">
+            android:orientation="vertical">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Skill Progress" android:textSize="11sp" android:textColor="@color/gray_700" />
-                <com.google.android.material.progressindicator.LinearProgressIndicator
-                    android:id="@+id/pb_skill_progress"
-                    android:layout_width="match_parent"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    app:indicatorColor="@color/primary_purple"
-                    android:progress="70" />
+                    android:layout_weight="1"
+                    android:text="Learning &amp; Training Progress"
+                    android:textSize="11sp"
+                    android:textColor="@color/gray_700" />
+                <TextView
+                    android:id="@+id/tv_progress_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="65%"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/primary_emerald" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/pb_learning_progress"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Learning" android:textSize="11sp" android:textColor="@color/gray_700" />
-                <com.google.android.material.progressindicator.LinearProgressIndicator
-                    android:id="@+id/pb_learning_progress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    app:indicatorColor="@color/primary_emerald"
-                    android:progress="45" />
-            </LinearLayout>
+                android:layout_marginTop="6dp"
+                app:indicatorColor="@color/primary_emerald"
+                app:trackColor="#E8F5E9"
+                app:trackCornerRadius="4dp"
+                android:progress="65" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tv_training_info"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Completed: 5 programs"
-            android:textSize="12sp"
-            android:textColor="@color/gray_700" />
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_training_info"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="✓ 3 Courses Completed"
+                android:textSize="12sp"
+                android:textColor="@color/gray_700" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View Details →"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/primary_purple" />
+        </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

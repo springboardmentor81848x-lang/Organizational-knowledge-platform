@@ -11,36 +11,89 @@
         android:layout_height="wrap_content"
         android:background="@color/white"
         app:elevation="0dp">
+
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
-            <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/app_logo" tools:ignore="ContentDescription" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Mentor Dashboard" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/app_logo"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Mentor Talent Center"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-black" />
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="6dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/btn_notifications"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                <TextView
+                    android:id="@+id/tv_notif_badge"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="@drawable/circle_green_dot"
+                    android:backgroundTint="#FF3B30"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_notifications"
+                android:id="@+id/btn_chat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="6dp"
+                android:src="@android:drawable/sym_action_chat"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/btn_profile"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="end"
                 android:layout_marginEnd="8dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                android:padding="10dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/btn_profile_avatar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="end"
-                android:layout_marginEnd="12dp"
-                android:src="@drawable/app_logo"
-                android:scaleType="centerCrop"
+                android:src="@drawable/ic_user_profile_circle"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                tools:ignore="ContentDescription" />
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -53,56 +106,237 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="20dp">
 
-            <TextView android:id="@+id/tv_greeting" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hello, Mentor! 🎓" android:textColor="@color/text_dark" android:textSize="24sp" android:fontFamily="sans-serif-black" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Guide your mentees to success" android:textColor="@color/gray_700" android:textSize="14sp" />
+            <TextView
+                android:id="@+id/tv_greeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome, Domain Mentor 🤝"
+                android:textColor="@color/text_dark"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Enterprise Learning &amp; Mentorship Oversight"
+                android:textColor="@color/gray_700"
+                android:textSize="13sp" />
 
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/viewPagerBanner"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
+                android:layout_height="170dp"
                 android:layout_marginTop="16dp" />
 
-            <!-- Stats Grid -->
-            <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:columnCount="2">
-                <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="4dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="My Mentees" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_assigned_mentees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_purple"/>
+            <!-- Live Telemetry KPI Grid (4 Metrics) -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:columnCount="2">
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#E0F2F1">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Active Learners" android:textSize="11sp" android:textColor="#004D40"/>
+                        <TextView android:id="@+id/tv_assigned_mentees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="14" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="#00897B"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="4dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Active Paths" android:textSize="12sp" android:textColor="@color/gray_700"/>
-                        <TextView android:id="@+id/tv_active_mentorships" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="22sp" android:fontFamily="sans-serif-black" android:textColor="@color/primary_emerald"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#E8EAF6">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Catalog Courses" android:textSize="11sp" android:textColor="#1A237E"/>
+                        <TextView android:id="@+id/tv_active_trainings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="8" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="#3949AB"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#E8F5E9">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Completion Rate" android:textSize="11sp" android:textColor="#1B5E20"/>
+                        <TextView android:id="@+id/tv_completion_rate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="84.6%" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="#2E7D32"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/RoundedCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#FFF8E1">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Effectiveness Rating" android:textSize="11sp" android:textColor="#E65100"/>
+                        <TextView android:id="@+id/tv_effectiveness_score" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4.9 ★" android:textSize="20sp" android:fontFamily="sans-serif-black" android:textColor="#FF8F00"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </GridLayout>
 
-            <!-- Navigation Hub -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Mentorship Tools" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
+            <!-- 6 Main Mentor Responsibilities Hub -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="⚡ Mentor Leadership Hub"
+                android:textColor="@color/text_dark"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
+
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:paddingHorizontal="8dp"
                 android:columnCount="2">
-                <include android:id="@+id/hub_mentees" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_sessions" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_mentee_progress" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_knowledge_session" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_requests" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_requests_sent" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
-                <include android:id="@+id/hub_mentor_profile" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" />
+
+                <!-- 1. Manage Training Programs/Catalog -->
+                <include
+                    android:id="@+id/hub_training_catalog"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <!-- 2. Support Learning Paths -->
+                <include
+                    android:id="@+id/hub_learning_paths"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <!-- 3. Monitor Training Participation -->
+                <include
+                    android:id="@+id/hub_training_participation"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <!-- 4. Track Completion -->
+                <include
+                    android:id="@+id/hub_completion_tracker"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <!-- 5. Monitor Learning Effectiveness -->
+                <include
+                    android:id="@+id/hub_learning_effectiveness"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <!-- 6. Support Certification & Renewals -->
+                <include
+                    android:id="@+id/hub_certifications"
+                    layout="@layout/item_hub_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
             </GridLayout>
 
-            <!-- Upcoming Section -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Next Actions" android:textColor="@color/text_dark" android:textSize="18sp" android:fontFamily="sans-serif-black" />
-            <com.google.android.material.card.MaterialCardView style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:id="@+id/tv_upcoming_sessions" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• 2 sessions scheduled for this week" android:textColor="@color/gray_700" />
-                    <TextView android:id="@+id/tv_pending_requests" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="• 1 pending mentee request" android:textColor="@color/primary_purple" android:textStyle="bold" />
+            <!-- Mentorship 1-on-1 Sessions Quick Banner -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Upcoming Coaching Sessions"
+                android:textColor="@color/text_dark"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-black" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/RoundedCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardElevation="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_today"
+                            app:tint="@color/primary_emerald" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="1-on-1 Code Review: Kafka Partitions"
+                            android:textColor="@color/text_dark"
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Today, 3:30 PM"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Mentee: Aarav Sharma • Milestone 4 validation &amp; query optimization"
+                        android:textColor="@color/gray_700"
+                        android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

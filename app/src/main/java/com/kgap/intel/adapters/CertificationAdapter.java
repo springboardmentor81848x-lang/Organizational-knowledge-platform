@@ -27,7 +27,20 @@ public class CertificationAdapter extends RecyclerView.Adapter<CertificationAdap
         Certification cert = certifications.get(position);
         holder.binding.tvCertTitle.setText(cert.getTitle());
         holder.binding.tvCertIssuer.setText(cert.getIssuer());
-        holder.binding.tvCertDate.setText(cert.getDate());
+        
+        String status = cert.getStatus();
+        String dateText = cert.getDate() + " • Expiry: " + cert.getExpiryDate();
+        if ("EXPIRING_SOON".equalsIgnoreCase(status)) {
+            dateText += " ⚠️ Expiring Soon (Action Required)";
+            holder.binding.tvCertDate.setTextColor(android.graphics.Color.parseColor("#EF6C00"));
+        } else if ("EXPIRED".equalsIgnoreCase(status)) {
+            dateText += " ❌ Renewal Required";
+            holder.binding.tvCertDate.setTextColor(android.graphics.Color.parseColor("#D32F2F"));
+        } else {
+            dateText += " ✅ Active";
+            holder.binding.tvCertDate.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
+        }
+        holder.binding.tvCertDate.setText(dateText);
     }
 
     @Override

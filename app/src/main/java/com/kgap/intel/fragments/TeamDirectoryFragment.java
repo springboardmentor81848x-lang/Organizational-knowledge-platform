@@ -36,8 +36,8 @@ public class TeamDirectoryFragment extends Fragment {
         viewModel.getTeamMembers().observe(getViewLifecycleOwner(), members -> {
             if (members != null) {
                 TeamMemberAdapter adapter = new TeamMemberAdapter(members, member -> {
-                    // Navigate to individual profile details
-                    navigateToFragment(ProfileFragment.newInstance(member.getEmail()));
+                    // Navigate to individual employee details
+                    navigateToFragment(UserDetailsFragment.newInstance(member.getId()));
                 });
                 binding.rvTeamMembers.setAdapter(adapter);
             }

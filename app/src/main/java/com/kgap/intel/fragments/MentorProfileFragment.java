@@ -16,6 +16,7 @@ import com.kgap.intel.databinding.FragmentMentorProfileBinding;
 import com.kgap.intel.databinding.ItemKnowledgeCardBinding;
 import com.kgap.intel.databinding.ItemMentorReviewBinding;
 import com.kgap.intel.databinding.ItemMentorshipSessionBinding;
+import com.kgap.intel.utils.SharedPrefManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,10 +69,26 @@ public class MentorProfileFragment extends Fragment {
         setupPreviousSessions();
         setupReviews();
 
-        binding.btnMessage.setOnClickListener(v -> Toast.makeText(getContext(), "Chat with " + finalMentorName + " opening...", Toast.LENGTH_SHORT).show());
-        binding.btnRequestMentorship.setOnClickListener(v -> {
-            MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(finalMentorName, finalMentorId);
-            bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
+        binding.btnMessage.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, ChatFragment.newInstance(finalMentorName, finalMentorId))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (userId == null || userId == -1L) userId = 4L;
+
+        new com.kgap.intel.repository.MentorAssignmentRepository(requireContext()).getCurrentAssignmentForEmployee(userId).observe(getViewLifecycleOwner(), assignment -> {
+            if (assignment != null && "ACTIVE".equalsIgnoreCase(assignment.getStatus()) && assignment.getMentorId() != null && assignment.getMentorId().equals(finalMentorId)) {
+                binding.btnRequestMentorship.setVisibility(View.GONE);
+            } else {
+                binding.btnRequestMentorship.setVisibility(View.VISIBLE);
+                binding.btnRequestMentorship.setOnClickListener(v -> {
+                    MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(finalMentorName, finalMentorId);
+                    bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
+                });
+            }
         });
     }
 

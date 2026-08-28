@@ -46,7 +46,21 @@ public class LDDashboardFragment extends Fragment {
 
     private void setupUI() {
         binding.btnNotifications.setOnClickListener(v -> navigateToFragment(new NotificationsFragment()));
-        binding.btnProfileAvatar.setOnClickListener(v -> navigateToFragment(new MoreFragment()));
+        binding.btnSearch.setOnClickListener(v -> new QuickServiceSearchBottomSheet().show(getParentFragmentManager(), "quick_service_search"));
+        setupNotificationBadge();
+    }
+
+    private void setupNotificationBadge() {
+        Long userId = com.kgap.intel.utils.SharedPrefManager.getInstance(requireContext()).getUserId();
+        com.kgap.intel.repository.NotificationRepository notifRepo = new com.kgap.intel.repository.NotificationRepository(requireContext());
+        notifRepo.getUnreadCount(userId).observe(getViewLifecycleOwner(), unreadCount -> {
+            if (unreadCount != null && unreadCount > 0) {
+                binding.tvNotifBadge.setVisibility(View.VISIBLE);
+                binding.tvNotifBadge.setText(unreadCount > 9 ? "9+" : String.valueOf(unreadCount));
+            } else {
+                binding.tvNotifBadge.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void setupBanner() {
@@ -72,44 +86,44 @@ public class LDDashboardFragment extends Fragment {
     }
 
     private void setupHub() {
-        // 1. Programs - Purple Theme
+        // 1. Training Catalog (Internal Programs & External Resource Links) - Purple Theme
         ItemHubButtonBinding programs = ItemHubButtonBinding.bind(binding.hubPrograms.getRoot());
         programs.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
         programs.ivIcon.setColorFilter(Color.parseColor("#673AB7"));
         programs.cardIconContainer.setCardBackgroundColor(Color.parseColor("#EDE7F6"));
-        programs.tvLabel.setText("Programs");
-        programs.getRoot().setOnClickListener(v -> navigateToFragment(new LDProgramsFragment()));
+        programs.tvLabel.setText("Training Catalog");
+        programs.getRoot().setOnClickListener(v -> navigateToFragment(new LDCatalogManagementFragment()));
         
-        // 2. Learning Paths - Indigo Theme
+        // 2. Personalized Learning Paths - Indigo Theme
         ItemHubButtonBinding paths = ItemHubButtonBinding.bind(binding.hubPaths.getRoot());
         paths.ivIcon.setImageResource(android.R.drawable.ic_menu_directions);
         paths.ivIcon.setColorFilter(Color.parseColor("#3F51B5"));
         paths.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E8EAF6"));
         paths.tvLabel.setText("Learning Paths");
-        paths.getRoot().setOnClickListener(v -> navigateToFragment(new LDProgramsFragment())); // Reusing for demo
+        paths.getRoot().setOnClickListener(v -> navigateToFragment(new LDLearningPathsManagementFragment()));
 
-        // 3. Recommendations - Pink Theme
+        // 3. Adaptive Recommendations & Scoring - Emerald Theme
         ItemHubButtonBinding recommendations = ItemHubButtonBinding.bind(binding.hubRecommendations.getRoot());
-        recommendations.ivIcon.setImageResource(android.R.drawable.ic_menu_view);
-        recommendations.ivIcon.setColorFilter(Color.parseColor("#E91E63"));
-        recommendations.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FCE4EC"));
-        recommendations.tvLabel.setText("Recommendations");
-        recommendations.getRoot().setOnClickListener(v -> navigateToFragment(new LDProgramsFragment())); // Reusing for demo
+        recommendations.ivIcon.setImageResource(android.R.drawable.ic_menu_compass);
+        recommendations.ivIcon.setColorFilter(Color.parseColor("#00B894"));
+        recommendations.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
+        recommendations.tvLabel.setText("AI Adapt & Score");
+        recommendations.getRoot().setOnClickListener(v -> navigateToFragment(new LDAdaptiveRecommendationsFragment()));
 
-        // 4. Certifications - Cyan Theme
+        // 4. Assign Mentors - Pink Theme
         ItemHubButtonBinding certifications = ItemHubButtonBinding.bind(binding.hubCertifications.getRoot());
-        certifications.ivIcon.setImageResource(android.R.drawable.ic_menu_send);
-        certifications.ivIcon.setColorFilter(Color.parseColor("#00BCD4"));
-        certifications.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E0F7FA"));
-        certifications.tvLabel.setText("Certifications");
-        certifications.getRoot().setOnClickListener(v -> navigateToFragment(new LDProgramsFragment())); // Reusing for demo
+        certifications.ivIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
+        certifications.ivIcon.setColorFilter(Color.parseColor("#E91E63"));
+        certifications.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FCE4EC"));
+        certifications.tvLabel.setText("Assign Mentors");
+        certifications.getRoot().setOnClickListener(v -> navigateToFragment(new AssignMentorsFragment()));
 
-        // 5. Knowledge Sessions - Emerald Theme
+        // 5. Knowledge Sessions - Cyan Theme
         ItemHubButtonBinding knowledge = ItemHubButtonBinding.bind(binding.hubKnowledgeSession.getRoot());
         knowledge.ivIcon.setImageResource(android.R.drawable.ic_menu_add);
-        knowledge.ivIcon.setColorFilter(Color.parseColor("#00C853"));
-        knowledge.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
-        knowledge.tvLabel.setText("New Session");
+        knowledge.ivIcon.setColorFilter(Color.parseColor("#00BCD4"));
+        knowledge.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E0F7FA"));
+        knowledge.tvLabel.setText("Host Session");
         knowledge.getRoot().setOnClickListener(v -> navigateToFragment(new KnowledgeSessionCreateFragment()));
 
         // 6. More - Grey Theme

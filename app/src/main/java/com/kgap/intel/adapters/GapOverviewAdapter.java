@@ -11,10 +11,16 @@ import com.kgap.intel.models.SkillGapResponse;
 import java.util.List;
 
 public class GapOverviewAdapter extends RecyclerView.Adapter<GapOverviewAdapter.ViewHolder> {
-    private final List<SkillGapResponse> items;
+    public interface OnGapClickListener {
+        void onGapClick(SkillGapResponse item);
+    }
 
-    public GapOverviewAdapter(List<SkillGapResponse> items) {
+    private final List<SkillGapResponse> items;
+    private final OnGapClickListener listener;
+
+    public GapOverviewAdapter(List<SkillGapResponse> items, OnGapClickListener listener) {
         this.items = items;
+        this.listener = listener;
     }
 
     @NonNull
@@ -55,6 +61,12 @@ public class GapOverviewAdapter extends RecyclerView.Adapter<GapOverviewAdapter.
             default: color = ContextCompat.getColor(holder.itemView.getContext(), R.color.gap_low); break;
         }
         holder.binding.tvGapLabel.setTextColor(color);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onGapClick(item);
+            }
+        });
     }
 
     private int getLevelPercent(String level) {

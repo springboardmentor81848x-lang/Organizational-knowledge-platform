@@ -54,13 +54,14 @@
 
                         <com.google.android.material.progressindicator.CircularProgressIndicator
                             android:id="@+id/progress_overall"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
                             android:progress="72"
                             app:indicatorColor="@color/primary_emerald"
-                            app:indicatorSize="160dp"
+                            app:indicatorSize="136dp"
                             app:trackColor="@color/gray_200"
-                            app:trackThickness="12dp" />
+                            app:trackThickness="11dp" />
 
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -75,7 +76,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="72%"
                                 android:textColor="@color/text_dark"
-                                android:textSize="32sp"
+                                android:textSize="30sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -91,7 +92,7 @@
                     <GridLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="32dp"
+                        android:layout_marginTop="28dp"
                         android:columnCount="2"
                         android:useDefaultMargins="true">
 
@@ -144,8 +145,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:paddingHorizontal="16dp"
                 android:nestedScrollingEnabled="false"
+                android:paddingHorizontal="16dp"
                 tools:listitem="@layout/item_active_goal" />
 
             <!-- Learning Activity Timeline -->

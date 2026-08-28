@@ -44,14 +44,14 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView android:id="@+id/card_peer" style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/card_assessment" style="@style/RoundedCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:gravity="center_vertical">
-                    <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@android:drawable/ic_menu_share" app:tint="@color/primary_emerald" />
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@android:drawable/ic_menu_edit" app:tint="@color/primary_emerald" />
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="16dp" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Peer Assessment" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Review peer competencies" android:textSize="12sp" android:textColor="@color/gray_700" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Skill Assessments" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Take Self, Peer, or Manager Assessments" android:textSize="12sp" android:textColor="@color/gray_700" />
                     </LinearLayout>
-                    <ImageButton android:id="@+id/btn_open_peer" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_media_play" android:background="?attr/selectableItemBackgroundBorderless" app:tint="@color/primary_emerald" />
+                    <ImageButton android:id="@+id/btn_open_assessment" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_media_play" android:background="?attr/selectableItemBackgroundBorderless" app:tint="@color/primary_emerald" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

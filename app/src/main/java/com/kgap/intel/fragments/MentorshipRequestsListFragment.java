@@ -183,14 +183,32 @@ public class MentorshipRequestsListFragment extends Fragment {
             if (isIncoming && "PENDING".equalsIgnoreCase(item.getStatus())) {
                 b.layoutActions.setVisibility(View.VISIBLE);
                 b.tvStatus.setVisibility(View.GONE);
+                b.btnAccept.setText("Accept");
+                b.btnAccept.setVisibility(View.VISIBLE);
+                b.btnReject.setText("Reject");
+                b.btnReject.setVisibility(View.VISIBLE);
                 b.btnAccept.setOnClickListener(v -> handleRequest(item.getId(), "ACCEPT"));
                 b.btnReject.setOnClickListener(v -> handleRequest(item.getId(), "REJECT"));
             } else if (!isIncoming && "PENDING".equalsIgnoreCase(item.getStatus())) {
                 b.layoutActions.setVisibility(View.VISIBLE);
                 b.btnAccept.setVisibility(View.GONE);
-                b.btnReject.setText("Cancel");
+                b.btnReject.setText("Cancel Request");
+                b.btnReject.setVisibility(View.VISIBLE);
                 b.tvStatus.setVisibility(View.GONE);
                 b.btnReject.setOnClickListener(v -> handleRequest(item.getId(), "CANCEL"));
+            } else if ("ACCEPTED".equalsIgnoreCase(item.getStatus())) {
+                b.layoutActions.setVisibility(View.VISIBLE);
+                b.tvStatus.setVisibility(View.VISIBLE);
+                b.tvStatus.setText("Status: CONNECTED / ACTIVE");
+                b.btnAccept.setText("💬 Chat with Mentor");
+                b.btnAccept.setVisibility(View.VISIBLE);
+                b.btnReject.setVisibility(View.GONE);
+                b.btnAccept.setOnClickListener(v -> {
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, ChatFragment.newInstance(finalPersonName, finalOtherId))
+                            .addToBackStack(null)
+                            .commit();
+                });
             } else {
                 b.layoutActions.setVisibility(View.GONE);
                 b.tvStatus.setVisibility(View.VISIBLE);

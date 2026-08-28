@@ -58,7 +58,9 @@
                     app:singleLine="true"
                     app:singleSelection="true">
 
+                    <!-- Category Chips (For Articles, Videos, PDFs, Tutorials, Shared) -->
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_all"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -66,28 +68,65 @@
                         android:checked="true" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_system_design"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="System Design" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_architecture"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Architecture" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cloud"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Cloud" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_frontend"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Frontend" />
+
+                    <!-- Session Status Chips (Only for Sessions tab) -->
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_session_all"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="All Sessions"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_session_registered"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Registered"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_session_upcoming"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upcoming"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_session_completed"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Completed"
+                        android:visibility="gone" />
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
 
@@ -105,6 +144,7 @@
                 <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PDFs" />
                 <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tutorials" />
                 <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Shared" />
+                <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sessions" />
             </com.google.android.material.tabs.TabLayout>
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
@@ -127,5 +167,12 @@
         app:backgroundTint="@color/primary_emerald"
         app:icon="@android:drawable/ic_menu_share"
         app:iconTint="@color/white" />
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -24,6 +24,25 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FindMentorFragment extends Fragment {
+    private static final String ARG_SKILL_FILTER = "skill_filter";
+    private String preFilledSkillFilter;
+
+    public static FindMentorFragment newInstance(String skillFilter) {
+        FindMentorFragment fragment = new FindMentorFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_SKILL_FILTER, skillFilter);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            preFilledSkillFilter = getArguments().getString(ARG_SKILL_FILTER);
+        }
+    }
+
     private FragmentFindMentorBinding binding;
     private RealMentorRepository repository;
     private final List<MentorProfileResponse> allMentorsList = new ArrayList<>();
@@ -49,6 +68,10 @@ public class FindMentorFragment extends Fragment {
         setupRecommendedMentors();
         setupAllMentors();
         setupSearchAndFilters();
+
+        if (preFilledSkillFilter != null && !preFilledSkillFilter.isEmpty()) {
+            binding.etSearchMentors.setText(preFilledSkillFilter);
+        }
 
         loadMentorsFromBackend();
     }
@@ -131,7 +154,8 @@ public class FindMentorFragment extends Fragment {
                 b.tvAvailabilityBadge.setText(item.getAvailability());
 
                 b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
-                b.btnRequestMentorship.setOnClickListener(v -> openMentorshipRequest(item.getDisplayName(), item.getEffectiveMentorId()));
+                b.btnRequestMentorship.setText("💬 Chat");
+                b.btnRequestMentorship.setOnClickListener(v -> openMentorChat(item.getDisplayName(), item.getEffectiveMentorId()));
                 view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
             }
             @Override
@@ -161,6 +185,13 @@ public class FindMentorFragment extends Fragment {
     private void openMentorProfile(String mentorName, Long mentorId) {
         getParentFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, MentorProfileFragment.newInstance(mentorName, mentorId))
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void openMentorChat(String mentorName, Long mentorId) {
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, ChatFragment.newInstance(mentorName, mentorId))
                 .addToBackStack(null)
                 .commit();
     }
@@ -207,6 +238,7 @@ public class FindMentorFragment extends Fragment {
             }
 
             b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
+            b.btnChatMentor.setOnClickListener(v -> openMentorChat(item.getDisplayName(), item.getEffectiveMentorId()));
             h.itemView.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
         }
         @Override public int getItemCount() { return list.size(); }

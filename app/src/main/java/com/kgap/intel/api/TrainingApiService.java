@@ -7,7 +7,9 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
+import java.util.Map;
 
 public interface TrainingApiService {
 
@@ -28,4 +30,10 @@ public interface TrainingApiService {
 
     @GET("training-enrollments/employee/{employeeId}")
     Call<List<TrainingEnrollment>> getEmployeeEnrollments(@Path("employeeId") Long employeeId);
+
+    @PUT("training-enrollments/{id}/progress")
+    Call<TrainingEnrollment> updateProgress(@Path("id") Long enrollmentId, @Body Map<String, Integer> body);
+
+    @PUT("training-enrollments/{id}/complete")
+    Call<TrainingEnrollment> markComplete(@Path("id") Long enrollmentId);
 }

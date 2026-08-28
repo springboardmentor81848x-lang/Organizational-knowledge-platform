@@ -26,9 +26,19 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PeerAssessmentFragment extends Fragment {
+    private static final String ARG_TYPE = "assessment_type";
     private FragmentPeerAssessmentBinding binding;
     private final List<PeerAssessmentRequest> requestList = new ArrayList<>();
     private PeerAssessmentAdapter adapter;
+    private String assessmentType = "PEER";
+
+    public static PeerAssessmentFragment newInstance(String assessmentType) {
+        PeerAssessmentFragment fragment = new PeerAssessmentFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_TYPE, assessmentType != null ? assessmentType : "PEER");
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -40,6 +50,14 @@ public class PeerAssessmentFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        if (getArguments() != null) {
+            assessmentType = getArguments().getString(ARG_TYPE, "PEER");
+        }
+
+        if ("MANAGER".equalsIgnoreCase(assessmentType)) {
+            binding.toolbar.setTitle("Manager Assessments");
+        }
+
         binding.toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         setupRecyclerView();
@@ -53,7 +71,8 @@ public class PeerAssessmentFragment extends Fragment {
                     String.valueOf(request.getSkillId()), 
                     request.getSkillName(), 
                     request.getTargetEmployeeId(),
-                    request.getTargetEmployeeName()))
+                    request.getTargetEmployeeName(),
+                    assessmentType))
                 .addToBackStack(null)
                 .commit();
         });

@@ -9,6 +9,9 @@ import com.kgap.intel.models.LearningPathResponse;
 import com.kgap.intel.repository.GapRepository;
 import com.kgap.intel.repository.LearningPathRepository;
 import com.kgap.intel.utils.SharedPrefManager;
+import com.kgap.intel.models.ExternalCourse;
+import com.kgap.intel.models.TrainingEnrollment;
+import com.kgap.intel.api.ApiClient;
 import java.util.List;
 
 public class LearningViewModel extends AndroidViewModel {
@@ -51,11 +54,8 @@ public class LearningViewModel extends AndroidViewModel {
         gapRepository.findEmployeeIdByEmail(email).observeForever(employeeId -> {
             if (employeeId != null) {
                 repository.getLearningPaths(employeeId).observeForever(paths -> {
-                    if (paths != null && !paths.isEmpty()) {
+                    if (paths != null) {
                         setPathsData(paths);
-                    } else if (paths != null && paths.isEmpty()) {
-                        // Attempt generating paths if none exist
-                        generateLearningPathsForEmployee(employeeId);
                     } else {
                         isLoading.setValue(false);
                         errorMessage.setValue("Failed to load learning paths from server.");
@@ -128,6 +128,86 @@ public class LearningViewModel extends AndroidViewModel {
                 }
             } else {
                 errorMessage.setValue("Failed to update learning progress on server.");
+            }
+        });
+    }
+    // ----- External Courses & Enrollments -----
+    private final MutableLiveData<List<ExternalCourse>> externalCourses = new MutableLiveData<>();
+    private final MutableLiveData<List<TrainingEnrollment>> employeeEnrollments = new MutableLiveData<>();
+    private final MutableLiveData<String> enrollmentError = new MutableLiveData<>();
+
+    public LiveData<List<ExternalCourse>> getExternalCourses() { return externalCourses; }
+    public LiveData<List<TrainingEnrollment>> getEmployeeEnrollments() { return employeeEnrollments; }
+    public LiveData<String> getEnrollmentError() { return enrollmentError; }
+
+    public void loadExternalCourses() {
+        isLoading.setValue(true);
+        errorMessage.setValue(null);
+        ApiClient.getTrainingApiService(getApplication()).getAllCourses().enqueue(new retrofit2.Callback<List<ExternalCourse>>() {
+            @Override
+            public void onResponse(retrofit2.Call<List<ExternalCourse>> call, retrofit2.Response<List<ExternalCourse>> response) {
+                isLoading.setValue(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    externalCourses.setValue(response.body());
+                } else {
+                    errorMessage.setValue("Failed to load courses: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(retrofit2.Call<List<ExternalCourse>> call, Throwable t) {
+                isLoading.setValue(false);
+                errorMessage.setValue("Error loading courses: " + t.getMessage());
+            }
+        });
+    }
+
+    public void loadEmployeeEnrollments() {
+        Long employeeId = SharedPrefManager.getInstance(getApplication()).getUserId();
+        if (employeeId == null) {
+            errorMessage.setValue("Unable to determine employee ID for enrollments.");
+            return;
+        }
+        isLoading.setValue(true);
+        ApiClient.getTrainingApiService(getApplication()).getEmployeeEnrollments(employeeId).enqueue(new retrofit2.Callback<List<TrainingEnrollment>>() {
+            @Override
+            public void onResponse(retrofit2.Call<List<TrainingEnrollment>> call, retrofit2.Response<List<TrainingEnrollment>> response) {
+                isLoading.setValue(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    employeeEnrollments.setValue(response.body());
+                } else {
+                    errorMessage.setValue("Failed to load enrollments: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(retrofit2.Call<List<TrainingEnrollment>> call, Throwable t) {
+                isLoading.setValue(false);
+                errorMessage.setValue("Error loading enrollments: " + t.getMessage());
+            }
+        });
+    }
+
+    public void enrollInCourse(Long trainingId) {
+        Long employeeId = SharedPrefManager.getInstance(getApplication()).getUserId();
+        if (employeeId == null) {
+            enrollmentError.setValue("User not logged in.");
+            return;
+        }
+        TrainingEnrollment request = new TrainingEnrollment(trainingId, employeeId);
+        ApiClient.getTrainingApiService(getApplication()).enrollInTraining(request).enqueue(new retrofit2.Callback<TrainingEnrollment>() {
+            @Override
+            public void onResponse(retrofit2.Call<TrainingEnrollment> call, retrofit2.Response<TrainingEnrollment> response) {
+                if (response.isSuccessful()) {
+                    // Refresh enrollments to update UI state
+                    loadEmployeeEnrollments();
+                } else if (response.code() == 409) {
+                    enrollmentError.setValue("You are already enrolled in this training.");
+                } else {
+                    enrollmentError.setValue("Enrollment failed: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(retrofit2.Call<TrainingEnrollment> call, Throwable t) {
+                enrollmentError.setValue("Enrollment error: " + t.getMessage());
             }
         });
     }

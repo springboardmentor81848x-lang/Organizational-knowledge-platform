@@ -5,11 +5,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.kgap.intel.R;
 import com.kgap.intel.activities.LoginActivity;
 import com.kgap.intel.databinding.FragmentMoreBinding;
 import com.kgap.intel.databinding.ViewProfileRowBinding;
@@ -45,32 +43,44 @@ public class MoreFragment extends Fragment {
     }
 
     private void setupOptions() {
+        // 1. Reports & Analytics Section (Available to Employees and All Users)
+        ViewProfileRowBinding reports = ViewProfileRowBinding.bind(binding.optReports.getRoot());
+        reports.tvLabel.setText("Reports & Performance Analytics");
+        reports.tvValue.setText("Generate & download official PDF performance reports");
+        reports.getRoot().setOnClickListener(v -> switchFragment(new ReportsFragment()));
+
+        // 2. Service Shortcuts Finder
+        ViewProfileRowBinding shortcuts = ViewProfileRowBinding.bind(binding.optShortcuts.getRoot());
+        shortcuts.tvLabel.setText("⚡ Service Shortcuts & Search");
+        shortcuts.tvValue.setText("Quickly launch any feature or platform service");
+        shortcuts.getRoot().setOnClickListener(v -> {
+            QuickServiceSearchBottomSheet sheet = new QuickServiceSearchBottomSheet();
+            sheet.show(getParentFragmentManager(), "QuickServiceSearch");
+        });
+
+        // 3. Settings & Platform
         ViewProfileRowBinding settings = ViewProfileRowBinding.bind(binding.optSettings.getRoot());
         settings.tvLabel.setText("System Settings");
         settings.tvValue.setText("General platform configuration");
 
-        ViewProfileRowBinding backup = ViewProfileRowBinding.bind(binding.optBackup.getRoot());
-        backup.tvLabel.setText("Backup & Restore");
-        backup.tvValue.setText("Manage database backups");
-        backup.getRoot().setOnClickListener(v -> Toast.makeText(getContext(), "Backup service active", Toast.LENGTH_SHORT).show());
-
         ViewProfileRowBinding notif = ViewProfileRowBinding.bind(binding.optNotifs.getRoot());
         notif.tvLabel.setText("Notifications");
-        notif.tvValue.setText("Manage admin alerts");
+        notif.tvValue.setText("Manage notification preferences & history");
         notif.getRoot().setOnClickListener(v -> switchFragment(new NotificationsFragment()));
 
+        // 4. Support & About
         ViewProfileRowBinding help = ViewProfileRowBinding.bind(binding.optHelp.getRoot());
         help.tvLabel.setText("Help & Support");
-        help.tvValue.setText("Contact technical support");
+        help.tvValue.setText("Contact technical support & documentation");
 
         ViewProfileRowBinding about = ViewProfileRowBinding.bind(binding.optAbout.getRoot());
         about.tvLabel.setText("About KGap");
-        about.tvValue.setText("Version 2.1.0 (Enterprise)");
+        about.tvValue.setText("Version 2.1.0 (Enterprise Intelligence)");
     }
 
     private void switchFragment(Fragment fragment) {
         getParentFragmentManager().beginTransaction()
-            .replace(R.id.fragment_container, fragment)
+            .replace(com.kgap.intel.R.id.fragment_container, fragment)
             .addToBackStack(null)
             .commit();
     }

@@ -29,8 +29,8 @@ public class SkillsHubFragment extends Fragment {
         binding.cardInventory.setOnClickListener(v -> switchFragment(new SkillsFragment()));
         binding.btnOpenInventory.setOnClickListener(v -> switchFragment(new SkillsFragment()));
 
-        binding.cardPeer.setOnClickListener(v -> switchFragment(new PeerAssessmentFragment()));
-        binding.btnOpenPeer.setOnClickListener(v -> switchFragment(new PeerAssessmentFragment()));
+        binding.cardAssessment.setOnClickListener(v -> showAssessmentTypeDialog());
+        binding.btnOpenAssessment.setOnClickListener(v -> showAssessmentTypeDialog());
 
         binding.cardExpertDirectory.setOnClickListener(v -> switchFragment(new ExpertDirectoryFragment()));
         binding.btnOpenExpertDirectory.setOnClickListener(v -> switchFragment(new ExpertDirectoryFragment()));
@@ -41,6 +41,23 @@ public class SkillsHubFragment extends Fragment {
         // Heatmap / History
         binding.cardHistory.setOnClickListener(v -> switchFragment(new HeatmapFragment()));
         binding.btnOpenHistory.setOnClickListener(v -> switchFragment(new HeatmapFragment()));
+    }
+
+    private void showAssessmentTypeDialog() {
+        String[] options = {"Self Assessment", "Peer Assessment", "Manager Assessment"};
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Assessment Type")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        switchFragment(new SkillsFragment());
+                    } else if (which == 1) {
+                        switchFragment(PeerAssessmentFragment.newInstance("PEER"));
+                    } else if (which == 2) {
+                        switchFragment(PeerAssessmentFragment.newInstance("MANAGER"));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void switchFragment(Fragment fragment) {

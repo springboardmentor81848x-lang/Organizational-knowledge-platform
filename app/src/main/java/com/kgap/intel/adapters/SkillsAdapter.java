@@ -1,12 +1,16 @@
 package com.kgap.intel.adapters;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
+import com.kgap.intel.R;
 import com.kgap.intel.databinding.ItemSkillCardBinding;
+import com.kgap.intel.models.SkillImprovement;
 import com.kgap.intel.models.SkillItem;
 import java.util.Objects;
 
@@ -34,7 +38,8 @@ public class SkillsAdapter extends ListAdapter<SkillItem, SkillsAdapter.SkillVie
                 return Objects.equals(oldItem.getName(), newItem.getName()) && 
                        oldItem.getProficiency() == newItem.getProficiency() &&
                        Objects.equals(oldItem.getLevel(), newItem.getLevel()) &&
-                       Objects.equals(oldItem.getCategory(), newItem.getCategory());
+                       Objects.equals(oldItem.getCategory(), newItem.getCategory()) &&
+                       Objects.equals(oldItem.getImprovement(), newItem.getImprovement());
             }
         });
     }
@@ -72,6 +77,26 @@ public class SkillsAdapter extends ListAdapter<SkillItem, SkillsAdapter.SkillVie
             binding.tvProficiencyText.setText(item.getProficiency() + "%");
             binding.tvSkillInfo.setText((item.getLevel() != null ? item.getLevel() : "N/A") + " • " + (item.getExperience() != null ? item.getExperience() : "0") + " Exp");
             binding.tvLastUpdated.setText("Updated: " + (item.getLastUpdated() != null ? item.getLastUpdated() : "Never"));
+
+            SkillImprovement imp = item.getImprovement();
+            if (imp != null && imp.getTrend() != null) {
+                double pct = imp.getImprovementPercentage();
+                binding.tvImprovementIndicator.setVisibility(View.VISIBLE);
+                if (imp.getTrend() == SkillImprovement.Trend.IMPROVED) {
+                    binding.tvImprovementIndicator.setText(String.format(java.util.Locale.US, "↑ +%.0f%%", pct));
+                    binding.tvImprovementIndicator.setTextColor(ContextCompat.getColor(binding.getRoot().getContext(), R.color.primary_emerald));
+                } else if (imp.getTrend() == SkillImprovement.Trend.DECLINED) {
+                    binding.tvImprovementIndicator.setText(String.format(java.util.Locale.US, "↓ %.0f%%", pct));
+                    binding.tvImprovementIndicator.setTextColor(ContextCompat.getColor(binding.getRoot().getContext(), android.R.color.holo_red_light));
+                } else if (imp.getTrend() == SkillImprovement.Trend.NO_CHANGE) {
+                    binding.tvImprovementIndicator.setText("0%");
+                    binding.tvImprovementIndicator.setTextColor(ContextCompat.getColor(binding.getRoot().getContext(), R.color.gray_700));
+                } else {
+                    binding.tvImprovementIndicator.setVisibility(View.GONE);
+                }
+            } else {
+                binding.tvImprovementIndicator.setVisibility(View.GONE);
+            }
 
             // Visual feedback based on proficiency
             if (item.getProficiency() < 30) {

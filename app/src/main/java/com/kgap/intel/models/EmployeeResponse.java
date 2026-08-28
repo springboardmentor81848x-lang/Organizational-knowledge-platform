@@ -17,6 +17,15 @@ public class EmployeeResponse {
 
     public EmployeeResponse() {}
 
+    public EmployeeResponse(Long id, String firstName, String lastName, String email, String role, String department) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.role = role;
+        this.department = department;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

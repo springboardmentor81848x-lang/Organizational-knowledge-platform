@@ -12,10 +12,20 @@ import com.kgap.intel.models.MenteeProgress;
 import java.util.List;
 
 public class MentorMenteesAdapter extends RecyclerView.Adapter<MentorMenteesAdapter.ViewHolder> {
+    public interface OnMenteeClickListener {
+        void onMenteeClick(MenteeProgress mentee);
+    }
+
     private List<MenteeProgress> mentees;
+    private final OnMenteeClickListener clickListener;
+
+    public MentorMenteesAdapter(List<MenteeProgress> mentees, OnMenteeClickListener clickListener) {
+        this.mentees = mentees;
+        this.clickListener = clickListener;
+    }
 
     public MentorMenteesAdapter(List<MenteeProgress> mentees) {
-        this.mentees = mentees;
+        this(mentees, null);
     }
 
     @NonNull
@@ -33,6 +43,12 @@ public class MentorMenteesAdapter extends RecyclerView.Adapter<MentorMenteesAdap
         holder.tvPath.setText(mentee.getCurrentLearningPath());
         holder.progressIndicator.setProgress(mentee.getOverallProgress());
         holder.tvProgressText.setText(mentee.getOverallProgress() + "%");
+
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onMenteeClick(mentee);
+            }
+        });
     }
 
     @Override

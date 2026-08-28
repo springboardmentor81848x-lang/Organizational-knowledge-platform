@@ -153,11 +153,11 @@ public class AchievementsFragment extends Fragment {
                 if (!alreadyInPaths) {
                     completedCount++;
                     startedCount++;
-                    String title = "Training Course #" + enrollment.getTrainingId() + " Completed";
+                    String title = "Completed " + enrollment.getTrainingTitle();
                     milestoneItems.add(new MilestoneItem(title, "Enrolled Training Course", "COMPLETED", 100, dateFormatted, true));
                 }
             } else if ("IN_PROGRESS".equals(status) || progress > 0) {
-                String title = "Training Course #" + enrollment.getTrainingId();
+                String title = enrollment.getTrainingTitle();
                 milestoneItems.add(new MilestoneItem(title, "Enrolled Training Course", "IN_PROGRESS", progress, dateFormatted, false));
             }
         }

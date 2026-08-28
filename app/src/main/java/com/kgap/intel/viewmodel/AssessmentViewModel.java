@@ -9,7 +9,11 @@ import androidx.lifecycle.MutableLiveData;
 import com.kgap.intel.api.ApiClient;
 import com.kgap.intel.api.AssessmentApiService;
 import com.kgap.intel.models.AssessmentQuestion;
+import com.kgap.intel.models.AssessmentResultItem;
 import com.kgap.intel.models.AssessmentSubmission;
+import com.kgap.intel.models.SkillImprovement;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,6 +25,8 @@ public class AssessmentViewModel extends AndroidViewModel {
     private final MutableLiveData<List<AssessmentQuestion>> questions = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<AssessmentApiService.AssessmentResult> assessmentResult = new MutableLiveData<>();
+    private final MutableLiveData<List<AssessmentResultItem>> historicalResults = new MutableLiveData<>();
+    private final MutableLiveData<SkillImprovement> skillImprovement = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
     public AssessmentViewModel(@NonNull Application application) {
@@ -31,10 +37,40 @@ public class AssessmentViewModel extends AndroidViewModel {
     public LiveData<List<AssessmentQuestion>> getQuestions() { return questions; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<AssessmentApiService.AssessmentResult> getAssessmentResult() { return assessmentResult; }
+    public LiveData<List<AssessmentResultItem>> getHistoricalResults() { return historicalResults; }
+    public LiveData<SkillImprovement> getSkillImprovement() { return skillImprovement; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
 
     public void loadQuestions(String skillId) {
+        loadQuestions(skillId, "SELF");
+    }
+
+    public void loadQuestions(String skillId, String assessmentType) {
         isLoading.setValue(true);
+        if (assessmentType != null && !assessmentType.trim().isEmpty()) {
+            apiService.getQuestionsForSkillAndType(skillId, assessmentType.toUpperCase()).enqueue(new Callback<List<AssessmentQuestion>>() {
+                @Override
+                public void onResponse(Call<List<AssessmentQuestion>> call, Response<List<AssessmentQuestion>> response) {
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        isLoading.setValue(false);
+                        questions.setValue(response.body());
+                    } else {
+                        // Fallback to general skill questions if type-specific questions are not distinct
+                        fallbackLoadQuestions(skillId);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<AssessmentQuestion>> call, Throwable t) {
+                    fallbackLoadQuestions(skillId);
+                }
+            });
+        } else {
+            fallbackLoadQuestions(skillId);
+        }
+    }
+
+    private void fallbackLoadQuestions(String skillId) {
         apiService.getQuestionsForSkill(skillId).enqueue(new Callback<List<AssessmentQuestion>>() {
             @Override
             public void onResponse(Call<List<AssessmentQuestion>> call, Response<List<AssessmentQuestion>> response) {
@@ -73,5 +109,41 @@ public class AssessmentViewModel extends AndroidViewModel {
                 errorMessage.setValue(t.getMessage());
             }
         });
+    }
+
+    public void loadHistoricalResults(Long employeeId, Long skillId) {
+        if (employeeId == null || employeeId <= 0) {
+            employeeId = 1L; // Fallback for unauthenticated/demo session
+        }
+        isLoading.setValue(true);
+        apiService.getHistoricalResults(employeeId, skillId).enqueue(new Callback<List<AssessmentResultItem>>() {
+            @Override
+            public void onResponse(Call<List<AssessmentResultItem>> call, Response<List<AssessmentResultItem>> response) {
+                isLoading.setValue(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    historicalResults.setValue(response.body());
+                } else {
+                    errorMessage.setValue("Failed to load historical results: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<AssessmentResultItem>> call, Throwable t) {
+                isLoading.setValue(false);
+                errorMessage.setValue(t != null ? t.getMessage() : "Error loading historical results");
+            }
+        });
+    }
+
+    public SkillImprovement calculateSkillImprovement(List<AssessmentResultItem> results) {
+        SkillImprovement imp = SkillImprovement.calculate(results);
+        if (imp != null) {
+            skillImprovement.setValue(imp);
+        } else {
+            SkillImprovement emptyImp = new SkillImprovement(null, 0.0, 0.0, 0.0, SkillImprovement.Trend.NO_CHANGE);
+            skillImprovement.setValue(emptyImp);
+            return emptyImp;
+        }
+        return imp;
     }
 }
