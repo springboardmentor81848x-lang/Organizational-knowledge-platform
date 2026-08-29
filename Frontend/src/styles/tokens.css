@@ -1,0 +1,133 @@
+/*
+ * Design tokens.
+ *
+ * The reference points are Workday, ServiceNow, Viva and Linear: light, dense, typographic,
+ * and calm. Enterprise software is read for hours at a time by people who are not admiring
+ * it, so the surface stays quiet and the data carries the contrast. Deliberately not the
+ * dark-sidebar dashboard template look — no saturated gradients, no neon accents on black.
+ *
+ * Colour is used sparingly and always to mean something: the accent marks the current
+ * location and primary action, and the status ramp encodes gap severity, which is the one
+ * scale a reader must never misjudge.
+ */
+
+:root {
+  /* ── Neutrals ─────────────────────────────────────────────────────────────
+     A slightly cool grey ramp. The page is off-white rather than pure white so
+     that cards, which are white, read as raised without needing heavy shadow. */
+  --c-canvas: #f4f6f8;
+  --c-surface: #ffffff;
+  --c-surface-sunken: #eef1f4;
+  --c-surface-hover: #f7f9fa;
+  --c-surface-selected: #eaf1f8;
+
+  --c-border: #dde3e9;
+  --c-border-strong: #c3ccd6;
+  --c-border-focus: #1e6fb8;
+
+  --c-text: #16202b;
+  --c-text-secondary: #566573;
+  --c-text-muted: #8a97a5;
+  --c-text-inverse: #ffffff;
+
+  /* ── Accent ───────────────────────────────────────────────────────────────
+     A deep institutional blue. Dark enough to carry white text at small sizes,
+     which matters for dense tables and compact buttons. */
+  --c-accent: #0a3d62;
+  --c-accent-hover: #0d4e7c;
+  --c-accent-active: #082f4b;
+  --c-accent-subtle: #eaf1f8;
+  --c-accent-border: #b8cfe4;
+
+  /* ── Status ───────────────────────────────────────────────────────────────
+     Ordered by seriousness, and separable without colour: every status is
+     always rendered with its label, never colour alone. */
+  --c-critical: #a5252b;
+  --c-critical-bg: #fdecec;
+  --c-critical-border: #f3c4c4;
+
+  --c-high: #a8560c;
+  --c-high-bg: #fdf1e5;
+  --c-high-border: #f2d3ae;
+
+  --c-medium: #8a6100;
+  --c-medium-bg: #fdf6e3;
+  --c-medium-border: #eddfae;
+
+  --c-low: #1f6b45;
+  --c-low-bg: #eaf5ef;
+  --c-low-border: #bcdfcb;
+
+  --c-info: #1e6fb8;
+  --c-info-bg: #eaf1f8;
+  --c-info-border: #bcd5ea;
+
+  /* ── Type ─────────────────────────────────────────────────────────────────
+     System stack: it renders instantly, matches the host OS, and avoids the
+     web-font flash that makes an internal tool feel like a website. */
+  --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Tabular figures for anything a reader compares down a column. */
+  --font-mono: 'Cascadia Mono', 'SF Mono', 'Roboto Mono', Consolas, monospace;
+
+  --fs-xs: 0.6875rem;
+  --fs-sm: 0.75rem;
+  --fs-base: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+  --fs-3xl: 1.875rem;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+
+  /* ── Space ────────────────────────────────────────────────────────────────
+     A 4px base. Enterprise screens are dense: the scale starts small on purpose. */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+
+  /* ── Shape and depth ──────────────────────────────────────────────────────
+     Small radii and shadows that suggest a single sheet of paper, not floating
+     glass cards. */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(22, 32, 43, 0.06);
+  --shadow-md: 0 2px 6px rgba(22, 32, 43, 0.08);
+  --shadow-lg: 0 8px 24px rgba(22, 32, 43, 0.12);
+
+  --focus-ring: 0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-border-focus);
+
+  /* ── Layout ───────────────────────────────────────────────────────────────
+     The rail is narrow: navigation is a means of getting to the work, not the
+     main event. */
+  --rail-width: 232px;
+  --rail-width-collapsed: 56px;
+  --topbar-height: 52px;
+  --content-max: 1440px;
+
+  --transition-fast: 120ms ease;
+  --transition-base: 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+  }
+}
