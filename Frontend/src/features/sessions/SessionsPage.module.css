@@ -1,0 +1,168 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 72ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.session {
+  display: flex;
+  gap: var(--s-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.session:first-child { padding-top: 0; }
+.session:last-child { padding-bottom: 0; border-bottom: none; }
+
+.sessionMain { flex: 1; min-width: 0; }
+.sessionHead { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.sessionTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.sessionMeta { margin-top: var(--s-1); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.sessionDesc { margin-top: var(--s-1); font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+
+.sessionActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-2);
+  flex-shrink: 0;
+  max-width: 200px;
+}
+
+/* Seat numbers are the message; the bar only makes them scannable. */
+.capacity { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); max-width: 380px; }
+
+.capacityTrack {
+  flex: 1;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+}
+
+.capacityFill { height: 100%; background: var(--c-accent); }
+.capacityFull { background: var(--c-high); }
+
+.capacityText { font-size: var(--fs-sm); color: var(--c-text-secondary); white-space: nowrap; }
+.fullFlag { color: var(--c-high); }
+.seatsLeft { color: var(--c-low); }
+
+.attendance {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  flex-wrap: wrap;
+}
+
+.feedbackGiven { font-size: var(--fs-sm); color: var(--c-low); }
+
+/* Why a control is unavailable, said plainly next to it. */
+.blockedNote {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  text-align: right;
+  line-height: var(--lh-normal);
+}
+
+.hostStats { margin-top: var(--s-2); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.hostNote { margin-top: var(--s-2); font-size: var(--fs-sm); color: var(--c-text-muted); line-height: var(--lh-normal); }
+
+.field { margin-bottom: var(--s-4); border: none; padding: 0; }
+.label { display: block; margin-bottom: var(--s-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-secondary); padding: 0; }
+
+.input, .textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+}
+
+.input { height: 36px; padding: 0 var(--s-3); }
+.textarea { resize: vertical; line-height: var(--lh-normal); }
+
+.input:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.formRow { display: grid; grid-template-columns: 1fr 100px 90px; gap: var(--s-3); }
+@media (max-width: 560px) { .formRow { grid-template-columns: 1fr; } }
+
+.ratingRow { display: flex; gap: 2px; }
+
+.ratingButton {
+  width: 44px; height: 34px;
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+.ratingButton:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.ratingButton:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.ratingButton:hover { background: var(--c-surface-hover); color: var(--c-text); }
+
+.ratingActive, .ratingActive:hover {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-text-inverse);
+}
+
+.registrants { display: flex; flex-direction: column; }
+
+.registrant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--c-border);
+  flex-wrap: wrap;
+}
+
+.registrant:last-child { border-bottom: none; }
+.registrantMeta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.registrantName { font-size: var(--fs-base); font-weight: var(--fw-medium); }
+.registrantFeedback { font-size: var(--fs-xs); color: var(--c-text-secondary); }
+
+.attendanceChoice { display: flex; gap: 2px; flex-shrink: 0; }
+
+.attendanceButton {
+  min-width: 62px;
+  height: 26px;
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+.attendanceButton:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.attendanceButton:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.attendanceButton:hover { background: var(--c-surface-hover); color: var(--c-text); }
+
+.attendanceActive, .attendanceActive:hover {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-text-inverse);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}

@@ -21,7 +21,8 @@ export interface AttendanceEntry {
 
 export interface SessionFeedbackRequest {
   rating: number
-  comment?: string
+  /** The server names this feedbackText; sending `comment` would silently drop it. */
+  feedbackText?: string
 }
 
 export interface SessionFilters {
