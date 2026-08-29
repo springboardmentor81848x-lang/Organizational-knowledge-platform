@@ -10,7 +10,7 @@ import com.orgskills.intelligence.entity.UserSkill;
 import com.orgskills.intelligence.entity.enums.MentorshipStatus;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
-import com.orgskills.intelligence.exception.UnauthorizedException;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -287,7 +287,7 @@ class MentorshipServiceTest {
         when(mentorshipMatchRepository.findById(42L)).thenReturn(Optional.of(pending));
 
         assertThatThrownBy(() -> mentorshipService.acceptMentorship(42L, 3L))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test

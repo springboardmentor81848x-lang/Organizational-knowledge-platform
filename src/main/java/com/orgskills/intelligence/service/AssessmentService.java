@@ -16,6 +16,7 @@ import com.orgskills.intelligence.entity.enums.AssessmentType;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AssessmentRepository;
@@ -137,7 +138,7 @@ public class AssessmentService {
         }
         if (!assessment.getAssessor().getId().equals(actorId)
                 && !ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new ValidationException("Access denied. This assessment belongs to another assessor.");
+            throw new ForbiddenException("Access denied. This assessment belongs to another assessor.");
         }
 
         // (a) Persist the results.
@@ -399,7 +400,7 @@ public class AssessmentService {
 
     private void requireCanActFor(User actor, Long employeeId) {
         if (!actor.getId().equals(employeeId) && !ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new ValidationException("Access denied. These assessments belong to another employee.");
+            throw new ForbiddenException("Access denied. These assessments belong to another employee.");
         }
     }
 
@@ -409,7 +410,7 @@ public class AssessmentService {
                 || ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
             return;
         }
-        throw new ValidationException("Access denied. This assessment belongs to another employee.");
+        throw new ForbiddenException("Access denied. This assessment belongs to another employee.");
     }
 
     // ── Mapping ─────────────────────────────────────────────────────────────────

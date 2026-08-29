@@ -328,10 +328,10 @@ class ReportsIntegrationTest {
         User outsider = userRepository.save(outsider());
 
         mockMvc.perform(authedGet("/api/reports/employee/" + outsider.getId(), manager.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(authedGet("/api/reports/training-effectiveness", employee.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // ── Document parsing ────────────────────────────────────────────────────────

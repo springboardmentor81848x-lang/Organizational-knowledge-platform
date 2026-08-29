@@ -15,7 +15,7 @@ import com.orgskills.intelligence.entity.enums.AttendanceStatus;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
-import com.orgskills.intelligence.exception.UnauthorizedException;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.KnowledgeSessionRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -126,7 +126,7 @@ class KnowledgeSessionServiceTest {
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> knowledgeSessionService.createSession(2L, sessionRequest(2)))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Only mentors and L&D administrators");
 
         verify(sessionRepository, never()).save(any(KnowledgeSession.class));
@@ -170,7 +170,7 @@ class KnowledgeSessionServiceTest {
         when(sessionRepository.findById(100L)).thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> knowledgeSessionService.updateSession(3L, 100L, sessionRequest(5)))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -342,7 +342,7 @@ class KnowledgeSessionServiceTest {
                 .build();
 
         assertThatThrownBy(() -> knowledgeSessionService.markAttendance(3L, 100L, request))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     // ── Feedback and effectiveness ──────────────────────────────────────────────

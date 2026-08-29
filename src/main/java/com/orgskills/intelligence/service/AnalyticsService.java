@@ -31,8 +31,8 @@ import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
-import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.repository.AchievementRepository;
 import com.orgskills.intelligence.repository.AssessmentResultRepository;
 import com.orgskills.intelligence.repository.EnrollmentRepository;
@@ -418,7 +418,7 @@ public class AnalyticsService {
     public List<SkillGapReportRow> getSkillGapAnalytics(Long actorId) {
         User actor = getUser(actorId);
         if (!ORG_WIDE_ROLES.contains(actor.getRole())) {
-            throw new UnauthorizedException("Skill gap analytics require an HR, L&D or admin role");
+            throw new ForbiddenException("Skill gap analytics require an HR, L&D or admin role");
         }
 
         Map<Long, List<RoleCompetency>> requirementsBySkill = roleCompetencyRepository.findAll().stream()
@@ -500,7 +500,7 @@ public class AnalyticsService {
     public OrganizationAnalyticsResponse getOrganizationAnalytics(Long actorId) {
         User actor = getUser(actorId);
         if (!ORG_WIDE_ROLES.contains(actor.getRole())) {
-            throw new UnauthorizedException("Organization-wide analytics require an HR, L&D or admin role");
+            throw new ForbiddenException("Organization-wide analytics require an HR, L&D or admin role");
         }
 
         List<Enrollment> enrollments = enrollmentRepository.findAll();
@@ -536,7 +536,7 @@ public class AnalyticsService {
         if (actor.getRole() == Role.DEPARTMENT_HEAD && sameDepartment(actor, employee)) {
             return;
         }
-        throw new UnauthorizedException("Access denied. " + employee.getFullName() + " is not in your reporting line.");
+        throw new ForbiddenException("Access denied. " + employee.getFullName() + " is not in your reporting line.");
     }
 
     /** A manager reads their own team; a department head reads managers inside their department. */
@@ -547,7 +547,7 @@ public class AnalyticsService {
         if (actor.getRole() == Role.DEPARTMENT_HEAD && sameDepartment(actor, manager)) {
             return;
         }
-        throw new UnauthorizedException("Access denied. You may only view your own team.");
+        throw new ForbiddenException("Access denied. You may only view your own team.");
     }
 
     private void requireCanViewDepartment(User actor, String department) {
@@ -557,7 +557,7 @@ public class AnalyticsService {
         if (actor.getRole() == Role.DEPARTMENT_HEAD && department.equalsIgnoreCase(actor.getDepartment())) {
             return;
         }
-        throw new UnauthorizedException("Access denied. You may only view your own department.");
+        throw new ForbiddenException("Access denied. You may only view your own department.");
     }
 
     /**

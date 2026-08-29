@@ -15,8 +15,8 @@ import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
-import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.KnowledgeSessionRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -330,7 +330,7 @@ public class KnowledgeSessionService {
                 .anyMatch(mentorship -> mentorship.getMentor().getId().equals(host.getId()));
 
         if (!hasSeniorSkill && !mentorsSomeone) {
-            throw new UnauthorizedException("Only mentors and L&D administrators can host knowledge-sharing "
+            throw new ForbiddenException("Only mentors and L&D administrators can host knowledge-sharing "
                     + "sessions. Reach " + MENTOR_PROFICIENCY_THRESHOLD + " in a skill or mentor an employee first.");
         }
     }
@@ -341,7 +341,7 @@ public class KnowledgeSessionService {
 
     private void requireHostOrAdmin(KnowledgeSession session, User actor) {
         if (!isHostOrAdmin(session, actor)) {
-            throw new UnauthorizedException("Only the hosting mentor or an L&D administrator can manage this session");
+            throw new ForbiddenException("Only the hosting mentor or an L&D administrator can manage this session");
         }
     }
 

@@ -16,8 +16,8 @@ import com.orgskills.intelligence.entity.enums.MentorshipStatus;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
-import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.AchievementRepository;
@@ -303,7 +303,7 @@ public class MentorshipService {
         MentorshipMatch mentorship = getMentorship(mentorshipId);
         if (!mentorship.getMentee().getId().equals(actingUserId)
                 && !mentorship.getMentor().getId().equals(actingUserId)) {
-            throw new ValidationException("Access denied. You are not a participant in this mentorship.");
+            throw new ForbiddenException("Access denied. You are not a participant in this mentorship.");
         }
         if (mentorship.getStatus() != MentorshipStatus.ACTIVE) {
             throw new ValidationException("Only an ACTIVE mentorship can be completed; this one is "
@@ -449,7 +449,7 @@ public class MentorshipService {
 
     private void requireMentor(MentorshipMatch mentorship, Long actingUserId) {
         if (!mentorship.getMentor().getId().equals(actingUserId)) {
-            throw new UnauthorizedException("Only the assigned mentor can respond to this mentorship request");
+            throw new ForbiddenException("Only the assigned mentor can respond to this mentorship request");
         }
     }
 

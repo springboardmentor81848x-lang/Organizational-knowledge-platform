@@ -1,6 +1,7 @@
 package com.orgskills.intelligence.security;
 
 import io.jsonwebtoken.Claims;
+import org.springframework.security.core.GrantedAuthority;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -38,9 +39,21 @@ public class JwtTokenProvider {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(jwtExpirationMs);
 
+        // The role travels in the token so a client can render role-appropriate navigation on
+        // the first paint, without waiting for a profile round trip. It is a snapshot: the
+        // server still authorises from the database on every request, and a role changed
+        // mid-session only reaches the client when the token is next refreshed.
+        String role = principal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .findFirst()
+                .map(authority -> authority.substring("ROLE_".length()))
+                .orElse(null);
+
         return Jwts.builder()
                 .subject(principal.getUserId().toString())
                 .claim("email", principal.getUsername())
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(key)

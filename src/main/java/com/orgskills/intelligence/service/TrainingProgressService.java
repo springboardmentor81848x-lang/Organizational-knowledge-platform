@@ -14,6 +14,7 @@ import com.orgskills.intelligence.entity.enums.AchievementType;
 import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AchievementRepository;
@@ -352,7 +353,7 @@ public class TrainingProgressService {
 
     private void requireCanActFor(User actor, Long employeeId) {
         if (!actor.getId().equals(employeeId) && !TRAINING_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new ValidationException("Access denied. This enrollment belongs to another employee.");
+            throw new ForbiddenException("Access denied. This enrollment belongs to another employee.");
         }
     }
 

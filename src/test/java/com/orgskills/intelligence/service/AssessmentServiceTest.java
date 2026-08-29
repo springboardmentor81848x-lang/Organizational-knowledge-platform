@@ -15,6 +15,7 @@ import com.orgskills.intelligence.entity.enums.AssessmentType;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AssessmentRepository;
 import com.orgskills.intelligence.repository.AssessmentResultRepository;
@@ -419,7 +420,7 @@ class AssessmentServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(employee));
 
         assertThatThrownBy(() -> assessmentService.getHistory(1L, 3L))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Access denied");
     }
 
