@@ -2,7 +2,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { useLogout, useSession } from '@/features/auth/useSession'
-import { navigation, roleLabel, visibleNavigation } from './navigation'
+import { navigation, visibleNavigation } from './navigation'
+import { roleLabel } from './roleRoutes'
 import styles from './AppShell.module.css'
 
 function initials(fullName: string): string {

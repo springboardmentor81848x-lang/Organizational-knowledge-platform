@@ -30,7 +30,7 @@ export const navigation: NavSection[] = [
   {
     label: 'My work',
     items: [
-      { label: 'Overview', to: '/' },
+      { label: 'My development', to: '/me' },
       { label: 'My skills', to: '/skills' },
       { label: 'My gaps', to: '/gaps' },
       { label: 'Learning', to: '/learning' },
@@ -73,17 +73,4 @@ export function visibleNavigation(role: Role | undefined): NavSection[] {
     .filter((section) => section.items.length > 0)
 }
 
-const ROLE_LABELS: Record<Role, string> = {
-  EMPLOYEE: 'Employee',
-  MANAGER: 'Team Lead',
-  DEPARTMENT_HEAD: 'Department Head',
-  HR_SPECIALIST: 'HR Specialist',
-  HR_ADMIN: 'HR Administrator',
-  LND_ADMIN: 'L&D Administrator',
-  SYSTEM_ADMIN: 'System Administrator',
-  ADMIN: 'Administrator',
-}
 
-export function roleLabel(role: Role | undefined): string {
-  return role ? ROLE_LABELS[role] : ''
-}
