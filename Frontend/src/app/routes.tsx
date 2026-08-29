@@ -2,6 +2,9 @@ import { createBrowserRouter } from 'react-router-dom'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RoleSelectPage } from '@/features/auth/RoleSelectPage'
 import { RoleDashboard } from '@/features/dashboards/RoleDashboard'
+import { EmployeeDashboard } from '@/features/dashboards/employee/EmployeeDashboard'
+import { ProfilePage } from '@/features/profile/ProfilePage'
+import { MySkillsPage } from '@/features/skills/MySkillsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -20,11 +23,11 @@ import { PlaceholderPage } from './PlaceholderPage'
  * thing that can be attempted, and refused.
  */
 
-const DASHBOARD_PATHS = ['me', 'team', 'department', 'workforce', 'catalog', 'admin']
+// /me has its own screen; the rest share the role dashboard until their part is built.
+const DASHBOARD_PATHS = ['team', 'department', 'workforce', 'catalog', 'admin']
 
 /** Screens that will be built in later parts. They show no figures and call nothing. */
 const PLACEHOLDER_PATHS = [
-  { path: 'skills', label: 'My skills' },
   { path: 'gaps', label: 'My gaps' },
   { path: 'learning', label: 'Learning' },
   { path: 'assessments', label: 'Assessments' },
@@ -60,6 +63,10 @@ export const router = createBrowserRouter([
     children: [
       // Signed in, "/" belongs to whichever dashboard the role owns.
       { path: '/', element: <RoleHomeRedirect /> },
+
+      { path: 'me', element: <RequireRole><EmployeeDashboard /></RequireRole> },
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'skills', element: <MySkillsPage /> },
 
       ...DASHBOARD_PATHS.map((path) => ({
         path,

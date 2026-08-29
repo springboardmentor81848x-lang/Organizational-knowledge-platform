@@ -32,6 +32,7 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'My development', to: '/me' },
       { label: 'My skills', to: '/skills' },
+      { label: 'My profile', to: '/profile' },
       { label: 'My gaps', to: '/gaps' },
       { label: 'Learning', to: '/learning' },
       { label: 'Assessments', to: '/assessments' },

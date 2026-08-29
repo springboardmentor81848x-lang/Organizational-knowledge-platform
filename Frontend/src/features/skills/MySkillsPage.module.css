@@ -1,0 +1,130 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.015em;
+}
+
+.subtitle {
+  margin-top: var(--s-2);
+  max-width: 70ch;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+}
+
+.skillCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.skillName {
+  font-weight: var(--fw-medium);
+}
+
+.category {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--s-1);
+  justify-content: flex-end;
+}
+
+.field {
+  margin-bottom: var(--s-4);
+  border: none;
+  padding: 0;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+  padding: 0;
+}
+
+.select {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.hint {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+/* The level choices are the scale itself, so picking one shows what it will look like. */
+.levelChoices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.levelChoice {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.levelChoice:hover {
+  background: var(--c-surface-hover);
+}
+
+.levelChoiceActive,
+.levelChoiceActive:hover {
+  background: var(--c-surface-selected);
+  border-color: var(--c-accent-border);
+}
+
+.levelChoice:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.levelName {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
