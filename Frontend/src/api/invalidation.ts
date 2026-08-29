@@ -34,6 +34,40 @@ export function invalidateEmployeeSkillGraph(queryClient: QueryClient, employeeI
   ]).then(() => undefined)
 }
 
+/**
+ * Submitting an assessment sets off the widest cascade in the platform. The server, in one
+ * transaction, moves the employee proficiency, records the improvement, recalculates gaps,
+ * regenerates recommendations, refreshes learning paths and writes a notification.
+ *
+ * The client has to drop everything downstream of that or the screens keep showing the state
+ * from before the submission. This is the whole chain, including the assessment history itself
+ * and the achievements a completed assessment can earn.
+ */
+export function invalidateAfterAssessment(
+  queryClient: QueryClient,
+  employeeId: number,
+): Promise<void> {
+  return Promise.all([
+    invalidateEmployeeSkillGraph(queryClient, employeeId),
+    queryClient.invalidateQueries({ queryKey: queryKeys.assessments.all }),
+    queryClient.invalidateQueries({ queryKey: ['achievements'] }),
+  ]).then(() => undefined)
+}
+
+/** Enrolling or moving a course along changes progress, achievements and every dashboard. */
+export function invalidateAfterEnrollmentChange(
+  queryClient: QueryClient,
+  employeeId: number,
+): Promise<void> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollments.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
+    queryClient.invalidateQueries({ queryKey: ['achievements'] }),
+  ]).then(() => undefined)
+}
+
 /** A profile change alters how the person is labelled everywhere they appear. */
 export function invalidateProfile(queryClient: QueryClient, employeeId: number): Promise<void> {
   return Promise.all([

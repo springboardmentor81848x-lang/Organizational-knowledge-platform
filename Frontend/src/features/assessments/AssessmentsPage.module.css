@@ -1,0 +1,247 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.header {
+  max-width: 74ch;
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.015em;
+}
+
+.subtitle {
+  margin-top: var(--s-2);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.tab {
+  padding: var(--s-2) var(--s-4);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--c-text);
+}
+
+.tabActive,
+.tabActive:hover {
+  color: var(--c-accent);
+  border-bottom-color: var(--c-accent);
+}
+
+.skillList {
+  display: flex;
+  flex-direction: column;
+}
+
+.skillRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.skillRow:last-child {
+  border-bottom: none;
+}
+
+.skillMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.skillName {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+}
+
+.currently {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+/* Five buttons in scale order, so choosing a level is choosing a rung. */
+.levelPicker {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.levelButton {
+  min-width: 52px;
+  height: 28px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+.levelButton:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.levelButton:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.levelButton:hover {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+}
+
+.levelButtonActive,
+.levelButtonActive:hover {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-text-inverse);
+}
+
+.field {
+  margin-top: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.select {
+  width: 100%;
+  max-width: 420px;
+  height: 36px;
+  padding: 0 var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.selectionCount {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.note {
+  font-size: var(--fs-base);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+/* ── Outcome ───────────────────────────────────────────────────────────── */
+
+.outcome {
+  border-color: var(--c-low-border);
+  background: var(--c-low-bg);
+}
+
+.deltaList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.delta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.deltaSkill {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  min-width: 140px;
+}
+
+.deltaMove {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-base);
+}
+
+.deltaFrom {
+  color: var(--c-text-secondary);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.arrow {
+  color: var(--c-text-muted);
+}
+
+.deltaTo {
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.outcomeNote {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-low-border);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
