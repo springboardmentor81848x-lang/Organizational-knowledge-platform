@@ -15,6 +15,9 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 type SessionExpiredListener = () => void
 const sessionExpiredListeners = new Set<SessionExpiredListener>()
 
+/** Where the browser is sent once a session is definitively over. */
+const LOGIN_PATH = '/login'
+
 export function onSessionExpired(listener: SessionExpiredListener): () => void {
   sessionExpiredListeners.add(listener)
   return () => sessionExpiredListeners.delete(listener)
@@ -23,6 +26,13 @@ export function onSessionExpired(listener: SessionExpiredListener): () => void {
 function notifySessionExpired(): void {
   tokenStore.clear()
   sessionExpiredListeners.forEach((listener) => listener())
+
+  // A 401 that survived a refresh attempt means the session is over. Subscribers clear the
+  // cache; this gets the user to the sign-in screen rather than leaving them on a page whose
+  // every panel has failed. Guarded so redirecting while already there cannot loop.
+  if (typeof window !== 'undefined' && window.location.pathname !== LOGIN_PATH) {
+    window.location.assign(LOGIN_PATH)
+  }
 }
 
 /**

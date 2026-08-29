@@ -1,0 +1,35 @@
+import { api } from './client'
+import type { GapAnalysis, OrgGapMetrics, UserGapSummary } from '@/types/api'
+
+export const gapAnalysisApi = {
+  /**
+   * Recalculates and returns the employee's gaps. Prefer `stored` for read-only views: this
+   * one rewrites the gap rows and regenerates recommendations as a side effect.
+   */
+  recalculateForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<GapAnalysis[]>(`/api/gaps/user/${userId}`, signal),
+
+  /** The persisted gaps, computed only if none exist yet. */
+  storedForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<GapAnalysis[]>(`/api/gaps/user/${userId}/stored`, signal),
+
+  summaryForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<UserGapSummary>(`/api/gaps/user/${userId}/summary`, signal),
+
+  /** Required skills the employee has no record of at all. */
+  missingForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<GapAnalysis[]>(`/api/gaps/user/${userId}/missing`, signal),
+
+  /** Skills held but below the level the role requires. */
+  proficiencyGapsForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<GapAnalysis[]>(`/api/gaps/user/${userId}/proficiency-gaps`, signal),
+
+  compareToTargetRole: (userId: number, targetJobTitle: string, targetDepartment: string) =>
+    api.post<GapAnalysis[]>(
+      `/api/gaps/user/${userId}/compare-target?targetJobTitle=${encodeURIComponent(
+        targetJobTitle,
+      )}&targetDepartment=${encodeURIComponent(targetDepartment)}`,
+    ),
+
+  orgSummary: (signal?: AbortSignal) => api.get<OrgGapMetrics>('/api/gaps/org-summary', signal),
+}
