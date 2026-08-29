@@ -2,6 +2,7 @@ package com.orgskills.intelligence.service;
 
 import com.orgskills.intelligence.dto.auth.AuthResponse;
 import com.orgskills.intelligence.dto.auth.ChangePasswordRequest;
+import com.orgskills.intelligence.dto.auth.ForgotPasswordRequest;
 import com.orgskills.intelligence.dto.auth.LoginRequest;
 import com.orgskills.intelligence.dto.auth.OAuth2GoogleRequest;
 import com.orgskills.intelligence.dto.auth.RefreshTokenRequest;
@@ -10,6 +11,7 @@ import com.orgskills.intelligence.dto.auth.UpdateProfileRequest;
 import com.orgskills.intelligence.dto.auth.UserProfileResponse;
 import com.orgskills.intelligence.entity.RefreshToken;
 import com.orgskills.intelligence.entity.User;
+import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.UnauthorizedException;
@@ -30,12 +32,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    /** Roles holding the administrative reset, and so the ones worth telling. */
+    private static final Set<Role> PASSWORD_RESET_ROLES =
+            EnumSet.of(Role.SYSTEM_ADMIN, Role.ADMIN, Role.HR_ADMIN);
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -44,6 +52,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuditLogService auditLogService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final NotificationService notificationService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -221,6 +230,43 @@ public class AuthService {
 
         auditLogService.logEvent(user.getId(), user.getEmail(), "UPDATE_PROFILE", "User", user.getId().toString(), "User profile updated");
         return toUserProfile(userRepository.save(user));
+    }
+
+    /**
+     * Records that somebody cannot get in, and puts it in front of the people who can help.
+     *
+     * <p>There is no self-service reset: this platform sends no email, so a link-based flow
+     * would either need infrastructure that does not exist or would have to pretend to send
+     * something. Instead the request reaches every administrator as a notification, and they
+     * complete it with the reset they already have.
+     *
+     * <p>The answer is the same whether or not the address belongs to anybody. Confirming which
+     * addresses have accounts would turn this into a way of enumerating the staff directory.
+     */
+    @Transactional
+    public void requestPasswordReset(ForgotPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+
+        userRepository.findByEmail(email).ifPresent(user -> {
+            List<User> administrators = userRepository.findAll().stream()
+                    .filter(candidate -> PASSWORD_RESET_ROLES.contains(candidate.getRole()))
+                    .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
+                    .toList();
+
+            for (User administrator : administrators) {
+                notificationService.createOnce(
+                        administrator,
+                        "Password reset requested",
+                        user.getFullName() + " (" + user.getEmail() + ") cannot sign in and has asked for a "
+                                + "password reset.",
+                        NotificationType.SYSTEM_ALERT,
+                        "password-reset-request:" + user.getId());
+            }
+
+            auditLogService.logEvent(user.getId(), user.getEmail(), "PASSWORD_RESET_REQUESTED", "User",
+                    user.getId().toString(),
+                    "Reset requested; " + administrators.size() + " administrator(s) notified");
+        });
     }
 
     @Transactional

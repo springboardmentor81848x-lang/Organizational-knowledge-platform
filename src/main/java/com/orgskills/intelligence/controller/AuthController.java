@@ -46,6 +46,17 @@ public class AuthController {
         return ResponseEntity.ok(authService.oauth2GoogleLogin(request));
     }
 
+    /**
+     * Always answers 202, whether or not the address has an account. Anything else would let a
+     * caller discover who works here.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(
+            @Valid @RequestBody com.orgskills.intelligence.dto.auth.ForgotPasswordRequest request) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.accepted().build();
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponse> me(Authentication authentication) {
         return ResponseEntity.ok(authService.getCurrentUser(authentication));
