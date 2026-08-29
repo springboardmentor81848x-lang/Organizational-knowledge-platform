@@ -138,3 +138,81 @@
 .submit {
   margin-top: var(--s-2);
 }
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-bottom: var(--s-2);
+  color: var(--c-accent);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-5) 0;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+
+.googleGlyph {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border-strong);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-secondary);
+}
+
+/* Shown instead of the button when Google is not configured: a control that fails on click
+   is worse than one that says why it is absent. */
+.googleUnavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  background: var(--c-surface-sunken);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.switchRole {
+  margin-top: var(--s-5);
+  text-align: center;
+  font-size: var(--fs-sm);
+}
+
+.dialogBody {
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
