@@ -311,8 +311,8 @@ public class ManagerService {
         List<Enrollment> enrollments = enrollmentRepository.findByEmployeeId(employee.getId());
         double avgProgress = enrollments.stream().mapToDouble(Enrollment::getProgress).average().orElse(0.0);
 
-        List<Assessment> assessments = assessmentRepository.findBySubmittedForIdOrderBySubmittedAtDesc(employee.getId());
-        Instant lastAssessment = assessments.isEmpty() ? null : assessments.get(0).getSubmittedAt();
+        List<Assessment> assessments = assessmentRepository.findByEmployeeIdOrderByDateDesc(employee.getId());
+        Instant lastAssessment = assessments.isEmpty() ? null : assessments.get(0).getDate();
 
         return TeamMemberSummary.builder()
                 .id(employee.getId())
@@ -328,21 +328,10 @@ public class ManagerService {
     }
 
     private double getSkillScore(UserSkill us) {
-        if (us.getRatingScore() != null) return us.getRatingScore();
-        return switch (us.getProficiencyLevel()) {
-            case UNAWARE -> 1.0;
-            case BEGINNER -> 2.0;
-            case INTERMEDIATE -> 3.0;
-            case ADVANCED -> 4.0;
-            case EXPERT -> 5.0;
-        };
+        return us.getProficiencyLevel().getScore();
     }
 
     private String scoreToProficiencyLabel(double score) {
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE.name();
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER.name();
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE.name();
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED.name();
-        return ProficiencyLevel.EXPERT.name();
+        return ProficiencyLevel.fromScore(score).name();
     }
 }

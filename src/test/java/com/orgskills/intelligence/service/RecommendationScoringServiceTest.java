@@ -103,7 +103,7 @@ class RecommendationScoringServiceTest {
     @DisplayName("Returns courses sorted by descending score with detailed scoreBreakdown")
     void testScoreCoursesReturnsSortedWithBreakdown() {
         RoleCompetency rcJava = new RoleCompetency(1L, "Backend Engineer", "Engineering", javaSkill, ProficiencyLevel.ADVANCED);
-        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, Instant.now());
+        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, false, Instant.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(devEmployee));
         when(roleCompetencyRepository.findByJobTitleIgnoreCaseAndDepartmentIgnoreCase("Backend Engineer", "Engineering"))
@@ -130,7 +130,7 @@ class RecommendationScoringServiceTest {
     @DisplayName("Role-Based Filtering: completely excludes courses unrelated to employee's role requirements/gaps")
     void testRoleBasedFilteringExcludesUnrelatedCourses() {
         RoleCompetency rcJava = new RoleCompetency(1L, "Backend Engineer", "Engineering", javaSkill, ProficiencyLevel.ADVANCED);
-        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, Instant.now());
+        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, false, Instant.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(devEmployee));
         when(roleCompetencyRepository.findByJobTitleIgnoreCaseAndDepartmentIgnoreCase("Backend Engineer", "Engineering"))
@@ -152,8 +152,8 @@ class RecommendationScoringServiceTest {
         RoleCompetency rcDev = new RoleCompetency(1L, "Backend Engineer", "Engineering", javaSkill, ProficiencyLevel.ADVANCED);
         RoleCompetency rcOps = new RoleCompetency(2L, "DevOps Engineer", "Infrastructure", k8sSkill, ProficiencyLevel.ADVANCED);
 
-        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, Instant.now());
-        GapAnalysis gapOpsK8s = new GapAnalysis(2L, devOpsEmployee, k8sSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, Instant.now());
+        GapAnalysis gapJava = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, false, Instant.now());
+        GapAnalysis gapOpsK8s = new GapAnalysis(2L, devOpsEmployee, k8sSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, false, Instant.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(devEmployee));
         when(roleCompetencyRepository.findByJobTitleIgnoreCaseAndDepartmentIgnoreCase("Backend Engineer", "Engineering"))
@@ -185,7 +185,7 @@ class RecommendationScoringServiceTest {
     @DisplayName("Adaptive Re-ranking: employee recommendations change ranking after proficiency level increases")
     void testAdaptiveRerankingAfterProficiencyLevelChange() {
         RoleCompetency rcJava = new RoleCompetency(1L, "Backend Engineer", "Engineering", javaSkill, ProficiencyLevel.ADVANCED);
-        GapAnalysis initialGap = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, Instant.now());
+        GapAnalysis initialGap = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 1.0, 3.0, RiskSeverity.CRITICAL, false, Instant.now());
         UserSkill lowUserSkill = new UserSkill(1L, devEmployee, javaSkill, ProficiencyLevel.BEGINNER, 1.0);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(devEmployee));
@@ -200,7 +200,7 @@ class RecommendationScoringServiceTest {
         assertThat(initialRankings.get(0).getCourse().getTitle()).isEqualTo("Java 101");
 
         // Employee levels up to level 4.0 -> Gap drops to 0.0 or 1.0
-        GapAnalysis updatedGap = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 4.0, 0.0, RiskSeverity.LOW, Instant.now());
+        GapAnalysis updatedGap = new GapAnalysis(1L, devEmployee, javaSkill, 4.0, 4.0, 0.0, RiskSeverity.LOW, false, Instant.now());
         UserSkill highUserSkill = new UserSkill(1L, devEmployee, javaSkill, ProficiencyLevel.ADVANCED, 4.0);
 
         when(gapAnalysisRepository.findByUserIdOrderByGapScoreDesc(1L)).thenReturn(List.of(updatedGap));

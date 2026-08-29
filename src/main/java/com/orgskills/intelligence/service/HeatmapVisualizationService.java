@@ -388,12 +388,7 @@ public class HeatmapVisualizationService {
     }
 
     private String scoreToProficiencyLabel(double score) {
-        if (score <= 0.0) return "NONE";
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE.name();
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER.name();
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE.name();
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED.name();
-        return ProficiencyLevel.EXPERT.name();
+        return ProficiencyLevel.fromScore(score).name();
     }
 
     private HeatmapMatrixResponse buildEmptyHeatmapResponse(String scope, String scopeName) {

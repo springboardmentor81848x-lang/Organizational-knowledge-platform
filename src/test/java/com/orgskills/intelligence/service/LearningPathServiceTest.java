@@ -17,7 +17,6 @@ import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.LearningPathStepRepository;
 import com.orgskills.intelligence.repository.UserRepository;
-import com.orgskills.intelligence.repository.UserSkillRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,13 +55,7 @@ class LearningPathServiceTest {
     private LearningPathStepRepository learningPathStepRepository;
 
     @Mock
-    private UserSkillRepository userSkillRepository;
-
-    @Mock
     private GapAnalysisService gapAnalysisService;
-
-    @Mock
-    private RecommendationService recommendationService;
 
     @Mock
     private RecommendationScoringService recommendationScoringService;
@@ -180,7 +174,7 @@ class LearningPathServiceTest {
     }
 
     @Test
-    @DisplayName("Completing steps updates overallProgressPercent and completing path triggers skill level update and gap/rec refresh")
+    @DisplayName("Completing every step completes the path but does not move proficiency or gaps")
     void testCompleteStepManually_PathCompletion() {
         LearningPath path = LearningPath.builder()
                 .id(50L)
@@ -216,7 +210,6 @@ class LearningPathServiceTest {
         when(learningPathStepRepository.findById(202L)).thenReturn(Optional.of(step2));
         when(learningPathStepRepository.save(any(LearningPathStep.class))).thenAnswer(inv -> inv.getArgument(0));
         when(learningPathRepository.save(any(LearningPath.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(userSkillRepository.findByUserIdAndSkillId(100L, 1L)).thenReturn(Optional.empty());
 
         LearningPathResponse response = learningPathService.completeStepManually(202L);
 
@@ -224,12 +217,8 @@ class LearningPathServiceTest {
         assertThat(response.getOverallProgressPercent()).isEqualTo(100);
         assertThat(response.getStatus()).isEqualTo("COMPLETED");
 
-        ArgumentCaptor<UserSkill> userSkillCaptor = ArgumentCaptor.forClass(UserSkill.class);
-        verify(userSkillRepository).save(userSkillCaptor.capture());
-        assertThat(userSkillCaptor.getValue().getRatingScore()).isEqualTo(3.0);
-        assertThat(userSkillCaptor.getValue().getProficiencyLevel()).isEqualTo(ProficiencyLevel.INTERMEDIATE);
-
-        verify(gapAnalysisService).calculateAndFetchUserGaps(100L);
-        verify(recommendationService).generateRecommendations(100L);
+        // Finishing a learning path is not evidence of ability, so it must not raise the
+        // employee's proficiency or recalculate their gaps. Only an assessment does that.
+        verify(gapAnalysisService, never()).calculateAndFetchUserGaps(100L);
     }
 }

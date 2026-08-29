@@ -1,8 +1,8 @@
 package com.orgskills.intelligence.service;
 
 import com.orgskills.intelligence.dto.employee.AchievementResponse;
-import com.orgskills.intelligence.dto.employee.AssessmentRequest;
-import com.orgskills.intelligence.dto.employee.AssessmentResponse;
+import com.orgskills.intelligence.dto.assessment.AssessmentResponse;
+import com.orgskills.intelligence.dto.assessment.SubmitAssessmentRequest;
 import com.orgskills.intelligence.dto.employee.CertificationRequest;
 import com.orgskills.intelligence.dto.employee.CertificationResponse;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileRequest;
@@ -12,7 +12,6 @@ import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
 import com.orgskills.intelligence.dto.employee.UpdateProgressRequest;
 import com.orgskills.intelligence.dto.employee.MentorMatchResponse;
 import com.orgskills.intelligence.entity.Achievement;
-import com.orgskills.intelligence.entity.Assessment;
 import com.orgskills.intelligence.entity.Certification;
 import com.orgskills.intelligence.entity.EmployeeProfile;
 import com.orgskills.intelligence.entity.MentorshipMatch;
@@ -28,7 +27,6 @@ import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AchievementRepository;
-import com.orgskills.intelligence.repository.AssessmentRepository;
 import com.orgskills.intelligence.repository.CertificationRepository;
 import com.orgskills.intelligence.repository.EmployeeProfileRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -54,14 +52,13 @@ public class EmployeeService {
     private final EmployeeProfileRepository employeeProfileRepository;
     private final UserSkillRepository userSkillRepository;
     private final SkillRepository skillRepository;
-    private final AssessmentRepository assessmentRepository;
     private final AchievementRepository achievementRepository;
     private final CertificationRepository certificationRepository;
     private final MentorshipMatchRepository mentorshipMatchRepository;
-    private final GapAnalysisService gapAnalysisService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final TrainingProgressService trainingProgressService;
+    private final AssessmentService assessmentService;
 
     // ── Profile CRUD ─────────────────────────────────────────────────────────────
 
@@ -94,93 +91,29 @@ public class EmployeeService {
         return toProfileResponse(saved);
     }
 
-    // ── Self & Peer Assessment Chain Reactions ──────────────────────────────────
+    // ── Self & Peer Assessment ──────────────────────────────────────────────────
+
+    // Assessment submission and the chain it triggers live in AssessmentService, so these
+    // self-service endpoints and /api/assessments run exactly the same flow.
 
     @Transactional
-    public AssessmentResponse submitSelfAssessment(Long userId, AssessmentRequest request) {
-        User user = getUser(userId);
-        Skill skill = getSkill(request.getSkillId());
-
-        Assessment assessment = new Assessment();
-        assessment.setType(AssessmentType.SELF);
-        assessment.setSkill(skill);
-        assessment.setScore(request.getScore());
-        assessment.setSubmittedBy(user);
-        assessment.setSubmittedFor(user);
-        assessment.setComments(request.getComments());
-
-        Assessment saved = assessmentRepository.save(assessment);
-
-        // Update UserSkill
-        updateUserSkillRating(user, skill, request.getScore());
-
-        // Chain Reaction: Recalculate gaps & recommendations
-        try {
-            gapAnalysisService.calculateAndFetchUserGaps(userId);
-        } catch (Exception ex) {
-            log.warn("Gap calculation failed post self-assessment: {}", ex.getMessage());
-        }
-
-        auditLogService.logEvent(userId, user.getEmail(), "SUBMIT_SELF_ASSESSMENT", "Assessment", saved.getId().toString(), "Self assessment submitted for skill " + skill.getName());
-        return toAssessmentResponse(saved);
+    public AssessmentResponse submitSelfAssessment(Long userId, SubmitAssessmentRequest request) {
+        return assessmentService.createAndSubmit(userId, userId, AssessmentType.SELF, request);
     }
 
     @Transactional
-    public AssessmentResponse submitPeerAssessment(Long submitterId, Long colleagueId, AssessmentRequest request) {
-        if (submitterId.equals(colleagueId)) {
-            throw new ValidationException("Cannot submit peer assessment for yourself. Use self-assessment.");
-        }
-
-        User submitter = getUser(submitterId);
-        User colleague = getUser(colleagueId);
-        Skill skill = getSkill(request.getSkillId());
-
-        Assessment assessment = new Assessment();
-        assessment.setType(AssessmentType.PEER);
-        assessment.setSkill(skill);
-        assessment.setScore(request.getScore());
-        assessment.setSubmittedBy(submitter);
-        assessment.setSubmittedFor(colleague);
-        assessment.setComments(request.getComments());
-
-        Assessment saved = assessmentRepository.save(assessment);
-
-        // Calculate average peer score for this colleague & skill and update UserSkill
-        List<Assessment> peerAssessments = assessmentRepository.findBySubmittedForIdAndSkillIdOrderBySubmittedAtDesc(colleagueId, skill.getId());
-        double avgScore = peerAssessments.stream().mapToDouble(Assessment::getScore).average().orElse(request.getScore());
-        updateUserSkillRating(colleague, skill, avgScore);
-
-        // Chain Reaction for colleague
-        try {
-            gapAnalysisService.calculateAndFetchUserGaps(colleagueId);
-        } catch (Exception ex) {
-            log.warn("Gap calculation failed post peer assessment: {}", ex.getMessage());
-        }
-
-        // Notify colleague
-        notificationService.createNotification(
-                colleague,
-                "Peer Assessment Received",
-                submitter.getFullName() + " submitted a peer assessment for your " + skill.getName() + " skill.",
-                NotificationType.INFO
-        );
-
-        auditLogService.logEvent(submitterId, submitter.getEmail(), "SUBMIT_PEER_ASSESSMENT", "Assessment", saved.getId().toString(), "Peer assessment submitted for " + colleague.getEmail());
-        return toAssessmentResponse(saved);
+    public AssessmentResponse submitPeerAssessment(Long submitterId, Long colleagueId, SubmitAssessmentRequest request) {
+        return assessmentService.createAndSubmit(submitterId, colleagueId, AssessmentType.PEER, request);
     }
 
     @Transactional(readOnly = true)
     public List<AssessmentResponse> getAssessmentsReceived(Long userId) {
-        return assessmentRepository.findBySubmittedForIdOrderBySubmittedAtDesc(userId).stream()
-                .map(this::toAssessmentResponse)
-                .toList();
+        return assessmentService.getAssessments(userId, userId);
     }
 
     @Transactional(readOnly = true)
     public List<AssessmentResponse> getAssessmentsGiven(Long userId) {
-        return assessmentRepository.findBySubmittedByIdOrderBySubmittedAtDesc(userId).stream()
-                .map(this::toAssessmentResponse)
-                .toList();
+        return assessmentService.getAssessmentsByAssessor(userId);
     }
 
     // ── Training Enrollment & Progress ──────────────────────────────────────────
@@ -256,9 +189,7 @@ public class EmployeeService {
     public List<MentorMatchResponse> getAvailableMentors(Long userId, Long skillId) {
         List<UserSkill> highlyProficient = userSkillRepository.findBySkillId(skillId).stream()
                 .filter(us -> !us.getUser().getId().equals(userId))
-                .filter(us -> us.getProficiencyLevel() == ProficiencyLevel.ADVANCED ||
-                              us.getProficiencyLevel() == ProficiencyLevel.EXPERT ||
-                              (us.getRatingScore() != null && us.getRatingScore() >= 4.0))
+                .filter(us -> us.getProficiencyLevel().getScore() >= ProficiencyLevel.ADVANCED.getScore())
                 .toList();
 
         return highlyProficient.stream().map(us -> MentorMatchResponse.builder()
@@ -366,27 +297,7 @@ public class EmployeeService {
         return employeeProfileRepository.save(profile);
     }
 
-    private void updateUserSkillRating(User user, Skill skill, Double ratingScore) {
-        UserSkill userSkill = userSkillRepository.findByUserIdAndSkillId(user.getId(), skill.getId())
-                .orElseGet(() -> {
-                    UserSkill us = new UserSkill();
-                    us.setUser(user);
-                    us.setSkill(skill);
-                    return us;
-                });
 
-        userSkill.setRatingScore(ratingScore);
-        userSkill.setProficiencyLevel(scoreToProficiencyLevel(ratingScore));
-        userSkillRepository.save(userSkill);
-    }
-
-    private ProficiencyLevel scoreToProficiencyLevel(double score) {
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE;
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER;
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE;
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED;
-        return ProficiencyLevel.EXPERT;
-    }
 
     private EmployeeProfileResponse toProfileResponse(EmployeeProfile profile) {
         return EmployeeProfileResponse.builder()
@@ -403,21 +314,6 @@ public class EmployeeService {
                 .build();
     }
 
-    private AssessmentResponse toAssessmentResponse(Assessment a) {
-        return AssessmentResponse.builder()
-                .id(a.getId())
-                .type(a.getType())
-                .skillId(a.getSkill().getId())
-                .skillName(a.getSkill().getName())
-                .score(a.getScore())
-                .submittedById(a.getSubmittedBy().getId())
-                .submittedByName(a.getSubmittedBy().getFullName())
-                .submittedForId(a.getSubmittedFor().getId())
-                .submittedForName(a.getSubmittedFor().getFullName())
-                .comments(a.getComments())
-                .submittedAt(a.getSubmittedAt())
-                .build();
-    }
 
 
     private AchievementResponse toAchievementResponse(Achievement a) {

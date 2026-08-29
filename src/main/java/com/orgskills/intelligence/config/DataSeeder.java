@@ -182,16 +182,16 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedUserSkills() {
         User alice = userRepository.findByEmail("employee@orgskills.com").orElseThrow();
-        assignSkill(alice, "Java", ProficiencyLevel.INTERMEDIATE, 3.0);
-        assignSkill(alice, "Spring Boot", ProficiencyLevel.BEGINNER, 2.0);
-        assignSkill(alice, "SQL", ProficiencyLevel.INTERMEDIATE, 3.5);
-        assignSkill(alice, "Communication", ProficiencyLevel.BEGINNER, 1.5);
+        assignSkill(alice, "Java", ProficiencyLevel.INTERMEDIATE);
+        assignSkill(alice, "Spring Boot", ProficiencyLevel.BEGINNER);
+        assignSkill(alice, "SQL", ProficiencyLevel.INTERMEDIATE);
+        assignSkill(alice, "Communication", ProficiencyLevel.BEGINNER);
 
         User bob = userRepository.findByEmail("manager@orgskills.com").orElseThrow();
-        assignSkill(bob, "Java", ProficiencyLevel.EXPERT, 5.0);
-        assignSkill(bob, "Leadership", ProficiencyLevel.INTERMEDIATE, 3.0);
-        assignSkill(bob, "Communication", ProficiencyLevel.INTERMEDIATE, 3.0);
-        assignSkill(bob, "Agile", ProficiencyLevel.BEGINNER, 2.0);
+        assignSkill(bob, "Java", ProficiencyLevel.EXPERT);
+        assignSkill(bob, "Leadership", ProficiencyLevel.INTERMEDIATE);
+        assignSkill(bob, "Communication", ProficiencyLevel.INTERMEDIATE);
+        assignSkill(bob, "Agile", ProficiencyLevel.BEGINNER);
     }
 
     private void seedCourses() {
@@ -300,13 +300,14 @@ public class DataSeeder implements CommandLineRunner {
         gapSnapshotRepository.save(s2);
     }
 
-    private void assignSkill(User user, String skillName, ProficiencyLevel level, double rating) {
+    /** The rating mirrors the level's canonical score, so seed data cannot contradict the scale. */
+    private void assignSkill(User user, String skillName, ProficiencyLevel level) {
         skillRepository.findByNameIgnoreCase(skillName).ifPresent(skill -> {
             UserSkill us = new UserSkill();
             us.setUser(user);
             us.setSkill(skill);
             us.setProficiencyLevel(level);
-            us.setRatingScore(rating);
+            us.setRatingScore((double) level.getScore());
             userSkillRepository.save(us);
         });
     }

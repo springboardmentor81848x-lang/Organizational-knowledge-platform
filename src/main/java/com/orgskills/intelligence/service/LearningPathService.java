@@ -10,15 +10,12 @@ import com.orgskills.intelligence.entity.LearningPath;
 import com.orgskills.intelligence.entity.LearningPathStep;
 import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.User;
-import com.orgskills.intelligence.entity.UserSkill;
-import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.repository.CourseRepository;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.LearningPathStepRepository;
 import com.orgskills.intelligence.repository.UserRepository;
-import com.orgskills.intelligence.repository.UserSkillRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -43,9 +40,7 @@ public class LearningPathService {
     private final CourseRepository courseRepository;
     private final LearningPathRepository learningPathRepository;
     private final LearningPathStepRepository learningPathStepRepository;
-    private final UserSkillRepository userSkillRepository;
     private final GapAnalysisService gapAnalysisService;
-    private final RecommendationService recommendationService;
     private final RecommendationScoringService recommendationScoringService;
 
     public LearningPathService(
@@ -54,9 +49,7 @@ public class LearningPathService {
             CourseRepository courseRepository,
             LearningPathRepository learningPathRepository,
             LearningPathStepRepository learningPathStepRepository,
-            UserSkillRepository userSkillRepository,
             @Lazy GapAnalysisService gapAnalysisService,
-            RecommendationService recommendationService,
             RecommendationScoringService recommendationScoringService
     ) {
         this.userRepository = userRepository;
@@ -64,9 +57,7 @@ public class LearningPathService {
         this.courseRepository = courseRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathStepRepository = learningPathStepRepository;
-        this.userSkillRepository = userSkillRepository;
         this.gapAnalysisService = gapAnalysisService;
-        this.recommendationService = recommendationService;
         this.recommendationScoringService = recommendationScoringService;
     }
 
@@ -295,33 +286,9 @@ public class LearningPathService {
             path.setStatus("COMPLETED");
             learningPathRepository.save(path);
 
-            if (path.getEmployee() != null && path.getTargetSkill() != null) {
-                Long empId = path.getEmployee().getId();
-                Long skillId = path.getTargetSkill().getId();
-
-                UserSkill userSkill = userSkillRepository.findByUserIdAndSkillId(empId, skillId)
-                        .orElseGet(() -> {
-                            UserSkill us = new UserSkill();
-                            us.setUser(path.getEmployee());
-                            us.setSkill(path.getTargetSkill());
-                            us.setProficiencyLevel(ProficiencyLevel.BEGINNER);
-                            us.setRatingScore(2.0);
-                            return us;
-                        });
-
-                double currentRating = userSkill.getRatingScore() != null ? userSkill.getRatingScore() : 1.0;
-                double newRating = Math.min(5.0, currentRating + 1.0);
-                userSkill.setRatingScore(newRating);
-                userSkill.setProficiencyLevel(scoreToProficiencyLevel(newRating));
-                userSkillRepository.save(userSkill);
-
-                try {
-                    gapAnalysisService.calculateAndFetchUserGaps(empId);
-                    recommendationService.generateRecommendations(empId);
-                } catch (Exception ex) {
-                    log.warn("Failed to trigger auto gap/rec recalculation after path completion: {}", ex.getMessage());
-                }
-            }
+            // Finishing a learning path deliberately does not raise the employee's proficiency and
+            // does not recalculate gaps. A level is a claim about ability and only an assessment is
+            // evidence for it, so the employee reassesses to have the new level recognised.
         } else if (completedCount > 0) {
             path.setStatus("IN_PROGRESS");
             learningPathRepository.save(path);
@@ -331,13 +298,6 @@ public class LearningPathService {
         }
     }
 
-    private ProficiencyLevel scoreToProficiencyLevel(double score) {
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE;
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER;
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE;
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED;
-        return ProficiencyLevel.EXPERT;
-    }
 
     // ── Response Mapping ────────────────────────────────────────────────────────
 

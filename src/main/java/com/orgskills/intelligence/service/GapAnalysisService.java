@@ -253,7 +253,7 @@ public class GapAnalysisService {
                 ));
 
         Map<Long, List<GapAnalysis>> missingBySkill = allGaps.stream()
-                .filter(g -> g.getCurrentScore() == 0.0)
+                .filter(g -> Boolean.TRUE.equals(g.getMissingSkill()))
                 .collect(Collectors.groupingBy(g -> g.getSkill().getId()));
 
         List<OrgGapMetricsResponse.SkillGapSummary> topMissing = missingBySkill.entrySet().stream()
@@ -285,8 +285,8 @@ public class GapAnalysisService {
     }
 
     private GapAnalysis buildGap(User user, RoleCompetency roleCompetency, UserSkill userSkill) {
-        double target = proficiencyToScore(roleCompetency.getRequiredProficiencyLevel());
-        double current = userSkill == null ? 0.0 : normalizedCurrentScore(userSkill);
+        double target = roleCompetency.getRequiredProficiencyLevel().getScore();
+        double current = userSkill == null ? 0.0 : userSkill.getProficiencyLevel().getScore();
         double gapScore = Math.max(0.0, target - current);
         RiskSeverity severity = classifyRisk(gapScore);
 
@@ -297,6 +297,7 @@ public class GapAnalysisService {
         gap.setCurrentScore(current);
         gap.setGapScore(gapScore);
         gap.setRiskSeverity(severity);
+        gap.setMissingSkill(userSkill == null);
 
         if (severity == RiskSeverity.CRITICAL) {
             notificationService.createGapAlert(user, roleCompetency.getSkill(), gapScore);
@@ -304,30 +305,11 @@ public class GapAnalysisService {
         return gap;
     }
 
-    private double normalizedCurrentScore(UserSkill userSkill) {
-        if (userSkill.getRatingScore() != null) {
-            return Math.max(0.0, Math.min(5.0, userSkill.getRatingScore()));
-        }
-        return proficiencyToScore(userSkill.getProficiencyLevel());
-    }
 
-    private double proficiencyToScore(ProficiencyLevel level) {
-        return switch (level) {
-            case UNAWARE -> 1.0;
-            case BEGINNER -> 2.0;
-            case INTERMEDIATE -> 3.0;
-            case ADVANCED -> 4.0;
-            case EXPERT -> 5.0;
-        };
-    }
 
+    /** Labels a score on the canonical scale. Missing skills are labelled by the caller. */
     private String scoreToProficiencyLabel(double score) {
-        if (score <= 0.0) return "NONE";
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE.name();
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER.name();
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE.name();
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED.name();
-        return ProficiencyLevel.EXPERT.name();
+        return ProficiencyLevel.fromScore(score).name();
     }
 
     private RiskSeverity classifyRisk(double gapScore) {
@@ -344,7 +326,7 @@ public class GapAnalysisService {
     }
 
     public GapAnalysisResponse toResponse(GapAnalysis gap) {
-        boolean missing = gap.getCurrentScore() == 0.0;
+        boolean missing = Boolean.TRUE.equals(gap.getMissingSkill());
         return GapAnalysisResponse.builder()
                 .id(gap.getId())
                 .userId(gap.getUser().getId())
@@ -356,7 +338,7 @@ public class GapAnalysisService {
                 .currentScore(gap.getCurrentScore())
                 .gapScore(gap.getGapScore())
                 .targetProficiency(scoreToProficiencyLabel(gap.getTargetScore()))
-                .currentProficiency(scoreToProficiencyLabel(gap.getCurrentScore()))
+                .currentProficiency(missing ? "NONE" : scoreToProficiencyLabel(gap.getCurrentScore()))
                 .isMissingSkill(missing)
                 .riskSeverity(gap.getRiskSeverity())
                 .build();

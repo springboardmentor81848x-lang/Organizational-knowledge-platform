@@ -34,8 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -91,11 +93,11 @@ class GapAnalysisServiceTest {
     @Test
     @DisplayName("calculateAndFetchUserGaps identifies missing skills and proficiency gaps accurately")
     void testCalculateAndFetchUserGaps() {
-        // User has Java at BEGINNER level (score 2.0), but no Docker skill record (Missing skill)
-        RoleCompetency rc1 = new RoleCompetency(1L, "Software Engineer", "Engineering", javaSkill, ProficiencyLevel.EXPERT); // Target 5.0
-        RoleCompetency rc2 = new RoleCompetency(2L, "Software Engineer", "Engineering", dockerSkill, ProficiencyLevel.INTERMEDIATE); // Target 3.0
+        // User has Java at BEGINNER (score 1), but no Docker skill record at all (missing skill)
+        RoleCompetency rc1 = new RoleCompetency(1L, "Software Engineer", "Engineering", javaSkill, ProficiencyLevel.EXPERT); // Target 4
+        RoleCompetency rc2 = new RoleCompetency(2L, "Software Engineer", "Engineering", dockerSkill, ProficiencyLevel.INTERMEDIATE); // Target 2
 
-        UserSkill userSkillJava = new UserSkill(100L, sampleUser, javaSkill, ProficiencyLevel.BEGINNER, 2.0);
+        UserSkill userSkillJava = new UserSkill(100L, sampleUser, javaSkill, ProficiencyLevel.BEGINNER, 1.0);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(roleCompetencyRepository.findByJobTitleIgnoreCaseAndDepartmentIgnoreCase("Software Engineer", "Engineering"))
@@ -108,28 +110,29 @@ class GapAnalysisServiceTest {
 
         assertThat(results).hasSize(2);
 
-        // First result should be highest gap score (Docker: target 3.0, current 0.0, gap 3.0 -> CRITICAL)
-        // or Java (target 5.0, current 2.0, gap 3.0 -> CRITICAL)
+        // Java: target EXPERT 4, current BEGINNER 1, gap 3 -> CRITICAL
         GapAnalysisResponse javaGap = results.stream().filter(g -> g.getSkillId().equals(10L)).findFirst().orElseThrow();
         assertThat(javaGap.getSkillName()).isEqualTo("Java");
-        assertThat(javaGap.getTargetScore()).isEqualTo(5.0);
-        assertThat(javaGap.getCurrentScore()).isEqualTo(2.0);
+        assertThat(javaGap.getTargetScore()).isEqualTo(4.0);
+        assertThat(javaGap.getCurrentScore()).isEqualTo(1.0);
         assertThat(javaGap.getGapScore()).isEqualTo(3.0);
         assertThat(javaGap.isMissingSkill()).isFalse();
         assertThat(javaGap.getRiskSeverity()).isEqualTo(RiskSeverity.CRITICAL);
 
+        // Docker: target INTERMEDIATE 2, no record at all, gap 2 -> HIGH
         GapAnalysisResponse dockerGap = results.stream().filter(g -> g.getSkillId().equals(20L)).findFirst().orElseThrow();
         assertThat(dockerGap.getSkillName()).isEqualTo("Docker");
-        assertThat(dockerGap.getTargetScore()).isEqualTo(3.0);
+        assertThat(dockerGap.getTargetScore()).isEqualTo(2.0);
         assertThat(dockerGap.getCurrentScore()).isEqualTo(0.0);
-        assertThat(dockerGap.getGapScore()).isEqualTo(3.0);
+        assertThat(dockerGap.getGapScore()).isEqualTo(2.0);
         assertThat(dockerGap.isMissingSkill()).isTrue();
-        assertThat(dockerGap.getRiskSeverity()).isEqualTo(RiskSeverity.CRITICAL);
+        assertThat(dockerGap.getCurrentProficiency()).isEqualTo("NONE");
+        assertThat(dockerGap.getRiskSeverity()).isEqualTo(RiskSeverity.HIGH);
 
         // Verification of database interactions and notifications for CRITICAL risk
         verify(gapAnalysisRepository).deleteByUserId(1L);
         verify(notificationService).createGapAlert(eq(sampleUser), eq(javaSkill), eq(3.0));
-        verify(notificationService).createGapAlert(eq(sampleUser), eq(dockerSkill), eq(3.0));
+        verify(notificationService, never()).createGapAlert(eq(sampleUser), eq(dockerSkill), anyDouble());
     }
 
     @Test
@@ -148,7 +151,7 @@ class GapAnalysisServiceTest {
     @DisplayName("calculateAndFetchTargetRoleGaps compares against target role without deleting stored primary gaps")
     void testCalculateAndFetchTargetRoleGaps() {
         RoleCompetency rc = new RoleCompetency(1L, "Senior Architect", "Engineering", javaSkill, ProficiencyLevel.EXPERT);
-        UserSkill userSkillJava = new UserSkill(100L, sampleUser, javaSkill, ProficiencyLevel.ADVANCED, 4.0);
+        UserSkill userSkillJava = new UserSkill(100L, sampleUser, javaSkill, ProficiencyLevel.ADVANCED, 3.0);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(roleCompetencyRepository.findByJobTitleIgnoreCaseAndDepartmentIgnoreCase("Senior Architect", "Engineering"))
@@ -159,8 +162,8 @@ class GapAnalysisServiceTest {
 
         assertThat(results).hasSize(1);
         GapAnalysisResponse gap = results.get(0);
-        assertThat(gap.getTargetScore()).isEqualTo(5.0);
-        assertThat(gap.getCurrentScore()).isEqualTo(4.0);
+        assertThat(gap.getTargetScore()).isEqualTo(4.0);
+        assertThat(gap.getCurrentScore()).isEqualTo(3.0);
         assertThat(gap.getGapScore()).isEqualTo(1.0);
         assertThat(gap.getRiskSeverity()).isEqualTo(RiskSeverity.MEDIUM);
     }
@@ -168,8 +171,8 @@ class GapAnalysisServiceTest {
     @Test
     @DisplayName("getUserGapSummary computes readiness percentage and risk breakdown correctly")
     void testGetUserGapSummary() {
-        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 5.0, 3.0, 2.0, RiskSeverity.HIGH, null);
-        GapAnalysis gap2 = new GapAnalysis(2L, sampleUser, dockerSkill, 3.0, 0.0, 3.0, RiskSeverity.CRITICAL, null);
+        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 4.0, 2.0, 2.0, RiskSeverity.HIGH, false, null);
+        GapAnalysis gap2 = new GapAnalysis(2L, sampleUser, dockerSkill, 3.0, 0.0, 3.0, RiskSeverity.CRITICAL, true, null);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(userRepository.existsById(1L)).thenReturn(true);
@@ -179,17 +182,17 @@ class GapAnalysisServiceTest {
 
         assertThat(summary.getUserId()).isEqualTo(1L);
         assertThat(summary.getTotalRequiredSkills()).isEqualTo(2);
-        assertThat(summary.getMissingSkillsCount()).isEqualTo(1); // docker (currentScore 0)
-        assertThat(summary.getProficiencyGapsCount()).isEqualTo(1); // java (currentScore 3 < target 5)
+        assertThat(summary.getMissingSkillsCount()).isEqualTo(1); // docker, flagged as not on record
+        assertThat(summary.getProficiencyGapsCount()).isEqualTo(1); // java (current 2 < target 4)
         assertThat(summary.getMetSkillsCount()).isEqualTo(0);
-        // Total target = 8.0, Total current = 3.0, Readiness = (3/8)*100 = 37.5%
-        assertThat(summary.getOverallReadinessPercentage()).isEqualTo(37.5);
+        // Total target = 7.0, total current = 2.0, readiness = (2/7)*100 = 28.57%
+        assertThat(summary.getOverallReadinessPercentage()).isEqualTo(28.57);
     }
 
     @Test
     @DisplayName("getDepartmentMetrics computes average gap score and severity distribution")
     void testGetDepartmentMetrics() {
-        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 5.0, 3.0, 2.0, RiskSeverity.HIGH, null);
+        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 4.0, 2.0, 2.0, RiskSeverity.HIGH, false, null);
 
         when(userRepository.findByDepartmentIgnoreCase("Engineering")).thenReturn(List.of(sampleUser));
         when(gapAnalysisRepository.findByUserIdIn(List.of(1L))).thenReturn(List.of(gap1));
@@ -205,7 +208,7 @@ class GapAnalysisServiceTest {
     @Test
     @DisplayName("getOrgGapMetrics aggregates overall gap intelligence across organization")
     void testGetOrgGapMetrics() {
-        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 5.0, 0.0, 5.0, RiskSeverity.CRITICAL, null);
+        GapAnalysis gap1 = new GapAnalysis(1L, sampleUser, javaSkill, 4.0, 0.0, 4.0, RiskSeverity.CRITICAL, true, null);
 
         when(userRepository.findAll()).thenReturn(List.of(sampleUser));
         when(gapAnalysisRepository.findAll()).thenReturn(List.of(gap1));
@@ -214,7 +217,7 @@ class GapAnalysisServiceTest {
 
         assertThat(orgMetrics.getTotalEmployees()).isEqualTo(1);
         assertThat(orgMetrics.getTotalAnalyzedGaps()).isEqualTo(1);
-        assertThat(orgMetrics.getOverallAverageGapScore()).isEqualTo(5.0);
+        assertThat(orgMetrics.getOverallAverageGapScore()).isEqualTo(4.0);
         assertThat(orgMetrics.getTopMissingSkills()).hasSize(1);
         assertThat(orgMetrics.getTopMissingSkills().get(0).getSkillName()).isEqualTo("Java");
     }

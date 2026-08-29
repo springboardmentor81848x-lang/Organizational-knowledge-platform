@@ -7,6 +7,7 @@ import com.orgskills.intelligence.entity.RoleCompetency;
 import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.UserSkill;
+import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.repository.CourseRepository;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
@@ -173,19 +174,8 @@ public class RecommendationScoringService {
         if (gap != null && gap.getCurrentScore() != null) {
             return gap.getCurrentScore();
         }
-        if (userSkill != null) {
-            if (userSkill.getRatingScore() != null) {
-                return userSkill.getRatingScore();
-            }
-            if (userSkill.getProficiencyLevel() != null) {
-                return switch (userSkill.getProficiencyLevel()) {
-                    case UNAWARE -> 1.0;
-                    case BEGINNER -> 2.0;
-                    case INTERMEDIATE -> 3.0;
-                    case ADVANCED -> 4.0;
-                    case EXPERT -> 5.0;
-                };
-            }
+        if (userSkill != null && userSkill.getProficiencyLevel() != null) {
+            return userSkill.getProficiencyLevel().getScore();
         }
         return 0.0;
     }
@@ -195,27 +185,23 @@ public class RecommendationScoringService {
             return 50.0;
         }
 
-        String stage = difficulty.toUpperCase().trim();
-        return switch (stage) {
-            case "BEGINNER", "BASIC", "ENTRY" -> {
-                if (currentLevel <= 2.0) yield 100.0;
-                if (currentLevel <= 3.0) yield 70.0;
-                if (currentLevel <= 4.0) yield 40.0;
-                yield 10.0;
-            }
-            case "INTERMEDIATE", "MEDIUM" -> {
-                if (currentLevel <= 1.5) yield 50.0;
-                if (currentLevel <= 3.5) yield 100.0;
-                if (currentLevel <= 4.5) yield 60.0;
-                yield 20.0;
-            }
-            case "ADVANCED", "EXPERT", "HARD" -> {
-                if (currentLevel < 2.0) yield 20.0;
-                if (currentLevel <= 3.0) yield 60.0;
-                yield 100.0;
-            }
-            default -> 50.0;
+        ProficiencyLevel courseLevel = switch (difficulty.toUpperCase().trim()) {
+            case "BEGINNER", "BASIC", "ENTRY" -> ProficiencyLevel.BEGINNER;
+            case "INTERMEDIATE", "MEDIUM" -> ProficiencyLevel.INTERMEDIATE;
+            case "ADVANCED", "EXPERT", "HARD" -> ProficiencyLevel.ADVANCED;
+            default -> null;
         };
+        if (courseLevel == null) {
+            return 50.0;
+        }
+
+        // A course fits best when it sits at or just above where the employee currently is:
+        // far above is unteachable, far below is a waste of their time.
+        double stretch = courseLevel.getScore() - currentLevel;
+        if (stretch >= 0.0 && stretch <= 1.0) return 100.0;
+        if (stretch > 1.0 && stretch <= 2.0) return 60.0;
+        if (stretch < 0.0 && stretch >= -1.0) return 60.0;
+        return 20.0;
     }
 
     private double calculateRecencyScore(Instant createdAt, Instant now) {

@@ -53,6 +53,13 @@ public class GapAnalysis {
     @Column(nullable = false)
     private RiskSeverity riskSeverity;
 
+    /**
+     * True when the employee has no record of this skill at all. Distinct from holding it at
+     * UNAWARE, which also scores 0 on the canonical scale but means the skill is on file.
+     */
+    @Column(name = "missing_skill", nullable = false)
+    private Boolean missingSkill = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

@@ -1,8 +1,8 @@
 package com.orgskills.intelligence.controller;
 
 import com.orgskills.intelligence.dto.employee.AchievementResponse;
-import com.orgskills.intelligence.dto.employee.AssessmentRequest;
-import com.orgskills.intelligence.dto.employee.AssessmentResponse;
+import com.orgskills.intelligence.dto.assessment.AssessmentResponse;
+import com.orgskills.intelligence.dto.assessment.SubmitAssessmentRequest;
 import com.orgskills.intelligence.dto.employee.CertificationRequest;
 import com.orgskills.intelligence.dto.employee.CertificationResponse;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileRequest;
@@ -77,7 +77,7 @@ public class EmployeeController {
     @PostMapping("/assessments/self")
     public ResponseEntity<AssessmentResponse> submitSelfAssessment(
             Authentication authentication,
-            @Valid @RequestBody AssessmentRequest request) {
+            @Valid @RequestBody SubmitAssessmentRequest request) {
         Long userId = getUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.submitSelfAssessment(userId, request));
     }
@@ -86,7 +86,7 @@ public class EmployeeController {
     public ResponseEntity<AssessmentResponse> submitPeerAssessment(
             Authentication authentication,
             @PathVariable Long colleagueId,
-            @Valid @RequestBody AssessmentRequest request) {
+            @Valid @RequestBody SubmitAssessmentRequest request) {
         Long userId = getUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.submitPeerAssessment(userId, colleagueId, request));
     }

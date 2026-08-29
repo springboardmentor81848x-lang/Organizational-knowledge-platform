@@ -161,22 +161,11 @@ public class HrIntelligenceService {
     }
 
     private double getSkillScore(UserSkill us) {
-        if (us.getRatingScore() != null) return us.getRatingScore();
-        return switch (us.getProficiencyLevel()) {
-            case UNAWARE -> 1.0;
-            case BEGINNER -> 2.0;
-            case INTERMEDIATE -> 3.0;
-            case ADVANCED -> 4.0;
-            case EXPERT -> 5.0;
-        };
+        return us.getProficiencyLevel().getScore();
     }
 
     private String scoreToProficiencyLabel(double score) {
-        if (score <= 1.0) return ProficiencyLevel.UNAWARE.name();
-        if (score <= 2.0) return ProficiencyLevel.BEGINNER.name();
-        if (score <= 3.0) return ProficiencyLevel.INTERMEDIATE.name();
-        if (score <= 4.0) return ProficiencyLevel.ADVANCED.name();
-        return ProficiencyLevel.EXPERT.name();
+        return ProficiencyLevel.fromScore(score).name();
     }
 
     private UserProfileResponse toUserProfile(User user) {
