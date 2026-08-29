@@ -14,6 +14,7 @@ import { SessionsPage } from '@/features/sessions/SessionsPage'
 import { ExpertDirectoryPage } from '@/features/experts/ExpertDirectoryPage'
 import { NotificationCenterPage } from '@/features/notifications/NotificationCenterPage'
 import { AchievementsPage } from '@/features/achievements/AchievementsPage'
+import { TeamDashboardPage } from '@/features/team/TeamDashboardPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -33,7 +34,8 @@ import { PlaceholderPage } from './PlaceholderPage'
  */
 
 // /me has its own screen; the rest share the role dashboard until their part is built.
-const DASHBOARD_PATHS = ['team', 'department', 'workforce', 'catalog', 'admin']
+// team and department now have real screens over their own scoped endpoints.
+const DASHBOARD_PATHS = ['workforce', 'catalog', 'admin']
 
 /** Screens that will be built in later parts. They show no figures and call nothing. */
 const PLACEHOLDER_PATHS = [{ path: 'reports', label: 'Reports' }]
@@ -77,6 +79,8 @@ export const router = createBrowserRouter([
       { path: 'experts', element: <ExpertDirectoryPage /> },
       { path: 'notifications', element: <NotificationCenterPage /> },
       { path: 'achievements', element: <AchievementsPage /> },
+      { path: 'team', element: <RequireRole><TeamDashboardPage scope="manager" /></RequireRole> },
+      { path: 'department', element: <RequireRole><TeamDashboardPage scope="department" /></RequireRole> },
 
       ...DASHBOARD_PATHS.map((path) => ({
         path,
