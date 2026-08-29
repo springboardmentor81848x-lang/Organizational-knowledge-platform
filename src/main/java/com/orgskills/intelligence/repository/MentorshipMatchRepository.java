@@ -16,4 +16,10 @@ public interface MentorshipMatchRepository extends JpaRepository<MentorshipMatch
                                                                  MentorshipStatus status);
 
     List<MentorshipMatch> findByMentorIdInAndStatusIn(Collection<Long> mentorIds, Collection<MentorshipStatus> statuses);
+
+    List<MentorshipMatch> findByMenteeIdAndStatusOrderByCreatedAtDesc(Long menteeId, MentorshipStatus status);
+
+    List<MentorshipMatch> findByMenteeIdInAndStatus(Collection<Long> menteeIds, MentorshipStatus status);
+
+    long countByStatus(MentorshipStatus status);
 }

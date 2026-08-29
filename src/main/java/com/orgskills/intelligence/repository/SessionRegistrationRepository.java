@@ -14,6 +14,8 @@ public interface SessionRegistrationRepository extends JpaRepository<SessionRegi
 
     List<SessionRegistration> findBySessionIdIn(Collection<Long> sessionIds);
 
+    List<SessionRegistration> findByEmployeeId(Long employeeId);
+
     Optional<SessionRegistration> findBySessionIdAndEmployeeId(Long sessionId, Long employeeId);
 
     long countBySessionId(Long sessionId);
