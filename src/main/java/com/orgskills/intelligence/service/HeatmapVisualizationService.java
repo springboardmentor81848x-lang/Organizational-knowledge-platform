@@ -62,24 +62,37 @@ public class HeatmapVisualizationService {
                 ? userRepository.findByDepartmentIgnoreCase(department.trim())
                 : userRepository.findAll();
 
-        if (users.isEmpty()) {
-            return buildEmptyHeatmapResponse(department != null ? "DEPARTMENT" : "ORG", department);
+        return buildMatrixForUsers(
+                users,
+                department != null && !department.isBlank() ? "DEPARTMENT" : "ORG",
+                department,
+                category);
+    }
+
+    /**
+     * Builds the person-by-skill matrix for an explicit set of people.
+     *
+     * <p>Exposed so each audience can be served from the set it is entitled to: a manager passes
+     * their direct reports, a department head passes their department. Filtering one shared
+     * organisation-wide call by a label would leave the whole matrix on the wire regardless of
+     * who asked.
+     *
+     * <p>This reads stored analysis and never triggers a calculation. It previously looped over
+     * every user calling gap analysis when no rows existed, catching failures as it went — but a
+     * user with no competency profile makes that call throw, and the failed inner transaction
+     * had already marked the shared one rollback-only, so the whole request died with
+     * "Transaction silently rolled back" no matter how carefully the exception was caught.
+     * Recalculating is a write, and a read should not be doing it.
+     */
+    @Transactional(readOnly = true)
+    public HeatmapMatrixResponse buildMatrixForUsers(List<User> users, String scope, String scopeName,
+                                                     String category) {
+        if (users == null || users.isEmpty()) {
+            return buildEmptyHeatmapResponse(scope, scopeName);
         }
 
         List<Long> userIds = users.stream().map(User::getId).toList();
         List<GapAnalysis> storedGaps = gapAnalysisRepository.findByUserIdIn(userIds);
-
-        // If no stored gaps exist yet, trigger calculation for these users
-        if (storedGaps.isEmpty()) {
-            for (User user : users) {
-                try {
-                    gapAnalysisService.calculateAndFetchUserGaps(user.getId());
-                } catch (Exception e) {
-                    log.warn("Could not calculate gaps for user {}: {}", user.getId(), e.getMessage());
-                }
-            }
-            storedGaps = gapAnalysisRepository.findByUserIdIn(userIds);
-        }
 
         // Apply skill category filter if requested
         if (category != null && !category.isBlank()) {
@@ -157,8 +170,8 @@ public class HeatmapVisualizationService {
                 .toList();
 
         return HeatmapMatrixResponse.builder()
-                .scope(department != null ? "DEPARTMENT" : "ORG")
-                .scopeName(department != null ? department : "All Departments")
+                .scope(scope)
+                .scopeName(scopeName != null && !scopeName.isBlank() ? scopeName : "All Departments")
                 .totalUsers(userHeaders.size())
                 .totalSkills(skillHeaders.size())
                 .skills(skillHeaders)

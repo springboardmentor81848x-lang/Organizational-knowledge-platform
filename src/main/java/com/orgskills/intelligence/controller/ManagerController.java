@@ -4,6 +4,7 @@ import com.orgskills.intelligence.dto.gap.GapAnalysisResponse;
 import com.orgskills.intelligence.dto.manager.AssignMentorshipRequest;
 import com.orgskills.intelligence.dto.manager.GapHeatmapResponse;
 import com.orgskills.intelligence.dto.manager.SkillCoverageResponse;
+import com.orgskills.intelligence.dto.heatmap.HeatmapMatrixResponse;
 import com.orgskills.intelligence.dto.manager.TeamMemberSummary;
 import com.orgskills.intelligence.dto.manager.TrainingAdoptionResponse;
 import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
@@ -11,6 +12,7 @@ import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.security.CustomPrincipal;
+import com.orgskills.intelligence.service.HeatmapVisualizationService;
 import com.orgskills.intelligence.service.ManagerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -34,6 +37,7 @@ import java.util.List;
 public class ManagerController {
 
     private final ManagerService managerService;
+    private final HeatmapVisualizationService heatmapVisualizationService;
 
     @GetMapping("/team")
     public ResponseEntity<List<TeamMemberSummary>> getTeam(Authentication authentication) {
@@ -54,6 +58,21 @@ public class ManagerController {
         Long managerId = getUserId(authentication);
         List<User> team = managerService.getTeamMembers(managerId);
         return ResponseEntity.ok(managerService.getGapHeatmap(team, "TEAM", "My Team"));
+    }
+
+    /**
+     * The person-by-skill matrix for this manager's direct reports. Distinct from the department
+     * head's equivalent: each is handed the set of people its caller is responsible for, so
+     * neither can see beyond its own scope.
+     */
+    @GetMapping("/team/gap-matrix")
+    public ResponseEntity<HeatmapMatrixResponse> getTeamGapMatrix(
+            Authentication authentication,
+            @RequestParam(required = false) String category) {
+        Long managerId = getUserId(authentication);
+        List<User> team = managerService.getTeamMembers(managerId);
+        return ResponseEntity.ok(
+                heatmapVisualizationService.buildMatrixForUsers(team, "TEAM", "My team", category));
     }
 
     @GetMapping("/team/high-risk-gaps")
