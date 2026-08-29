@@ -81,6 +81,17 @@ export const queryKeys = {
       ['experts', 'search', skill, minProficiency ?? 'any'] as const,
   },
 
+  team: {
+    all: ['team'] as const,
+    /** Keyed by scope so a manager view and a department view never share a cache entry. */
+    members: (scope: 'manager' | 'department') => ['team', scope, 'members'] as const,
+    gapMatrix: (scope: 'manager' | 'department') => ['team', scope, 'gap-matrix'] as const,
+    highRiskGaps: (scope: 'manager' | 'department') => ['team', scope, 'high-risk'] as const,
+    adoption: (scope: 'manager' | 'department') => ['team', scope, 'adoption'] as const,
+    memberProgress: (scope: 'manager' | 'department', employeeId: number) =>
+      ['team', scope, 'member', employeeId] as const,
+  },
+
   analytics: {
     all: ['analytics'] as const,
     employee: (employeeId: number) => ['analytics', 'employee', employeeId] as const,

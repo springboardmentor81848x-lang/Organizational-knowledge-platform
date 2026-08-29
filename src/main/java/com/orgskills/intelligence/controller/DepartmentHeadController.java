@@ -71,7 +71,7 @@ public class DepartmentHeadController {
     public ResponseEntity<HeatmapMatrixResponse> getDepartmentGapMatrix(
             Authentication authentication,
             @RequestParam(required = false) String category) {
-        String department = resolveDepartment(authentication);
+        String department = resolveUserDepartment(authentication);
         List<User> members = managerService.getDepartmentMembers(department);
         return ResponseEntity.ok(
                 heatmapVisualizationService.buildMatrixForUsers(members, "DEPARTMENT", department, category));
