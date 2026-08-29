@@ -9,6 +9,9 @@ import { AssessmentsPage } from '@/features/assessments/AssessmentsPage'
 import { GapsPage } from '@/features/gaps/GapsPage'
 import { LearningPage } from '@/features/learning/LearningPage'
 import { RecommendationsPage } from '@/features/learning/RecommendationsPage'
+import { MentorshipPage } from '@/features/mentorship/MentorshipPage'
+import { SessionsPage } from '@/features/sessions/SessionsPage'
+import { ExpertDirectoryPage } from '@/features/experts/ExpertDirectoryPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -31,12 +34,7 @@ import { PlaceholderPage } from './PlaceholderPage'
 const DASHBOARD_PATHS = ['team', 'department', 'workforce', 'catalog', 'admin']
 
 /** Screens that will be built in later parts. They show no figures and call nothing. */
-const PLACEHOLDER_PATHS = [
-  { path: 'mentorship', label: 'Mentorship' },
-  { path: 'sessions', label: 'Sessions' },
-  { path: 'experts', label: 'Expert directory' },
-  { path: 'reports', label: 'Reports' },
-]
+const PLACEHOLDER_PATHS = [{ path: 'reports', label: 'Reports' }]
 
 export const router = createBrowserRouter([
   {
@@ -72,6 +70,9 @@ export const router = createBrowserRouter([
       { path: 'recommendations', element: <RecommendationsPage /> },
       { path: 'learning', element: <LearningPage /> },
       { path: 'assessments', element: <AssessmentsPage /> },
+      { path: 'mentorship', element: <MentorshipPage /> },
+      { path: 'sessions', element: <SessionsPage /> },
+      { path: 'experts', element: <ExpertDirectoryPage /> },
 
       ...DASHBOARD_PATHS.map((path) => ({
         path,
