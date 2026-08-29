@@ -1,0 +1,153 @@
+.wrapper { display: flex; flex-direction: column; gap: var(--s-4); }
+.scroll { overflow-x: auto; }
+
+.grid { border-collapse: separate; border-spacing: 2px; }
+
+.corner {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--c-surface);
+  text-align: left;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+  padding: var(--s-2);
+  min-width: 190px;
+}
+
+.personHead {
+  padding: var(--s-2);
+  vertical-align: bottom;
+  text-align: left;
+  min-width: 92px;
+  max-width: 110px;
+}
+
+.personName {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personRole {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--fw-regular);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The skill column stays put while people scroll past, so a row never loses its label. */
+.skillHead {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--c-surface);
+  text-align: left;
+  padding: var(--s-2);
+  min-width: 190px;
+  border-right: 1px solid var(--c-border);
+}
+
+.skillName { display: block; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.skillCategory { display: block; font-size: 10px; color: var(--c-text-muted); }
+
+.cellWrap { padding: 0; }
+
+.cell {
+  display: block;
+  width: 100%;
+  min-width: 88px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: outline var(--transition-fast);
+}
+
+.cell:disabled { cursor: default; }
+
+/* The one place severity colour is decided, from the shared tokens. The backend also sends a
+   hex per cell; using it would let the palette drift from the rest of the interface. */
+.critical { background: var(--c-critical); border-color: var(--c-critical); }
+.high { background: var(--c-high); border-color: var(--c-high); }
+.medium { background: var(--c-medium); border-color: var(--c-medium); }
+.low { background: var(--c-low); border-color: var(--c-low); }
+
+/* An unanalysed pair is hatched, not coloured: it is the absence of a measurement, and must not
+   be mistaken for a measurement of zero. */
+.absent {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--c-surface-sunken),
+    var(--c-surface-sunken) 4px,
+    var(--c-surface) 4px,
+    var(--c-surface) 8px
+  );
+  border-color: var(--c-border);
+}
+
+.cellSelected { outline: 2px solid var(--c-text); outline-offset: 1px; }
+
+.footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.legend { display: flex; gap: var(--s-4); flex-wrap: wrap; }
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.swatch { width: 14px; height: 14px; border-radius: var(--radius-sm); border: 1px solid; }
+
+.hint { font-size: var(--fs-sm); color: var(--c-text-muted); }
+
+.detail {
+  flex: 1;
+  min-width: 280px;
+  padding: var(--s-3);
+  background: var(--c-surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.detailTitle { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.detailLabel { font-size: var(--fs-xs); color: var(--c-text-secondary); }
+.detailValue { margin: 1px 0 0; font-size: var(--fs-base); font-weight: var(--fw-medium); }
+.detailNote { margin-top: var(--s-3); font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+
+.empty { font-size: var(--fs-base); color: var(--c-text-secondary); line-height: var(--lh-normal); padding: var(--s-5); }
