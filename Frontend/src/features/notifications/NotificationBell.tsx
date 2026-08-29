@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { notificationsApi } from '@/api/notifications'
 import { queryKeys } from '@/api/queryKeys'
@@ -43,7 +44,7 @@ export function NotificationBell() {
   const unread = query.data?.filter((notification) => !notification.isRead).length ?? 0
 
   return (
-    <span className={styles.wrapper}>
+    <Link className={styles.wrapper} to="/notifications" aria-label="Notifications">
       <span className={styles.glyph} aria-hidden="true">
         ◔
       </span>
@@ -55,6 +56,6 @@ export function NotificationBell() {
       <span className="visually-hidden">
         {unread === 0 ? 'No unread notifications' : `${unread} unread notifications`}
       </span>
-    </span>
+    </Link>
   )
 }

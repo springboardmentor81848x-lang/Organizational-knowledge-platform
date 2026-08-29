@@ -29,6 +29,15 @@ const TONE_BY_VALUE: Record<string, Tone> = {
   REJECTED: 'neutral',
   // SessionStatus
   SCHEDULED: 'info',
+  // CertificationStatus — a lapsed certificate is a compliance problem, not a neutral fact.
+  // ACTIVE is deliberately absent: it belongs to two vocabularies at once, meaning "ongoing"
+  // for a mentorship and "valid" for a certificate. Rather than let one silently win, the
+  // mentorship reading stays in the map above and callers who mean the other pass a tone.
+  EXPIRING_SOON: 'medium',
+  EXPIRED: 'critical',
+  // AttendanceStatus
+  ATTENDED: 'low',
+  ABSENT: 'high',
 }
 
 export function toneFor(value: string | null | undefined): Tone {
