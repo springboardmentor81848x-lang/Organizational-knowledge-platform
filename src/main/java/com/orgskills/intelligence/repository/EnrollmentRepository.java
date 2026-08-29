@@ -5,6 +5,7 @@ import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByCourseId(Long courseId);
     List<Enrollment> findByEmployeeIdInAndStatus(Collection<Long> employeeIds, EnrollmentStatus status);
     List<Enrollment> findByEmployeeIdAndStatus(Long employeeId, EnrollmentStatus status);
+
+    /** Enrolments still in flight whose target completion date falls in the given window. */
+    List<Enrollment> findByStatusInAndTargetCompletionDateBetween(
+            Collection<EnrollmentStatus> statuses, Instant from, Instant to);
 
     /**
      * Enrolments an employee already holds for a course in any of the given states. A course may be

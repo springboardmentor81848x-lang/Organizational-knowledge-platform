@@ -102,6 +102,7 @@ public class TrainingProgressService {
         enrollment.setCourse(training);
         enrollment.setStatus(EnrollmentStatus.NOT_STARTED);
         enrollment.setProgress(0.0);
+        enrollment.setTargetCompletionDate(request.getTargetCompletionDate());
         Enrollment saved = enrollmentRepository.save(enrollment);
 
         List<LearningMilestone> milestones = createMilestones(saved, training, request.getMilestones());

@@ -68,6 +68,10 @@ public class Enrollment {
     @Column(name = "completion_date")
     private Instant completionDate;
 
+    /** Optional date the employee is expected to finish by; drives the deadline reminder. */
+    @Column(name = "target_completion_date")
+    private Instant targetCompletionDate;
+
     @Column(nullable = false)
     private Instant lastProgressUpdateAt;
 

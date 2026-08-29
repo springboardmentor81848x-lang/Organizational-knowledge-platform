@@ -7,6 +7,7 @@ import com.orgskills.intelligence.dto.recommendation.RecommendationResponse;
 import com.orgskills.intelligence.entity.GapAnalysis;
 import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.TrainingRecommendation;
+import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
@@ -40,6 +41,7 @@ public class RecommendationService {
     private final GapAnalysisRepository gapAnalysisRepository;
     private final TrainingRecommendationRepository recommendationRepository;
     private final RecommendationScoringService recommendationScoringService;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -163,7 +165,31 @@ public class RecommendationService {
             saved.add(recommendationRepository.save(rec));
         }
 
+        notifyNewRecommendations(employee, saved);
         return saved.stream().map(this::toResponse).toList();
+    }
+
+    /**
+     * Tells the employee that fresh recommendations are waiting. One notification per generation
+     * rather than one per row: gaps are recalculated on every assessment, and a notification per
+     * recommended course would bury everything else in the feed.
+     */
+    private void notifyNewRecommendations(User employee, List<TrainingRecommendation> generated) {
+        if (generated.isEmpty()) {
+            return;
+        }
+
+        String skills = generated.stream()
+                .map(rec -> rec.getSkill().getName())
+                .distinct()
+                .limit(3)
+                .collect(Collectors.joining(", "));
+        String message = generated.size() == 1
+                ? "A new training recommendation is available for " + skills + "."
+                : generated.size() + " new training recommendations are available, covering " + skills + ".";
+
+        notificationService.createNotification(employee, "New training recommendations",
+                message, NotificationType.TRAINING_RECOMMENDATION);
     }
 
     @Transactional(readOnly = true)

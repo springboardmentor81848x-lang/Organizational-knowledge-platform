@@ -20,6 +20,9 @@ public class EnrollmentRequest {
     /** Defaults to the caller. Enrolling somebody else requires a manager or L&D role. */
     private Long employeeId;
 
+    /** Optional date the employee is expected to finish by; drives the deadline reminder. */
+    private java.time.Instant targetCompletionDate;
+
     /** Optional; used only when the training has no milestone template of its own. */
     @Valid
     private List<MilestoneDefinitionRequest> milestones;

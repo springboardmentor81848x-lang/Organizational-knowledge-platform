@@ -188,7 +188,7 @@ public class EmployeeController {
     @GetMapping("/notifications")
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
         Long userId = getUserId(authentication);
-        return ResponseEntity.ok(notificationService.getUserNotifications(userId));
+        return ResponseEntity.ok(notificationService.getForUser(userId, userId));
     }
 
     @PutMapping("/notifications/{id}/read")

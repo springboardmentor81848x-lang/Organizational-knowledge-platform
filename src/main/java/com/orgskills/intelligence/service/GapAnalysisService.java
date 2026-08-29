@@ -299,9 +299,8 @@ public class GapAnalysisService {
         gap.setRiskSeverity(severity);
         gap.setMissingSkill(userSkill == null);
 
-        if (severity == RiskSeverity.CRITICAL) {
-            notificationService.createGapAlert(user, roleCompetency.getSkill(), gapScore);
-        }
+        // HIGH and CRITICAL gaps alert the employee; the service decides which severities qualify.
+        notificationService.createGapAlert(user, roleCompetency.getSkill(), gapScore, severity);
         return gap;
     }
 

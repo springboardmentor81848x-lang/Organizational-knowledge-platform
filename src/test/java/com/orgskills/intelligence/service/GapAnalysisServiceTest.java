@@ -129,10 +129,11 @@ class GapAnalysisServiceTest {
         assertThat(dockerGap.getCurrentProficiency()).isEqualTo("NONE");
         assertThat(dockerGap.getRiskSeverity()).isEqualTo(RiskSeverity.HIGH);
 
-        // Verification of database interactions and notifications for CRITICAL risk
+        // Both gaps are announced: the service alerts on HIGH as well as CRITICAL, and decides
+        // for itself which severities warrant interrupting somebody.
         verify(gapAnalysisRepository).deleteByUserId(1L);
-        verify(notificationService).createGapAlert(eq(sampleUser), eq(javaSkill), eq(3.0));
-        verify(notificationService, never()).createGapAlert(eq(sampleUser), eq(dockerSkill), anyDouble());
+        verify(notificationService).createGapAlert(eq(sampleUser), eq(javaSkill), eq(3.0), eq(RiskSeverity.CRITICAL));
+        verify(notificationService).createGapAlert(eq(sampleUser), eq(dockerSkill), eq(2.0), eq(RiskSeverity.HIGH));
     }
 
     @Test

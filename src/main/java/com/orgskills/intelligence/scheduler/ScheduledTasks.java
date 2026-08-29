@@ -9,6 +9,7 @@ import com.orgskills.intelligence.repository.CertificationRepository;
 import com.orgskills.intelligence.repository.GapSnapshotRepository;
 import com.orgskills.intelligence.service.AuditLogService;
 import com.orgskills.intelligence.service.GapAnalysisService;
+import com.orgskills.intelligence.service.NotificationReminderService;
 import com.orgskills.intelligence.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class ScheduledTasks {
     private final NotificationService notificationService;
     private final GapAnalysisService gapAnalysisService;
     private final AuditLogService auditLogService;
+    private final NotificationReminderService notificationReminderService;
 
     // Daily certification expiry check at 1:00 AM
     @Scheduled(cron = "0 0 1 * * ?")
@@ -53,6 +55,24 @@ public class ScheduledTasks {
                 );
                 auditLogService.logEvent(null, "SCHEDULER", "CERTIFICATION_EXPIRING_SOON", "Certification", cert.getId().toString(), "Flagged certification expiring on " + cert.getExpiresAt());
             }
+        }
+    }
+
+    // Daily reminder scans at 6:00 AM, before the working day starts.
+    @Scheduled(cron = "0 0 6 * * ?")
+    public void sendDailyReminders() {
+        log.info("Running scheduled daily reminder scans...");
+        runScan("training deadline", notificationReminderService::sendTrainingDeadlineReminders);
+        runScan("session", notificationReminderService::sendSessionReminders);
+        runScan("assessment due", notificationReminderService::sendAssessmentReminders);
+    }
+
+    /** One failing scan must not stop the others: they are independent reminders. */
+    private void runScan(String name, java.util.function.IntSupplier scan) {
+        try {
+            log.info("Sent {} {} reminder(s).", scan.getAsInt(), name);
+        } catch (Exception ex) {
+            log.error("The {} reminder scan failed: {}", name, ex.getMessage(), ex);
         }
     }
 

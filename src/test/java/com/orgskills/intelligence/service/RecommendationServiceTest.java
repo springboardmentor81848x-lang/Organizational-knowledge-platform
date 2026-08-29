@@ -48,6 +48,9 @@ class RecommendationServiceTest {
     @Mock
     private RecommendationScoringService recommendationScoringService;
 
+    @Mock
+    private NotificationService notificationService;
+
     private RecommendationService recommendationService;
 
     private User sampleEmployee;
@@ -63,6 +66,7 @@ class RecommendationServiceTest {
                 gapAnalysisRepository,
                 recommendationRepository,
                 recommendationScoringService,
+                notificationService,
                 objectMapper
         );
 

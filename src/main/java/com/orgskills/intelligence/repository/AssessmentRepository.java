@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
@@ -16,6 +17,9 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
     List<Assessment> findByAssessorIdOrderByDateDesc(Long assessorId);
 
     List<Assessment> findByEmployeeIdAndStatusOrderByDateDesc(Long employeeId, AssessmentStatus status);
+
+    /** Assessments in a given state due within a window; backs the reminder scan. */
+    List<Assessment> findByStatusAndDateBetween(AssessmentStatus status, Instant from, Instant to);
 
     /**
      * Pending assessments of the same type, by the same assessor, for the same employee, that

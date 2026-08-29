@@ -49,6 +49,15 @@ public class Notification {
     @Column(nullable = false)
     private Boolean isRead = false;
 
+    /**
+     * Identifies the exact thing this notification is about, e.g. {@code enrollment-deadline:42}.
+     * Recurring jobs use it to recognise a reminder they have already sent, so a nightly scan does
+     * not tell somebody about the same deadline every morning until they act on it. Null for
+     * notifications raised once by an event rather than by a repeating scan.
+     */
+    @Column(name = "dedupe_key")
+    private String dedupeKey;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
