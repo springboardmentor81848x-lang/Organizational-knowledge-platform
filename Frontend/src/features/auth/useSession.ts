@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, onSessionExpired } from '@/api/client'
+import { onSessionExpired } from '@/api/client'
+import { authApi } from '@/api/auth'
 import { queryKeys } from '@/api/queryKeys'
+import { decodeJwt, userIdFromClaims } from '@/lib/jwt'
 import { tokenStore } from '@/lib/tokenStore'
-import type { AuthResponse, LoginRequest, UserProfile } from '@/types/api'
+import type { LoginRequest } from '@/types/api'
 
 /**
  * The signed-in user.
@@ -16,15 +18,24 @@ import type { AuthResponse, LoginRequest, UserProfile } from '@/types/api'
 export function useSession() {
   const query = useQuery({
     queryKey: queryKeys.session,
-    queryFn: ({ signal }) => api.get<UserProfile>('/api/auth/me', signal),
+    queryFn: ({ signal }) => authApi.me(signal),
     // Only ask when a token exists; otherwise this is a guaranteed 401 on every page load.
     enabled: tokenStore.hasSession(),
     staleTime: 5 * 60_000,
     retry: false,
   })
 
+  // The role from the token paints role-appropriate navigation on the first frame. The
+  // profile is still the authority: once /api/auth/me resolves, its role wins, so a role
+  // changed since sign-in corrects itself rather than persisting until the token expires.
+  const claims = decodeJwt(tokenStore.getAccessToken())
+  const role = query.data?.role ?? claims?.role ?? null
+
   return {
     user: query.data ?? null,
+    /** Available before the profile loads, decoded from the token. */
+    role,
+    userId: query.data?.id ?? userIdFromClaims(claims),
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
@@ -39,8 +50,7 @@ export function useLogin() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (credentials: LoginRequest) =>
-      api.postUnauthenticated<AuthResponse>('/api/auth/login', credentials),
+    mutationFn: (credentials: LoginRequest) => authApi.login(credentials),
     onSuccess: (auth) => {
       tokenStore.set({ accessToken: auth.accessToken, refreshToken: auth.refreshToken })
       // Seed the session so the shell renders immediately, then let the normal refetch

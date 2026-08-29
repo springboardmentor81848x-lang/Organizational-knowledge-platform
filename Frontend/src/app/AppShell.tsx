@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { useLogout, useSession } from '@/features/auth/useSession'
 import { navigation, roleLabel, visibleNavigation } from './navigation'
 import styles from './AppShell.module.css'
@@ -20,10 +21,10 @@ function currentPageLabel(pathname: string): string {
 }
 
 export function AppShell() {
-  const { user } = useSession()
+  const { user, role } = useSession()
   const logout = useLogout()
   const location = useLocation()
-  const sections = visibleNavigation(user?.role)
+  const sections = visibleNavigation(role ?? undefined)
 
   return (
     <div className={styles.shell}>
@@ -74,6 +75,7 @@ export function AppShell() {
         <header className={styles.topbar}>
           <span className={styles.breadcrumb}>{currentPageLabel(location.pathname)}</span>
           <div className={styles.topbarActions}>
+            <NotificationBell />
             <Button variant="ghost" size="sm" onClick={logout}>
               Sign out
             </Button>
