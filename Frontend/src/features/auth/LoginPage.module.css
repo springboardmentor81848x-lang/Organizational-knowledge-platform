@@ -1,0 +1,140 @@
+.page {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+}
+
+/* On a wide screen the brand panel carries the institutional weight so the form itself can
+   stay small and unfussy. It is dropped entirely on narrow screens rather than shrunk. */
+@media (min-width: 900px) {
+  .page {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+.brand {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--s-12);
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+}
+
+@media (min-width: 900px) {
+  .brand {
+    display: flex;
+  }
+}
+
+.brandMark {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+}
+
+.brandMarkGlyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: var(--fw-bold);
+}
+
+.brandCopy {
+  max-width: 32ch;
+}
+
+.brandTitle {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.015em;
+}
+
+.brandText {
+  margin-top: var(--s-4);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.brandFooter {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.formSide {
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background: var(--c-surface);
+}
+
+.form {
+  width: 100%;
+  max-width: 360px;
+}
+
+.formHeading {
+  font-size: var(--fs-2xl);
+}
+
+.formSub {
+  margin-top: var(--s-2);
+  margin-bottom: var(--s-6);
+  color: var(--c-text-secondary);
+}
+
+.field {
+  margin-bottom: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.input {
+  width: 100%;
+  height: 38px;
+  padding: 0 var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.input:hover {
+  border-color: var(--c-text-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+.submit {
+  margin-top: var(--s-2);
+}
