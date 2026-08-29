@@ -288,7 +288,7 @@ public class GapAnalysisService {
         double target = roleCompetency.getRequiredProficiencyLevel().getScore();
         double current = userSkill == null ? 0.0 : userSkill.getProficiencyLevel().getScore();
         double gapScore = Math.max(0.0, target - current);
-        RiskSeverity severity = classifyRisk(gapScore);
+        RiskSeverity severity = RiskSeverity.fromGapScore(gapScore);
 
         GapAnalysis gap = new GapAnalysis();
         gap.setUser(user);
@@ -312,18 +312,6 @@ public class GapAnalysisService {
         return ProficiencyLevel.fromScore(score).name();
     }
 
-    private RiskSeverity classifyRisk(double gapScore) {
-        if (gapScore >= 3.0) {
-            return RiskSeverity.CRITICAL;
-        }
-        if (gapScore >= 2.0) {
-            return RiskSeverity.HIGH;
-        }
-        if (gapScore >= 1.0) {
-            return RiskSeverity.MEDIUM;
-        }
-        return RiskSeverity.LOW;
-    }
 
     public GapAnalysisResponse toResponse(GapAnalysis gap) {
         boolean missing = Boolean.TRUE.equals(gap.getMissingSkill());

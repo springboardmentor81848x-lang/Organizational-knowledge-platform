@@ -6,7 +6,9 @@ import com.orgskills.intelligence.dto.analytics.ImprovedAfterTraining;
 import com.orgskills.intelligence.dto.analytics.LearningPathSummary;
 import com.orgskills.intelligence.dto.analytics.OrganizationAnalyticsResponse;
 import com.orgskills.intelligence.dto.analytics.RecentAssessmentResultSummary;
+import com.orgskills.intelligence.dto.analytics.SkillGapDepartmentBreakdown;
 import com.orgskills.intelligence.dto.analytics.SkillGapFrequency;
+import com.orgskills.intelligence.dto.analytics.SkillGapReportRow;
 import com.orgskills.intelligence.dto.analytics.TeamAnalyticsResponse;
 import com.orgskills.intelligence.dto.analytics.TrainingProgramUptake;
 import com.orgskills.intelligence.dto.analytics.UpcomingSessionSummary;
@@ -20,10 +22,12 @@ import com.orgskills.intelligence.entity.GapAnalysis;
 import com.orgskills.intelligence.entity.KnowledgeSession;
 import com.orgskills.intelligence.entity.LearningPath;
 import com.orgskills.intelligence.entity.MentorshipMatch;
+import com.orgskills.intelligence.entity.RoleCompetency;
 import com.orgskills.intelligence.entity.SessionRegistration;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.entity.enums.MentorshipStatus;
+import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
@@ -35,6 +39,7 @@ import com.orgskills.intelligence.repository.EnrollmentRepository;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
+import com.orgskills.intelligence.repository.RoleCompetencyRepository;
 import com.orgskills.intelligence.repository.SessionRegistrationRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -83,6 +88,7 @@ public class AnalyticsService {
     private final AchievementRepository achievementRepository;
     private final AssessmentResultRepository assessmentResultRepository;
     private final MentorshipMatchRepository mentorshipMatchRepository;
+    private final RoleCompetencyRepository roleCompetencyRepository;
     private final SessionRegistrationRepository sessionRegistrationRepository;
     private final UserSkillService userSkillService;
     private final GapAnalysisService gapAnalysisService;
@@ -338,10 +344,16 @@ public class AnalyticsService {
                 .orElse(0.0);
 
         List<GapAnalysis> gaps = gapAnalysisRepository.findByUserIdIn(memberIds);
+        List<AssessmentResult> assessed = assessmentResultRepository.findSubmittedResultsForEmployees(memberIds);
 
         return DepartmentAnalyticsResponse.builder()
                 .department(department)
                 .totalEmployees(members.size())
+                .eligibleEmployees(gaps.stream()
+                        .filter(g -> g.getGapScore() != null && g.getGapScore() > 0.0)
+                        .map(g -> g.getUser().getId())
+                        .distinct()
+                        .count())
                 .employeesEnrolled(enrollments.stream().map(e -> e.getEmployee().getId()).distinct().count())
                 .employeesCompleted(enrollments.stream()
                         .filter(this::isFinished)
@@ -350,7 +362,15 @@ public class AnalyticsService {
                         .count())
                 .totalEnrollments((long) enrollments.size())
                 .completedEnrollments(completedEnrollments)
+                .trainingCompletionRatePercent(enrollments.isEmpty()
+                        ? 0.0
+                        : round((completedEnrollments * 100.0) / enrollments.size()))
                 .averageLearningProgressPercent(round(averageProgress))
+                .averageSkillImprovement(round(assessed.stream()
+                        .filter(r -> r.getImprovement() != null)
+                        .mapToInt(AssessmentResult::getImprovement)
+                        .average()
+                        .orElse(0.0)))
                 .criticalSkillGapCount(gaps.stream()
                         .filter(g -> g.getRiskSeverity() == RiskSeverity.CRITICAL)
                         .count())
@@ -385,6 +405,93 @@ public class AnalyticsService {
                 .max(Comparator.comparing(SkillGapFrequency::getAffectedEmployees)
                         .thenComparing(SkillGapFrequency::getAverageGapScore))
                 .orElse(null);
+    }
+
+    // ── Skill gap view ──────────────────────────────────────────────────────────
+
+    /**
+     * Every skill that any role requires, with what is demanded of it, where the workforce
+     * actually sits, and which departments feel the shortfall. Shared by the skill gap report so
+     * the document and the endpoint can never disagree.
+     */
+    @Transactional(readOnly = true)
+    public List<SkillGapReportRow> getSkillGapAnalytics(Long actorId) {
+        User actor = getUser(actorId);
+        if (!ORG_WIDE_ROLES.contains(actor.getRole())) {
+            throw new UnauthorizedException("Skill gap analytics require an HR, L&D or admin role");
+        }
+
+        Map<Long, List<RoleCompetency>> requirementsBySkill = roleCompetencyRepository.findAll().stream()
+                .collect(Collectors.groupingBy(rc -> rc.getSkill().getId()));
+        Map<Long, List<GapAnalysis>> gapsBySkill = gapAnalysisRepository.findAll().stream()
+                .collect(Collectors.groupingBy(g -> g.getSkill().getId()));
+
+        List<SkillGapReportRow> rows = new ArrayList<>();
+        for (Map.Entry<Long, List<RoleCompetency>> entry : requirementsBySkill.entrySet()) {
+            List<RoleCompetency> requirements = entry.getValue();
+            var skill = requirements.get(0).getSkill();
+            List<GapAnalysis> skillGaps = gapsBySkill.getOrDefault(entry.getKey(), List.of());
+
+            double requiredScore = requirements.stream()
+                    .mapToInt(rc -> rc.getRequiredProficiencyLevel().getScore())
+                    .average()
+                    .orElse(0.0);
+            double currentAverage = skillGaps.stream()
+                    .mapToDouble(GapAnalysis::getCurrentScore)
+                    .average()
+                    .orElse(0.0);
+            double averageGap = skillGaps.stream()
+                    .mapToDouble(GapAnalysis::getGapScore)
+                    .average()
+                    .orElse(0.0);
+
+            rows.add(SkillGapReportRow.builder()
+                    .skillId(skill.getId())
+                    .skillName(skill.getName())
+                    .category(skill.getCategory())
+                    .requiredScore(round(requiredScore))
+                    .requiredLevel(ProficiencyLevel.fromScore(requiredScore))
+                    .currentAverageScore(round(currentAverage))
+                    .currentAverageLevel(ProficiencyLevel.fromScore(currentAverage))
+                    .averageGapScore(round(averageGap))
+                    .affectedEmployees(skillGaps.stream()
+                            .filter(g -> g.getGapScore() != null && g.getGapScore() > 0.0)
+                            .map(g -> g.getUser().getId())
+                            .distinct()
+                            .count())
+                    .severity(RiskSeverity.fromGapScore(averageGap))
+                    .departmentBreakdown(departmentBreakdown(skillGaps))
+                    .build());
+        }
+
+        rows.sort(Comparator.comparing(SkillGapReportRow::getAverageGapScore).reversed()
+                .thenComparing(SkillGapReportRow::getSkillName));
+        return rows;
+    }
+
+    private List<SkillGapDepartmentBreakdown> departmentBreakdown(List<GapAnalysis> skillGaps) {
+        Map<String, List<GapAnalysis>> byDepartment = skillGaps.stream()
+                .filter(g -> g.getGapScore() != null && g.getGapScore() > 0.0)
+                .collect(Collectors.groupingBy(
+                        g -> g.getUser().getDepartment() == null ? "Unassigned" : g.getUser().getDepartment(),
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
+        return byDepartment.entrySet().stream()
+                .map(e -> SkillGapDepartmentBreakdown.builder()
+                        .department(e.getKey())
+                        .affectedEmployees(e.getValue().stream()
+                                .map(g -> g.getUser().getId())
+                                .distinct()
+                                .count())
+                        .averageGapScore(round(e.getValue().stream()
+                                .mapToDouble(GapAnalysis::getGapScore)
+                                .average()
+                                .orElse(0.0)))
+                        .build())
+                .sorted(Comparator.comparing(SkillGapDepartmentBreakdown::getAffectedEmployees).reversed()
+                        .thenComparing(SkillGapDepartmentBreakdown::getDepartment))
+                .toList();
     }
 
     // ── Organization dashboard ──────────────────────────────────────────────────

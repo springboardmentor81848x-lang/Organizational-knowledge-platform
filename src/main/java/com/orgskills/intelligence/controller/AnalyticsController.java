@@ -3,6 +3,7 @@ package com.orgskills.intelligence.controller;
 import com.orgskills.intelligence.dto.analytics.DepartmentAnalyticsResponse;
 import com.orgskills.intelligence.dto.analytics.EmployeeAnalyticsResponse;
 import com.orgskills.intelligence.dto.analytics.OrganizationAnalyticsResponse;
+import com.orgskills.intelligence.dto.analytics.SkillGapReportRow;
 import com.orgskills.intelligence.dto.analytics.TeamAnalyticsResponse;
 import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.security.CustomPrincipal;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Read-only analytics dashboards. Every figure is queried live on each request.
@@ -52,6 +55,12 @@ public class AnalyticsController {
             Authentication authentication,
             @PathVariable String deptId) {
         return ResponseEntity.ok(analyticsService.getDepartmentAnalytics(getUserId(authentication), deptId));
+    }
+
+    /** Org-wide gap picture per skill; the same rows the skill gap report is rendered from. */
+    @GetMapping("/skill-gaps")
+    public ResponseEntity<List<SkillGapReportRow>> getSkillGapAnalytics(Authentication authentication) {
+        return ResponseEntity.ok(analyticsService.getSkillGapAnalytics(getUserId(authentication)));
     }
 
     @GetMapping("/organization")
