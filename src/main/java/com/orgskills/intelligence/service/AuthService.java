@@ -17,6 +17,7 @@ import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.RefreshTokenRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import com.orgskills.intelligence.security.CustomPrincipal;
+import com.orgskills.intelligence.security.GoogleIdTokenVerifier;
 import com.orgskills.intelligence.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,6 +43,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuditLogService auditLogService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -142,26 +144,36 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Signs somebody in with a Google identity that Google itself has vouched for.
+     *
+     * <p>The account is resolved from the verified token and never from the request body. It
+     * also signs in existing people only: auto-provisioning on first Google sign-in would let
+     * anyone with a Google account into an internal directory, which is not a decision this
+     * endpoint should be making on its own.
+     */
     @Transactional
     public AuthResponse oauth2GoogleLogin(OAuth2GoogleRequest request) {
-        String email = (request.getEmail() != null && !request.getEmail().isBlank()) 
-                ? request.getEmail().trim().toLowerCase() 
-                : "google_" + UUID.randomUUID().toString().substring(0, 8) + "@oauth.domain";
+        GoogleIdTokenVerifier.GoogleIdentity identity = googleIdTokenVerifier.verify(request.getIdToken());
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
-            User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            newUser.setFullName(request.getFullName() != null ? request.getFullName().trim() : "Google User");
-            newUser.setRole(Role.EMPLOYEE);
-            newUser.setDepartment("Engineering");
-            newUser.setJobTitle("Software Engineer");
-            newUser.setActive(true);
-            return userRepository.save(newUser);
-        });
+        User user = userRepository.findByEmail(identity.email())
+                .orElseThrow(() -> {
+                    auditLogService.logEvent(null, identity.email(), "OAUTH2_LOGIN_REJECTED", "User", "-",
+                            "Google sign-in for an address with no account on this platform");
+                    return new UnauthorizedException(
+                            "No account exists for " + identity.email()
+                                    + ". Ask an administrator to create one before signing in with Google.");
+                });
 
         if (!Boolean.TRUE.equals(user.getActive())) {
             throw new UnauthorizedException("User account is inactive");
+        }
+
+        // Keep the profile picture in step with the identity provider, but nothing else: name,
+        // role and department are administered here, not by Google.
+        if (identity.avatarUrl() != null && !identity.avatarUrl().isBlank()) {
+            user.setAvatarUrl(identity.avatarUrl());
+            userRepository.save(user);
         }
 
         CustomPrincipal principal = new CustomPrincipal(
@@ -175,7 +187,8 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateToken(auth);
         String refreshToken = createRefreshToken(user);
 
-        auditLogService.logEvent(user.getId(), user.getEmail(), "OAUTH2_GOOGLE_LOGIN", "User", user.getId().toString(), "Google OAuth2 login successful");
+        auditLogService.logEvent(user.getId(), user.getEmail(), "OAUTH2_LOGIN", "User",
+                user.getId().toString(), "Signed in with a verified Google identity");
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -184,6 +197,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public UserProfileResponse getCurrentUser(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomPrincipal principal)) {
             throw new UnauthorizedException("Not authenticated");

@@ -37,6 +37,11 @@ app:
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-secure-32-char-minimum-secret}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  oauth2:
+    google:
+      # Google sign-in stays refused until this is set: without a client id there is no
+      # audience to check a token against, and an unverified token proves nothing.
+      client-id: ${GOOGLE_CLIENT_ID:}
   openai:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gemini-3.6-flash}
