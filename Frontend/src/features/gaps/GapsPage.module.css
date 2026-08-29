@@ -1,0 +1,53 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 72ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  flex-wrap: wrap;
+}
+
+.readiness { display: flex; flex-direction: column; }
+
+.readinessValue {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.readinessLabel {
+  margin-top: var(--s-1);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--s-5);
+  margin: 0;
+  flex: 1;
+}
+
+.figure { min-width: 0; }
+.figureLabel { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.figureValue { margin: 2px 0 0; font-size: var(--fs-xl); font-weight: var(--fw-semibold); }
+
+.skillCell { display: flex; flex-direction: column; gap: 1px; }
+.skillName { font-weight: var(--fw-medium); }
+.category { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+.level { font-size: var(--fs-base); }
+
+/* A skill with no record is a different situation from a skill held at a low level, and the
+   table says which rather than showing a zero for both. */
+.missing {
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--c-text-muted);
+}
