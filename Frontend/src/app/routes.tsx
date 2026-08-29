@@ -5,6 +5,10 @@ import { RoleDashboard } from '@/features/dashboards/RoleDashboard'
 import { EmployeeDashboard } from '@/features/dashboards/employee/EmployeeDashboard'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { MySkillsPage } from '@/features/skills/MySkillsPage'
+import { AssessmentsPage } from '@/features/assessments/AssessmentsPage'
+import { GapsPage } from '@/features/gaps/GapsPage'
+import { LearningPage } from '@/features/learning/LearningPage'
+import { RecommendationsPage } from '@/features/learning/RecommendationsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -28,9 +32,6 @@ const DASHBOARD_PATHS = ['team', 'department', 'workforce', 'catalog', 'admin']
 
 /** Screens that will be built in later parts. They show no figures and call nothing. */
 const PLACEHOLDER_PATHS = [
-  { path: 'gaps', label: 'My gaps' },
-  { path: 'learning', label: 'Learning' },
-  { path: 'assessments', label: 'Assessments' },
   { path: 'mentorship', label: 'Mentorship' },
   { path: 'sessions', label: 'Sessions' },
   { path: 'experts', label: 'Expert directory' },
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
       { path: 'me', element: <RequireRole><EmployeeDashboard /></RequireRole> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'skills', element: <MySkillsPage /> },
+      { path: 'gaps', element: <GapsPage /> },
+      { path: 'recommendations', element: <RecommendationsPage /> },
+      { path: 'learning', element: <LearningPage /> },
+      { path: 'assessments', element: <AssessmentsPage /> },
 
       ...DASHBOARD_PATHS.map((path) => ({
         path,

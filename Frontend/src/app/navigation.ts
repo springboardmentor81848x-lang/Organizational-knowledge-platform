@@ -34,6 +34,7 @@ export const navigation: NavSection[] = [
       { label: 'My skills', to: '/skills' },
       { label: 'My profile', to: '/profile' },
       { label: 'My gaps', to: '/gaps' },
+      { label: 'Recommendations', to: '/recommendations' },
       { label: 'Learning', to: '/learning' },
       { label: 'Assessments', to: '/assessments' },
       { label: 'Mentorship', to: '/mentorship' },
