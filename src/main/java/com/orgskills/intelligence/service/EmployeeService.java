@@ -10,18 +10,18 @@ import com.orgskills.intelligence.dto.employee.EmployeeProfileResponse;
 import com.orgskills.intelligence.dto.employee.EnrollmentRequest;
 import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
 import com.orgskills.intelligence.dto.employee.UpdateProgressRequest;
-import com.orgskills.intelligence.dto.employee.MentorMatchResponse;
+import com.orgskills.intelligence.dto.mentorship.MentorshipRequest;
+import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
+import com.orgskills.intelligence.dto.mentorship.RecommendedMentorResponse;
 import com.orgskills.intelligence.entity.Achievement;
 import com.orgskills.intelligence.entity.Certification;
 import com.orgskills.intelligence.entity.EmployeeProfile;
-import com.orgskills.intelligence.entity.MentorshipMatch;
 import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.UserSkill;
 import com.orgskills.intelligence.entity.enums.AchievementType;
 import com.orgskills.intelligence.entity.enums.AssessmentType;
 import com.orgskills.intelligence.entity.enums.CertificationStatus;
-import com.orgskills.intelligence.entity.enums.MentorshipStatus;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
@@ -29,7 +29,6 @@ import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AchievementRepository;
 import com.orgskills.intelligence.repository.CertificationRepository;
 import com.orgskills.intelligence.repository.EmployeeProfileRepository;
-import com.orgskills.intelligence.repository.MentorshipMatchRepository;
 import com.orgskills.intelligence.repository.SkillRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import com.orgskills.intelligence.repository.UserSkillRepository;
@@ -54,11 +53,11 @@ public class EmployeeService {
     private final SkillRepository skillRepository;
     private final AchievementRepository achievementRepository;
     private final CertificationRepository certificationRepository;
-    private final MentorshipMatchRepository mentorshipMatchRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final TrainingProgressService trainingProgressService;
     private final AssessmentService assessmentService;
+    private final MentorshipService mentorshipService;
 
     // ── Profile CRUD ─────────────────────────────────────────────────────────────
 
@@ -185,96 +184,33 @@ public class EmployeeService {
 
     // ── Mentorship ──────────────────────────────────────────────────────────────
 
+    // Mentorship lives in MentorshipService. These self-service endpoints delegate so that both
+    // routes apply the same rules: without this, /api/employee/mentorship/request skipped the
+    // checks /api/mentorships enforces and could create a second ACTIVE mentorship for a skill,
+    // or pair a mentee with a mentor no more skilled than they are.
+
     @Transactional(readOnly = true)
-    public List<MentorMatchResponse> getAvailableMentors(Long userId, Long skillId) {
-        List<UserSkill> highlyProficient = userSkillRepository.findBySkillId(skillId).stream()
-                .filter(us -> !us.getUser().getId().equals(userId))
-                .filter(us -> us.getProficiencyLevel().getScore() >= ProficiencyLevel.ADVANCED.getScore())
-                .toList();
-
-        return highlyProficient.stream().map(us -> MentorMatchResponse.builder()
-                .mentorId(us.getUser().getId())
-                .mentorName(us.getUser().getFullName())
-                .mentorEmail(us.getUser().getEmail())
-                .department(us.getUser().getDepartment())
-                .jobTitle(us.getUser().getJobTitle())
-                .skillId(us.getSkill().getId())
-                .skillName(us.getSkill().getName())
-                .proficiencyLevel(us.getProficiencyLevel())
-                .ratingScore(us.getRatingScore())
-                .build()).toList();
+    public List<RecommendedMentorResponse> getAvailableMentors(Long userId, Long skillId) {
+        return mentorshipService.findRecommendedMentors(userId, skillId);
     }
 
     @Transactional
-    public MentorshipMatch requestMentorship(Long menteeId, Long mentorId, Long targetSkillId) {
-        if (menteeId.equals(mentorId)) {
-            throw new ValidationException("Cannot request mentorship with yourself");
-        }
-
-        User mentee = getUser(menteeId);
-        User mentor = getUser(mentorId);
-        Skill targetSkill = getSkill(targetSkillId);
-
-        MentorshipMatch match = new MentorshipMatch();
-        match.setMentee(mentee);
-        match.setMentor(mentor);
-        match.setTargetSkill(targetSkill);
-        match.setStatus(MentorshipStatus.REQUESTED);
-
-        MentorshipMatch saved = mentorshipMatchRepository.save(match);
-
-        notificationService.createNotification(
-                mentor,
-                "Mentorship Request",
-                mentee.getFullName() + " has requested your mentorship for " + targetSkill.getName(),
-                NotificationType.MENTORSHIP_REQUEST
-        );
-
-        return saved;
+    public MentorshipResponse requestMentorship(Long menteeId, Long mentorId, Long targetSkillId) {
+        MentorshipRequest request = new MentorshipRequest();
+        request.setMenteeId(menteeId);
+        request.setMentorId(mentorId);
+        request.setSkillId(targetSkillId);
+        return mentorshipService.requestMentorship(request);
     }
 
     @Transactional
-    public MentorshipMatch acceptMentorship(Long mentorId, Long matchId) {
-        MentorshipMatch match = mentorshipMatchRepository.findById(matchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mentorship match not found for id: " + matchId));
-
-        if (!match.getMentor().getId().equals(mentorId)) {
-            throw new ValidationException("Access denied. You are not the assigned mentor.");
-        }
-
-        match.setStatus(MentorshipStatus.ACTIVE);
-        MentorshipMatch saved = mentorshipMatchRepository.save(match);
-
-        notificationService.createNotification(
-                match.getMentee(),
-                "Mentorship Request Accepted",
-                match.getMentor().getFullName() + " accepted your mentorship request for " + match.getTargetSkill().getName(),
-                NotificationType.INFO
-        );
-
-        return saved;
+    public MentorshipResponse acceptMentorship(Long mentorId, Long matchId) {
+        return mentorshipService.acceptMentorship(matchId, mentorId);
     }
 
     @Transactional
-    public MentorshipMatch completeMentorship(Long userId, Long matchId) {
-        MentorshipMatch match = mentorshipMatchRepository.findById(matchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mentorship match not found for id: " + matchId));
-
-        if (!match.getMentee().getId().equals(userId) && !match.getMentor().getId().equals(userId)) {
-            throw new ValidationException("Access denied. You are not a participant in this mentorship.");
-        }
-
-        match.setStatus(MentorshipStatus.COMPLETED);
-        MentorshipMatch saved = mentorshipMatchRepository.save(match);
-
-        Achievement achievement = new Achievement();
-        achievement.setEmployee(match.getMentee());
-        achievement.setType(AchievementType.MENTORSHIP_COMPLETED);
-        achievement.setTitle("Mentorship Completed: " + match.getTargetSkill().getName());
-        achievement.setDescription("Completed mentorship with " + match.getMentor().getFullName());
-        achievementRepository.save(achievement);
-
-        return saved;
+    public MentorshipResponse completeMentorship(Long userId, Long matchId) {
+        return mentorshipService.completeMentorship(matchId, userId);
     }
 
     // ── Helper methods ──────────────────────────────────────────────────────────

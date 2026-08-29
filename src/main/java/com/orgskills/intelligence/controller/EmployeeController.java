@@ -8,14 +8,14 @@ import com.orgskills.intelligence.dto.employee.CertificationResponse;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileRequest;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileResponse;
 import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
-import com.orgskills.intelligence.dto.employee.MentorMatchResponse;
+import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
+import com.orgskills.intelligence.dto.mentorship.RecommendedMentorResponse;
 import com.orgskills.intelligence.dto.employee.UpdateProgressRequest;
 import com.orgskills.intelligence.dto.gap.GapAnalysisResponse;
 import com.orgskills.intelligence.dto.ld.LearningPathResponse;
 import com.orgskills.intelligence.dto.notification.NotificationResponse;
 import com.orgskills.intelligence.dto.recommendation.RecommendationResponse;
 import com.orgskills.intelligence.dto.skill.UserSkillResponse;
-import com.orgskills.intelligence.entity.MentorshipMatch;
 import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.security.CustomPrincipal;
 import com.orgskills.intelligence.service.EmployeeService;
@@ -153,7 +153,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/mentors")
-    public ResponseEntity<List<MentorMatchResponse>> getMentors(
+    public ResponseEntity<List<RecommendedMentorResponse>> getMentors(
             Authentication authentication,
             @RequestParam Long skillId) {
         Long userId = getUserId(authentication);
@@ -161,7 +161,7 @@ public class EmployeeController {
     }
 
     @PostMapping("/mentorship/request")
-    public ResponseEntity<MentorshipMatch> requestMentorship(
+    public ResponseEntity<MentorshipResponse> requestMentorship(
             Authentication authentication,
             @RequestParam Long mentorId,
             @RequestParam Long targetSkillId) {
@@ -170,7 +170,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/mentorship/{id}/accept")
-    public ResponseEntity<MentorshipMatch> acceptMentorship(
+    public ResponseEntity<MentorshipResponse> acceptMentorship(
             Authentication authentication,
             @PathVariable Long id) {
         Long userId = getUserId(authentication);
@@ -178,7 +178,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/mentorship/{id}/complete")
-    public ResponseEntity<MentorshipMatch> completeMentorship(
+    public ResponseEntity<MentorshipResponse> completeMentorship(
             Authentication authentication,
             @PathVariable Long id) {
         Long userId = getUserId(authentication);

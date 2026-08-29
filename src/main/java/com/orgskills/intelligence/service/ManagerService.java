@@ -4,7 +4,10 @@ import com.orgskills.intelligence.dto.gap.GapAnalysisResponse;
 import com.orgskills.intelligence.dto.manager.GapHeatmapCell;
 import com.orgskills.intelligence.dto.manager.GapHeatmapResponse;
 import com.orgskills.intelligence.dto.manager.SkillCoverageResponse;
+import com.orgskills.intelligence.dto.employee.EnrollmentRequest;
+import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
 import com.orgskills.intelligence.dto.manager.TeamMemberSummary;
+import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
 import com.orgskills.intelligence.dto.manager.TrainingAdoptionResponse;
 import com.orgskills.intelligence.entity.Assessment;
 import com.orgskills.intelligence.entity.Course;
@@ -54,6 +57,8 @@ public class ManagerService {
     private final MentorshipMatchRepository mentorshipMatchRepository;
     private final SkillRepository skillRepository;
     private final GapAnalysisService gapAnalysisService;
+    private final TrainingProgressService trainingProgressService;
+    private final MentorshipService mentorshipService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
 
@@ -232,75 +237,50 @@ public class ManagerService {
 
     // ── Direct Training / Mentorship Assignments ─────────────────────────────────
 
+    /**
+     * Assigning training is the same act as an employee enrolling themselves, so it goes through
+     * the same service: the duplicate-enrolment check applies, the course milestone template is
+     * copied, and a completed attempt is left alone rather than reopened.
+     */
     @Transactional
-    public Enrollment assignTraining(Long assignedByUserId, Long employeeId, Long courseId) {
+    public EnrollmentResponse assignTraining(Long assignedByUserId, Long employeeId, Long courseId) {
         User assigner = userRepository.findById(assignedByUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assigner user not found for id: " + assignedByUserId));
+
+        EnrollmentRequest request = new EnrollmentRequest(courseId);
+        request.setEmployeeId(employeeId);
+        EnrollmentResponse enrollment = trainingProgressService.enroll(assignedByUserId, request);
+
         User employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found for id: " + employeeId));
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found for id: " + courseId));
-
-        Enrollment enrollment = enrollmentRepository.findFirstByEmployeeIdAndCourseIdOrderByStartDateDesc(employeeId, courseId)
-                .orElseGet(() -> {
-                    Enrollment e = new Enrollment();
-                    e.setEmployee(employee);
-                    e.setCourse(course);
-                    return e;
-                });
-
-        enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
-        Enrollment saved = enrollmentRepository.save(enrollment);
-
         notificationService.createNotification(
                 employee,
                 "Training Course Assigned",
-                assigner.getFullName() + " has assigned you the course: " + course.getTitle(),
+                assigner.getFullName() + " has assigned you the course: " + enrollment.getTrainingTitle(),
                 NotificationType.TRAINING_RECOMMENDATION
         );
 
-        auditLogService.logEvent(assignedByUserId, assigner.getEmail(), "ASSIGN_TRAINING", "Enrollment", saved.getId().toString(), "Assigned course " + course.getTitle() + " to " + employee.getEmail());
-        return saved;
+        auditLogService.logEvent(assignedByUserId, assigner.getEmail(), "ASSIGN_TRAINING", "Enrollment",
+                String.valueOf(enrollment.getEnrollmentId()),
+                "Assigned course " + enrollment.getTrainingTitle() + " to " + employee.getEmail());
+        return enrollment;
     }
 
+    /** Pairing an employee with a mentor runs the mentorship module's pairing rules. */
     @Transactional
-    public MentorshipMatch assignMentorship(Long assignedByUserId, Long employeeId, Long mentorId, Long targetSkillId) {
+    public MentorshipResponse assignMentorship(Long assignedByUserId, Long employeeId, Long mentorId,
+                                               Long targetSkillId) {
         User assigner = userRepository.findById(assignedByUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assigner user not found for id: " + assignedByUserId));
-        User mentee = userRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found for id: " + employeeId));
-        User mentor = userRepository.findById(mentorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mentor not found for id: " + mentorId));
-        var targetSkill = skillRepository.findById(targetSkillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Skill not found for id: " + targetSkillId));
 
-        MentorshipMatch match = new MentorshipMatch();
-        match.setMentee(mentee);
-        match.setMentor(mentor);
-        match.setTargetSkill(targetSkill);
-        match.setStatus(MentorshipStatus.ACTIVE);
+        MentorshipResponse assigned =
+                mentorshipService.assignMentorship(assigner, employeeId, mentorId, targetSkillId);
 
-        MentorshipMatch saved = mentorshipMatchRepository.save(match);
-
-        notificationService.createNotification(
-                mentee,
-                "Mentorship Assigned",
-                assigner.getFullName() + " has paired you with mentor " + mentor.getFullName() + " for " + targetSkill.getName(),
-                NotificationType.MENTORSHIP_REQUEST
-        );
-
-        notificationService.createNotification(
-                mentor,
-                "New Mentee Assigned",
-                assigner.getFullName() + " assigned " + mentee.getFullName() + " to you for mentorship in " + targetSkill.getName(),
-                NotificationType.MENTORSHIP_REQUEST
-        );
-
-        auditLogService.logEvent(assignedByUserId, assigner.getEmail(), "ASSIGN_MENTORSHIP", "MentorshipMatch", saved.getId().toString(), "Assigned mentor " + mentor.getEmail() + " to " + mentee.getEmail());
-        return saved;
+        auditLogService.logEvent(assignedByUserId, assigner.getEmail(), "ASSIGN_MENTORSHIP", "MentorshipMatch",
+                String.valueOf(assigned.getMentorshipId()),
+                "Assigned mentor " + assigned.getMentorName() + " to " + assigned.getMenteeName());
+        return assigned;
     }
-
-    // ── Helper methods ──────────────────────────────────────────────────────────
 
     private TeamMemberSummary buildMemberSummary(User employee) {
         List<UserSkill> userSkills = userSkillRepository.findByUserId(employee.getId());

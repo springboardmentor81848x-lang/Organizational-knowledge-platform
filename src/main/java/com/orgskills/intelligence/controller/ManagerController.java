@@ -6,8 +6,8 @@ import com.orgskills.intelligence.dto.manager.GapHeatmapResponse;
 import com.orgskills.intelligence.dto.manager.SkillCoverageResponse;
 import com.orgskills.intelligence.dto.manager.TeamMemberSummary;
 import com.orgskills.intelligence.dto.manager.TrainingAdoptionResponse;
-import com.orgskills.intelligence.entity.Enrollment;
-import com.orgskills.intelligence.entity.MentorshipMatch;
+import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
+import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.security.CustomPrincipal;
@@ -83,7 +83,7 @@ public class ManagerController {
     }
 
     @PostMapping("/team/{employeeId}/assign-training/{courseId}")
-    public ResponseEntity<Enrollment> assignTraining(
+    public ResponseEntity<EnrollmentResponse> assignTraining(
             Authentication authentication,
             @PathVariable Long employeeId,
             @PathVariable Long courseId) {
@@ -92,7 +92,7 @@ public class ManagerController {
     }
 
     @PostMapping("/team/{employeeId}/assign-mentorship")
-    public ResponseEntity<MentorshipMatch> assignMentorship(
+    public ResponseEntity<MentorshipResponse> assignMentorship(
             Authentication authentication,
             @PathVariable Long employeeId,
             @Valid @RequestBody AssignMentorshipRequest request) {
