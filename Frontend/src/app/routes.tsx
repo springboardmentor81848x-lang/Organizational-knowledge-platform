@@ -12,6 +12,8 @@ import { RecommendationsPage } from '@/features/learning/RecommendationsPage'
 import { MentorshipPage } from '@/features/mentorship/MentorshipPage'
 import { SessionsPage } from '@/features/sessions/SessionsPage'
 import { ExpertDirectoryPage } from '@/features/experts/ExpertDirectoryPage'
+import { NotificationCenterPage } from '@/features/notifications/NotificationCenterPage'
+import { AchievementsPage } from '@/features/achievements/AchievementsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -73,6 +75,8 @@ export const router = createBrowserRouter([
       { path: 'mentorship', element: <MentorshipPage /> },
       { path: 'sessions', element: <SessionsPage /> },
       { path: 'experts', element: <ExpertDirectoryPage /> },
+      { path: 'notifications', element: <NotificationCenterPage /> },
+      { path: 'achievements', element: <AchievementsPage /> },
 
       ...DASHBOARD_PATHS.map((path) => ({
         path,

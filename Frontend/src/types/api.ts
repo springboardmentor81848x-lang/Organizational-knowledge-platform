@@ -72,6 +72,8 @@ export type NotificationType =
   | 'INFO'
   | 'SYSTEM_ALERT'
 
+export type CertificationStatus = 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED'
+
 export type AchievementType =
   | 'COURSE_COMPLETED'
   | 'CERTIFICATION_EARNED'
@@ -436,6 +438,18 @@ export interface Notification {
   type: NotificationType
   isRead: boolean
   createdAt: string
+}
+
+export interface Certification {
+  id: number
+  employeeId: number
+  employeeName: string
+  name: string
+  issuer: string
+  /** Dates only, no time component, as the server sends them. */
+  issuedAt: string
+  expiresAt: string | null
+  status: CertificationStatus
 }
 
 // ── Administration ──────────────────────────────────────────────────────────
