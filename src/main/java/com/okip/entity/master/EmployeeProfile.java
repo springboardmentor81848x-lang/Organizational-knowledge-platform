@@ -54,6 +54,9 @@ public class EmployeeProfile {
     @Column(length = 10)
     private String gender;
 
+    @Column(name = "bio", length = 1000)
+    private String bio;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -142,6 +145,14 @@ public class EmployeeProfile {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 
     public LocalDateTime getCreatedAt() {
