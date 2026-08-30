@@ -90,6 +90,11 @@ export interface UserProfile {
   department: string | null
   jobTitle: string | null
   avatarUrl: string | null
+  /**
+   * Whether the account may be used. Deactivating blocks sign-in and every subsequent request,
+   * including ones carrying a token issued before the change.
+   */
+  active: boolean
 }
 
 export interface AuthResponse {
@@ -245,8 +250,11 @@ export interface LearningPath {
   status: string
   overallProgressPercent: number
   generatedAt: string
+  /** The server's own answer to whether the catalogue can offer anything for this skill. */
   noCoursesAvailable: boolean
   steps: LearningPathStep[]
+  /** The courses making up the path. Sent by the oversight endpoint; absent on some others. */
+  courses?: Course[]
 }
 
 // ── Courses and enrolments ──────────────────────────────────────────────────

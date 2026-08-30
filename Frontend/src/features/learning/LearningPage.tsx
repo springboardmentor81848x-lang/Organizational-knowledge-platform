@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { coursesApi } from '@/api/courses'
+import { catalogApi } from '@/api/catalog'
 import { enrollmentsApi } from '@/api/enrollments'
 import { learningPathsApi } from '@/api/learningPaths'
 import { recommendationsApi } from '@/api/recommendations'
@@ -423,7 +423,7 @@ function CourseCatalog({ employeeId }: { employeeId: number }) {
 
   const catalog = useQuery({
     queryKey: queryKeys.courses.catalog(),
-    queryFn: ({ signal }) => coursesApi.list(signal),
+    queryFn: ({ signal }) => catalogApi.courses(signal),
     retry: false,
   })
 

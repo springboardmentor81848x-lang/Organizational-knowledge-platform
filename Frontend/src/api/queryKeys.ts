@@ -115,6 +115,27 @@ export const queryKeys = {
     skillGaps: () => ['analytics', 'skill-gaps'] as const,
   },
 
+  /** The learning catalogue, as its administrator sees it. */
+  catalog: {
+    all: ['catalog'] as const,
+    courses: () => ['catalog', 'courses'] as const,
+    course: (courseId: number) => ['catalog', 'courses', courseId] as const,
+    participation: (courseId: number) => ['catalog', 'courses', courseId, 'participation'] as const,
+    external: () => ['catalog', 'external'] as const,
+    learningPaths: () => ['catalog', 'learning-paths'] as const,
+    expiringCertifications: () => ['catalog', 'certifications', 'expiring'] as const,
+  },
+
+  admin: {
+    all: ['admin'] as const,
+    users: (department?: string) => ['admin', 'users', department ?? 'all'] as const,
+    user: (userId: number) => ['admin', 'users', userId] as const,
+    roles: () => ['admin', 'roles'] as const,
+    permissions: () => ['admin', 'permissions'] as const,
+    auditLogs: () => ['admin', 'audit-logs'] as const,
+    health: () => ['admin', 'health'] as const,
+  },
+
   achievements: {
     all: ['achievements'] as const,
     forUser: (userId: number) => ['achievements', 'user', userId] as const,

@@ -95,11 +95,18 @@ interface RequestOptions {
   signal?: AbortSignal
   /** Set for endpoints that must not attempt a refresh, such as login itself. */
   skipAuth?: boolean
+  /**
+   * A multipart upload. The body is sent as-is and no Content-Type is set: the browser has to
+   * write that header itself so it carries the multipart boundary.
+   */
+  form?: FormData
 }
 
 async function send(path: string, options: RequestOptions, isRetry = false): Promise<Response> {
   const headers: Record<string, string> = {}
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (options.body !== undefined && options.form === undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
 
   if (!options.skipAuth) {
     const token = tokenStore.getAccessToken()
@@ -111,7 +118,7 @@ async function send(path: string, options: RequestOptions, isRetry = false): Pro
     response = await fetch(`${BASE_URL}${path}`, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.form ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
       signal: options.signal,
     })
   } catch (cause) {
@@ -148,6 +155,10 @@ export const api = {
   patch: <T>(path: string, body?: unknown, signal?: AbortSignal) =>
     request<T>(path, { method: 'PATCH', body, signal }),
   delete: <T>(path: string, signal?: AbortSignal) => request<T>(path, { method: 'DELETE' , signal }),
+
+  /** Multipart upload, for the catalogue import. Carries the bearer token like any other call. */
+  postForm: <T>(path: string, form: FormData, signal?: AbortSignal) =>
+    request<T>(path, { method: 'POST', form, signal }),
 
   /** Login and refresh must not carry a stale bearer token or trigger a refresh loop. */
   postUnauthenticated: <T>(path: string, body?: unknown) =>

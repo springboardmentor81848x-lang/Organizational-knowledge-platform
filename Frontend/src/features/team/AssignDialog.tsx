@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { assessmentsApi } from '@/api/assessments'
-import { coursesApi } from '@/api/courses'
+import { catalogApi } from '@/api/catalog'
 import { expertsApi } from '@/api/experts'
 import { skillsApi } from '@/api/skills'
 import { departmentHeadApi, managerApi } from '@/api/team'
@@ -90,7 +90,7 @@ function AssignTraining({
 
   const courses = useQuery({
     queryKey: queryKeys.courses.catalog(),
-    queryFn: ({ signal }) => coursesApi.list(signal),
+    queryFn: ({ signal }) => catalogApi.courses(signal),
     retry: false,
   })
 
