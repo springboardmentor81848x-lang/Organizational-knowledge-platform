@@ -44,6 +44,7 @@ public class LndAdminService {
     private final CertificationRepository certificationRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final HrIntelligenceService hrIntelligenceService;
 
     // ── Course Catalog CRUD ─────────────────────────────────────────────────────
 
@@ -230,27 +231,17 @@ public class LndAdminService {
                 .build();
     }
 
+    /**
+     * How well a course has worked, measured from real before-and-after assessment levels.
+     *
+     * <p>Delegated to the workforce intelligence service rather than computed again here: this
+     * page and the HR training-effectiveness report answer the same question about the same
+     * course, and two implementations would eventually answer it differently. It previously
+     * returned a fixed 2.0 to 3.25 for every course regardless of whether anyone had taken it.
+     */
     @Transactional(readOnly = true)
     public TrainingEffectivenessResponse getCourseEffectiveness(Long courseId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found for id: " + courseId));
-
-        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
-        long completedCount = enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.COMPLETED).count();
-        double completionRate = enrollments.isEmpty() ? 0.0 : (completedCount * 100.0) / enrollments.size();
-
-        return TrainingEffectivenessResponse.builder()
-                .courseId(course.getId())
-                .courseTitle(course.getTitle())
-                .provider(course.getProvider())
-                .skillName(course.getSkillCovered() != null ? course.getSkillCovered().getName() : "General")
-                .enrolledCount(enrollments.size())
-                .completedCount((int) completedCount)
-                .completionRatePercent(Math.round(completionRate * 100.0) / 100.0)
-                .avgPreCourseSkillLevel(2.0)
-                .avgPostCourseSkillLevel(3.25)
-                .avgSkillImprovement(1.25)
-                .build();
+        return hrIntelligenceService.getCourseEffectiveness(courseId);
     }
 
     // ── Certification Expiry Monitoring & Reminder ──────────────────────────────
