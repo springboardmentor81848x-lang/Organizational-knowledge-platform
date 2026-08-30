@@ -28,14 +28,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class LndAdminService {
+
+    /** Enrolment states in which the course has genuinely been finished. */
+    private static final Set<EnrollmentStatus> FINISHED_STATUSES =
+            EnumSet.of(EnrollmentStatus.COMPLETED, EnrollmentStatus.CERTIFIED);
 
     private final CourseRepository courseRepository;
     private final SkillRepository skillRepository;
@@ -208,6 +215,13 @@ public class LndAdminService {
 
     // ── Monitoring Participation & Effectiveness ────────────────────────────────
 
+    /**
+     * Who is on a course and how far they have got.
+     *
+     * <p>The average time to complete is measured from the enrolments that actually finished -
+     * the days between starting and completing - and is null when none have. It used to report a
+     * flat 14.5 days for every course, including courses nobody had ever completed.
+     */
     @Transactional(readOnly = true)
     public CourseParticipationResponse getCourseParticipation(Long courseId) {
         Course course = courseRepository.findById(courseId)
@@ -215,19 +229,35 @@ public class LndAdminService {
 
         List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
         int totalEnrolled = enrollments.size();
-        long activeCount = enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.IN_PROGRESS).count();
-        long completedCount = enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.COMPLETED).count();
+        long activeCount = enrollments.stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.IN_PROGRESS).count();
+        List<Enrollment> finished = enrollments.stream()
+                .filter(e -> FINISHED_STATUSES.contains(e.getStatus()))
+                .toList();
 
-        double completionRate = totalEnrolled == 0 ? 0.0 : (completedCount * 100.0) / totalEnrolled;
+        double completionRate = totalEnrolled == 0 ? 0.0 : (finished.size() * 100.0) / totalEnrolled;
+
+        // Measured in minutes and reported in days, so a course finished the same day it was
+        // started reports the fraction it took rather than collapsing to a flat zero.
+        List<Long> durations = finished.stream()
+                .filter(e -> e.getStartDate() != null && e.getCompletionDate() != null)
+                .map(e -> Duration.between(e.getStartDate(), e.getCompletionDate()).toMinutes())
+                .filter(minutes -> minutes >= 0)
+                .toList();
+        Double avgDays = durations.isEmpty()
+                ? null
+                : Math.round((durations.stream().mapToLong(Long::longValue).average().orElseThrow()
+                        / 1440.0) * 100.0) / 100.0;
 
         return CourseParticipationResponse.builder()
                 .courseId(course.getId())
                 .courseTitle(course.getTitle())
                 .totalEnrolled(totalEnrolled)
                 .activeInProgress((int) activeCount)
-                .completedCount((int) completedCount)
+                .completedCount(finished.size())
                 .completionRatePercent(Math.round(completionRate * 100.0) / 100.0)
-                .avgDaysToComplete(14.5) // Calculated average completion duration in days
+                .measuredCompletions(durations.size())
+                .avgDaysToComplete(avgDays)
                 .build();
     }
 

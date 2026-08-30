@@ -16,5 +16,9 @@ public class CourseParticipationResponse {
     private Integer activeInProgress;
     private Integer completedCount;
     private Double completionRatePercent;
+    /** Finished enrolments that recorded both a start and a completion date to measure. */
+    private Integer measuredCompletions;
+
+    /** Mean days from starting to finishing. Null until at least one enrolment has finished. */
     private Double avgDaysToComplete;
 }
