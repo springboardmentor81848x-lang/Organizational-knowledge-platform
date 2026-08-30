@@ -18,6 +18,8 @@ import { TeamDashboardPage } from '@/features/team/TeamDashboardPage'
 import { WorkforceLayout } from '@/features/workforce/WorkforceLayout'
 import { GapIntelligencePage } from '@/features/workforce/GapIntelligencePage'
 import { SkillInventoryPage } from '@/features/workforce/SkillInventoryPage'
+import { TrainingEffectivenessPage } from '@/features/workforce/TrainingEffectivenessPage'
+import { GapTrendPage } from '@/features/workforce/GapTrendPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -97,6 +99,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <GapIntelligencePage /> },
           { path: 'inventory', element: <SkillInventoryPage /> },
+          { path: 'effectiveness', element: <TrainingEffectivenessPage /> },
+          { path: 'trends', element: <GapTrendPage /> },
         ],
       },
 
