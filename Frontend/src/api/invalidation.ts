@@ -63,7 +63,19 @@ export function invalidateAfterAssessment(
   ]).then(() => undefined)
 }
 
-/** Enrolling or moving a course along changes progress, achievements and every dashboard. */
+/**
+ * Enrolling or moving a course along.
+ *
+ * Completing one does more on the server than it looks: it writes an achievement, advances the
+ * learning path step, and regenerates the employee's recommendations — a course just finished
+ * should stop being recommended. It also moves every count of training taken, which three
+ * different audiences read from three different endpoints: a manager's adoption figures, HR's
+ * training effectiveness, and the learning administrator's per-course participation.
+ *
+ * Proficiency and gaps are deliberately absent. Finishing a course does not move a skill level
+ * in this platform; only an assessment does. Invalidating the gap list here would send the
+ * screens to refetch numbers that cannot have changed.
+ */
 export function invalidateAfterEnrollmentChange(
   queryClient: QueryClient,
   employeeId: number,
@@ -71,9 +83,16 @@ export function invalidateAfterEnrollmentChange(
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollments.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.forUser(employeeId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.achievements.all }),
+
+    // The other party's view: training adoption, effectiveness and course participation all
+    // count this enrolment.
+    queryClient.invalidateQueries({ queryKey: queryKeys.team.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all }),
   ]).then(() => undefined)
 }
 

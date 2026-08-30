@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { QueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/api/queryKeys'
-import { invalidateAfterAssessment } from '@/api/invalidation'
+import { invalidateAfterAssessment, invalidateAfterEnrollmentChange } from '@/api/invalidation'
 
 /**
  * The half of the Milestone 3 chain that crosses from one person's screen to another's.
@@ -89,4 +89,47 @@ describe('the chain across roles', () => {
     })
   })
 
+  describe('after an enrolment is created or completed', () => {
+    it("drops the manager's training adoption, which counts enrolments and completions", async () => {
+      const adoption = queryKeys.team.adoption('manager')
+      seed(adoption, { totalMembers: 1, completedMembers: 0 })
+
+      await invalidateAfterEnrollmentChange(queryClient, EMPLOYEE_ID)
+
+      expect(isStale(adoption)).toBe(true)
+    })
+
+    it("drops HR's training effectiveness and the L&D course participation", async () => {
+      const effectiveness = queryKeys.hr.trainingEffectiveness()
+      const participation = queryKeys.catalog.participation(1)
+      seed(effectiveness, [{ courseId: 1, completedCount: 0 }])
+      seed(participation, { courseId: 1, completedCount: 0, avgDaysToComplete: null })
+
+      await invalidateAfterEnrollmentChange(queryClient, EMPLOYEE_ID)
+
+      expect(isStale(effectiveness)).toBe(true)
+      expect(isStale(participation)).toBe(true)
+    })
+
+    it('drops the recommendations, which the server regenerates when a course completes', async () => {
+      const key = queryKeys.recommendations.forUser(EMPLOYEE_ID)
+      seed(key, [{ id: 1, courseTitle: 'the course just finished' }])
+
+      await invalidateAfterEnrollmentChange(queryClient, EMPLOYEE_ID)
+
+      expect(isStale(key)).toBe(true)
+    })
+
+    it('leaves unrelated caches alone, so the fix is not just invalidating everything', async () => {
+      const sessions = queryKeys.sessions.list()
+      const roles = queryKeys.admin.roles()
+      seed(sessions, [{ id: 1 }])
+      seed(roles, [{ id: 1, name: 'EMPLOYEE' }])
+
+      await invalidateAfterEnrollmentChange(queryClient, EMPLOYEE_ID)
+
+      expect(isStale(sessions)).toBe(false)
+      expect(isStale(roles)).toBe(false)
+    })
+  })
 })
