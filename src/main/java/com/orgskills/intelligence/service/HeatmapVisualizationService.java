@@ -134,7 +134,11 @@ public class HeatmapVisualizationService {
             double currentScore = gap.getCurrentScore();
             double targetScore = gap.getTargetScore();
             double gapScore = gap.getGapScore();
-            boolean isMissing = currentScore == 0.0;
+            // UNAWARE is a level somebody holds and scores zero, so a zero score is not the
+            // same as having no record of the skill. The analysis says which it is.
+            boolean isMissing = gap.getMissingSkill() != null
+                    ? gap.getMissingSkill()
+                    : currentScore == 0.0;
 
             String skillLevel = determineSkillLevel(currentScore, gapScore);
             String colorCode = getColorCodeForLevel(skillLevel);
