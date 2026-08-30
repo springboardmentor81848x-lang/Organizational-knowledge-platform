@@ -92,6 +92,20 @@ export const queryKeys = {
       ['team', scope, 'member', employeeId] as const,
   },
 
+  /**
+   * Workforce intelligence, at organisation scope. Kept apart from the team keys because they
+   * are answered by different endpoints for a different audience: nothing here narrows to a
+   * caller's own reports, so sharing a cache entry with the team views would be wrong.
+   */
+  hr: {
+    all: ['hr'] as const,
+    gapMatrix: (department?: string) => ['hr', 'gap-matrix', department ?? 'all'] as const,
+    skillInventory: () => ['hr', 'skill-inventory'] as const,
+    trainingEffectiveness: () => ['hr', 'training-effectiveness'] as const,
+    gapTrends: (department?: string) => ['hr', 'gap-trends', department ?? 'all'] as const,
+    employees: (filters: Record<string, unknown>) => ['hr', 'employees', filters] as const,
+  },
+
   analytics: {
     all: ['analytics'] as const,
     employee: (employeeId: number) => ['analytics', 'employee', employeeId] as const,
