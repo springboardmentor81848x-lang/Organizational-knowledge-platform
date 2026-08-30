@@ -143,6 +143,7 @@ class UserSkillScopingIntegrationTest {
 
     private MockHttpServletRequestBuilder authed(MockHttpServletRequestBuilder builder, User user) {
         CustomPrincipal principal = new CustomPrincipal(user.getId(), user.getEmail(), "",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());

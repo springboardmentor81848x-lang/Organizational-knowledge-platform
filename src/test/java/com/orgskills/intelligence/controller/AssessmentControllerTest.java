@@ -235,6 +235,7 @@ class AssessmentControllerTest {
 
     private Authentication principal(Long userId) {
         CustomPrincipal customPrincipal = new CustomPrincipal(userId, "user@orgskills.com", "",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
         return new UsernamePasswordAuthenticationToken(customPrincipal, null, customPrincipal.getAuthorities());
     }

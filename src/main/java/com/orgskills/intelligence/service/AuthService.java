@@ -24,6 +24,7 @@ import com.orgskills.intelligence.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -114,6 +115,17 @@ public class AuthService {
                     .refreshToken(refreshToken)
                     .user(toUserProfile(user))
                     .build();
+        } catch (DisabledException ex) {
+            // The account is deactivated. Spring refuses it inside authenticate() now that the
+            // principal reports the real flag, so this arrives before the check further up and
+            // must produce the same answer: a refusal the caller can read, and a record of it.
+            User deactivated = userRepository.findByEmail(normalizedEmail).orElse(null);
+            auditLogService.logEvent(
+                    deactivated != null ? deactivated.getId() : null, normalizedEmail,
+                    "LOGIN_FAILED", "User",
+                    deactivated != null ? deactivated.getId().toString() : null,
+                    "Deactivated account login attempt");
+            throw new UnauthorizedException("Account is deactivated. Please contact an administrator.");
         } catch (BadCredentialsException ex) {
             auditLogService.logEvent(null, normalizedEmail, "LOGIN_FAILED", "User", null, "Invalid credentials for email: " + normalizedEmail);
             throw new UnauthorizedException("Invalid email or password");
@@ -139,6 +151,7 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
+                Boolean.TRUE.equals(user.getActive()),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
 
@@ -189,6 +202,7 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
+                Boolean.TRUE.equals(user.getActive()),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
         Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
@@ -305,6 +319,7 @@ public class AuthService {
                 .department(user.getDepartment())
                 .jobTitle(user.getJobTitle())
                 .avatarUrl(user.getAvatarUrl())
+                .active(user.getActive())
                 .build();
     }
 }

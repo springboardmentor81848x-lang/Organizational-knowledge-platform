@@ -18,4 +18,7 @@ public class UserProfileResponse {
     private String department;
     private String jobTitle;
     private String avatarUrl;
+
+    /** Whether the account may be used at all. Deactivating blocks sign-in and every request. */
+    private Boolean active;
 }

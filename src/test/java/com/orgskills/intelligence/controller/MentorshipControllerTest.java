@@ -190,6 +190,7 @@ class MentorshipControllerTest {
 
     private Authentication principal(Long userId) {
         CustomPrincipal customPrincipal = new CustomPrincipal(userId, "mentor@corp.com", "n/a",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
         return new UsernamePasswordAuthenticationToken(customPrincipal, "n/a", customPrincipal.getAuthorities());
     }

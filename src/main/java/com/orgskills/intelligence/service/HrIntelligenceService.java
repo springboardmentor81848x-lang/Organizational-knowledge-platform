@@ -324,6 +324,7 @@ public class HrIntelligenceService {
                 .department(user.getDepartment())
                 .jobTitle(user.getJobTitle())
                 .avatarUrl(user.getAvatarUrl())
+                .active(user.getActive())
                 .build();
     }
 }
