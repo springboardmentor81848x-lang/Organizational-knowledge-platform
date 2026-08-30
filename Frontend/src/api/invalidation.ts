@@ -18,10 +18,14 @@ import { queryKeys } from './queryKeys'
  * Anything derived from one employee's proficiency: their gaps, what is recommended to them,
  * their learning paths and every dashboard that counts them.
  *
- * The analytics invalidation is deliberately broad. A manager's team dashboard and a
- * department's totals both include this employee, and the client has no way of knowing which
- * manager or which department without asking — so it drops every analytics view rather than
- * leaving somebody else's screen wrong.
+ * The last three are deliberately broad, and they are the ones that were missing. A manager's
+ * team heatmap, a department head's, and HR's organisation-wide view all contain this employee,
+ * and the client cannot know which manager or which department without asking. Dropping the
+ * whole branch is the only way to be sure somebody else's screen is not left showing a gap that
+ * has since closed — which it would do silently, rendering perfectly and simply being wrong.
+ *
+ * They are separate branches because they are answered by separate endpoints for separate
+ * audiences: ['analytics'] does not contain ['team'], and neither contains ['hr'].
  */
 export function invalidateEmployeeSkillGraph(queryClient: QueryClient, employeeId: number): Promise<void> {
   return Promise.all([
@@ -31,6 +35,11 @@ export function invalidateEmployeeSkillGraph(queryClient: QueryClient, employeeI
     queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
+
+    // The other party's view. A manager's team dashboard and heatmap, a department head's, and
+    // the organisation-wide workforce screens are all built from this employee's gaps.
+    queryClient.invalidateQueries({ queryKey: queryKeys.team.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }),
   ]).then(() => undefined)
 }
 
@@ -50,7 +59,7 @@ export function invalidateAfterAssessment(
   return Promise.all([
     invalidateEmployeeSkillGraph(queryClient, employeeId),
     queryClient.invalidateQueries({ queryKey: queryKeys.assessments.all }),
-    queryClient.invalidateQueries({ queryKey: ['achievements'] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.achievements.all }),
   ]).then(() => undefined)
 }
 
@@ -64,7 +73,7 @@ export function invalidateAfterEnrollmentChange(
     queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
-    queryClient.invalidateQueries({ queryKey: ['achievements'] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.achievements.all }),
   ]).then(() => undefined)
 }
 
