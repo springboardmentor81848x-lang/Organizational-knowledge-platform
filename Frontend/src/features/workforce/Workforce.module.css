@@ -1,0 +1,168 @@
+.section { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.sectionHeader { max-width: 72ch; }
+.sectionTitle { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.sectionSubtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+/* ── Section tabs ──────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  margin-bottom: calc(var(--s-1) * -1);
+}
+
+.tab {
+  padding: var(--s-2) var(--s-4);
+  border-bottom: 2px solid transparent;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  margin-bottom: -1px;
+  text-decoration: none;
+}
+
+.tab:hover { color: var(--c-text); }
+.tabActive, .tabActive:hover { color: var(--c-accent); border-bottom-color: var(--c-accent); }
+
+/* ── Figures ───────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--s-5);
+  margin: 0;
+}
+
+.statLabel { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.statValue {
+  display: flex; align-items: baseline; gap: 3px;
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.statSuffix { font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text-secondary); }
+
+/* Severity ink for a figure that counts serious things. Always beside its own label. */
+.critical { color: var(--c-critical); }
+.high { color: var(--c-high); }
+
+/* ── Table cells ───────────────────────────────────────────────────────── */
+
+.twoLine { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.primaryText { font-weight: var(--fw-medium); }
+.secondaryText { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+/* A blank cell and a measured zero must not look alike. */
+.muted { font-size: var(--fs-sm); font-style: italic; color: var(--c-text-muted); }
+
+.levelCell { display: flex; align-items: center; gap: var(--s-3); }
+.levelScore { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.movement { display: flex; align-items: baseline; gap: var(--s-2); font-family: var(--font-mono); font-size: var(--fs-base); }
+.arrow { color: var(--c-text-muted); font-family: var(--font-sans); }
+
+.delta { font-family: var(--font-mono); font-weight: var(--fw-semibold); }
+.deltaUp { color: var(--c-low); }
+.deltaDown { color: var(--c-critical); }
+.deltaFlat { color: var(--c-text-secondary); }
+
+.barCell { display: flex; align-items: center; gap: var(--s-2); }
+
+.barTrack {
+  flex: 1;
+  min-width: 48px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  overflow: hidden;
+}
+
+.barFill { height: 100%; background: var(--c-accent); border-radius: var(--radius-pill); }
+.barValue { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-secondary); min-width: 38px; text-align: right; }
+
+/* ── Controls ──────────────────────────────────────────────────────────── */
+
+.filters { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+/* One filter row above everything it scopes, rather than a control per card. */
+.filterRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.inlineField { display: flex; align-items: center; gap: var(--s-2); }
+.field { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.fieldLabel { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-secondary); white-space: nowrap; }
+
+.input, .select {
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  min-width: 160px;
+}
+
+.input:focus-visible, .select:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--c-border-focus); }
+
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toggleButton {
+  padding: var(--s-2) var(--s-4);
+  border: none;
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+}
+
+.toggleButton + .toggleButton { border-left: 1px solid var(--c-border-strong); }
+.toggleActive { background: var(--c-accent-subtle); color: var(--c-accent); }
+
+.formGrid { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* ── Prose ─────────────────────────────────────────────────────────────── */
+
+.scopeNote {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  background: var(--c-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+
+.summary { margin-bottom: var(--s-4); font-size: var(--fs-md); color: var(--c-text-secondary); max-width: 80ch; }
+.footnote { margin-top: var(--s-4); font-size: var(--fs-sm); color: var(--c-text-muted); max-width: 88ch; line-height: var(--lh-normal); }
+.dialogNote { margin-top: var(--s-4); font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+
+/* ── Small multiples ───────────────────────────────────────────────────── */
+
+.smallMultiples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--s-6);
+}
