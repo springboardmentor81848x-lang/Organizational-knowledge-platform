@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RoleSelectPage } from '@/features/auth/RoleSelectPage'
-import { RoleDashboard } from '@/features/dashboards/RoleDashboard'
 import { EmployeeDashboard } from '@/features/dashboards/employee/EmployeeDashboard'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { MySkillsPage } from '@/features/skills/MySkillsPage'
@@ -22,9 +21,15 @@ import { TrainingEffectivenessPage } from '@/features/workforce/TrainingEffectiv
 import { GapTrendPage } from '@/features/workforce/GapTrendPage'
 import { PeopleAdminPage } from '@/features/workforce/PeopleAdminPage'
 import { ReportsPage } from '@/features/reports/ReportsPage'
+import { CatalogLayout } from '@/features/catalog/CatalogLayout'
+import { CoursesPage } from '@/features/catalog/CoursesPage'
+import { ImportPage } from '@/features/catalog/ImportPage'
+import { LearningPathsPage } from '@/features/catalog/LearningPathsPage'
+import { CertificationRenewalsPage } from '@/features/catalog/CertificationRenewalsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
+import { RoleDashboard } from '@/features/dashboards/RoleDashboard'
 import { RoleHomeRedirect } from './RoleHomeRedirect'
 
 /**
@@ -36,12 +41,10 @@ import { RoleHomeRedirect } from './RoleHomeRedirect'
  *
  * The dashboards are reached by the role's own path — /me, /team, /department, /workforce,
  * /catalog, /admin — so each role has a URL of its own and landing on somebody else's is a
- * thing that can be attempted, and refused.
+ * thing that can be attempted, and refused. Every one of them now has a real screen over its
+ * own scoped endpoints.
  */
 
-// /me, /team, /department and /workforce have their own screens over their own scoped
-// endpoints; the rest share the role dashboard until their part is built.
-const DASHBOARD_PATHS = ['catalog', 'admin']
 
 export const router = createBrowserRouter([
   {
@@ -105,14 +108,32 @@ export const router = createBrowserRouter([
 
       { path: 'reports', element: <RequireRole><ReportsPage /></RequireRole> },
 
-      ...DASHBOARD_PATHS.map((path) => ({
-        path,
+      // Learning operations and platform administration, each nested so every view has its own
+      // URL and the whole section inherits one role check rather than repeating it per view.
+      {
+        path: 'catalog',
+        element: (
+          <RequireRole>
+            <CatalogLayout />
+          </RequireRole>
+        ),
+        children: [
+          { index: true, element: <CoursesPage /> },
+          { path: 'import', element: <ImportPage /> },
+          { path: 'paths', element: <LearningPathsPage /> },
+          { path: 'certifications', element: <CertificationRenewalsPage /> },
+        ],
+      },
+
+      // Administration keeps the generic role dashboard until its own screens are built.
+      {
+        path: 'admin',
         element: (
           <RequireRole>
             <RoleDashboard />
           </RequireRole>
         ),
-      })),
+      },
 
       { path: '*', element: <RoleHomeRedirect /> },
     ],
