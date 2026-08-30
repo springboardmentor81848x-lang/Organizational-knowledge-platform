@@ -1,6 +1,7 @@
 package com.orgskills.intelligence.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orgskills.intelligence.dto.ld.CatalogImportResult;
 import com.orgskills.intelligence.dto.ld.ExternalCourseDTO;
 import com.orgskills.intelligence.dto.ld.ExternalCourseResponse;
 import com.orgskills.intelligence.entity.Course;
@@ -102,10 +103,14 @@ class ExternalCatalogServiceTest {
             return c;
         });
 
-        List<ExternalCourseResponse> responses = externalCatalogService.importFromProvider("Coursera", "Spring Boot");
+        CatalogImportResult result = externalCatalogService.importFromProvider("Coursera", "Spring Boot");
 
-        assertThat(responses).hasSize(1);
-        ExternalCourseResponse res = responses.get(0);
+        assertThat(result.getRowsRead()).isEqualTo(1);
+        assertThat(result.getCreated()).isEqualTo(1);
+        assertThat(result.getSkipped()).isZero();
+        assertThat(result.getProviderError()).isNull();
+        assertThat(result.getCourses()).hasSize(1);
+        ExternalCourseResponse res = result.getCourses().get(0);
         assertThat(res.getTitle()).isEqualTo("Spring Boot Microservices");
         assertThat(res.getProvider()).isEqualTo("Coursera");
         assertThat(res.getDifficulty()).isEqualTo("INTERMEDIATE");
@@ -147,10 +152,13 @@ class ExternalCatalogServiceTest {
             return c;
         });
 
-        List<ExternalCourseResponse> responses = externalCatalogService.importFromFile(file);
+        CatalogImportResult result = externalCatalogService.importFromFile(file);
 
-        assertThat(responses).hasSize(1);
-        ExternalCourseResponse res = responses.get(0);
+        assertThat(result.getRowsRead()).isEqualTo(1);
+        assertThat(result.getCreated()).isEqualTo(1);
+        assertThat(result.getSkipped()).isZero();
+        assertThat(result.getCourses()).hasSize(1);
+        ExternalCourseResponse res = result.getCourses().get(0);
         assertThat(res.getTitle()).isEqualTo("Advanced Spring Boot");
         assertThat(res.getProvider()).isEqualTo("Infosys Springboard");
         assertThat(res.getDifficulty()).isEqualTo("ADVANCED");
@@ -194,10 +202,13 @@ class ExternalCatalogServiceTest {
             return c;
         });
 
-        List<ExternalCourseResponse> responses = externalCatalogService.importFromFile(file);
+        CatalogImportResult result = externalCatalogService.importFromFile(file);
 
-        assertThat(responses).hasSize(1);
-        ExternalCourseResponse res = responses.get(0);
+        assertThat(result.getRowsRead()).isEqualTo(1);
+        assertThat(result.getCreated()).isEqualTo(1);
+        assertThat(result.getSkipped()).isZero();
+        assertThat(result.getCourses()).hasSize(1);
+        ExternalCourseResponse res = result.getCourses().get(0);
         assertThat(res.getTitle()).isEqualTo("React Deep Dive");
         assertThat(res.getProvider()).isEqualTo("Udemy");
         assertThat(res.getDifficulty()).isEqualTo("ADVANCED");

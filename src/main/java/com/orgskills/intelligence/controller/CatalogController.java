@@ -1,5 +1,6 @@
 package com.orgskills.intelligence.controller;
 
+import com.orgskills.intelligence.dto.ld.CatalogImportResult;
 import com.orgskills.intelligence.dto.ld.ExternalCourseResponse;
 import com.orgskills.intelligence.service.ExternalCatalogService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * The external course catalogue and the imports that fill it.
+ *
+ * <p>Both import endpoints answer with what the import actually did - rows read, created,
+ * updated, and each row that was rejected with its reason - rather than with a list of whatever
+ * happened to succeed.
+ */
 @RestController
 @RequestMapping("/api/catalog")
 @RequiredArgsConstructor
@@ -26,19 +34,19 @@ public class CatalogController {
 
     @PostMapping("/import/provider/{providerName}")
     @PreAuthorize("hasAnyRole('LND_ADMIN', 'SYSTEM_ADMIN', 'ADMIN')")
-    public ResponseEntity<List<ExternalCourseResponse>> importFromProvider(
+    public ResponseEntity<CatalogImportResult> importFromProvider(
             @PathVariable String providerName,
             @RequestParam(required = false, defaultValue = "") String skill) {
-        List<ExternalCourseResponse> imported = externalCatalogService.importFromProvider(providerName, skill);
-        return ResponseEntity.status(HttpStatus.CREATED).body(imported);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(externalCatalogService.importFromProvider(providerName, skill));
     }
 
     @PostMapping(value = "/import/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('LND_ADMIN', 'SYSTEM_ADMIN', 'ADMIN')")
-    public ResponseEntity<List<ExternalCourseResponse>> importFromFile(
+    public ResponseEntity<CatalogImportResult> importFromFile(
             @RequestParam("file") MultipartFile file) {
-        List<ExternalCourseResponse> imported = externalCatalogService.importFromFile(file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(imported);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(externalCatalogService.importFromFile(file));
     }
 
     @GetMapping("/external")
