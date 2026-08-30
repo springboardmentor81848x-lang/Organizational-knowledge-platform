@@ -21,11 +21,11 @@ import { SkillInventoryPage } from '@/features/workforce/SkillInventoryPage'
 import { TrainingEffectivenessPage } from '@/features/workforce/TrainingEffectivenessPage'
 import { GapTrendPage } from '@/features/workforce/GapTrendPage'
 import { PeopleAdminPage } from '@/features/workforce/PeopleAdminPage'
+import { ReportsPage } from '@/features/reports/ReportsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
 import { RoleHomeRedirect } from './RoleHomeRedirect'
-import { PlaceholderPage } from './PlaceholderPage'
 
 /**
  * The route table.
@@ -42,9 +42,6 @@ import { PlaceholderPage } from './PlaceholderPage'
 // /me, /team, /department and /workforce have their own screens over their own scoped
 // endpoints; the rest share the role dashboard until their part is built.
 const DASHBOARD_PATHS = ['catalog', 'admin']
-
-/** Screens that will be built in later parts. They show no figures and call nothing. */
-const PLACEHOLDER_PATHS = [{ path: 'reports', label: 'Reports' }]
 
 export const router = createBrowserRouter([
   {
@@ -106,20 +103,13 @@ export const router = createBrowserRouter([
         ],
       },
 
+      { path: 'reports', element: <RequireRole><ReportsPage /></RequireRole> },
+
       ...DASHBOARD_PATHS.map((path) => ({
         path,
         element: (
           <RequireRole>
             <RoleDashboard />
-          </RequireRole>
-        ),
-      })),
-
-      ...PLACEHOLDER_PATHS.map(({ path, label }) => ({
-        path,
-        element: (
-          <RequireRole>
-            <PlaceholderPage title={label} />
           </RequireRole>
         ),
       })),

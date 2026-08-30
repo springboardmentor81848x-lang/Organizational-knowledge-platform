@@ -61,7 +61,13 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'Workforce', to: '/workforce', roles: PEOPLE_ROLES },
       { label: 'Course catalog', to: '/catalog', roles: LEARNING_ROLES },
-      { label: 'Reports', to: '/reports', roles: [...PEOPLE_ROLES, ...MANAGER_ROLES] },
+      // Everyone the reports route admits gets the link. A role that can open a page by
+      // typing its URL should not have to: the two lists are the same list.
+      {
+        label: 'Reports',
+        to: '/reports',
+        roles: [...PEOPLE_ROLES, ...MANAGER_ROLES, ...DEPARTMENT_ROLES, ...LEARNING_ROLES],
+      },
       { label: 'Administration', to: '/admin', roles: ADMIN_ROLES },
     ],
   },

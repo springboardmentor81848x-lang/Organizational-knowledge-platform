@@ -1,0 +1,33 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.header { max-width: 76ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.controlRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+}
+
+.field { display: flex; flex-direction: column; gap: var(--s-2); min-width: 260px; flex: 1; }
+.fieldLabel { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-secondary); }
+
+.select {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: var(--fs-base);
+}
+
+.select:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--c-border-focus); }
+
+.actions { display: flex; gap: var(--s-2); }
+
+.note { font-size: var(--fs-sm); color: var(--c-text-secondary); max-width: 62ch; margin: 0; }
