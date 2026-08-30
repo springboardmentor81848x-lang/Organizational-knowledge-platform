@@ -4,6 +4,7 @@ import com.orgskills.intelligence.dto.auth.UserProfileResponse;
 import com.orgskills.intelligence.dto.hr.GapTrendPoint;
 import com.orgskills.intelligence.dto.hr.SkillInventoryResponse;
 import com.orgskills.intelligence.dto.hr.TrainingEffectivenessResponse;
+import com.orgskills.intelligence.dto.heatmap.HeatmapMatrixResponse;
 import com.orgskills.intelligence.dto.manager.GapHeatmapResponse;
 import com.orgskills.intelligence.entity.AssessmentResult;
 import com.orgskills.intelligence.entity.Course;
@@ -56,6 +57,7 @@ public class HrIntelligenceService {
     private final GapSnapshotRepository gapSnapshotRepository;
     private final AssessmentResultRepository assessmentResultRepository;
     private final ManagerService managerService;
+    private final HeatmapVisualizationService heatmapVisualizationService;
     private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
@@ -71,6 +73,29 @@ public class HrIntelligenceService {
             scopeName = "ORGANIZATION_WIDE";
         }
         return managerService.getGapHeatmap(users, "ORGANIZATION", scopeName);
+    }
+
+    /**
+     * The person-by-skill matrix at organisation scope, in the same shape the manager and
+     * department views are served in, so one component renders all three and a HIGH gap is the
+     * same colour wherever it is seen.
+     *
+     * <p>Scope comes from the caller reaching this endpoint at all — it sits behind the HR roles.
+     * The optional department narrows a view the caller already holds organisation-wide; it never
+     * grants one, which is why a manager cannot obtain another team's matrix by naming it.
+     */
+    @Transactional(readOnly = true)
+    public HeatmapMatrixResponse getOrgGapMatrix(String department, String category) {
+        boolean narrowed = department != null && !department.isBlank();
+        List<User> users = narrowed
+                ? userRepository.findByDepartmentIgnoreCase(department.trim())
+                : userRepository.findAll();
+
+        return heatmapVisualizationService.buildMatrixForUsers(
+                users,
+                narrowed ? "DEPARTMENT" : "ORGANIZATION",
+                narrowed ? department.trim() : "Whole organisation",
+                category);
     }
 
     @Transactional(readOnly = true)

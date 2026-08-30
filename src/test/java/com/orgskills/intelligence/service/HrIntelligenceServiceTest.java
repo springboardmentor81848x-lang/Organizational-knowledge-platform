@@ -71,6 +71,9 @@ class HrIntelligenceServiceTest {
     private ManagerService managerService;
 
     @Mock
+    private HeatmapVisualizationService heatmapVisualizationService;
+
+    @Mock
     private AuditLogService auditLogService;
 
     @InjectMocks
