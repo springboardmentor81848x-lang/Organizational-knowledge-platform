@@ -1,0 +1,193 @@
+.section { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.sectionHeader { max-width: 72ch; }
+.sectionTitle { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.sectionSubtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  margin-bottom: calc(var(--s-1) * -1);
+}
+
+.tab {
+  padding: var(--s-2) var(--s-4);
+  border-bottom: 2px solid transparent;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  margin-bottom: -1px;
+  text-decoration: none;
+}
+
+.tab:hover { color: var(--c-text); }
+.tabActive, .tabActive:hover { color: var(--c-accent); border-bottom-color: var(--c-accent); }
+
+/* ── Figures ───────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--s-5);
+  margin: 0;
+}
+
+.reachGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-5);
+  margin: 0;
+}
+
+.statLabel { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.statValue {
+  display: flex; align-items: baseline; gap: 4px;
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.statSuffix { font-size: var(--fs-sm); font-weight: var(--fw-regular); color: var(--c-text-muted); }
+.bad { color: var(--c-critical); }
+
+/* ── Cells ─────────────────────────────────────────────────────────────── */
+
+.twoLine { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.primaryText { font-weight: var(--fw-medium); }
+.secondaryText { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.muted { font-size: var(--fs-sm); font-style: italic; color: var(--c-text-muted); }
+
+/* Status carries its own word; the colour only reinforces it. */
+.statusActive { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-low); }
+.statusInactive { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-critical); }
+
+.timestamp { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.action { font-size: var(--fs-sm); font-weight: var(--fw-medium); text-transform: capitalize; }
+.auth { color: var(--c-text-secondary); }
+.refused { color: var(--c-critical); }
+.access { color: var(--c-high); }
+.change { color: var(--c-text-secondary); }
+.plain { color: var(--c-text-secondary); }
+
+.endpoint { font-family: var(--font-mono); font-size: var(--fs-sm); }
+
+.method {
+  display: inline-block;
+  min-width: 46px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-accent);
+}
+
+.roleChips { display: flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
+
+.chip {
+  display: inline-block;
+  padding: 1px var(--s-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  font-size: var(--fs-xs);
+  color: var(--c-text-secondary);
+  white-space: nowrap;
+}
+
+.selfNote { font-size: var(--fs-xs); font-style: italic; color: var(--c-text-muted); }
+
+.rawRule {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  background: var(--c-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  color: var(--c-text-secondary);
+}
+
+/* ── Controls ──────────────────────────────────────────────────────────── */
+
+.filters { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+.controlRow { display: flex; align-items: flex-end; gap: var(--s-4); flex-wrap: wrap; }
+
+.field { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; flex: 1; }
+.fieldLabel { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-secondary); }
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  min-width: 160px;
+}
+
+.textarea { resize: vertical; }
+
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--c-border-focus);
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-base);
+  color: var(--c-text-secondary);
+}
+
+.formGrid { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* ── Dialog sections and prose ─────────────────────────────────────────── */
+
+.dialogSection { margin-bottom: var(--s-5); }
+.dialogSection:last-child { margin-bottom: 0; }
+
+.subheading {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--s-3);
+}
+
+.dialogNote {
+  margin-top: var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+  max-width: 76ch;
+}
+
+/* ── Health ────────────────────────────────────────────────────────────── */
+
+.healthRow { display: flex; align-items: center; gap: var(--s-4); }
+
+.healthLamp {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  flex: none;
+}
+
+.lampUp { background: var(--c-low); box-shadow: 0 0 0 4px var(--c-low-bg); }
+.lampDown { background: var(--c-critical); box-shadow: 0 0 0 4px var(--c-critical-bg); }
+
+.healthStatus {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+}

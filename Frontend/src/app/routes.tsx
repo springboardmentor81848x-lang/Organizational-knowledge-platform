@@ -26,10 +26,14 @@ import { CoursesPage } from '@/features/catalog/CoursesPage'
 import { ImportPage } from '@/features/catalog/ImportPage'
 import { LearningPathsPage } from '@/features/catalog/LearningPathsPage'
 import { CertificationRenewalsPage } from '@/features/catalog/CertificationRenewalsPage'
+import { AdminLayout } from '@/features/admin/AdminLayout'
+import { UsersPage } from '@/features/admin/UsersPage'
+import { RolesPage } from '@/features/admin/RolesPage'
+import { AuditLogPage } from '@/features/admin/AuditLogPage'
+import { SystemHealthPage } from '@/features/admin/SystemHealthPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
-import { RoleDashboard } from '@/features/dashboards/RoleDashboard'
 import { RoleHomeRedirect } from './RoleHomeRedirect'
 
 /**
@@ -125,14 +129,19 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Administration keeps the generic role dashboard until its own screens are built.
       {
         path: 'admin',
         element: (
           <RequireRole>
-            <RoleDashboard />
+            <AdminLayout />
           </RequireRole>
         ),
+        children: [
+          { index: true, element: <UsersPage /> },
+          { path: 'roles', element: <RolesPage /> },
+          { path: 'audit', element: <AuditLogPage /> },
+          { path: 'health', element: <SystemHealthPage /> },
+        ],
       },
 
       { path: '*', element: <RoleHomeRedirect /> },
