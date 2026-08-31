@@ -264,15 +264,6 @@ function Sidebar({ role }) {
               <LayoutDashboard size={20} />
               Mentor Dashboard
             </NavLink>
-
-            <NavLink
-              to="/training-management"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training Management
-            </NavLink>
-
             <NavLink
               to="/training-catalog"
               className={navLinkClass}
