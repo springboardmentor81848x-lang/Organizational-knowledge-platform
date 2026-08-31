@@ -21,6 +21,7 @@ import {
   Activity,
   FileText,
   PieChart,
+  MessageSquare,
 } from "lucide-react";
 
 function Sidebar({ role }) {
@@ -384,11 +385,19 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/mentorship"
+              to="/peer-mentoring"
               className={navLinkClass}
             >
               <Users size={20} />
-              Mentorship
+              Peer Mentoring
+            </NavLink>
+
+            <NavLink
+              to="/messages"
+              className={navLinkClass}
+            >
+              <MessageSquare size={20} />
+              Messages / Chat
             </NavLink>
 
             <NavLink

@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import {
+  Users,
+  MessageSquare,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Award,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Send,
+  RefreshCw,
+  Search
+} from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
@@ -23,16 +38,21 @@ const levelColors = {
 };
 
 function Mentorship() {
+  const navigate = useNavigate();
+
   // =========================================================
   // STATE
   // =========================================================
 
+  const [activeTab, setActiveTab] = useState("active-chats"); // "active-chats" | "requests" | "recommendations" | "all"
   const [recommendations, setRecommendations] = useState([]);
-  const [mentorships, setMentorships] = useState([]);
+  const [sentMentorships, setSentMentorships] = useState([]);
+  const [receivedMentorships, setReceivedMentorships] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [mentorshipLoading, setMentorshipLoading] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
 
   const [selectedMentor, setSelectedMentor] = useState(null);
 
@@ -45,6 +65,7 @@ function Mentorship() {
   // =========================================================
 
   const employeeId = localStorage.getItem("employeeId");
+  const currentRole = localStorage.getItem("role") || localStorage.getItem("userRole") || "EMPLOYEE";
 
   // =========================================================
   // AXIOS HEADERS
@@ -65,10 +86,7 @@ function Mentorship() {
   // =========================================================
 
   const loadRecommendations = async () => {
-    if (!employeeId) {
-      setError("Employee ID not found. Please login again.");
-      return;
-    }
+    if (!employeeId) return;
 
     try {
       setLoading(true);
@@ -78,163 +96,109 @@ function Mentorship() {
         `${API_BASE_URL}/mentor-allocations/employee/${employeeId}`,
         getHeaders()
       );
-      console.log("Mentor recommendations:", response.data);
 
-      setRecommendations(
-        Array.isArray(response.data) ? response.data : []
-      );
+      setRecommendations(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      console.error(
-        "Failed to load mentor recommendations:",
-        err
-      );
-
-      setError(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Unable to load mentor recommendations."
-      );
+      console.error("Failed to load mentor recommendations:", err);
     } finally {
       setLoading(false);
     }
   };
 
   // =========================================================
-  // LOAD MY MENTORSHIPS
+  // LOAD MENTORSHIPS (Both as mentee and as mentor)
   // =========================================================
 
   const loadMentorships = async () => {
-    if (!employeeId) {
-      return;
-    }
+    if (!employeeId) return;
 
     try {
       setMentorshipLoading(true);
 
-      const response = await axios.get(
-        `${API_BASE_URL}/mentorships/employee/${employeeId}`,
-        getHeaders()
-      );
+      const [sentRes, receivedRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/mentorships/employee/${employeeId}`, getHeaders()).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE_URL}/mentorships/mentor/${employeeId}`, getHeaders()).catch(() => ({ data: [] })),
+      ]);
 
-      console.log("My mentorships:", response.data);
-
-      setMentorships(
-        Array.isArray(response.data) ? response.data : []
-      );
+      setSentMentorships(Array.isArray(sentRes.data) ? sentRes.data : []);
+      setReceivedMentorships(Array.isArray(receivedRes.data) ? receivedRes.data : []);
     } catch (err) {
-      console.error(
-        "Failed to load mentorships:",
-        err
-      );
-
-      setError(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Unable to load your mentorships."
-      );
+      console.error("Failed to load mentorships:", err);
+      setError(err.response?.data?.message || err.response?.data || "Unable to load your mentorships.");
     } finally {
       setMentorshipLoading(false);
     }
   };
 
-  // =========================================================
-  // INITIAL LOAD
-  // =========================================================
-
   useEffect(() => {
     loadRecommendations();
     loadMentorships();
-  }, []);
+  }, [employeeId]);
 
   // =========================================================
-  // OPEN REQUEST FORM
+  // ACCEPT / REJECT MENTORSHIP REQUESTS (for Employee B)
   // =========================================================
 
-  const openRequestForm = (mentor) => {
-    console.log("Selected mentor:", mentor);
+  const handleAcceptRequest = async (mentorshipId) => {
+    try {
+      setProcessingId(mentorshipId);
+      setError("");
+      setMessage("");
 
-    if (!mentor.skillId) {
-      setError(
-        `Skill ID is missing for ${mentor.firstName || ""} ${
-          mentor.lastName || ""
-        }.`
-      );
-      return;
+      await axios.put(`${API_BASE_URL}/mentorships/${mentorshipId}/accept`, null, getHeaders());
+
+      setMessage("Peer mentorship request accepted! You can now start chatting.");
+      await loadMentorships();
+      setActiveTab("active-chats");
+    } catch (err) {
+      console.error("Failed to accept mentorship:", err);
+      setError(err.response?.data?.message || err.response?.data || "Failed to accept mentorship request.");
+    } finally {
+      setProcessingId(null);
     }
-
-    setSelectedMentor(mentor);
-    setGoal("");
-    setMessage("");
-    setError("");
   };
 
-  // =========================================================
-  // CLOSE REQUEST FORM
-  // =========================================================
+  const handleRejectRequest = async (mentorshipId) => {
+    try {
+      setProcessingId(mentorshipId);
+      setError("");
+      setMessage("");
 
-  const closeRequestForm = () => {
-    if (requesting) {
-      return;
+      await axios.put(`${API_BASE_URL}/mentorships/${mentorshipId}/reject`, null, getHeaders());
+
+      setMessage("Mentorship request rejected.");
+      await loadMentorships();
+    } catch (err) {
+      console.error("Failed to reject mentorship:", err);
+      setError(err.response?.data?.message || err.response?.data || "Failed to reject mentorship request.");
+    } finally {
+      setProcessingId(null);
     }
-
-    setSelectedMentor(null);
-    setGoal("");
-    setMessage("");
-    setError("");
   };
 
   // =========================================================
   // SEND MENTORSHIP REQUEST
   // =========================================================
 
+  const openRequestForm = (mentor) => {
+    if (!mentor.skillId) {
+      setError(`Skill ID is missing for ${mentor.firstName || ""} ${mentor.lastName || ""}.`);
+      return;
+    }
+    setSelectedMentor(mentor);
+    setGoal("");
+    setMessage("");
+    setError("");
+  };
+
+  const closeRequestForm = () => {
+    if (requesting) return;
+    setSelectedMentor(null);
+    setGoal("");
+  };
+
   const sendMentorshipRequest = async () => {
-    if (!selectedMentor) {
-      return;
-    }
-
-    // -------------------------------------------------------
-    // Employee ID
-    // -------------------------------------------------------
-
-    if (!employeeId) {
-      setError(
-        "Employee ID not found. Please login again."
-      );
-      return;
-    }
-
-    // -------------------------------------------------------
-    // Goal
-    // -------------------------------------------------------
-
-    if (!goal.trim()) {
-      setError(
-        "Please enter your mentorship goal."
-      );
-      return;
-    }
-
-    // -------------------------------------------------------
-    // Mentor ID
-    // -------------------------------------------------------
-
-    if (!selectedMentor.employeeId) {
-      setError(
-        "Mentor employee ID is missing. Please refresh the page."
-      );
-      return;
-    }
-
-    // -------------------------------------------------------
-    // Skill ID
-    // -------------------------------------------------------
-
-    if (!selectedMentor.skillId) {
-      setError(
-        "Skill information is missing for this mentor. Please refresh the page."
-      );
-      return;
-    }
+    if (!selectedMentor || !employeeId || !goal.trim()) return;
 
     try {
       setRequesting(true);
@@ -242,721 +206,712 @@ function Mentorship() {
       setMessage("");
 
       const params = new URLSearchParams();
+      params.append("menteeIdentifier", employeeId);
+      params.append("mentorIdentifier", selectedMentor.employeeId);
+      params.append("skillId", String(selectedMentor.skillId));
+      params.append("goal", goal.trim());
 
-      params.append(
-        "menteeIdentifier",
-        employeeId
-      );
+      await axios.post(`${API_BASE_URL}/mentorships?${params.toString()}`, null, getHeaders());
 
-      params.append(
-        "mentorIdentifier",
-        selectedMentor.employeeId
-      );
-
-      // Important:
-      // This prevents mentorship.skill_id from being NULL.
-      params.append(
-        "skillId",
-        String(selectedMentor.skillId)
-      );
-
-      params.append(
-        "goal",
-        goal.trim()
-      );
-
-      console.log(
-        "Sending mentorship request:",
-        {
-          menteeIdentifier: employeeId,
-          mentorIdentifier:
-            selectedMentor.employeeId,
-          skillId:
-            selectedMentor.skillId,
-          skillName:
-            selectedMentor.skillName,
-          goal: goal.trim(),
-        }
-      );
-
-      const response = await axios.post(
-        `${API_BASE_URL}/mentorships?${params.toString()}`,
-        null,
-        getHeaders()
-      );
-
-      console.log(
-        "Mentorship created:",
-        response.data
-      );
-
-      setMessage(
-        `Mentorship request sent successfully to ${
-          selectedMentor.firstName || ""
-        } ${selectedMentor.lastName || ""}.`
-      );
-
+      setMessage(`Mentorship request sent successfully to ${selectedMentor.firstName || ""} ${selectedMentor.lastName || ""}!`);
       setSelectedMentor(null);
       setGoal("");
-
       await loadMentorships();
+      setActiveTab("requests");
     } catch (err) {
-      console.error(
-        "Failed to send mentorship request:",
-        err
-      );
-
-      console.error(
-        "Backend response:",
-        err.response?.data
-      );
-
-      setError(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to send mentorship request."
-      );
+      console.error("Failed to send mentorship request:", err);
+      setError(err.response?.data?.message || err.response?.data || "Failed to send mentorship request.");
     } finally {
       setRequesting(false);
     }
   };
 
   // =========================================================
-  // STATUS STYLE
+  // ACTIVE CHATS LIST (Combined Accepted / Active mentorships)
   // =========================================================
 
-  const getStatusStyle = (status) => {
-    switch (status?.toUpperCase()) {
-      case "REQUESTED":
-        return "bg-yellow-100 text-yellow-700";
+  const activeChatsList = React.useMemo(() => {
+    const combined = [...sentMentorships, ...receivedMentorships];
+    const unique = new Map();
 
-      case "ACCEPTED":
-        return "bg-blue-100 text-blue-700";
+    combined.forEach((item) => {
+      const status = item.status?.toUpperCase();
+      if ((status === "ACCEPTED" || status === "ACTIVE") && !unique.has(item.id)) {
+        unique.set(item.id, item);
+      }
+    });
 
-      case "ACTIVE":
-        return "bg-green-100 text-green-700";
+    return Array.from(unique.values());
+  }, [sentMentorships, receivedMentorships]);
 
-      case "COMPLETED":
-        return "bg-purple-100 text-purple-700";
+  // Pending incoming requests (where current user is the mentor)
+  const pendingIncomingRequests = React.useMemo(() => {
+    return receivedMentorships.filter((m) => m.status?.toUpperCase() === "REQUESTED");
+  }, [receivedMentorships]);
 
-      case "REJECTED":
-        return "bg-red-100 text-red-700";
+  // Pending outgoing requests (where current user requested someone else)
+  const pendingSentRequests = React.useMemo(() => {
+    return sentMentorships.filter((m) => m.status?.toUpperCase() === "REQUESTED");
+  }, [sentMentorships]);
 
-      case "CANCELLED":
-        return "bg-gray-100 text-gray-700";
-
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  // =========================================================
-  // LEVEL NAME
-  // =========================================================
-
-  const getLevelName = (level) => {
-    return (
-      levelNames[level] ||
-      `Level ${level || 0}`
-    );
-  };
-
-  // =========================================================
-  // LEVEL COLOR
-  // =========================================================
-
-  const getLevelColor = (level) => {
-    return (
-      levelColors[level] ||
-      "bg-gray-100 text-gray-700"
-    );
-  };
-
-  // =========================================================
-  // FILTER MENTORSHIPS
-  // =========================================================
-
-  const requestedMentorships =
-    mentorships.filter(
-      (item) =>
-        item.status?.toUpperCase() ===
-        "REQUESTED"
-    );
-
-  const acceptedMentorships =
-    mentorships.filter(
-      (item) =>
-        item.status?.toUpperCase() ===
-        "ACCEPTED"
-    );
-
-  const activeMentorships =
-    mentorships.filter(
-      (item) =>
-        item.status?.toUpperCase() ===
-        "ACTIVE"
-    );
-
-  const rejectedMentorships =
-    mentorships.filter(
-      (item) =>
-        item.status?.toUpperCase() ===
-        "REJECTED"
-    );
-
-  const completedMentorships =
-    mentorships.filter(
-      (item) =>
-        item.status?.toUpperCase() ===
-        "COMPLETED"
-    );
-
-  // =========================================================
-  // MENTORSHIP CARD
-  // =========================================================
-
-  const MentorshipCard = ({ mentorship }) => {
-    const mentor = mentorship.mentor;
-    const skill = mentorship.skill;
-
-    return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-        {/* MENTOR HEADER */}
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
-              {mentor?.firstName?.charAt(0) || ""}
-              {mentor?.lastName?.charAt(0) || ""}
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-gray-800">
-                {mentor?.firstName || ""}{" "}
-                {mentor?.lastName || ""}
-              </h3>
-
-              <p className="text-sm text-gray-500">
-                {mentor?.designation ||
-                  "Mentor"}
-              </p>
-            </div>
-          </div>
-
-          {/* STATUS */}
-
-          <span
-            className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(
-              mentorship.status
-            )}`}
-          >
-            {mentorship.status}
-          </span>
-        </div>
-
-        {/* DETAILS */}
-
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-lg bg-blue-50 p-3">
-            <p className="text-xs text-blue-600">
-              Skill
-            </p>
-
-            <p className="mt-1 font-semibold text-gray-800">
-              {skill?.skillName ||
-                "Not specified"}
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">
-              Request Date
-            </p>
-
-            <p className="mt-1 font-semibold text-gray-800">
-              {mentorship.startDate ||
-                mentorship.createdAt ||
-                "Not available"}
-            </p>
-          </div>
-        </div>
-
-        {/* GOAL */}
-
-        {mentorship.goal && (
-          <div className="mt-4">
-            <p className="text-xs font-medium text-gray-500">
-              Mentorship Goal
-            </p>
-
-            <p className="mt-1 text-sm text-gray-700">
-              {mentorship.goal}
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // =========================================================
-  // EMPTY STATE
-  // =========================================================
-
-  const EmptyState = ({ message }) => (
-    <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-      <p className="text-sm text-gray-500">
-        {message}
-      </p>
-    </div>
-  );
-
-  // =========================================================
-  // MAIN UI
-  // =========================================================
+  const allRecords = React.useMemo(() => {
+    const combined = [...sentMentorships, ...receivedMentorships];
+    const unique = new Map();
+    combined.forEach((item) => {
+      if (!unique.has(item.id)) unique.set(item.id, item);
+    });
+    return Array.from(unique.values());
+  }, [sentMentorships, receivedMentorships]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* =====================================================
-          EMPLOYEE SIDEBAR
-      ====================================================== */}
+    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+      <Sidebar role={currentRole} />
 
-      <Sidebar role="EMPLOYEE" />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Navbar title="Peer Mentoring" />
 
-      {/* =====================================================
-          MAIN CONTENT
-      ====================================================== */}
-
-      <div className="flex-1 min-w-0">
-        {/* ===================================================
-            NAVBAR
-        ==================================================== */}
-
-        <Navbar title="Mentorship" />
-
-        {/* ===================================================
-            PAGE CONTENT
-        ==================================================== */}
-
-        <main className="p-8">
-          {/* =================================================
-              HEADER
-          ================================================= */}
-
-          
-
-          {/* =================================================
-              SUCCESS MESSAGE
-          ================================================= */}
-
-          {message && (
-            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
-              {message}
-            </div>
-          )}
-
-          {/* =================================================
-              ERROR MESSAGE
-          ================================================= */}
-
-          {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-              {error}
-            </div>
-          )}
-
-          {/* =================================================
-              1. RECOMMENDED MENTORS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  1. Recommended Mentors
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Mentors recommended based on your
-                  current skill gaps.
+        <main className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+          {/* Header Banner */}
+          <div className="rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-100 text-xs font-semibold backdrop-blur-sm border border-white/20">
+                  <Sparkles size={14} className="text-yellow-300" />
+                  Employee-to-Employee Peer Mentorship & Messaging
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight">Peer Mentoring</h1>
+                <p className="text-blue-100 text-sm md:text-base leading-relaxed">
+                  Connect with internal experts, accept mentoring requests from colleagues, and exchange knowledge through direct messaging.
                 </p>
               </div>
 
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate("/expert-directory")}
+                  className="px-4 py-2.5 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2"
+                >
+                  <Search size={15} />
+                  Find in Expert Directory
+                </button>
+                <button
+                  onClick={() => navigate("/messages")}
+                  className="px-4 py-2.5 bg-blue-500/30 hover:bg-blue-500/50 text-white font-bold text-xs rounded-xl border border-white/30 backdrop-blur-sm transition flex items-center gap-2"
+                >
+                  <MessageSquare size={15} />
+                  Open Messenger
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback Messages */}
+          {message && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+                <span>{message}</span>
+              </div>
+              <button onClick={() => setMessage("")} className="font-bold text-emerald-600">✕</button>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <XCircle size={18} className="text-red-600 shrink-0" />
+                <span>{error}</span>
+              </div>
+              <button onClick={() => setError("")} className="font-bold text-red-600">✕</button>
+            </div>
+          )}
+
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              {/* Tab 1: Active Chats */}
               <button
-                onClick={loadRecommendations}
-                disabled={loading}
-                className="w-fit rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => setActiveTab("active-chats")}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 ${
+                  activeTab === "active-chats"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
               >
-                {loading
-                  ? "Refreshing..."
-                  : "Refresh"}
+                <MessageSquare size={16} />
+                <span>Active Chats</span>
+                <span className={`px-2 py-0.5 text-[11px] rounded-full ${
+                  activeTab === "active-chats" ? "bg-blue-800 text-white" : "bg-slate-200 text-slate-700"
+                }`}>
+                  {activeChatsList.length}
+                </span>
+              </button>
+
+              {/* Tab 2: Requests */}
+              <button
+                onClick={() => setActiveTab("requests")}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 ${
+                  activeTab === "requests"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <Clock size={16} />
+                <span>Requests</span>
+                {pendingIncomingRequests.length > 0 && (
+                  <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-amber-500 text-white animate-pulse">
+                    {pendingIncomingRequests.length} New
+                  </span>
+                )}
+              </button>
+
+              {/* Tab 3: Recommended Mentors */}
+              <button
+                onClick={() => setActiveTab("recommendations")}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 ${
+                  activeTab === "recommendations"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <Award size={16} />
+                <span>Recommended Mentors</span>
+                <span className={`px-2 py-0.5 text-[11px] rounded-full ${
+                  activeTab === "recommendations" ? "bg-blue-800 text-white" : "bg-slate-200 text-slate-700"
+                }`}>
+                  {recommendations.length}
+                </span>
+              </button>
+
+              {/* Tab 4: All Records */}
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 ${
+                  activeTab === "all"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <Users size={16} />
+                <span>All Mentorships</span>
               </button>
             </div>
 
-            {loading ? (
-              <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-                <p className="text-gray-500">
-                  Loading mentor recommendations...
-                </p>
-              </div>
-            ) : recommendations.length === 0 ? (
-              <EmptyState message="No mentor recommendations available for your current skill gaps." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {recommendations.map(
-                  (mentor, index) => (
-                    <div
-                      key={`${mentor.id}-${mentor.skillId}-${index}`}
-                      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    >
-                      {/* AVATAR + NAME */}
+            <button
+              onClick={() => {
+                loadMentorships();
+                loadRecommendations();
+              }}
+              disabled={mentorshipLoading}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+            >
+              <RefreshCw size={12} className={mentorshipLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-                          {mentor.firstName?.charAt(
-                            0
-                          ) || ""}
-                          {mentor.lastName?.charAt(
-                            0
-                          ) || ""}
+          {/* ========================================================
+              TAB 1: ACTIVE CHATS (Java Mentoring, etc.)
+          ======================================================== */}
+          {activeTab === "active-chats" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>Active Peer Mentorship Chats</span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+                      Messaging Enabled
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Peer mentorships accepted by both parties. Click <strong>[Open Chat]</strong> to send messages.
+                  </p>
+                </div>
+              </div>
+
+              {mentorshipLoading ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+                  <RefreshCw className="mx-auto text-blue-600 animate-spin mb-3" size={32} />
+                  <p className="text-sm text-slate-600">Loading active mentoring chats...</p>
+                </div>
+              ) : activeChatsList.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-sm space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                    <MessageSquare size={28} />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-800">No Active Chats Yet</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Active chats appear once a mentorship request is accepted. You can find experts in the Expert Directory or check your pending requests.
+                  </p>
+                  <div className="flex justify-center gap-3 pt-2">
+                    <button
+                      onClick={() => navigate("/expert-directory")}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition"
+                    >
+                      Browse Expert Directory
+                    </button>
+                    {pendingIncomingRequests.length > 0 && (
+                      <button
+                        onClick={() => setActiveTab("requests")}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition"
+                      >
+                        Review Pending Requests ({pendingIncomingRequests.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {activeChatsList.map((m) => {
+                    const isMentor =
+                      String(m.mentor?.employeeId) === String(employeeId) ||
+                      String(m.mentor?.id) === String(localStorage.getItem("userId"));
+
+                    const mentorName = `${m.mentor?.firstName || ""} ${m.mentor?.lastName || ""}`.trim() || "Mentor";
+                    const menteeName = `${m.mentee?.firstName || ""} ${m.mentee?.lastName || ""}`.trim() || "Mentee";
+                    const skillName = m.skill?.skillName || "Peer Mentoring";
+
+                    return (
+                      <div
+                        key={m.id}
+                        className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                      >
+                        {/* Topic Header: e.g. Java Mentoring */}
+                        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <h3 className="font-bold text-slate-900 text-base">
+                                {skillName} Mentoring
+                              </h3>
+                            </div>
+                            <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                              <ShieldCheck size={12} /> Accepted Peer Relationship
+                            </span>
+                          </div>
+
+                          <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {m.status}
+                          </span>
                         </div>
 
-                        <div className="min-w-0">
-                          <h3 className="truncate font-semibold text-gray-800">
-                            {mentor.firstName}{" "}
-                            {mentor.lastName}
-                          </h3>
+                        {/* Participants (e.g. Rahul Sharma & Priya Reddy) */}
+                        <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100 space-y-2 text-xs">
+                          {/* Mentor */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                                {mentorName.charAt(0)}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-800 block leading-tight">{mentorName}</span>
+                                <span className="text-[10px] text-slate-400">Mentor • {m.mentor?.designation || "Expert"}</span>
+                              </div>
+                            </div>
+                            {isMentor && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                You
+                              </span>
+                            )}
+                          </div>
 
-                          <p className="truncate text-xs text-gray-500">
-                            {mentor.designation ||
-                              "Mentor"}
-                          </p>
+                          {/* Mentee */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/50">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs">
+                                {menteeName.charAt(0)}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-800 block leading-tight">{menteeName}</span>
+                                <span className="text-[10px] text-slate-400">Mentee • {m.mentee?.designation || "Learner"}</span>
+                              </div>
+                            </div>
+                            {!isMentor && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                You
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Goal snippet */}
+                        {m.goal && (
+                          <div className="text-xs text-slate-600 bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/60 italic line-clamp-2">
+                            "{m.goal}"
+                          </div>
+                        )}
+
+                        {/* Open Chat Action */}
+                        <button
+                          onClick={() => navigate(`/messages?mentorshipId=${m.id}`)}
+                          className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
+                        >
+                          <MessageSquare size={14} />
+                          <span>Open Chat</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 2: REQUESTS (Incoming & Sent)
+          ======================================================== */}
+          {activeTab === "requests" && (
+            <div className="space-y-8">
+              {/* 1. INCOMING REQUESTS (Where current employee is requested as mentor) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <span>Incoming Mentorship Requests</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {pendingIncomingRequests.length} Pending
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Peers who found your expertise in the directory and requested your mentorship.
+                    </p>
+                  </div>
+                </div>
+
+                {pendingIncomingRequests.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs">
+                    No pending incoming mentorship requests at this time.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {pendingIncomingRequests.map((req) => {
+                      const menteeName = `${req.mentee?.firstName || ""} ${req.mentee?.lastName || ""}`.trim() || "Peer Colleague";
+                      const isProcessing = processingId === req.id;
+
+                      return (
+                        <div
+                          key={req.id}
+                          className="bg-white rounded-2xl border-2 border-amber-200/70 p-5 shadow-sm space-y-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold flex items-center justify-center shadow-sm text-sm">
+                                {menteeName.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-900 text-sm">{menteeName}</h4>
+                                <p className="text-xs text-slate-500">{req.mentee?.designation || "Colleague"} • {req.mentee?.department?.departmentName || "Engineering"}</p>
+                              </div>
+                            </div>
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              Requested
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-1.5">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-medium">Requested Skill:</span>
+                              <span className="font-bold text-slate-900">{req.skill?.skillName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-medium">Date Requested:</span>
+                              <span className="text-slate-600">{req.startDate || "Recent"}</span>
+                            </div>
+                            {req.goal && (
+                              <div className="pt-1.5 border-t border-slate-200">
+                                <span className="text-slate-400 block font-medium mb-0.5">Mentee's Goal:</span>
+                                <p className="text-slate-700 italic">"{req.goal}"</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons: Accept & Reject */}
+                          <div className="flex items-center gap-3 pt-1">
+                            <button
+                              onClick={() => handleRejectRequest(req.id)}
+                              disabled={isProcessing}
+                              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                            >
+                              <XCircle size={14} className="text-slate-500" />
+                              <span>Decline</span>
+                            </button>
+                            <button
+                              onClick={() => handleAcceptRequest(req.id)}
+                              disabled={isProcessing}
+                              className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                            >
+                              {isProcessing ? (
+                                <RefreshCw size={14} className="animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle size={14} />
+                                  <span>Accept & Start Chat</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. SENT REQUESTS (Where current employee requested another peer) */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Sent Mentorship Requests</h3>
+                    <p className="text-xs text-slate-500">
+                      Requests you sent to internal experts from the Expert Directory.
+                    </p>
+                  </div>
+                </div>
+
+                {pendingSentRequests.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs">
+                    No pending sent mentorship requests.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {pendingSentRequests.map((req) => {
+                      const mentorName = `${req.mentor?.firstName || ""} ${req.mentor?.lastName || ""}`.trim() || "Expert";
+                      return (
+                        <div
+                          key={req.id}
+                          className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm">
+                                {mentorName.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-900 text-sm">{mentorName}</h4>
+                                <p className="text-xs text-slate-500">{req.mentor?.designation || "Expert Mentor"}</p>
+                              </div>
+                            </div>
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              Pending Acceptance
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-medium">Skill:</span>
+                              <span className="font-semibold text-slate-800">{req.skill?.skillName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-medium">Request Date:</span>
+                              <span className="text-slate-600">{req.startDate || "Recent"}</span>
+                            </div>
+                            {req.goal && (
+                              <div className="pt-1 text-slate-600 italic">
+                                "{req.goal}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 3: RECOMMENDED MENTORS
+          ======================================================== */}
+          {activeTab === "recommendations" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Recommended Mentors for Your Skill Gaps</h2>
+                  <p className="text-xs text-slate-500">
+                    Colleagues with advanced proficiency in topics you are currently targeting.
+                  </p>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                  <RefreshCw className="mx-auto text-blue-600 animate-spin mb-3" size={32} />
+                  <p className="text-sm text-slate-600">Loading recommendations...</p>
+                </div>
+              ) : recommendations.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+                  <p className="text-sm text-slate-500">No mentor recommendations available for your current skill gaps.</p>
+                  <button
+                    onClick={() => navigate("/expert-directory")}
+                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold"
+                  >
+                    Search Expert Directory
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {recommendations.map((mentor, index) => (
+                    <div
+                      key={`${mentor.id}-${mentor.skillId}-${index}`}
+                      className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm shrink-0">
+                          {mentor.firstName?.charAt(0) || "M"}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 text-xs truncate">
+                            {mentor.firstName} {mentor.lastName}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 truncate">{mentor.designation || "Mentor"}</p>
                         </div>
                       </div>
 
-                      {/* SKILL */}
-
-                      <div className="mt-4 rounded-lg bg-blue-50 p-3">
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-blue-600">
-                          Skill
-                        </p>
-
-                        <p className="mt-1 truncate text-sm font-semibold text-gray-800">
-                          {mentor.skillName ||
-                            "Skill"}
-                        </p>
-
-                        <span
-                          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ${getLevelColor(
-                            mentor.skillLevel
-                          )}`}
-                        >
-                          {getLevelName(
-                            mentor.skillLevel
-                          )}
+                      <div className="bg-blue-50 p-2.5 rounded-xl text-xs">
+                        <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block">Skill</span>
+                        <span className="font-semibold text-slate-900 block truncate mt-0.5">{mentor.skillName}</span>
+                        <span className={`mt-1.5 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${levelColors[mentor.skillLevel] || ""}`}>
+                          {levelNames[mentor.skillLevel] || `Level ${mentor.skillLevel}`}
                         </span>
                       </div>
 
-                      {/* REQUEST BUTTON */}
-
                       <button
-                        onClick={() =>
-                          openRequestForm(
-                            mentor
-                          )
-                        }
+                        onClick={() => openRequestForm(mentor)}
                         disabled={!mentor.skillId}
-                        className="mt-4 w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm"
                       >
-                        {mentor.skillId
-                          ? "Request Mentorship"
-                          : "Skill Unavailable"}
+                        <Send size={12} />
+                        <span>Request Mentorship</span>
                       </button>
                     </div>
-                  )
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* =================================================
-              2. MY MENTORSHIP REQUESTS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                2. My Mentorship Requests
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Requests you have sent to mentors.
-              </p>
+                  ))}
+                </div>
+              )}
             </div>
+          )}
 
-            {mentorshipLoading ? (
-              <EmptyState message="Loading your mentorship requests..." />
-            ) : requestedMentorships.length === 0 ? (
-              <EmptyState message="You don't have any pending mentorship requests." />
-            ) : (
-              <div className="space-y-4">
-                {requestedMentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
+          {/* ========================================================
+              TAB 4: ALL MENTORSHIP RECORDS
+          ======================================================== */}
+          {activeTab === "all" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">All Mentorship Records</h2>
+                  <p className="text-xs text-slate-500">Complete log of accepted, requested, completed, or declined mentorships.</p>
+                </div>
               </div>
-            )}
-          </section>
 
-          {/* =================================================
-              3. MY MENTORSHIPS
-          ================================================= */}
+              {allRecords.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500 text-xs">
+                  No mentorship records found.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allRecords.map((m) => {
+                    const isAccepted = m.status?.toUpperCase() === "ACCEPTED" || m.status?.toUpperCase() === "ACTIVE";
 
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                3. My Mentorships
-              </h2>
+                    return (
+                      <div key={m.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-slate-900 text-sm">{m.skill?.skillName || "Mentoring"}</h4>
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            isAccepted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
+                          }`}>
+                            {m.status}
+                          </span>
+                        </div>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Overview of your accepted, active,
-                completed, and rejected mentorships.
-              </p>
+                        <div className="bg-slate-50 p-2.5 rounded-xl text-xs space-y-1">
+                          <p className="text-slate-600">
+                            <strong>Mentor:</strong> {m.mentor?.firstName} {m.mentor?.lastName}
+                          </p>
+                          <p className="text-slate-600">
+                            <strong>Mentee:</strong> {m.mentee?.firstName} {m.mentee?.lastName}
+                          </p>
+                        </div>
+
+                        {isAccepted && (
+                          <button
+                            onClick={() => navigate(`/messages?mentorshipId=${m.id}`)}
+                            className="w-full py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                          >
+                            <MessageSquare size={13} />
+                            <span>Open Chat</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            {mentorships.length === 0 ? (
-              <EmptyState message="You don't have any mentorship records yet." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {mentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* =================================================
-              4. ACTIVE MENTORSHIP STATUS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                4. Active Mentorship Status
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Mentorships that are currently active.
-              </p>
-            </div>
-
-            {activeMentorships.length === 0 ? (
-              <EmptyState message="You don't have any active mentorships." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {activeMentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* =================================================
-              5. ACCEPTED STATUS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                5. Accepted Status
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Mentorship requests accepted by
-                mentors.
-              </p>
-            </div>
-
-            {acceptedMentorships.length === 0 ? (
-              <EmptyState message="No accepted mentorships." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {acceptedMentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* =================================================
-              6. REJECTED STATUS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                6. Rejected Status
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Mentorship requests that were
-                rejected.
-              </p>
-            </div>
-
-            {rejectedMentorships.length === 0 ? (
-              <EmptyState message="You don't have any rejected mentorship requests." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {rejectedMentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* =================================================
-              7. COMPLETED STATUS
-          ================================================= */}
-
-          <section className="mb-10">
-            <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                7. Completed Status
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Mentorships that have been
-                successfully completed.
-              </p>
-            </div>
-
-            {completedMentorships.length === 0 ? (
-              <EmptyState message="You don't have any completed mentorships yet." />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {completedMentorships.map(
-                  (mentorship) => (
-                    <MentorshipCard
-                      key={mentorship.id}
-                      mentorship={mentorship}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </section>
+          )}
         </main>
       </div>
 
-      {/* =====================================================
+      {/* ========================================================
           REQUEST MODAL
-      ====================================================== */}
-
+      ======================================================== */}
       {selectedMentor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Request Mentorship
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-5">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Users size={18} className="text-blue-600" />
+                  Request Peer Mentorship
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Send a mentorship request to {selectedMentor.firstName} {selectedMentor.lastName}
+                </p>
+              </div>
+              <button onClick={closeRequestForm} className="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+            </div>
 
-            <p className="mt-2 text-gray-600">
-              Send a mentorship request to{" "}
-              <span className="font-semibold">
-                {selectedMentor.firstName}{" "}
-                {selectedMentor.lastName}
-              </span>
-            </p>
-
-            {/* SELECTED SKILL */}
-
-            <div className="mt-5 rounded-lg bg-blue-50 p-4">
-              <p className="text-sm text-blue-600">
-                Skill you want to improve
-              </p>
-
-              <p className="mt-1 font-semibold text-gray-800">
-                {selectedMentor.skillName ||
-                  "Not specified"}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-600">
-                Mentor proficiency:{" "}
-                <span className="font-medium">
-                  {getLevelName(
-                    selectedMentor.skillLevel
-                  )}
-                </span>
+            <div className="bg-blue-50/70 p-3.5 rounded-xl border border-blue-100 text-xs space-y-1">
+              <span className="text-slate-400 font-medium">Skill Area:</span>
+              <p className="font-bold text-slate-900 text-sm">{selectedMentor.skillName}</p>
+              <p className="text-slate-600 mt-1">
+                Mentor Proficiency: <span className="font-semibold text-blue-700">{levelNames[selectedMentor.skillLevel]}</span>
               </p>
             </div>
 
-            {/* GOAL */}
-
-            <div className="mt-6">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Mentorship Goal
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Mentorship Goal / Message <span className="text-red-500">*</span>
               </label>
-
               <textarea
                 value={goal}
-                onChange={(e) =>
-                  setGoal(e.target.value)
-                }
-                rows="4"
-                placeholder={`Example: I want to improve my ${
-                  selectedMentor.skillName ||
-                  "skill"
-                } skills...`}
-                className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                onChange={(e) => setGoal(e.target.value)}
+                rows={4}
+                placeholder={`Example: Hello ${selectedMentor.firstName}, I want to strengthen my understanding in ${selectedMentor.skillName}...`}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition resize-none"
               />
             </div>
 
-            {/* BUTTONS */}
-
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
               <button
                 onClick={closeRequestForm}
                 disabled={requesting}
-                className="rounded-lg border border-gray-300 px-5 py-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
               >
                 Cancel
               </button>
-
               <button
                 onClick={sendMentorshipRequest}
-                disabled={
-                  requesting ||
-                  !selectedMentor.skillId ||
-                  !goal.trim()
-                }
-                className="rounded-lg bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={requesting || !goal.trim()}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm disabled:opacity-50"
               >
-                {requesting
-                  ? "Sending..."
-                  : "Send Request"}
+                {requesting ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <>
+                    <Send size={14} />
+                    <span>Send Request</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
