@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -11,6 +12,10 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  MessageSquare,
+  ArrowRight,
+  UserCheck,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -21,6 +26,7 @@ import {
 import axios from "axios";
 
 function EmployeeDashboard() {
+  const navigate = useNavigate();
   // =========================================================
   // EMPLOYEE INFORMATION
   // =========================================================
@@ -40,6 +46,8 @@ function EmployeeDashboard() {
   const [skills, setSkills] = useState([]);
   const [gaps, setGaps] = useState([]);
   const [historicalComparison, setHistoricalComparison] = useState(null);
+  const [activeChats, setActiveChats] = useState([]);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -156,6 +164,27 @@ function EmployeeDashboard() {
         );
 
         setHistoricalComparison(null);
+      }
+
+      // =====================================================
+      // 4. PEER MENTORING ACTIVE CHATS & REQUESTS
+      // =====================================================
+      try {
+        const token = localStorage.getItem("token");
+        const authHeaders = { headers: { Authorization: token ? `Bearer ${token}` : "" } };
+
+        const [chatsRes, incomingReqsRes] = await Promise.all([
+          axios.get(`http://localhost:8080/api/messages/active-chats/${employeeId}`, authHeaders).catch(() => ({ data: [] })),
+          axios.get(`http://localhost:8080/api/mentorships/mentor/${employeeId}`, authHeaders).catch(() => ({ data: [] }))
+        ]);
+
+        setActiveChats(Array.isArray(chatsRes.data) ? chatsRes.data : []);
+        
+        const incoming = Array.isArray(incomingReqsRes.data) ? incomingReqsRes.data : [];
+        const pendingCount = incoming.filter(r => r.status?.toUpperCase() === "REQUESTED").length;
+        setPendingRequestsCount(pendingCount);
+      } catch (chatErr) {
+        console.error("Peer mentoring data error:", chatErr);
       }
     } catch (err) {
       console.error(
@@ -553,6 +582,106 @@ function EmployeeDashboard() {
               </div>
             </div>
 
+          </div>
+
+          {/* =================================================
+              PEER MENTORING & ACTIVE CHATS
+          ================================================= */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mt-8 border border-slate-100">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <MessageSquare size={18} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800">
+                    Peer Mentoring — Active Chats
+                  </h2>
+                </div>
+                <p className="text-gray-500 mt-1 text-sm">
+                  Real-time direct messaging for accepted employee-to-employee peer mentoring.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {pendingRequestsCount > 0 && (
+                  <button
+                    onClick={() => navigate("/peer-mentoring")}
+                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm animate-pulse"
+                  >
+                    <span>{pendingRequestsCount} Pending Request{pendingRequestsCount > 1 ? "s" : ""}</span>
+                    <ArrowRight size={13} />
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigate("/messages")}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <MessageSquare size={14} />
+                  <span>Open Messenger</span>
+                </button>
+              </div>
+            </div>
+
+            {activeChats.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-center">
+                <p className="text-sm font-semibold text-slate-700">No active peer mentoring chats yet</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  Messaging unlocks once a peer mentoring request is accepted. Find colleagues skilled in your target areas or accept incoming requests.
+                </p>
+                <div className="mt-3 flex justify-center gap-2">
+                  <button
+                    onClick={() => navigate("/expert-directory")}
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition"
+                  >
+                    Find in Expert Directory
+                  </button>
+                  <button
+                    onClick={() => navigate("/peer-mentoring")}
+                    className="px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-lg transition"
+                  >
+                    View Peer Mentoring
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeChats.map((chat) => (
+                  <div
+                    key={chat.mentorshipId}
+                    className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 hover:bg-white hover:shadow-md transition flex flex-col justify-between space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                          {chat.skillName} Mentoring
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm mt-1.5">
+                          {chat.peerName}
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          {chat.isCurrentUserMentor ? "Your Mentee" : "Your Peer Mentor"} • {chat.peerDesignation || "Colleague"}
+                        </p>
+                      </div>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Active" />
+                    </div>
+
+                    <p className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 truncate italic">
+                      "{chat.lastMessage || "No messages yet"}"
+                    </p>
+
+                    <button
+                      onClick={() => navigate(`/messages?mentorshipId=${chat.mentorshipId}`)}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <MessageSquare size={13} />
+                      <span>Open Chat</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* =================================================

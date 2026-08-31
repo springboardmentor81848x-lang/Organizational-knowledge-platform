@@ -33,6 +33,7 @@ import TrainingLearning from "../pages/TrainingLearning";
 import LearningProgress from "../pages/LearningProgress";
 import KnowledgeSession from "../pages/KnowledgeSession";
 import Mentorship from "../pages/Mentorship";
+import Messages from "../pages/Messages";
 import ExpertDirectory from "../pages/ExpertDirectory";
 
 // ==================================================
@@ -558,11 +559,22 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          MENTORSHIP
+          MENTORSHIP & PEER MENTORING
       ================================================== */}
 
       <Route
         path="/mentorship"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/peer-mentoring"
         element={
           <ProtectedRoute
             allowedRoles={["EMPLOYEE"]}
@@ -579,6 +591,54 @@ function AppRoutes() {
             allowedRoles={["EMPLOYEE"]}
           >
             <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/peer-mentoring"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <Mentorship />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          PEER MENTORING MESSAGES / CHAT
+      ================================================== */}
+
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE", "MENTOR"]}
+          >
+            <Messages />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/messages/:mentorshipId"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE", "MENTOR"]}
+          >
+            <Messages />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employee/messages"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE", "MENTOR"]}
+          >
+            <Messages />
           </ProtectedRoute>
         }
       />
