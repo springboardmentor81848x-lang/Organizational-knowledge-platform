@@ -45,6 +45,10 @@ import GapIntelligence from "../pages/GapIntelligence";
 import CompetencyFramework from "../pages/CompetencyFramework";
 import WorkforceSkillInventory from "../pages/WorkforceSkillInventory";
 import MentorAllocation from "../pages/MentorAllocation";
+import TrainingEffectiveness from "../pages/TrainingEffectiveness";
+import SkillForecast from "../pages/SkillForecast";
+import UserManagement from "../pages/UserManagement";
+import HRReports from "../pages/HRReports";
 
 // ==================================================
 // MANAGER
@@ -52,6 +56,11 @@ import MentorAllocation from "../pages/MentorAllocation";
 
 import ManagerDashboard from "../pages/ManagerDashboard";
 import TeamCoverage from "../pages/TeamCoverage";
+import ManagerTeamSkillGaps from "../pages/ManagerTeamSkillGaps";
+import ManagerEmployeeProgress from "../pages/ManagerEmployeeProgress";
+import ManagerTrainingAdoption from "../pages/ManagerTrainingAdoption";
+import ManagerReports from "../pages/ManagerReports";
+import ManagerNotifications from "../pages/ManagerNotifications";
 import ManagerAssessment from "../pages/ManagerAssessment";
 
 // ==================================================
@@ -69,7 +78,6 @@ import Reports from "../pages/Reports";
 
 import MentorDashboard from "../pages/MentorDashboard";
 import LearningAnalytics from "../pages/LearningAnalytics";
-import TrainingManagement from "../pages/TrainingManagement";
 import MentorManagement from "../pages/MentorManagement";
 import CourseCatalog from "../pages/CourseCatalog";
 
@@ -131,7 +139,6 @@ const getRoleFromToken = () => {
     return role;
 
   } catch (error) {
-
     console.error(
       "Unable to read role from JWT:",
       error
@@ -146,7 +153,6 @@ const getRoleFromToken = () => {
 // ==================================================
 
 const normalizeRole = (role) => {
-
   if (!role) {
     return "";
   }
@@ -177,7 +183,6 @@ const normalizeRole = (role) => {
 // ==================================================
 
 const getRole = () => {
-
   let role =
     localStorage.getItem("role") ||
     localStorage.getItem("userRole") ||
@@ -202,14 +207,12 @@ function ProtectedRoute({
   children,
   allowedRoles,
 }) {
-
   const token =
     localStorage.getItem("token");
 
   const role = getRole();
 
   if (!token) {
-
     return (
       <Navigate
         to="/login"
@@ -247,9 +250,7 @@ function ProtectedRoute({
 // ==================================================
 
 function AppRoutes() {
-
   return (
-
     <Routes>
 
       {/* ==================================================
@@ -614,7 +615,10 @@ function AppRoutes() {
         path="/messages"
         element={
           <ProtectedRoute
-            allowedRoles={["EMPLOYEE", "MENTOR"]}
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+            ]}
           >
             <Messages />
           </ProtectedRoute>
@@ -625,7 +629,10 @@ function AppRoutes() {
         path="/messages/:mentorshipId"
         element={
           <ProtectedRoute
-            allowedRoles={["EMPLOYEE", "MENTOR"]}
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+            ]}
           >
             <Messages />
           </ProtectedRoute>
@@ -636,7 +643,10 @@ function AppRoutes() {
         path="/employee/messages"
         element={
           <ProtectedRoute
-            allowedRoles={["EMPLOYEE", "MENTOR"]}
+            allowedRoles={[
+              "EMPLOYEE",
+              "MENTOR",
+            ]}
           >
             <Messages />
           </ProtectedRoute>
@@ -749,11 +759,103 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/training-effectiveness"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <TrainingEffectiveness />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/skill-forecast"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <SkillForecast />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "HR",
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/hr/reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={["HR"]}
+          >
+            <HRReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/system-administrator/users"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/system-administrator/reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <HRReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/system-administrator/notifications"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <Notifications />
+          </ProtectedRoute>
+        }
+      />
+
       {/* ==================================================
           MANAGER
       ================================================== */}
-
-      {/* Manager Dashboard */}
 
       <Route
         path="/manager"
@@ -794,7 +896,6 @@ function AppRoutes() {
 
       {/* ==================================================
           TEAM SKILL GAPS
-          Will be implemented separately
       ================================================== */}
 
       <Route
@@ -803,14 +904,24 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerDashboard />
+            <ManagerTeamSkillGaps />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager/team-skill-gaps"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerTeamSkillGaps />
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
           HIGH RISK GAPS
-          Will be implemented separately
       ================================================== */}
 
       <Route
@@ -826,7 +937,6 @@ function AppRoutes() {
 
       {/* ==================================================
           EMPLOYEE PROGRESS
-          Will be implemented separately
       ================================================== */}
 
       <Route
@@ -835,7 +945,18 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerDashboard />
+            <ManagerEmployeeProgress />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager/employee-progress"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerEmployeeProgress />
           </ProtectedRoute>
         }
       />
@@ -867,9 +988,34 @@ function AppRoutes() {
               "MANAGER",
               "DEPARTMENT HEAD",
               "DEPARTMENT_HEAD",
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
             ]}
           >
             <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager-reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager/reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerReports />
           </ProtectedRoute>
         }
       />
@@ -889,6 +1035,28 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/training-adoption"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerTrainingAdoption />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager/training-adoption"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerTrainingAdoption />
+          </ProtectedRoute>
+        }
+      />
+
       {/* ==================================================
           MANAGER LEARNING INTERVENTIONS
       ================================================== */}
@@ -900,6 +1068,17 @@ function AppRoutes() {
             allowedRoles={["MANAGER"]}
           >
             <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manager/notifications"
+        element={
+          <ProtectedRoute
+            allowedRoles={["MANAGER"]}
+          >
+            <ManagerNotifications />
           </ProtectedRoute>
         }
       />
@@ -1051,16 +1230,9 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/training-management"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MENTOR"]}
-          >
-            <TrainingManagement />
-          </ProtectedRoute>
-        }
-      />
+      {/* ==================================================
+          MENTOR MANAGEMENT
+      ================================================== */}
 
       <Route
         path="/mentor-management"
@@ -1072,6 +1244,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          TRAINING CATALOG
+      ================================================== */}
 
       <Route
         path="/training-catalog"

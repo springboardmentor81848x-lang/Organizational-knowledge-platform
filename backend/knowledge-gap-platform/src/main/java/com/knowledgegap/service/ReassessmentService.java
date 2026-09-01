@@ -2,6 +2,7 @@ package com.knowledgegap.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -173,11 +174,6 @@ public class ReassessmentService {
             );
         }
 
-
-        // =====================================================
-        // GET ASSESSMENT
-        // =====================================================
-
         Assessment assessment =
                 assessmentRepository
                         .findById(assessmentId)
@@ -187,11 +183,6 @@ public class ReassessmentService {
                                                 + assessmentId
                                 )
                         );
-
-
-        // =====================================================
-        // GET EMPLOYEE
-        // =====================================================
 
         Employee employee =
                 employeeService
@@ -205,11 +196,6 @@ public class ReassessmentService {
                                 )
                         );
 
-
-        // =====================================================
-        // FIND LATEST REASSESSMENT
-        // =====================================================
-
         Optional<AssessmentAttempt> attemptOptional =
                 assessmentAttemptRepository
                         .findFirstByEmployeeAndAssessmentAndAssessmentTypeOrderByIdDesc(
@@ -218,96 +204,120 @@ public class ReassessmentService {
                                 AssessmentType.REASSESSMENT
                         );
 
-
         if (attemptOptional.isEmpty()) {
-
             return Optional.empty();
         }
 
+        return Optional.of(
+                buildReassessmentResponse(
+                        attemptOptional.get(),
+                        employee
+                )
+        );
+    }
 
-        AssessmentAttempt attempt =
-                attemptOptional.get();
+    @Transactional(readOnly = true)
+    public Optional<ReassessmentResponse>
+    getLatestReassessmentResultByEmployee(
+            String employeeIdentifier) {
 
+        if (employeeIdentifier == null ||
+                employeeIdentifier.isBlank()) {
 
-        // =====================================================
-        // GET SAVED ANSWERS
-        // =====================================================
+            throw new IllegalArgumentException(
+                    "Employee identifier is required."
+            );
+        }
+
+        Employee employee =
+                employeeService
+                        .getEmployeeByIdentifier(
+                                employeeIdentifier
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found: "
+                                                + employeeIdentifier
+                                )
+                        );
+
+        List<AssessmentAttempt> attempts =
+                assessmentAttemptRepository
+                        .findByEmployeeOrderByCompletedAtAsc(employee);
+
+        if (attempts == null || attempts.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<AssessmentAttempt> latestAttempt =
+                attempts.stream()
+                        .filter(attempt ->
+                                attempt.getAssessmentType() ==
+                                        AssessmentType.REASSESSMENT)
+                        .sorted(Comparator.comparing(
+                                AssessmentAttempt::getCompletedAt,
+                                Comparator.nullsLast(LocalDateTime::compareTo)
+                        ).reversed())
+                        .findFirst();
+
+        if (latestAttempt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                buildReassessmentResponse(
+                        latestAttempt.get(),
+                        employee
+                )
+        );
+    }
+
+    private ReassessmentResponse buildReassessmentResponse(
+            AssessmentAttempt attempt,
+            Employee employee) {
+
+        Assessment assessment = attempt.getAssessment();
 
         List<AssessmentAnswer> answers =
                 assessmentAnswerRepository
                         .findByAttempt(attempt);
 
-
         int correctAnswers = 0;
-
         if (answers != null) {
-
             for (AssessmentAnswer answer : answers) {
-
-                if (Boolean.TRUE.equals(
-                        answer.getCorrect())) {
-
+                if (Boolean.TRUE.equals(answer.getCorrect())) {
                     correctAnswers++;
                 }
             }
         }
-
-
-        // =====================================================
-        // GET TOTAL QUESTIONS
-        // =====================================================
 
         int totalQuestions =
                 answers != null
                         ? answers.size()
                         : assessmentQuestionRepository
                                 .findByAssessmentId(
-                                        assessmentId
+                                        assessment.getId()
                                 )
                                 .size();
-
-
-        // =====================================================
-        // GET SAVED GAP RESULTS
-        // =====================================================
 
         List<AssessmentGapResult> gapResults =
                 assessmentGapResultRepository
                         .findByAttempt(attempt);
 
-
-        List<ReassessmentSkillResultResponse>
-                skillResults =
+        List<ReassessmentSkillResultResponse> skillResults =
                 new ArrayList<>();
 
-
-        // =====================================================
-        // BUILD HISTORICAL SKILL RESULTS
-        // =====================================================
-
         if (gapResults != null) {
-
-            for (
-                    AssessmentGapResult gapResult :
-                    gapResults
-            ) {
-
+            for (AssessmentGapResult gapResult : gapResults) {
                 int previousLevel =
                         normalizeLevel(
                                 gapResult.getPreviousLevel()
                         );
 
-
                 int currentLevel =
                         normalizeLevel(
                                 gapResult.getAssessedLevel()
                         );
-
-
-                // =================================================
-                // IMPORTANT:
-                // GET REQUIRED LEVEL FROM COMPETENCY FRAMEWORK
-                // =================================================
 
                 int requiredLevel =
                         getRequiredLevelFromCompetency(
@@ -316,42 +326,23 @@ public class ReassessmentService {
                                 currentLevel
                         );
 
-
                 String previousLevelName =
-                        getLevelName(
-                                previousLevel
-                        );
-
+                        getLevelName(previousLevel);
 
                 String currentLevelName =
-                        getLevelName(
-                                currentLevel
-                        );
-
+                        getLevelName(currentLevel);
 
                 String requiredLevelName =
-                        getLevelName(
-                                requiredLevel
-                        );
-
-
-                // =================================================
-                // RECALCULATE REMAINING GAP USING FRAMEWORK
-                // =================================================
+                        getLevelName(requiredLevel);
 
                 int remainingGap =
                         Math.max(
-                                requiredLevel -
-                                currentLevel,
+                                requiredLevel - currentLevel,
                                 0
                         );
 
-
                 String gapSeverity =
-                        getGapSeverity(
-                                remainingGap
-                        );
-
+                        getGapSeverity(remainingGap);
 
                 skillResults.add(
                         new ReassessmentSkillResultResponse(
@@ -371,26 +362,17 @@ public class ReassessmentService {
             }
         }
 
-
-        // =====================================================
-        // RETURN RESULT
-        // =====================================================
-
-        ReassessmentResponse response =
-                new ReassessmentResponse(
-                        attempt.getId(),
-                        assessment.getId(),
-                        assessment.getTitle(),
-                        employee.getEmployeeId(),
-                        attempt.getOverallScore(),
-                        attempt.getPerformanceLevel(),
-                        correctAnswers,
-                        totalQuestions,
-                        skillResults
-                );
-
-
-        return Optional.of(response);
+        return new ReassessmentResponse(
+                attempt.getId(),
+                assessment.getId(),
+                assessment.getTitle(),
+                employee.getEmployeeId(),
+                attempt.getOverallScore(),
+                attempt.getPerformanceLevel(),
+                correctAnswers,
+                totalQuestions,
+                skillResults
+        );
     }
 
 

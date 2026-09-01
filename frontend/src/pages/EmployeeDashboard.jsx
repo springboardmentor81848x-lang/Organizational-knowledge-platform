@@ -133,7 +133,7 @@ function EmployeeDashboard() {
         const token = localStorage.getItem("token");
 
         const historicalResponse = await axios.get(
-          `http://localhost:8080/api/employee/assessment/history/${employeeId}`,
+          `http://localhost:8080/api/employee/reassessment/latest/${employeeId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -155,7 +155,17 @@ function EmployeeDashboard() {
         ) {
           setHistoricalComparison(result);
         } else {
-          setHistoricalComparison(null);
+          const storedResult = sessionStorage.getItem("reassessmentResult");
+          if (storedResult) {
+            const parsed = JSON.parse(storedResult);
+            if (parsed && Array.isArray(parsed.skillResults) && parsed.skillResults.length > 0) {
+              setHistoricalComparison(parsed);
+            } else {
+              setHistoricalComparison(null);
+            }
+          } else {
+            setHistoricalComparison(null);
+          }
         }
       } catch (historyError) {
         console.error(
@@ -163,7 +173,17 @@ function EmployeeDashboard() {
           historyError
         );
 
-        setHistoricalComparison(null);
+        const storedResult = sessionStorage.getItem("reassessmentResult");
+        if (storedResult) {
+          const parsed = JSON.parse(storedResult);
+          if (parsed && Array.isArray(parsed.skillResults) && parsed.skillResults.length > 0) {
+            setHistoricalComparison(parsed);
+          } else {
+            setHistoricalComparison(null);
+          }
+        } else {
+          setHistoricalComparison(null);
+        }
       }
 
       // =====================================================

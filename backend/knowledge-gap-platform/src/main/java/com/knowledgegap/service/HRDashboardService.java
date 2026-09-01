@@ -13,10 +13,15 @@ import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.KnowledgeGap;
+import com.knowledgegap.entity.Mentorship;
+import com.knowledgegap.entity.TrainingEnrollment;
+import com.knowledgegap.entity.TrainingStatus;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
 import com.knowledgegap.repository.KnowledgeGapRepository;
+import com.knowledgegap.repository.MentorshipRepository;
+import com.knowledgegap.repository.TrainingEnrollmentRepository;
 
 @Service
 public class HRDashboardService {
@@ -25,17 +30,23 @@ public class HRDashboardService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final KnowledgeGapRepository knowledgeGapRepository;
     private final AssessmentAttemptRepository assessmentAttemptRepository;
+    private final TrainingEnrollmentRepository trainingEnrollmentRepository;
+    private final MentorshipRepository mentorshipRepository;
 
     public HRDashboardService(
             EmployeeRepository employeeRepository,
             EmployeeSkillRepository employeeSkillRepository,
             KnowledgeGapRepository knowledgeGapRepository,
-            AssessmentAttemptRepository assessmentAttemptRepository) {
+            AssessmentAttemptRepository assessmentAttemptRepository,
+            TrainingEnrollmentRepository trainingEnrollmentRepository,
+            MentorshipRepository mentorshipRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.knowledgeGapRepository = knowledgeGapRepository;
         this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.trainingEnrollmentRepository = trainingEnrollmentRepository;
+        this.mentorshipRepository = mentorshipRepository;
     }
 
     public Map<String, Object> getDashboardSummary() {
@@ -561,27 +572,72 @@ public class HRDashboardService {
          * =====================================================
          * TRAINING KPIs
          * =====================================================
-         *
-         * Your imported database currently has no status
-         * values in learning_path or learning_path_course.
-         *
-         * Therefore we leave these as 0 rather than inventing
-         * training data.
          */
+        List<TrainingEnrollment> trainingEnrollments =
+                trainingEnrollmentRepository.findAll();
+
+        long totalTrainingEnrollments =
+                trainingEnrollments.size();
+
+        long completedTrainingCount =
+                trainingEnrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getStatus() == TrainingStatus.COMPLETED
+                                        || enrollment.getStatus() == TrainingStatus.CERTIFIED
+                        )
+                        .count();
+
+        long employeesInTraining =
+                trainingEnrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getEmployee() != null
+                                        && (enrollment.getStatus() == TrainingStatus.NOT_STARTED
+                                                || enrollment.getStatus() == TrainingStatus.IN_PROGRESS
+                                                || enrollment.getStatus() == TrainingStatus.EXPIRED_RENEWAL)
+                        )
+                        .map(enrollment -> enrollment.getEmployee().getId())
+                        .distinct()
+                        .count();
+
+        double averageLearningProgress = 0.0;
+
+        if (!trainingEnrollments.isEmpty()) {
+            averageLearningProgress =
+                    trainingEnrollments.stream()
+                            .map(TrainingEnrollment::getProgressPercentage)
+                            .filter(progress -> progress != null)
+                            .mapToInt(Integer::intValue)
+                            .average()
+                            .orElse(0.0);
+        }
+
+        averageLearningProgress =
+                Math.round(averageLearningProgress * 100.0) / 100.0;
+
+        double trainingCompletionRate = 0.0;
+
+        if (totalTrainingEnrollments > 0) {
+            trainingCompletionRate =
+                    (completedTrainingCount * 100.0)
+                            / totalTrainingEnrollments;
+        }
+
+        trainingCompletionRate =
+                Math.round(trainingCompletionRate * 100.0) / 100.0;
 
         dashboard.put(
                 "employeesInTraining",
-                0
+                employeesInTraining
         );
 
         dashboard.put(
                 "trainingCompletionRate",
-                0
+                trainingCompletionRate
         );
 
         dashboard.put(
                 "averageLearningProgress",
-                0
+                averageLearningProgress
         );
 
 
@@ -600,12 +656,22 @@ public class HRDashboardService {
          * =====================================================
          * KPI 8 - ACTIVE MENTORSHIPS
          * =====================================================
-         *
-         * No mentorship entity/table currently exists.
          */
+        List<Mentorship> mentorships =
+                mentorshipRepository.findAll();
+
+        long activeMentorships =
+                mentorships.stream()
+                        .filter(mentorship ->
+                                mentorship != null
+                                        && ("ACTIVE".equalsIgnoreCase(mentorship.getStatus())
+                                                || "ACCEPTED".equalsIgnoreCase(mentorship.getStatus()))
+                        )
+                        .count();
+
         dashboard.put(
                 "activeMentorships",
-                0
+                activeMentorships
         );
 
 

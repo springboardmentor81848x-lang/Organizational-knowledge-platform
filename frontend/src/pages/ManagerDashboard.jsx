@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
-  LayoutDashboard,
-  Users,
   BarChart3,
   AlertTriangle,
   Activity,
   ClipboardCheck,
   GraduationCap,
-  Lightbulb,
   Bell,
-  LogOut,
-  User,
   RefreshCw,
+  Users,
+  User,
+  BookOpen,
+  ShieldCheck,
 } from "lucide-react";
 
 import axios from "axios";
+import Sidebar from "../components/Sidebar";
 
 function ManagerDashboard() {
   const navigate = useNavigate();
@@ -33,155 +33,12 @@ function ManagerDashboard() {
   const token = localStorage.getItem("token");
 
   // =========================================================
-  // NAVIGATION LINK STYLE
-  // =========================================================
-
-  const navLinkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-      isActive
-        ? "bg-gray-700 text-white"
-        : "text-gray-300 hover:bg-gray-800 hover:text-white"
-    }`;
-
-  // =========================================================
-  // LOGOUT
+  // NAVIGATION IS SHARED IN Sidebar COMPONENT
   // =========================================================
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
-  };
-
-  // =========================================================
-  // SIDEBAR
-  // =========================================================
-
-  const Sidebar = () => {
-    return (
-      <aside className="w-64 bg-gray-900 text-white flex flex-col fixed left-0 top-0 bottom-0 z-20">
-        {/* ===================================================
-            SIDEBAR HEADER
-        =================================================== */}
-
-        <div className="px-6 py-6 border-b border-gray-700">
-          <h1 className="text-xl font-bold">
-            Knowledge Gap
-          </h1>
-
-          <p className="text-sm text-gray-400 mt-1">
-            Manager Portal
-          </p>
-        </div>
-
-        {/* ===================================================
-            NAVIGATION
-        =================================================== */}
-
-        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
-          <NavLink
-            to="/manager"
-            className={navLinkClass}
-          >
-            <LayoutDashboard size={20} />
-            <span>Manager Dashboard</span>
-          </NavLink>
-
-          <NavLink
-            to="/team-skills"
-            className={navLinkClass}
-          >
-            <Users size={20} />
-            <span>Team Skill Coverage</span>
-          </NavLink>
-
-          <NavLink
-            to="/team-gaps"
-            className={navLinkClass}
-          >
-            <BarChart3 size={20} />
-            <span>Team Skill Gaps</span>
-          </NavLink>
-
-          <NavLink
-            to="/high-risk-gaps"
-            className={navLinkClass}
-          >
-            <AlertTriangle size={20} />
-            <span>High-Risk Gaps</span>
-          </NavLink>
-
-          <NavLink
-            to="/employee-progress"
-            className={navLinkClass}
-          >
-            <Activity size={20} />
-            <span>Employee Progress</span>
-          </NavLink>
-
-          <NavLink
-            to="/manager-assessment"
-            className={navLinkClass}
-          >
-            <ClipboardCheck size={20} />
-            <span>Manager Assessment</span>
-          </NavLink>
-
-          <NavLink
-            to="/training"
-            className={navLinkClass}
-          >
-            <GraduationCap size={20} />
-            <span>Training & Learning</span>
-          </NavLink>
-
-          <NavLink
-            to="/learning-interventions"
-            className={navLinkClass}
-          >
-            <Lightbulb size={20} />
-            <span>Learning Interventions</span>
-          </NavLink>
-
-          <NavLink
-            to="/notifications"
-            className={navLinkClass}
-          >
-            <Bell size={20} />
-            <span>Notifications</span>
-          </NavLink>
-        </nav>
-
-        {/* ===================================================
-            USER + LOGOUT
-        =================================================== */}
-
-        <div className="border-t border-gray-700 p-3">
-          <div className="flex items-center gap-3 px-4 py-3 mb-2">
-            <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center">
-              <User size={18} />
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                Manager
-              </p>
-
-              <p className="text-xs text-gray-400 truncate">
-                {employeeId || "Manager"}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition"
-          >
-            <LogOut size={20} />
-            Logout
-          </button>
-        </div>
-      </aside>
-    );
   };
 
   // =========================================================
@@ -459,18 +316,18 @@ function ManagerDashboard() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
       {/* =====================================================
           SIDEBAR
       ===================================================== */}
 
-      <Sidebar />
+      <Sidebar role="MANAGER" />
 
       {/* =====================================================
           MAIN CONTENT
       ===================================================== */}
 
-      <main className="ml-64 p-8">
+      <main className="flex-1 p-8">
         {/* ===================================================
             HEADER
         =================================================== */}

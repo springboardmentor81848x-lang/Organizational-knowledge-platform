@@ -87,6 +87,31 @@ public class ReassessmentController {
         return ResponseEntity.notFound().build();
     }
 
+    // =========================================================
+    // GET LATEST REASSESSMENT RESULT FOR EMPLOYEE
+    // =========================================================
+    // This endpoint is used by the employee dashboard to show the
+    // most recent persisted historical comparison.
+    // =========================================================
+
+    @GetMapping("/latest/{employeeIdentifier}")
+    public ResponseEntity<ReassessmentResponse>
+    getLatestEmployeeReassessmentResult(
+            @PathVariable String employeeIdentifier) {
+
+        Optional<ReassessmentResponse> result =
+                reassessmentService
+                        .getLatestReassessmentResultByEmployee(
+                                employeeIdentifier
+                        );
+
+        if (result.isPresent()) {
+            return ResponseEntity.ok(result.get());
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
 
     // =========================================================
     // SUBMIT REASSESSMENT

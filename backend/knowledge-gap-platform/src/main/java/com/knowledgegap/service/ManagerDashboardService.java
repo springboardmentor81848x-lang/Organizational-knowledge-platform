@@ -12,10 +12,15 @@ import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.Department;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.LearningProgress;
 import com.knowledgegap.entity.Skill;
+import com.knowledgegap.entity.TrainingEnrollment;
+import com.knowledgegap.entity.TrainingStatus;
 import com.knowledgegap.repository.CompetencyRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.LearningProgressRepository;
+import com.knowledgegap.repository.TrainingEnrollmentRepository;
 
 @Service
 public class ManagerDashboardService {
@@ -23,15 +28,21 @@ public class ManagerDashboardService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final CompetencyRepository competencyRepository;
+    private final TrainingEnrollmentRepository trainingEnrollmentRepository;
+    private final LearningProgressRepository learningProgressRepository;
 
     public ManagerDashboardService(
             EmployeeRepository employeeRepository,
             EmployeeSkillRepository employeeSkillRepository,
-            CompetencyRepository competencyRepository) {
+            CompetencyRepository competencyRepository,
+            TrainingEnrollmentRepository trainingEnrollmentRepository,
+            LearningProgressRepository learningProgressRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.competencyRepository = competencyRepository;
+        this.trainingEnrollmentRepository = trainingEnrollmentRepository;
+        this.learningProgressRepository = learningProgressRepository;
     }
 
     // =========================================================
@@ -374,24 +385,85 @@ public class ManagerDashboardService {
         );
 
         // =====================================================
-        // TRAINING
+        // TRAINING ADOPTION AND EMPLOYEE PROGRESS
         // =====================================================
-        //
-        // These values are initialized safely.
-        // They can later be connected to TrainingEnrollment
-        // repository/service without affecting the dashboard.
-        //
-        // =====================================================
+
+        List<TrainingEnrollment> departmentEnrollments =
+                trainingEnrollmentRepository
+                        .findByEmployeeDepartmentId(
+                                departmentId
+                        );
+
+        long uniqueEnrolledEmployees =
+                departmentEnrollments.stream()
+                        .map(enrollment -> enrollment.getEmployee())
+                        .filter(employee -> employee != null)
+                        .map(Employee::getId)
+                        .filter(id -> id != null)
+                        .distinct()
+                        .count();
+
+        long inProgressCount =
+                departmentEnrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getStatus() == TrainingStatus.IN_PROGRESS
+                                        || enrollment.getStatus() == TrainingStatus.NOT_STARTED)
+                        .count();
+
+        long completedCount =
+                departmentEnrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getStatus() == TrainingStatus.COMPLETED
+                                        || enrollment.getStatus() == TrainingStatus.CERTIFIED)
+                        .count();
 
         TrainingAdoption trainingAdoption =
                 new TrainingAdoption(
-                        0,
-                        0,
-                        0
+                        (int) uniqueEnrolledEmployees,
+                        (int) inProgressCount,
+                        (int) completedCount
                 );
 
         List<EmployeeProgress> employeeProgress =
                 new ArrayList<>();
+
+        for (Employee teamMember : teamMembers) {
+            if (teamMember == null) {
+                continue;
+            }
+
+            List<LearningProgress> progressRecords =
+                    learningProgressRepository
+                            .findByEmployee(teamMember);
+
+            double averageProgress = 0.0;
+
+            if (!progressRecords.isEmpty()) {
+                averageProgress = progressRecords.stream()
+                        .filter(progress -> progress != null)
+                        .map(LearningProgress::getProgressPercentage)
+                        .filter(progress -> progress != null)
+                        .mapToDouble(Integer::doubleValue)
+                        .average()
+                        .orElse(0.0);
+            }
+
+            employeeProgress.add(
+                    new EmployeeProgress(
+                            buildEmployeeName(teamMember),
+                            teamMember.getEmployeeId(),
+                            round(averageProgress)
+                    )
+            );
+        }
+
+        employeeProgress.sort(
+                (a, b) ->
+                        Double.compare(
+                                b.getProgressPercentage(),
+                                a.getProgressPercentage()
+                        )
+        );
 
         // =====================================================
         // RETURN COMPLETE DASHBOARD

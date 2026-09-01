@@ -126,9 +126,9 @@ function Sidebar({ role }) {
               User Management
             </NavLink>
 
-            <NavLink to="/reports" className={navLinkClass}>
+            <NavLink to="/hr/reports" className={navLinkClass}>
               <BarChart3 size={20} />
-              Reports
+              HR Reports
             </NavLink>
 
             <NavLink
@@ -184,6 +184,14 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
+              to="/manager-reports"
+              className={navLinkClass}
+            >
+              <FileText size={20} />
+              Reports
+            </NavLink>
+
+            <NavLink
               to="/manager-assessment"
               className={navLinkClass}
             >
@@ -200,7 +208,7 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/notifications"
+              to="/manager/notifications"
               className={navLinkClass}
             >
               <Bell size={20} />
@@ -449,7 +457,7 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/users"
+              to="/system-administrator/users"
               className={navLinkClass}
             >
               <UserCog size={20} />
@@ -457,7 +465,7 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/reports"
+              to="/system-administrator/reports"
               className={navLinkClass}
             >
               <BarChart3 size={20} />
@@ -465,7 +473,7 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/notifications"
+              to="/system-administrator/notifications"
               className={navLinkClass}
             >
               <Bell size={20} />
