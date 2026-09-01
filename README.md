@@ -99,4 +99,8 @@ mvn spring-boot:run
 npm install
 npm run dev
 ```
+<<<<<<< HEAD
 The application runs locally on `http://localhost:3000`.
+=======
+The application Test - https://okgip-overhaul.onrender.com/
+>>>>>>> f968e5c9c585be98063dafd8fe833e28b89067bf
