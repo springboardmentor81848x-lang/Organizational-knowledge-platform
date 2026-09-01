@@ -144,7 +144,23 @@ public class ReportsFragment extends Fragment {
         String selfDisplayName = "👤 My Self Report (" + (myUserName != null ? myUserName : "Logged-in User") + ")";
         targetList.add(new EmployeeTarget(myUserId, selfDisplayName, myUserName != null ? myUserName : "User", "My Department", role != null ? role : "Employee", true));
 
-        // Fetch other employees from backend API
+        boolean isRegularEmployee = role == null || "EMPLOYEE".equalsIgnoreCase(role) || "ROLE_EMPLOYEE".equalsIgnoreCase(role);
+
+        if (isRegularEmployee) {
+            // Employees can ONLY download their own report. Hide employee selector card and populate single self option.
+            if (binding != null && binding.cardEmployeeSelector != null) {
+                binding.cardEmployeeSelector.setVisibility(View.GONE);
+            }
+            populateSpinner();
+            return;
+        }
+
+        // For Managers, HR, Dept Heads, Admins: allow viewing team/department members
+        if (binding != null && binding.cardEmployeeSelector != null) {
+            binding.cardEmployeeSelector.setVisibility(View.VISIBLE);
+        }
+
+        // Fetch other employees from backend API for managers/HR/admins
         employeeApiService.getAllEmployees().enqueue(new Callback<List<EmployeeResponse>>() {
             @Override
             public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> response) {
@@ -173,8 +189,7 @@ public class ReportsFragment extends Fragment {
                             continue;
                         }
 
-                        boolean isEmployee = emp.getRole() != null && "EMPLOYEE".equalsIgnoreCase(emp.getRole());
-                        if (isHrOrAdmin || isMatchingDepartment(userEmail, deptName, emp.getDepartment(), emp.getJobRoleId()) || (isEmployee && deptName != null && deptName.equalsIgnoreCase(emp.getDepartment()))) {
+                        if (isHrOrAdmin || isMatchingDepartment(userEmail, deptName, emp.getDepartment(), emp.getJobRoleId())) {
                             String label = "👥 " + empFullName + " (" + (emp.getDepartment() != null ? emp.getDepartment() : "Team") + ")";
                             targetList.add(new EmployeeTarget(emp.getId(), label, empFullName, emp.getDepartment() != null ? emp.getDepartment() : "Engineering", emp.getRole() != null ? emp.getRole() : "Employee", false));
                         }

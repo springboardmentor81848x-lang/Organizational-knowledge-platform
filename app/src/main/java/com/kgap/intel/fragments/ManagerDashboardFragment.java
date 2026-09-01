@@ -61,8 +61,10 @@ public class ManagerDashboardFragment extends Fragment {
             name = "Manager";
         }
         binding.tvGreeting.setText("Welcome back, " + name + " 👋");
+        binding.tvGreeting.setOnClickListener(v -> navigateToFragment(new ProfileFragment()));
 
         binding.btnNotifications.setOnClickListener(v -> navigateToFragment(new NotificationsFragment()));
+        binding.btnProfile.setOnClickListener(v -> navigateToFragment(new ProfileFragment()));
         binding.btnSearch.setOnClickListener(v -> new QuickServiceSearchBottomSheet().show(getParentFragmentManager(), "quick_service_search"));
         setupNotificationBadge();
     }
@@ -134,6 +136,22 @@ public class ManagerDashboardFragment extends Fragment {
         reports.cardIconContainer.setCardBackgroundColor(Color.parseColor("#FFF3E0"));
         reports.tvLabel.setText("Reports");
         reports.getRoot().setOnClickListener(v -> navigateToFragment(new ReportsFragment()));
+
+        // 5. My Profile - Teal Theme
+        ItemHubButtonBinding profile = ItemHubButtonBinding.bind(binding.hubManagerProfile.getRoot());
+        profile.ivIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
+        profile.ivIcon.setColorFilter(Color.parseColor("#00897B"));
+        profile.cardIconContainer.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
+        profile.tvLabel.setText("My Profile");
+        profile.getRoot().setOnClickListener(v -> navigateToFragment(new ProfileFragment()));
+
+        // 6. More & Account - Purple Theme
+        ItemHubButtonBinding more = ItemHubButtonBinding.bind(binding.hubManagerMore.getRoot());
+        more.ivIcon.setImageResource(android.R.drawable.ic_menu_preferences);
+        more.ivIcon.setColorFilter(Color.parseColor("#7B1FA2"));
+        more.cardIconContainer.setCardBackgroundColor(Color.parseColor("#F3E5F5"));
+        more.tvLabel.setText("Account & More");
+        more.getRoot().setOnClickListener(v -> navigateToFragment(new MoreFragment()));
 
         // Card Listeners for Stats
         binding.cardDirectReports.setOnClickListener(v -> navigateToFragment(new TeamDirectoryFragment()));

@@ -57,9 +57,11 @@ public class GapViewModel extends AndroidViewModel {
         errorMessage.setValue(null);
 
         if ("EMPLOYEE".equalsIgnoreCase(role)) {
+            Long prefUserId = prefManager.getUserId();
             gapRepository.findEmployeeIdByEmail(email).observeForever(id -> {
-                if (id != null) {
-                    fetchGaps(id);
+                Long targetId = id != null ? id : prefUserId;
+                if (targetId != null) {
+                    fetchGaps(targetId);
                 } else {
                     isLoading.setValue(false);
                     errorMessage.setValue("Employee record not found for " + email);
@@ -279,7 +281,7 @@ public class GapViewModel extends AndroidViewModel {
             isLoading.setValue(false);
             if (gaps != null) {
                 List<SkillGapResponse> cleanGaps = gaps.stream()
-                    .filter(g -> g.getEmployeeName() != null && !g.getEmployeeName().toLowerCase().contains("admin") && (g.getEmployeeId() == null || g.getEmployeeId() != 1L))
+                    .filter(g -> (g.getEmployeeName() == null || !g.getEmployeeName().toLowerCase().contains("admin")) && (g.getEmployeeId() == null || g.getEmployeeId() != 1L))
                     .collect(Collectors.toList());
                 skillGaps.setValue(cleanGaps);
             } else if (errorMessage.getValue() == null) {

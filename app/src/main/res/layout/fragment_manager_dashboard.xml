@@ -68,6 +68,21 @@
             </FrameLayout>
 
             <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/btn_profile"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:padding="8dp"
+                app:tint="@color/text_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/btn_search"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
@@ -140,6 +155,8 @@
                 <include android:id="@+id/hub_team_members" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_learning_team" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_columnWeight="1" />
                 <include android:id="@+id/hub_more_manager" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_manager_profile" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_columnWeight="1" />
+                <include android:id="@+id/hub_manager_more" layout="@layout/item_hub_button" android:layout_width="0dp" android:layout_columnWeight="1" />
             </GridLayout>
 
             <!-- Team Stats Grid -->

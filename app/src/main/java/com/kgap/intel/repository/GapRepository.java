@@ -248,32 +248,71 @@ public class GapRepository {
                     return;
                 }
 
-                // Step 2: Fetch gaps
-                gapApiService.getEmployeeGaps(employeeId).enqueue(new Callback<List<SkillGapResponse>>() {
+                employeeApiService.getAllEmployees().enqueue(new Callback<List<EmployeeResponse>>() {
                     @Override
-                    public void onResponse(Call<List<SkillGapResponse>> call, Response<List<SkillGapResponse>> response) {
-                        android.util.Log.d("SkillGapDebug", "Gaps API Status: " + response.code());
-                        List<SkillGapResponse> gaps = new ArrayList<>();
-                        if (response.isSuccessful() && response.body() != null) {
-                            gaps = response.body();
-                            for (SkillGapResponse g : gaps) {
-                                String name = skillMap.getOrDefault(g.getSkillId(), "Unknown Skill (" + g.getSkillId() + ")");
-                                g.setSkillName(name);
+                    public void onResponse(Call<List<EmployeeResponse>> call, Response<List<EmployeeResponse>> empResponse) {
+                        Map<Long, String> empMap = new HashMap<>();
+                        if (empResponse.isSuccessful() && empResponse.body() != null) {
+                            for (EmployeeResponse e : empResponse.body()) {
+                                empMap.put(e.getId(), (e.getFirstName() + " " + e.getLastName()).trim());
                             }
                         }
-                        
-                        if (!gaps.isEmpty()) {
-                            data.setValue(gaps);
-                        } else {
-                            data.setValue(new ArrayList<>());
-                        }
+
+                        // Step 2: Fetch gaps
+                        gapApiService.getEmployeeGaps(employeeId).enqueue(new Callback<List<SkillGapResponse>>() {
+                            @Override
+                            public void onResponse(Call<List<SkillGapResponse>> call, Response<List<SkillGapResponse>> response) {
+                                android.util.Log.d("SkillGapDebug", "Gaps API Status: " + response.code());
+                                List<SkillGapResponse> gaps = new ArrayList<>();
+                                if (response.isSuccessful() && response.body() != null) {
+                                    gaps = response.body();
+                                    for (SkillGapResponse g : gaps) {
+                                        String sName = skillMap.getOrDefault(g.getSkillId(), "Skill " + g.getSkillId());
+                                        g.setSkillName(sName);
+                                        String eName = empMap.getOrDefault(g.getEmployeeId(), "Employee");
+                                        g.setEmployeeName(eName);
+                                    }
+                                }
+                                
+                                if (!gaps.isEmpty()) {
+                                    data.setValue(gaps);
+                                } else {
+                                    data.setValue(new ArrayList<>());
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<List<SkillGapResponse>> call, Throwable t) {
+                                android.util.Log.e("SkillGapDebug", "Gaps API Failure: " + t.getMessage());
+                                errorData.setValue("Unable to load skill gap data (Network error)");
+                                data.setValue(null);
+                            }
+                        });
                     }
 
                     @Override
-                    public void onFailure(Call<List<SkillGapResponse>> call, Throwable t) {
-                        android.util.Log.e("SkillGapDebug", "Gaps API Failure: " + t.getMessage());
-                        errorData.setValue("Unable to load skill gap data (Network error)");
-                        data.setValue(null);
+                    public void onFailure(Call<List<EmployeeResponse>> call, Throwable t) {
+                        // Fallback without employee map
+                        gapApiService.getEmployeeGaps(employeeId).enqueue(new Callback<List<SkillGapResponse>>() {
+                            @Override
+                            public void onResponse(Call<List<SkillGapResponse>> call, Response<List<SkillGapResponse>> response) {
+                                List<SkillGapResponse> gaps = new ArrayList<>();
+                                if (response.isSuccessful() && response.body() != null) {
+                                    gaps = response.body();
+                                    for (SkillGapResponse g : gaps) {
+                                        String sName = skillMap.getOrDefault(g.getSkillId(), "Skill " + g.getSkillId());
+                                        g.setSkillName(sName);
+                                        g.setEmployeeName("Employee");
+                                    }
+                                }
+                                data.setValue(gaps);
+                            }
+
+                            @Override
+                            public void onFailure(Call<List<SkillGapResponse>> call, Throwable t) {
+                                data.setValue(null);
+                            }
+                        });
                     }
                 });
             }
