@@ -3,37 +3,39 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  UserCheck, // ✅ FIXED: required for Mentor Allocation
+  UserCheck,
   ClipboardList,
+  ClipboardCheck,
   BarChart3,
   GraduationCap,
   BookOpen,
   Bell,
   LogOut,
   User,
+  UserCog,
   Brain,
-  AlertTriangle,
   TrendingUp,
   Library,
-  Lightbulb,
-  UserCog,
-  PieChart,
-  Activity,
   CalendarDays,
+  RotateCcw,
+  Activity,
+  FileText,
+  PieChart,
+  MessageSquare,
 } from "lucide-react";
 
 function Sidebar({ role }) {
   // ==================================================
   // NORMALIZE ROLE
   // ==================================================
-  const normalizedRole = (role || "")
+  const normalizedRole = String(role || "")
     .toUpperCase()
-    .replace("ROLE_", "")
+    .replace(/^ROLE_/, "")
     .replace(/_/g, " ")
     .trim();
 
   // ==================================================
-  // COMMON NAVLINK STYLE
+  // NAVLINK STYLE
   // ==================================================
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-3 px-6 py-3 transition ${
@@ -62,20 +64,15 @@ function Sidebar({ role }) {
       <nav className="flex-1 mt-6 overflow-y-auto">
 
         {/* ==================================================
-            HR SIDEBAR
+            HR
         ================================================== */}
         {normalizedRole === "HR" && (
           <>
-            {/* HR Dashboard */}
-            <NavLink
-              to="/hr"
-              className={navLinkClass}
-            >
+            <NavLink to="/hr" className={navLinkClass}>
               <LayoutDashboard size={20} />
               HR Dashboard
             </NavLink>
 
-            {/* Gap Intelligence */}
             <NavLink
               to="/hr/gap-intelligence"
               className={navLinkClass}
@@ -84,7 +81,6 @@ function Sidebar({ role }) {
               Gap Intelligence
             </NavLink>
 
-            {/* Workforce Skills */}
             <NavLink
               to="/hr/workforce-skills"
               className={navLinkClass}
@@ -93,7 +89,6 @@ function Sidebar({ role }) {
               Workforce Skills
             </NavLink>
 
-            {/* Competency Framework */}
             <NavLink
               to="/competency-framework"
               className={navLinkClass}
@@ -102,7 +97,6 @@ function Sidebar({ role }) {
               Competency Framework
             </NavLink>
 
-            {/* Training Effectiveness */}
             <NavLink
               to="/training-effectiveness"
               className={navLinkClass}
@@ -111,7 +105,6 @@ function Sidebar({ role }) {
               Training Effectiveness
             </NavLink>
 
-            {/* Skill Forecast */}
             <NavLink
               to="/skill-forecast"
               className={navLinkClass}
@@ -120,7 +113,6 @@ function Sidebar({ role }) {
               Skill Forecast
             </NavLink>
 
-            {/* Mentor Allocation */}
             <NavLink
               to="/hr/mentor-allocation"
               className={navLinkClass}
@@ -129,25 +121,16 @@ function Sidebar({ role }) {
               Mentor Allocation
             </NavLink>
 
-            {/* User Management */}
-            <NavLink
-              to="/users"
-              className={navLinkClass}
-            >
+            <NavLink to="/users" className={navLinkClass}>
               <UserCog size={20} />
               User Management
             </NavLink>
 
-            {/* Reports */}
-            <NavLink
-              to="/reports"
-              className={navLinkClass}
-            >
+            <NavLink to="/hr/reports" className={navLinkClass}>
               <BarChart3 size={20} />
-              Reports
+              HR Reports
             </NavLink>
 
-            {/* Notifications */}
             <NavLink
               to="/notifications"
               className={navLinkClass}
@@ -159,20 +142,15 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            MANAGER SIDEBAR
+            MANAGER
         ================================================== */}
         {normalizedRole === "MANAGER" && (
           <>
-            {/* Manager Dashboard */}
-            <NavLink
-              to="/manager"
-              className={navLinkClass}
-            >
+            <NavLink to="/manager" className={navLinkClass}>
               <LayoutDashboard size={20} />
               Manager Dashboard
             </NavLink>
 
-            {/* Team Skill Coverage */}
             <NavLink
               to="/team-skills"
               className={navLinkClass}
@@ -181,7 +159,6 @@ function Sidebar({ role }) {
               Team Skill Coverage
             </NavLink>
 
-            {/* Team Skill Gaps */}
             <NavLink
               to="/team-gaps"
               className={navLinkClass}
@@ -190,16 +167,6 @@ function Sidebar({ role }) {
               Team Skill Gaps
             </NavLink>
 
-            {/* High Risk Gaps */}
-            <NavLink
-              to="/high-risk-gaps"
-              className={navLinkClass}
-            >
-              <AlertTriangle size={20} />
-              High-Risk Gaps
-            </NavLink>
-
-            {/* Employee Progress */}
             <NavLink
               to="/employee-progress"
               className={navLinkClass}
@@ -208,68 +175,6 @@ function Sidebar({ role }) {
               Employee Progress
             </NavLink>
 
-            {/* Training */}
-            <NavLink
-              to="/training"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training & Learning
-            </NavLink>
-
-            {/* Learning Interventions */}
-            <NavLink
-              to="/learning-interventions"
-              className={navLinkClass}
-            >
-              <Lightbulb size={20} />
-              Learning Interventions
-            </NavLink>
-
-            {/* Notifications */}
-            <NavLink
-              to="/notifications"
-              className={navLinkClass}
-            >
-              <Bell size={20} />
-              Notifications
-            </NavLink>
-          </>
-        )}
-
-        {/* ==================================================
-            DEPARTMENT HEAD SIDEBAR
-        ================================================== */}
-        {normalizedRole === "DEPARTMENT HEAD" && (
-          <>
-            {/* Department Dashboard */}
-            <NavLink
-              to="/department-head"
-              className={navLinkClass}
-            >
-              <LayoutDashboard size={20} />
-              Department Dashboard
-            </NavLink>
-
-            {/* Team Gap Heatmap */}
-            <NavLink
-              to="/team-gap-heatmap"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              Team Gap Heatmap
-            </NavLink>
-
-            {/* Skill Coverage */}
-            <NavLink
-              to="/department-skills"
-              className={navLinkClass}
-            >
-              <Users size={20} />
-              Skill Coverage
-            </NavLink>
-
-            {/* Training Adoption */}
             <NavLink
               to="/training-adoption"
               className={navLinkClass}
@@ -278,36 +183,32 @@ function Sidebar({ role }) {
               Training Adoption
             </NavLink>
 
-            {/* High Risk Gaps */}
             <NavLink
-              to="/department-risk-gaps"
+              to="/manager-reports"
               className={navLinkClass}
             >
-              <AlertTriangle size={20} />
-              High-Risk Gaps
-            </NavLink>
-
-            {/* Individual Progress */}
-            <NavLink
-              to="/individual-progress"
-              className={navLinkClass}
-            >
-              <Activity size={20} />
-              Individual Progress
-            </NavLink>
-
-            {/* Reports */}
-            <NavLink
-              to="/reports"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
+              <FileText size={20} />
               Reports
             </NavLink>
 
-            {/* Notifications */}
             <NavLink
-              to="/notifications"
+              to="/manager-assessment"
+              className={navLinkClass}
+            >
+              <ClipboardCheck size={20} />
+              Manager Assessment
+            </NavLink>
+
+            <NavLink
+              to="/manager-reports"
+              className={navLinkClass}
+            >
+              <FileText size={20} />
+              Reports
+            </NavLink>
+
+            <NavLink
+              to="/manager/notifications"
               className={navLinkClass}
             >
               <Bell size={20} />
@@ -317,29 +218,61 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            MENTOR SIDEBAR
+            DEPARTMENT HEAD
         ================================================== */}
-        {normalizedRole === "MENTOR" && (
+        {normalizedRole === "DEPARTMENT HEAD" && (
           <>
-            {/* Mentor Dashboard */}
             <NavLink
-              to="/mentor"
+              to="/department-head"
               className={navLinkClass}
             >
               <LayoutDashboard size={20} />
-              Mentor Dashboard
+              Department Dashboard
             </NavLink>
 
-            {/* Training Management */}
             <NavLink
-              to="/training-management"
+              to="/department-head/skill-coverage"
+              className={navLinkClass}
+            >
+              <Users size={20} />
+              Skill Coverage
+            </NavLink>
+
+            <NavLink
+              to="/department-head/training-adoption"
               className={navLinkClass}
             >
               <GraduationCap size={20} />
-              Training Management
+              Training Adoption
             </NavLink>
 
-            {/* Course Catalog */}
+            <NavLink
+              to="/reports"
+              className={navLinkClass}
+            >
+              <BarChart3 size={20} />
+              Reports
+            </NavLink>
+
+            <NavLink
+              to="/department-head/notifications"
+              className={navLinkClass}
+            >
+              <Bell size={20} />
+              Notifications
+            </NavLink>
+          </>
+        )}
+
+        {/* ==================================================
+            MENTOR
+        ================================================== */}
+        {normalizedRole === "MENTOR" && (
+          <>
+            <NavLink to="/mentor" className={navLinkClass}>
+              <LayoutDashboard size={20} />
+              Mentor Dashboard
+            </NavLink>
             <NavLink
               to="/training-catalog"
               className={navLinkClass}
@@ -348,16 +281,6 @@ function Sidebar({ role }) {
               Course Catalog
             </NavLink>
 
-            {/* Learning Paths */}
-            <NavLink
-              to="/learning-path"
-              className={navLinkClass}
-            >
-              <BookOpen size={20} />
-              Learning Paths
-            </NavLink>
-
-            {/* Mentor Management */}
             <NavLink
               to="/mentor-management"
               className={navLinkClass}
@@ -366,7 +289,6 @@ function Sidebar({ role }) {
               Mentor Management
             </NavLink>
 
-            {/* Knowledge Sessions */}
             <NavLink
               to="/knowledge-sessions"
               className={navLinkClass}
@@ -375,7 +297,6 @@ function Sidebar({ role }) {
               Knowledge Sessions
             </NavLink>
 
-            {/* Learning Analytics */}
             <NavLink
               to="/learning-analytics"
               className={navLinkClass}
@@ -384,7 +305,6 @@ function Sidebar({ role }) {
               Learning Analytics
             </NavLink>
 
-            {/* Notifications */}
             <NavLink
               to="/notifications"
               className={navLinkClass}
@@ -396,11 +316,10 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            EMPLOYEE SIDEBAR
+            EMPLOYEE
         ================================================== */}
         {normalizedRole === "EMPLOYEE" && (
           <>
-            {/* Dashboard */}
             <NavLink
               to="/employee"
               className={navLinkClass}
@@ -409,7 +328,6 @@ function Sidebar({ role }) {
               Dashboard
             </NavLink>
 
-            {/* Profile */}
             <NavLink
               to="/profile"
               className={navLinkClass}
@@ -418,7 +336,6 @@ function Sidebar({ role }) {
               My Profile
             </NavLink>
 
-            {/* Skill Inventory */}
             <NavLink
               to="/skills"
               className={navLinkClass}
@@ -427,7 +344,6 @@ function Sidebar({ role }) {
               Skill Inventory
             </NavLink>
 
-            {/* Skill Assessment */}
             <NavLink
               to="/employee-assessment"
               className={navLinkClass}
@@ -436,7 +352,22 @@ function Sidebar({ role }) {
               Skill Assessment
             </NavLink>
 
-            {/* Knowledge Gap */}
+            <NavLink
+              to="/reassessment"
+              className={navLinkClass}
+            >
+              <RotateCcw size={20} />
+              Reassessment
+            </NavLink>
+
+            <NavLink
+              to="/peer-assessment"
+              className={navLinkClass}
+            >
+              <Users size={20} />
+              Peer Assessment
+            </NavLink>
+
             <NavLink
               to="/knowledge-gap"
               className={navLinkClass}
@@ -445,7 +376,6 @@ function Sidebar({ role }) {
               Knowledge Gap Analysis
             </NavLink>
 
-            {/* AI Learning Path */}
             <NavLink
               to="/learning-path"
               className={navLinkClass}
@@ -454,7 +384,6 @@ function Sidebar({ role }) {
               AI Learning Path
             </NavLink>
 
-            {/* Training & Learning */}
             <NavLink
               to="/training-learning"
               className={navLinkClass}
@@ -463,16 +392,22 @@ function Sidebar({ role }) {
               Training & Learning
             </NavLink>
 
-            {/* Mentorship */}
             <NavLink
-              to="/mentorship"
+              to="/peer-mentoring"
               className={navLinkClass}
             >
               <Users size={20} />
-              Mentorship
+              Peer Mentoring
             </NavLink>
 
-            {/* Knowledge Sessions */}
+            <NavLink
+              to="/messages"
+              className={navLinkClass}
+            >
+              <MessageSquare size={20} />
+              Messages / Chat
+            </NavLink>
+
             <NavLink
               to="/knowledge-sessions"
               className={navLinkClass}
@@ -481,25 +416,6 @@ function Sidebar({ role }) {
               Knowledge Sessions
             </NavLink>
 
-            {/* My Trainings */}
-            <NavLink
-              to="/my-trainings"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              My Trainings
-            </NavLink>
-
-            {/* Training Details */}
-            <NavLink
-              to="/training-details"
-              className={navLinkClass}
-            >
-              <BookOpen size={20} />
-              Training Details
-            </NavLink>
-
-            {/* Learning Progress */}
             <NavLink
               to="/learning-progress"
               className={navLinkClass}
@@ -508,7 +424,6 @@ function Sidebar({ role }) {
               Learning Progress
             </NavLink>
 
-            {/* Expert Directory */}
             <NavLink
               to="/expert-directory"
               className={navLinkClass}
@@ -517,7 +432,6 @@ function Sidebar({ role }) {
               Expert Directory
             </NavLink>
 
-            {/* Notifications */}
             <NavLink
               to="/notifications"
               className={navLinkClass}
@@ -529,12 +443,11 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            SYSTEM ADMINISTRATOR SIDEBAR
+            SYSTEM ADMINISTRATOR
         ================================================== */}
         {(normalizedRole === "SYSTEM ADMINISTRATOR" ||
           normalizedRole === "ADMIN") && (
           <>
-            {/* System Administrator Dashboard */}
             <NavLink
               to="/system-administrator"
               className={navLinkClass}
@@ -543,27 +456,24 @@ function Sidebar({ role }) {
               System Administrator
             </NavLink>
 
-            {/* User Management */}
             <NavLink
-              to="/users"
+              to="/system-administrator/users"
               className={navLinkClass}
             >
               <UserCog size={20} />
               User Management
             </NavLink>
 
-            {/* Reports */}
             <NavLink
-              to="/reports"
+              to="/system-administrator/reports"
               className={navLinkClass}
             >
               <BarChart3 size={20} />
               Reports
             </NavLink>
 
-            {/* Notifications */}
             <NavLink
-              to="/notifications"
+              to="/system-administrator/notifications"
               className={navLinkClass}
             >
               <Bell size={20} />

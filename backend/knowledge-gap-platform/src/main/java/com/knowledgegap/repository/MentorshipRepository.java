@@ -22,4 +22,9 @@ public interface MentorshipRepository
             Employee mentor,
             String status
     );
+
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM Mentorship m WHERE (m.mentee = :employee OR m.mentor = :employee) AND UPPER(m.status) IN ('ACCEPTED', 'ACTIVE')")
+    List<Mentorship> findActivePeerMentorships(
+            @org.springframework.data.repository.query.Param("employee") Employee employee
+    );
 }

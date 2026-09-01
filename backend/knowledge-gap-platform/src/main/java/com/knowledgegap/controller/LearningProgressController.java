@@ -15,6 +15,10 @@ public class LearningProgressController {
 
     private final LearningProgressService learningProgressService;
 
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
+
     public LearningProgressController(
             LearningProgressService learningProgressService) {
 
@@ -23,54 +27,68 @@ public class LearningProgressController {
     }
 
     // =========================================================
-    // GET EMPLOYEE LEARNING PROGRESS
-    // GET /api/learning-progress/employee/EMP1001
+    // GET ALL EMPLOYEE LEARNING PROGRESS
+    //
+    // GET
+    // /api/learning-progress/employee/EMP1001
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}")
-    public ResponseEntity<List<LearningProgress>> getEmployeeProgress(
+    public ResponseEntity<List<LearningProgress>>
+    getEmployeeProgress(
             @PathVariable String employeeIdentifier) {
 
         return ResponseEntity.ok(
                 learningProgressService
-                        .getEmployeeProgress(employeeIdentifier)
+                        .getEmployeeProgress(
+                                employeeIdentifier
+                        )
         );
     }
 
     // =========================================================
-    // CREATE LEARNING PROGRESS
-    // POST /api/learning-progress
+    // GET EMPLOYEE + COURSE PROGRESS
+    //
+    // GET
+    // /api/learning-progress/employee/EMP1001/course/1
     // =========================================================
 
-    @PostMapping
-    public ResponseEntity<LearningProgress> saveProgress(
-            @RequestBody LearningProgressRequest request) {
+    @GetMapping(
+            "/employee/{employeeIdentifier}/course/{courseId}"
+    )
+    public ResponseEntity<LearningProgress>
+    getEmployeeCourseProgress(
+            @PathVariable String employeeIdentifier,
+            @PathVariable Long courseId) {
 
-        LearningProgress progress =
-                learningProgressService.saveProgress(
-                        request.getEmployeeId(),
-                        request.getCourseId(),
-                        request.getProgressPercentage()
-                );
-
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(
+                learningProgressService
+                        .getEmployeeCourseProgress(
+                                employeeIdentifier,
+                                courseId
+                        )
+        );
     }
 
     // =========================================================
     // UPDATE LEARNING PROGRESS
-    // PUT /api/learning-progress/{id}
+    //
+    // PUT
+    // /api/learning-progress/1
     // =========================================================
 
     @PutMapping("/{id}")
-    public ResponseEntity<LearningProgress> updateProgress(
+    public ResponseEntity<LearningProgress>
+    updateProgress(
             @PathVariable Long id,
             @RequestBody UpdateProgressRequest request) {
 
         LearningProgress progress =
-                learningProgressService.updateProgress(
-                        id,
-                        request.getProgressPercentage()
-                );
+                learningProgressService
+                        .updateProgress(
+                                id,
+                                request.getProgressPercentage()
+                        );
 
         return ResponseEntity.ok(progress);
     }
@@ -80,50 +98,14 @@ public class LearningProgressController {
     // =========================================================
 
     @GetMapping("/{id}")
-    public ResponseEntity<LearningProgress> getById(
+    public ResponseEntity<LearningProgress>
+    getById(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                learningProgressService.getById(id)
+                learningProgressService
+                        .getById(id)
         );
-    }
-
-    // =========================================================
-    // REQUEST DTO
-    // =========================================================
-
-    public static class LearningProgressRequest {
-
-        private String employeeId;
-        private Long courseId;
-        private Integer progressPercentage;
-
-        public String getEmployeeId() {
-            return employeeId;
-        }
-
-        public void setEmployeeId(String employeeId) {
-            this.employeeId = employeeId;
-        }
-
-        public Long getCourseId() {
-            return courseId;
-        }
-
-        public void setCourseId(Long courseId) {
-            this.courseId = courseId;
-        }
-
-        public Integer getProgressPercentage() {
-            return progressPercentage;
-        }
-
-        public void setProgressPercentage(
-                Integer progressPercentage) {
-
-            this.progressPercentage =
-                    progressPercentage;
-        }
     }
 
     // =========================================================

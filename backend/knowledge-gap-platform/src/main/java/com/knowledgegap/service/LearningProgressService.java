@@ -16,124 +16,186 @@ import com.knowledgegap.repository.LearningProgressRepository;
 public class LearningProgressService {
 
     private final LearningProgressRepository learningProgressRepository;
+
     private final EmployeeRepository employeeRepository;
+
     private final CourseRepository courseRepository;
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public LearningProgressService(
             LearningProgressRepository learningProgressRepository,
             EmployeeRepository employeeRepository,
             CourseRepository courseRepository) {
 
-        this.learningProgressRepository = learningProgressRepository;
-        this.employeeRepository = employeeRepository;
-        this.courseRepository = courseRepository;
+        this.learningProgressRepository =
+                learningProgressRepository;
+
+        this.employeeRepository =
+                employeeRepository;
+
+        this.courseRepository =
+                courseRepository;
     }
 
     // =========================================================
-    // GET EMPLOYEE PROGRESS
+    // GET ALL EMPLOYEE LEARNING PROGRESS
     // =========================================================
 
+    @Transactional(readOnly = true)
     public List<LearningProgress> getEmployeeProgress(
             String employeeIdentifier) {
 
-        Employee employee = employeeRepository
-                .findByEmployeeId(employeeIdentifier)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Employee not found: "
-                                        + employeeIdentifier
-                        ));
+        Employee employee =
+                employeeRepository
+                        .findByEmployeeId(employeeIdentifier)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found: "
+                                                + employeeIdentifier
+                                )
+                        );
 
         return learningProgressRepository
                 .findByEmployee(employee);
     }
 
     // =========================================================
-    // CREATE / UPDATE PROGRESS
+    // GET PROGRESS FOR EMPLOYEE + COURSE
     // =========================================================
 
-    @Transactional
-    public LearningProgress saveProgress(
+    @Transactional(readOnly = true)
+    public LearningProgress getEmployeeCourseProgress(
             String employeeIdentifier,
-            Long courseId,
-            Integer progressPercentage) {
+            Long courseId) {
 
-        Employee employee = employeeRepository
-                .findByEmployeeId(employeeIdentifier)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Employee not found: "
-                                        + employeeIdentifier
-                        ));
+        Employee employee =
+                employeeRepository
+                        .findByEmployeeId(employeeIdentifier)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found: "
+                                                + employeeIdentifier
+                                )
+                        );
 
-        Course course = courseRepository
-                .findById(courseId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Course not found: "
-                                        + courseId
-                        ));
+        Course course =
+                courseRepository
+                        .findById(courseId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Course not found: "
+                                                + courseId
+                                )
+                        );
 
-        int progress = progressPercentage == null
-                ? 0
-                : Math.min(
-                        Math.max(progressPercentage, 0),
-                        100
-                );
+        return learningProgressRepository
+                .findByEmployeeAndCourse(
+                        employee,
+                        course
+                )
+                .orElseGet(() -> {
 
-        LearningProgress learningProgress =
-                learningProgressRepository
-                        .findByEmployeeAndCourse(
-                                employee,
-                                course
-                        )
-                        .orElseGet(() -> {
+                    LearningProgress progress =
+                            new LearningProgress();
 
-                            LearningProgress newProgress =
-                                    new LearningProgress();
+                    progress.setEmployee(employee);
+                    progress.setCourse(course);
+                    progress.setProgressPercentage(0);
 
-                            newProgress.setEmployee(employee);
-                            newProgress.setCourse(course);
-
-                            return newProgress;
-                        });
-
-        learningProgress.setProgressPercentage(progress);
-
-        return learningProgressRepository.save(
-                learningProgress
-        );
+                    return learningProgressRepository.save(
+                            progress
+                    );
+                });
     }
 
     // =========================================================
-    // UPDATE EXISTING PROGRESS
+    // CREATE INITIAL LEARNING PROGRESS
     // =========================================================
+
+    @Transactional
+    public LearningProgress initializeProgress(
+            Employee employee,
+            Course course) {
+
+        return learningProgressRepository
+                .findByEmployeeAndCourse(
+                        employee,
+                        course
+                )
+                .orElseGet(() -> {
+
+                    LearningProgress progress =
+                            new LearningProgress();
+
+                    progress.setEmployee(employee);
+                    progress.setCourse(course);
+                    progress.setProgressPercentage(0);
+
+                    return learningProgressRepository.save(
+                            progress
+                    );
+                });
+    }
+
+    // =========================================================
+    // UPDATE OVERALL PROGRESS
+    // =========================================================
+    /*
+     * Normally this method should NOT be called directly
+     * from the employee UI.
+     *
+     * Overall progress should come from:
+     *
+     * EmployeeMilestoneProgress
+     *          ↓
+     * Average milestone progress
+     *          ↓
+     * LearningProgress
+     *
+     * This method is kept for backend/internal use.
+     */
 
     @Transactional
     public LearningProgress updateProgress(
             Long id,
             Integer progressPercentage) {
 
-        LearningProgress learningProgress =
+        if (progressPercentage == null) {
+
+            throw new IllegalArgumentException(
+                    "Progress percentage is required."
+            );
+        }
+
+        if (
+            progressPercentage < 0 ||
+            progressPercentage > 100
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Progress must be between 0 and 100."
+            );
+        }
+
+        LearningProgress progress =
                 learningProgressRepository
                         .findById(id)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Learning progress not found: "
                                                 + id
-                                ));
+                                )
+                        );
 
-        int progress = progressPercentage == null
-                ? 0
-                : Math.min(
-                        Math.max(progressPercentage, 0),
-                        100
-                );
-
-        learningProgress.setProgressPercentage(progress);
+        progress.setProgressPercentage(
+                progressPercentage
+        );
 
         return learningProgressRepository.save(
-                learningProgress
+                progress
         );
     }
 
@@ -141,7 +203,9 @@ public class LearningProgressService {
     // GET BY ID
     // =========================================================
 
-    public LearningProgress getById(Long id) {
+    @Transactional(readOnly = true)
+    public LearningProgress getById(
+            Long id) {
 
         return learningProgressRepository
                 .findById(id)
@@ -149,6 +213,7 @@ public class LearningProgressService {
                         new RuntimeException(
                                 "Learning progress not found: "
                                         + id
-                        ));
+                        )
+                );
     }
 }

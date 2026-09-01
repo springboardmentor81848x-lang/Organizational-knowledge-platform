@@ -13,27 +13,25 @@ public interface TrainingEnrollmentRepository
         extends JpaRepository<TrainingEnrollment, Long> {
 
     // =========================================================
-    // GET ALL ENROLLMENTS FOR EMPLOYEE
+    // EMPLOYEE TRAINING
     // =========================================================
 
-    List<TrainingEnrollment> findByEmployee(
-            Employee employee
-    );
+    List<TrainingEnrollment> findByEmployee(Employee employee);
 
-    // =========================================================
-    // GET ALL ENROLLMENTS FOR COURSE
-    // =========================================================
-
-    List<TrainingEnrollment> findByCourse(
-            Course course
-    );
-
-    // =========================================================
-    // CHECK EMPLOYEE + COURSE ENROLLMENT
-    // =========================================================
+    List<TrainingEnrollment> findByCourse(Course course);
 
     Optional<TrainingEnrollment> findByEmployeeAndCourse(
             Employee employee,
             Course course
+    );
+
+    // =========================================================
+    // DEPARTMENT / MANAGER DASHBOARD
+    // =========================================================
+
+    // Get all training enrollments for employees
+    // belonging to a particular department
+    List<TrainingEnrollment> findByEmployeeDepartmentId(
+            Long departmentId
     );
 }

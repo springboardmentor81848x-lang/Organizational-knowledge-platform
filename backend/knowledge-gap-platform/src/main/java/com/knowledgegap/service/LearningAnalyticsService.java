@@ -1,16 +1,21 @@
 package com.knowledgegap.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.knowledgegap.dto.LearningAnalytics;
+import com.knowledgegap.dto.LearningVelocityDTO;
 import com.knowledgegap.dto.SessionAnalytics;
 import com.knowledgegap.entity.KnowledgeSession;
-import com.knowledgegap.entity.SessionFeedback;
+import com.knowledgegap.entity.LearningProgressHistory;
 import com.knowledgegap.repository.KnowledgeSessionRepository;
+import com.knowledgegap.repository.LearningProgressHistoryRepository;
 import com.knowledgegap.repository.SessionFeedbackRepository;
 import com.knowledgegap.repository.SessionRegistrationRepository;
 
@@ -21,15 +26,22 @@ public class LearningAnalyticsService {
     private final KnowledgeSessionRepository sessionRepository;
     private final SessionRegistrationRepository registrationRepository;
     private final SessionFeedbackRepository feedbackRepository;
+    private final LearningProgressHistoryRepository progressHistoryRepository;
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public LearningAnalyticsService(
             KnowledgeSessionRepository sessionRepository,
             SessionRegistrationRepository registrationRepository,
-            SessionFeedbackRepository feedbackRepository) {
+            SessionFeedbackRepository feedbackRepository,
+            LearningProgressHistoryRepository progressHistoryRepository) {
 
         this.sessionRepository = sessionRepository;
         this.registrationRepository = registrationRepository;
         this.feedbackRepository = feedbackRepository;
+        this.progressHistoryRepository = progressHistoryRepository;
     }
 
     // =========================================================
@@ -37,10 +49,6 @@ public class LearningAnalyticsService {
     // =========================================================
 
     public LearningAnalytics getMentorAnalytics(Long mentorId) {
-
-        // -----------------------------------------------------
-        // Get mentor sessions
-        // -----------------------------------------------------
 
         List<KnowledgeSession> sessions =
                 sessionRepository.findByMentorId(mentorId);
@@ -62,10 +70,6 @@ public class LearningAnalyticsService {
 
         List<SessionAnalytics> sessionAnalytics =
                 new ArrayList<>();
-
-        // -----------------------------------------------------
-        // Analyze every session
-        // -----------------------------------------------------
 
         for (KnowledgeSession session : sessions) {
 
@@ -106,10 +110,6 @@ public class LearningAnalyticsService {
                 averageRating = 0.0;
             }
 
-            // -------------------------------------------------
-            // Add to overall totals
-            // -------------------------------------------------
-
             totalRegistrations += registrations;
             totalAttended += attended;
             totalFeedback += feedbackCount;
@@ -117,24 +117,13 @@ public class LearningAnalyticsService {
             ratingSum +=
                     averageRating * feedbackCount;
 
-            // -------------------------------------------------
-            // Session attendance rate
-            // -------------------------------------------------
-
             double sessionAttendanceRate = 0.0;
 
             if (registrations > 0) {
-
                 sessionAttendanceRate =
                         ((double) attended / registrations)
-                        * 100.0;
+                                * 100.0;
             }
-
-            // -------------------------------------------------
-            // Session effectiveness
-            // Rating is out of 5.
-            // Convert to percentage.
-            // -------------------------------------------------
 
             double effectiveness =
                     (averageRating / 5.0) * 100.0;
@@ -147,10 +136,6 @@ public class LearningAnalyticsService {
 
             effectiveness =
                     round(effectiveness);
-
-            // -------------------------------------------------
-            // Session analytics
-            // -------------------------------------------------
 
             SessionAnalytics analytics =
                     new SessionAnalytics(
@@ -168,9 +153,9 @@ public class LearningAnalyticsService {
             sessionAnalytics.add(analytics);
         }
 
-        // -----------------------------------------------------
-        // Overall attendance rate
-        // -----------------------------------------------------
+        // =====================================================
+        // OVERALL ATTENDANCE RATE
+        // =====================================================
 
         double attendanceRate = 0.0;
 
@@ -179,12 +164,12 @@ public class LearningAnalyticsService {
             attendanceRate =
                     ((double) totalAttended
                             / totalRegistrations)
-                    * 100.0;
+                            * 100.0;
         }
 
-        // -----------------------------------------------------
-        // Overall average rating
-        // -----------------------------------------------------
+        // =====================================================
+        // OVERALL EFFECTIVENESS
+        // =====================================================
 
         double averageEffectiveness = 0.0;
 
@@ -197,19 +182,11 @@ public class LearningAnalyticsService {
                     (averageRating / 5.0) * 100.0;
         }
 
-        // -----------------------------------------------------
-        // Round values
-        // -----------------------------------------------------
-
         attendanceRate =
                 round(attendanceRate);
 
         averageEffectiveness =
                 round(averageEffectiveness);
-
-        // -----------------------------------------------------
-        // Return analytics
-        // -----------------------------------------------------
 
         return new LearningAnalytics(
                 mentorId,
@@ -247,7 +224,82 @@ public class LearningAnalyticsService {
     }
 
     // =========================================================
-    // ROUND DOUBLE
+    // EMPLOYEE LEARNING VELOCITY
+    // =========================================================
+
+    public List<LearningVelocityDTO>
+    getEmployeeLearningVelocity(
+            String employeeId) {
+
+        // -----------------------------------------------------
+        // GET HISTORY USING BUSINESS EMPLOYEE ID
+        // Example: EMP1001
+        // -----------------------------------------------------
+
+        List<LearningProgressHistory> history =
+                progressHistoryRepository
+                        .findByEmployee_EmployeeIdOrderByRecordedAtAsc(
+                                employeeId
+                        );
+
+        // -----------------------------------------------------
+        // GROUP PROGRESS BY DATE
+        //
+        // If progress is updated multiple times on the same
+        // day, the latest progress value is kept.
+        // -----------------------------------------------------
+
+        Map<LocalDate, Double> dailyProgress =
+                new LinkedHashMap<>();
+
+        for (LearningProgressHistory record : history) {
+
+            if (record.getRecordedAt() == null) {
+                continue;
+            }
+
+            if (record.getProgressPercentage() == null) {
+                continue;
+            }
+
+            double progress =
+                    Math.max(
+                            0,
+                            Math.min(
+                                    100,
+                                    record.getProgressPercentage()
+                            )
+                    );
+
+            dailyProgress.put(
+                    record.getRecordedAt().toLocalDate(),
+                    progress
+            );
+        }
+
+        // -----------------------------------------------------
+        // CREATE VELOCITY DTO LIST
+        // -----------------------------------------------------
+
+        List<LearningVelocityDTO> result =
+                new ArrayList<>();
+
+        for (Map.Entry<LocalDate, Double> entry
+                : dailyProgress.entrySet()) {
+
+            result.add(
+                    new LearningVelocityDTO(
+                            entry.getKey(),
+                            round(entry.getValue())
+                    )
+            );
+        }
+
+        return result;
+    }
+
+    // =========================================================
+    // ROUND
     // =========================================================
 
     private double round(double value) {

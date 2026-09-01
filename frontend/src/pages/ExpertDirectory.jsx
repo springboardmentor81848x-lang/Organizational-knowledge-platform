@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -16,7 +17,8 @@ import {
   LayoutGrid,
   List as ListIcon,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -49,6 +51,7 @@ const departmentColors = {
 };
 
 export default function ExpertDirectory() {
+  const navigate = useNavigate();
   const [experts, setExperts] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [skillsList, setSkillsList] = useState([]);
@@ -782,6 +785,16 @@ export default function ExpertDirectory() {
                           </div>
                         )}
                       </div>
+
+                      {(m.status?.toUpperCase() === 'ACCEPTED' || m.status?.toUpperCase() === 'ACTIVE') && (
+                        <button
+                          onClick={() => navigate(`/messages?mentorshipId=${m.id}`)}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <MessageSquare size={13} />
+                          <span>Open Chat</span>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -5,14 +5,11 @@ import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.KnowledgeGap;
-import com.knowledgegap.entity.Role;
 import com.knowledgegap.entity.Skill;
-
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.KnowledgeGapRepository;
-import com.knowledgegap.repository.RoleRepository;
 import com.knowledgegap.repository.SkillRepository;
 
 import org.springframework.stereotype.Service;
@@ -34,7 +31,6 @@ public class KnowledgeGapService {
     private final AssessmentAttemptRepository assessmentAttemptRepository;
     private final AssessmentGapResultRepository assessmentGapResultRepository;
     private final EmployeeRepository employeeRepository;
-    private final RoleRepository roleRepository;
     private final SkillRepository skillRepository;
 
     public KnowledgeGapService(
@@ -42,26 +38,13 @@ public class KnowledgeGapService {
             AssessmentAttemptRepository assessmentAttemptRepository,
             AssessmentGapResultRepository assessmentGapResultRepository,
             EmployeeRepository employeeRepository,
-            RoleRepository roleRepository,
             SkillRepository skillRepository) {
 
-        this.knowledgeGapRepository =
-                knowledgeGapRepository;
-
-        this.assessmentAttemptRepository =
-                assessmentAttemptRepository;
-
-        this.assessmentGapResultRepository =
-                assessmentGapResultRepository;
-
-        this.employeeRepository =
-                employeeRepository;
-
-        this.roleRepository =
-                roleRepository;
-
-        this.skillRepository =
-                skillRepository;
+        this.knowledgeGapRepository = knowledgeGapRepository;
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.assessmentGapResultRepository = assessmentGapResultRepository;
+        this.employeeRepository = employeeRepository;
+        this.skillRepository = skillRepository;
     }
 
     // =========================================================
@@ -71,9 +54,7 @@ public class KnowledgeGapService {
     public KnowledgeGap saveKnowledgeGap(
             KnowledgeGap knowledgeGap) {
 
-        return knowledgeGapRepository.save(
-                knowledgeGap
-        );
+        return knowledgeGapRepository.save(knowledgeGap);
     }
 
     // =========================================================
@@ -102,27 +83,31 @@ public class KnowledgeGapService {
     public List<KnowledgeGap> getKnowledgeGapsByEmployee(
             Employee employee) {
 
-        return knowledgeGapRepository.findByEmployee(
-                employee
-        );
+        return knowledgeGapRepository.findByEmployee(employee);
     }
 
     // =========================================================
     // GET LATEST ASSESSMENT ATTEMPT
     // =========================================================
 
-    private Optional<AssessmentAttempt>
-    getLatestAssessmentAttempt(
+    private Optional<AssessmentAttempt> getLatestAssessmentAttempt(
             Employee employee) {
 
         return assessmentAttemptRepository
-                .findFirstByEmployeeOrderByIdDesc(
-                        employee
-                );
+                .findFirstByEmployeeOrderByIdDesc(employee);
     }
 
     // =========================================================
     // GET TARGET ROLE FROM LATEST ASSESSMENT
+    //
+    // IMPORTANT:
+    // assessment_role_id is NOT the application role table ID.
+    //
+    // Example:
+    // assessment_role_id = 4
+    // means Data Scientist.
+    //
+    // It must NOT be searched in the role table.
     // =========================================================
 
     public String getLatestAssessmentTargetRole(
@@ -142,28 +127,40 @@ public class KnowledgeGapService {
             return "Not Assigned";
         }
 
-        Long roleId =
-                attempt.getAssessment()
-                        .getAssessmentRoleId();
+        String title =
+                attempt.getAssessment().getTitle();
 
-        if (roleId == null) {
+        if (title == null || title.trim().isEmpty()) {
             return "Not Assigned";
         }
 
-        return roleRepository
-                .findById(roleId)
-                .map(Role::getRoleName)
-                .orElse("Not Assigned");
+        /*
+         * Example:
+         *
+         * "Data Scientist Assessment"
+         *        ↓
+         * "Data Scientist"
+         */
+
+        if (title.endsWith(" Assessment")) {
+
+            return title.substring(
+                    0,
+                    title.length() - " Assessment".length()
+            );
+        }
+
+        return title;
     }
 
     // =========================================================
     // DETECT AND SAVE KNOWLEDGE GAPS
     //
-    // IMPORTANT:
+    // Uses the latest AssessmentGapResult.
     //
-    // This method DOES NOT use EmployeeSkill.
+    // DOES NOT use EmployeeSkill.
     //
-    // It uses the latest persisted AssessmentGapResult.
+    // DOES NOT use application Role table for assessmentRoleId.
     // =========================================================
 
     @Transactional
@@ -209,13 +206,18 @@ public class KnowledgeGapService {
 
         // -----------------------------------------------------
         // 3. GET TARGET ROLE
+        //
+        // DO NOT call roleRepository.findById()
+        //
+        // assessmentRoleId belongs to target-role mapping,
+        // not application roles.
         // -----------------------------------------------------
 
-        Long roleId =
+        Long assessmentRoleId =
                 attempt.getAssessment()
                         .getAssessmentRoleId();
 
-        if (roleId == null) {
+        if (assessmentRoleId == null) {
 
             System.out.println(
                     "Assessment does not have a target role."
@@ -224,18 +226,8 @@ public class KnowledgeGapService {
             return List.of();
         }
 
-        Role role =
-                roleRepository
-                        .findById(roleId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Role not found with ID: "
-                                                + roleId
-                                )
-                        );
-
         String targetRole =
-                role.getRoleName();
+                getLatestAssessmentTargetRole(employee);
 
         System.out.println(
                 "=================================="
@@ -248,6 +240,11 @@ public class KnowledgeGapService {
         System.out.println(
                 "Employee: "
                         + employee.getEmployeeId()
+        );
+
+        System.out.println(
+                "Assessment Role ID: "
+                        + assessmentRoleId
         );
 
         System.out.println(
@@ -281,9 +278,7 @@ public class KnowledgeGapService {
         // 5. DELETE PREVIOUS KNOWLEDGE GAPS
         // -----------------------------------------------------
 
-        knowledgeGapRepository.deleteByEmployee(
-                employee
-        );
+        knowledgeGapRepository.deleteByEmployee(employee);
 
         List<KnowledgeGap> gapResults =
                 new ArrayList<>();
@@ -293,8 +288,7 @@ public class KnowledgeGapService {
         //    INTO KNOWLEDGE GAPS
         // -----------------------------------------------------
 
-        for (AssessmentGapResult result :
-                assessmentResults) {
+        for (AssessmentGapResult result : assessmentResults) {
 
             if (result == null) {
                 continue;
@@ -346,9 +340,7 @@ public class KnowledgeGapService {
 
             Optional<Skill> skillOptional =
                     skillRepository
-                            .findBySkillName(
-                                    skillName
-                            );
+                            .findBySkillName(skillName);
 
             if (skillOptional.isEmpty()) {
 
@@ -372,17 +364,13 @@ public class KnowledgeGapService {
                 KnowledgeGap knowledgeGap =
                         new KnowledgeGap();
 
-                knowledgeGap.setEmployee(
-                        employee
-                );
+                knowledgeGap.setEmployee(employee);
 
-                knowledgeGap.setSkill(
-                        skill
-                );
+                knowledgeGap.setSkill(skill);
 
                 /*
                  * Convert percentage score into
-                 * the existing 1-5 level system.
+                 * existing 1-5 level system.
                  *
                  * 0-20   -> 1
                  * 21-40  -> 2
@@ -414,7 +402,7 @@ public class KnowledgeGapService {
                         );
 
                 /*
-                 * Gap is stored using the existing
+                 * Gap is stored using existing
                  * 1-5 level scale.
                  */
 
@@ -499,14 +487,11 @@ public class KnowledgeGapService {
     // HR KNOWLEDGE GAP ANALYSIS
     // =========================================================
 
-    public HRKnowledgeGapResponse
-    getHRKnowledgeGapAnalysis() {
+    public HRKnowledgeGapResponse getHRKnowledgeGapAnalysis() {
 
         List<Employee> employees =
                 employeeRepository
-                        .findByRoleRoleName(
-                                "EMPLOYEE"
-                        );
+                        .findByRoleRoleName("EMPLOYEE");
 
         List<KnowledgeGap> allGaps =
                 knowledgeGapRepository
@@ -546,10 +531,8 @@ public class KnowledgeGapService {
         // GAP DISTRIBUTION
         // -----------------------------------------------------
 
-        HRKnowledgeGapResponse.GapDistribution
-                distribution =
-                new HRKnowledgeGapResponse
-                        .GapDistribution();
+        HRKnowledgeGapResponse.GapDistribution distribution =
+                new HRKnowledgeGapResponse.GapDistribution();
 
         for (KnowledgeGap gap : allGaps) {
 
@@ -588,8 +571,7 @@ public class KnowledgeGapService {
         // TOP SKILLS WITH GAPS
         // -----------------------------------------------------
 
-        Map<String, List<KnowledgeGap>>
-                skillGroups =
+        Map<String, List<KnowledgeGap>> skillGroups =
                 allGaps.stream()
                         .filter(gap ->
                                 gap.getSkill() != null)
@@ -601,8 +583,7 @@ public class KnowledgeGapService {
                                 )
                         );
 
-        List<HRKnowledgeGapResponse.TopSkillGap>
-                topSkills =
+        List<HRKnowledgeGapResponse.TopSkillGap> topSkills =
                 skillGroups.entrySet()
                         .stream()
                         .map(entry -> {
@@ -654,8 +635,7 @@ public class KnowledgeGapService {
         // EMPLOYEE PERFORMANCE
         // -----------------------------------------------------
 
-        List<HRKnowledgeGapResponse
-                .EmployeeGapAnalysis>
+        List<HRKnowledgeGapResponse.EmployeeGapAnalysis>
                 employeePerformance =
                 employees.stream()
                         .map(employee -> {
@@ -670,14 +650,12 @@ public class KnowledgeGapService {
                                     latestAttempt
                                             .map(attempt ->
                                                     attempt.getOverallScore() != null
-                                                            ? attempt
-                                                                    .getOverallScore()
+                                                            ? attempt.getOverallScore()
                                                             : 0.0
                                             )
                                             .orElse(0.0);
 
-                            List<KnowledgeGap>
-                                    employeeGaps =
+                            List<KnowledgeGap> employeeGaps =
                                     allGaps.stream()
                                             .filter(gap ->
                                                     gap.getEmployee()
@@ -714,12 +692,10 @@ public class KnowledgeGapService {
                                             name,
                                             employee.getDesignation(),
                                             Math.round(
-                                                    assessmentScore
-                                                            * 100.0
+                                                    assessmentScore * 100.0
                                             ) / 100.0,
                                             Math.round(
-                                                    employeeAverageGap
-                                                            * 100.0
+                                                    employeeAverageGap * 100.0
                                             ) / 100.0,
                                             status
                                     );

@@ -1,9 +1,12 @@
 package com.knowledgegap.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.knowledgegap.dto.LearningAnalytics;
+import com.knowledgegap.dto.LearningVelocityDTO;
 import com.knowledgegap.service.LearningAnalyticsService;
 
 @RestController
@@ -23,7 +26,7 @@ public class LearningAnalyticsController {
     }
 
     // =========================================================
-    // GET MENTOR LEARNING ANALYTICS
+    // MENTOR LEARNING ANALYTICS
     // =========================================================
 
     @GetMapping("/mentor/{mentorId}")
@@ -39,7 +42,7 @@ public class LearningAnalyticsController {
     }
 
     // =========================================================
-    // GET SESSION EFFECTIVENESS
+    // SESSION EFFECTIVENESS
     // =========================================================
 
     @GetMapping("/session/{sessionId}/effectiveness")
@@ -53,5 +56,22 @@ public class LearningAnalyticsController {
                                 sessionId);
 
         return ResponseEntity.ok(effectiveness);
+    }
+
+    // =========================================================
+    // EMPLOYEE LEARNING VELOCITY
+    // =========================================================
+
+    @GetMapping("/employee/{employeeId}/velocity")
+    public ResponseEntity<List<LearningVelocityDTO>>
+    getEmployeeLearningVelocity(
+            @PathVariable String employeeId) {
+
+        List<LearningVelocityDTO> velocity =
+                analyticsService
+                        .getEmployeeLearningVelocity(
+                                employeeId);
+
+        return ResponseEntity.ok(velocity);
     }
 }

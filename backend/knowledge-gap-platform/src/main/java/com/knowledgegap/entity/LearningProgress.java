@@ -36,7 +36,7 @@ public class LearningProgress {
     private Course course;
 
     // =========================================================
-    // PROGRESS
+    // OVERALL PROGRESS
     // =========================================================
 
     @Column(nullable = false)
@@ -68,13 +68,7 @@ public class LearningProgress {
             progressPercentage = 0;
         }
 
-        if (progressPercentage > 0 && startedAt == null) {
-            startedAt = LocalDateTime.now();
-        }
-
-        if (progressPercentage == 100) {
-            completedAt = LocalDateTime.now();
-        }
+        updateDates();
     }
 
     // =========================================================
@@ -86,15 +80,31 @@ public class LearningProgress {
 
         updatedAt = LocalDateTime.now();
 
-        if (progressPercentage != null) {
+        if (progressPercentage == null) {
+            progressPercentage = 0;
+        }
 
-            if (progressPercentage > 0 && startedAt == null) {
-                startedAt = LocalDateTime.now();
-            }
+        updateDates();
+    }
 
-            if (progressPercentage == 100 && completedAt == null) {
-                completedAt = LocalDateTime.now();
-            }
+    // =========================================================
+    // DATE LOGIC
+    // =========================================================
+
+    private void updateDates() {
+
+        if (
+            progressPercentage > 0 &&
+            startedAt == null
+        ) {
+            startedAt = LocalDateTime.now();
+        }
+
+        if (
+            progressPercentage == 100 &&
+            completedAt == null
+        ) {
+            completedAt = LocalDateTime.now();
         }
     }
 

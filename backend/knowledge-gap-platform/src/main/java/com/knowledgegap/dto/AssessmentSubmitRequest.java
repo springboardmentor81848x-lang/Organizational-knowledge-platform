@@ -1,6 +1,8 @@
 package com.knowledgegap.dto;
 
-import java.util.Map;
+import java.util.List;
+
+import com.knowledgegap.entity.AssessmentType;
 
 public class AssessmentSubmitRequest {
 
@@ -8,27 +10,36 @@ public class AssessmentSubmitRequest {
 
     private Long assessmentId;
 
+    private List<AssessmentAnswerRequest> answers;
+
+    // =========================================================
+    // MODULE 5
+    // =========================================================
+
+    private AssessmentType assessmentType;
+
     /*
-     * questionId -> employee's selected answer
+     * Required only for PEER and MANAGER assessments.
      *
-     * Example:
+     * This should contain the evaluator's employee identifier,
+     * for example:
      *
-     * 1 -> "B"
-     * 2 -> "C"
-     * 3 -> "C"
+     * EMP1002
+     *
+     * For SELF assessment this can be null.
      */
-    private Map<Long, String> answers;
+    private String evaluatorId;
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public AssessmentSubmitRequest() {
     }
 
-    public Long getEmployeeId() {
-        return employeeId;
-    }
-
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
-    }
+    // =========================================================
+    // GETTERS / SETTERS
+    // =========================================================
 
     public Long getAssessmentId() {
         return assessmentId;
@@ -42,7 +53,27 @@ public class AssessmentSubmitRequest {
         return answers;
     }
 
-    public void setAnswers(Map<Long, String> answers) {
+    public void setAnswers(
+            List<AssessmentAnswerRequest> answers) {
+
         this.answers = answers;
+    }
+
+    public AssessmentType getAssessmentType() {
+        return assessmentType;
+    }
+
+    public void setAssessmentType(
+            AssessmentType assessmentType) {
+
+        this.assessmentType = assessmentType;
+    }
+
+    public String getEvaluatorId() {
+        return evaluatorId;
+    }
+
+    public void setEvaluatorId(String evaluatorId) {
+        this.evaluatorId = evaluatorId;
     }
 }
