@@ -219,6 +219,5 @@ newman run OKGIP-API-QA.postman_collection.json \
 
 ---
 
-LIVE PROJECT - https://okgip-overhaul.onrender.com
 
 Live Application - https://okgip-overhaul.onrender.com
