@@ -75,32 +75,9 @@ The database runs on **MySQL (Aiven Cloud or local MySQL server)** and includes 
 - **Backend**: Java 17, Spring Boot 3.2.3, Spring Data JPA, Hibernate, JWT Security, Lombok, Maven
 - **Database**: MySQL 8.0 (Aiven Cloud supported), H2 (Local memory option)
 
-## 🌐 Multi-Language Support
-Supported languages in the application interface:
-- English
-- தமிழ் (Tamil)
-- हिंदी (Hindi)
-- Español (Spanish)
-- Français (French)
-- Deutsch (German)
-- 中文 (Chinese)
 
-## 🚀 Getting Started
-
-### 1. Spring Boot Backend
-```bash
-cd springboot-backend
-mvn clean package
-mvn spring-boot:run
-```
-
-### 2. Frontend Application
-```bash
-npm install
-npm run dev
-```
 <<<<<<< HEAD
 The application runs locally on `http://localhost:3000`.
 =======
-The application Test - https://okgip-overhaul.onrender.com/
->>>>>>> f968e5c9c585be98063dafd8fe833e28b89067bf
+The application Test - [https://okgip-overhaul.onrender.com/
+>>>>>>> f968e5c9c585be98063dafd8fe833e28b89067bf](https://okgip-overhaul.onrender.com/)
