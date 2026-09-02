@@ -1,25 +1,29 @@
 package com.knowledgegap.service;
 
-import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.Notification;
-import com.knowledgegap.repository.NotificationRepository;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.Notification;
+import com.knowledgegap.repository.EmployeeRepository;
+import com.knowledgegap.repository.NotificationRepository;
 
 @Service
 @Transactional
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final EmployeeRepository employeeRepository;
 
     public NotificationService(
-            NotificationRepository notificationRepository) {
+            NotificationRepository notificationRepository,
+            EmployeeRepository employeeRepository) {
 
         this.notificationRepository = notificationRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     // =========================================================
@@ -101,4 +105,65 @@ public class NotificationService {
                 notification
         );
     }
+
+    // =========================================================
+    // SYSTEM ADMINISTRATOR NOTIFICATIONS
+    // =========================================================
+    //
+    // Sends the notification to every employee whose
+    // application/system role is SYSTEM_ADMINISTRATOR.
+    //
+    // Existing employee/mentor notifications are NOT changed.
+    // =========================================================
+
+    public void notifySystemAdministrators(
+        String type,
+        String message) {
+
+        System.out.println(
+                "========== SYSTEM ADMIN NOTIFICATION =========="
+        );
+
+        System.out.println(
+                "Searching for SYSTEM_ADMINISTRATOR users..."
+        );
+
+        List<Employee> administrators =
+                employeeRepository
+                        .findByRoleRoleName(
+                                "SYSTEM_ADMINISTRATOR"
+                        );
+
+        System.out.println(
+                "SYSTEM ADMINISTRATORS FOUND: "
+                        + administrators.size()
+        );
+
+        for (Employee administrator : administrators) {
+
+                System.out.println(
+                        "Creating notification for admin: "
+                                + administrator.getEmployeeId()
+                                + " | "
+                                + administrator.getEmail()
+                                + " | DB ID: "
+                                + administrator.getId()
+                );
+
+                createNotification(
+                        administrator,
+                        type,
+                        message
+                );
+
+                System.out.println(
+                        "Notification created successfully for: "
+                                + administrator.getEmployeeId()
+                );
+        }
+
+        System.out.println(
+                "==============================================="
+        );
+        }
 }

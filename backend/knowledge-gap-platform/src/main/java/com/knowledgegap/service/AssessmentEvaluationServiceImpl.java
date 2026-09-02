@@ -1,25 +1,24 @@
 package com.knowledgegap.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.knowledgegap.dto.AssessmentAnswerRequest;
 import com.knowledgegap.dto.AssessmentQuestionResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
 import com.knowledgegap.dto.AssessmentSubmitResponse;
 import com.knowledgegap.dto.EmployeeAssessmentResponse;
 import com.knowledgegap.dto.SkillAssessmentResult;
-
 import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentQuestion;
 import com.knowledgegap.entity.Employee;
-
 import com.knowledgegap.repository.AssessmentQuestionRepository;
 import com.knowledgegap.repository.AssessmentRepository;
 import com.knowledgegap.repository.EmployeeRepository;
-
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class AssessmentEvaluationServiceImpl
@@ -134,7 +133,29 @@ public class AssessmentEvaluationServiceImpl
             AssessmentSubmitRequest request) {
 
         // ========================================================
-        // 1. FIND EMPLOYEE
+        // 1. VALIDATE REQUEST
+        // ========================================================
+
+        if (request == null) {
+            throw new RuntimeException(
+                    "Assessment submission request cannot be null."
+            );
+        }
+
+        if (request.getEmployeeId() == null) {
+            throw new RuntimeException(
+                    "Employee ID is required."
+            );
+        }
+
+        if (request.getAssessmentId() == null) {
+            throw new RuntimeException(
+                    "Assessment ID is required."
+            );
+        }
+
+        // ========================================================
+        // 2. FIND EMPLOYEE
         // ========================================================
 
         Employee employee =
@@ -148,7 +169,7 @@ public class AssessmentEvaluationServiceImpl
                         );
 
         // ========================================================
-        // 2. FIND ASSESSMENT
+        // 3. FIND ASSESSMENT
         // ========================================================
 
         Assessment assessment =
@@ -161,8 +182,22 @@ public class AssessmentEvaluationServiceImpl
                         );
 
         // ========================================================
-        // 3. MAKE SURE ASSESSMENT BELONGS TO EMPLOYEE ROLE
+        // 4. MAKE SURE ASSESSMENT BELONGS TO EMPLOYEE ROLE
         // ========================================================
+
+        if (employee.getTargetRoleId() == null) {
+
+            throw new RuntimeException(
+                    "Employee has no target role assigned."
+            );
+        }
+
+        if (assessment.getAssessmentRoleId() == null) {
+
+            throw new RuntimeException(
+                    "Assessment has no role assigned."
+            );
+        }
 
         if (!assessment.getAssessmentRoleId()
                 .equals(employee.getTargetRoleId())) {
@@ -173,7 +208,7 @@ public class AssessmentEvaluationServiceImpl
         }
 
         // ========================================================
-        // 4. GET QUESTIONS
+        // 5. GET QUESTIONS
         // ========================================================
 
         List<AssessmentQuestion> questions =
@@ -182,8 +217,26 @@ public class AssessmentEvaluationServiceImpl
                                 assessment.getId()
                         );
 
+        if (questions == null || questions.isEmpty()) {
+
+            throw new RuntimeException(
+                    "No questions found for this assessment."
+            );
+        }
+
         // ========================================================
-        // 5. VARIABLES
+        // 6. GET SUBMITTED ANSWERS
+        // ========================================================
+
+        List<AssessmentAnswerRequest> submittedAnswers =
+                request.getAnswers();
+
+        if (submittedAnswers == null) {
+            submittedAnswers = new ArrayList<>();
+        }
+
+        // ========================================================
+        // 7. VARIABLES
         // ========================================================
 
         int totalQuestions =
@@ -196,7 +249,7 @@ public class AssessmentEvaluationServiceImpl
         int obtainedMarks = 0;
 
         // ========================================================
-        // 6. SKILL-WISE COUNTERS
+        // 8. SKILL-WISE COUNTERS
         // ========================================================
 
         Map<String, Integer> skillTotal =
@@ -206,13 +259,17 @@ public class AssessmentEvaluationServiceImpl
                 new LinkedHashMap<>();
 
         // ========================================================
-        // 7. CHECK EVERY QUESTION
+        // 9. CHECK EVERY QUESTION
         // ========================================================
 
         for (AssessmentQuestion question : questions) {
 
             String skill =
                     question.getSkillName();
+
+            if (skill == null || skill.trim().isEmpty()) {
+                skill = "General";
+            }
 
             int marks =
                     question.getMarks() == null
@@ -226,16 +283,27 @@ public class AssessmentEvaluationServiceImpl
                     skillTotal.getOrDefault(skill, 0) + 1
             );
 
+            // ----------------------------------------------------
+            // Find submitted answer for this question
+            // ----------------------------------------------------
+
             String employeeAnswer =
-                    request.getAnswers()
-                            .get(question.getId());
+                    findAnswerForQuestion(
+                            submittedAnswers,
+                            question.getId()
+                    );
+
+            // ----------------------------------------------------
+            // Check answer
+            // ----------------------------------------------------
 
             boolean correct =
                     employeeAnswer != null
-                            &&
-                    employeeAnswer.equalsIgnoreCase(
-                            question.getCorrectAnswer()
-                    );
+                            && question.getCorrectAnswer() != null
+                            && employeeAnswer.trim()
+                                    .equalsIgnoreCase(
+                                            question.getCorrectAnswer().trim()
+                                    );
 
             if (correct) {
 
@@ -258,20 +326,20 @@ public class AssessmentEvaluationServiceImpl
         }
 
         // ========================================================
-        // 8. OVERALL PERCENTAGE
+        // 10. OVERALL PERCENTAGE
         // ========================================================
 
-        double overallPercentage = 0;
+        double overallPercentage = 0.0;
 
         if (totalMarks > 0) {
 
             overallPercentage =
                     ((double) obtainedMarks
-                            / totalMarks) * 100;
+                            / totalMarks) * 100.0;
         }
 
         // ========================================================
-        // 9. OVERALL PROFICIENCY
+        // 11. OVERALL PROFICIENCY
         // ========================================================
 
         String overallLevel =
@@ -280,7 +348,7 @@ public class AssessmentEvaluationServiceImpl
                 );
 
         // ========================================================
-        // 10. SKILL-WISE RESULTS
+        // 12. SKILL-WISE RESULTS
         // ========================================================
 
         Map<String, SkillAssessmentResult>
@@ -299,8 +367,14 @@ public class AssessmentEvaluationServiceImpl
                             0
                     );
 
-            double percentage =
-                    ((double) correct / total) * 100;
+            double percentage = 0.0;
+
+            if (total > 0) {
+
+                percentage =
+                        ((double) correct
+                                / total) * 100.0;
+            }
 
             String level =
                     calculateProficiencyLevel(
@@ -323,7 +397,7 @@ public class AssessmentEvaluationServiceImpl
         }
 
         // ========================================================
-        // 11. CREATE RESPONSE
+        // 13. CREATE RESPONSE
         // ========================================================
 
         AssessmentSubmitResponse response =
@@ -366,6 +440,38 @@ public class AssessmentEvaluationServiceImpl
         );
 
         return response;
+    }
+
+    // ============================================================
+    // FIND ANSWER FOR QUESTION
+    // ============================================================
+
+    private String findAnswerForQuestion(
+            List<AssessmentAnswerRequest> answers,
+            Long questionId) {
+
+        if (answers == null || questionId == null) {
+            return null;
+        }
+
+        for (AssessmentAnswerRequest answer : answers) {
+
+            if (answer == null) {
+                continue;
+            }
+
+            // ====================================================
+            // FIX:
+            // AssessmentAnswerRequest uses getSelectedAnswer()
+            // ====================================================
+
+            if (questionId.equals(answer.getQuestionId())) {
+
+                return answer.getSelectedAnswer();
+            }
+        }
+
+        return null;
     }
 
     // ============================================================

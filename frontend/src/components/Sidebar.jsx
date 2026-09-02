@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 
 import {
@@ -68,7 +69,10 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "HR" && (
           <>
-            <NavLink to="/hr" className={navLinkClass}>
+            <NavLink
+              to="/hr"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               HR Dashboard
             </NavLink>
@@ -89,8 +93,12 @@ function Sidebar({ role }) {
               Workforce Skills
             </NavLink>
 
+            {/* ==================================================
+                CORRECTED: COMPETENCY FRAMEWORK
+                AppRoutes.jsx -> /team-skills
+            ================================================== */}
             <NavLink
-              to="/competency-framework"
+              to="/team-skills"
               className={navLinkClass}
             >
               <ClipboardList size={20} />
@@ -113,20 +121,30 @@ function Sidebar({ role }) {
               Skill Forecast
             </NavLink>
 
+            {/* ==================================================
+                CORRECTED: MENTOR ALLOCATION
+                AppRoutes.jsx -> /team-gaps
+            ================================================== */}
             <NavLink
-              to="/hr/mentor-allocation"
+              to="/team-gaps"
               className={navLinkClass}
             >
               <UserCheck size={20} />
               Mentor Allocation
             </NavLink>
 
-            <NavLink to="/users" className={navLinkClass}>
+            <NavLink
+              to="/users"
+              className={navLinkClass}
+            >
               <UserCog size={20} />
               User Management
             </NavLink>
 
-            <NavLink to="/hr/reports" className={navLinkClass}>
+            <NavLink
+              to="/hr/reports"
+              className={navLinkClass}
+            >
               <BarChart3 size={20} />
               HR Reports
             </NavLink>
@@ -146,7 +164,10 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "MANAGER" && (
           <>
-            <NavLink to="/manager" className={navLinkClass}>
+            <NavLink
+              to="/manager"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               Manager Dashboard
             </NavLink>
@@ -269,10 +290,14 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "MENTOR" && (
           <>
-            <NavLink to="/mentor" className={navLinkClass}>
+            <NavLink
+              to="/mentor"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               Mentor Dashboard
             </NavLink>
+
             <NavLink
               to="/training-catalog"
               className={navLinkClass}
@@ -511,3 +536,4 @@ function Sidebar({ role }) {
 }
 
 export default Sidebar;
+

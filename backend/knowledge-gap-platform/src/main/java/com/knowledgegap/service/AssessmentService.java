@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.knowledgegap.dto.AssessmentAnswerRequest;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
@@ -23,7 +24,6 @@ import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.Skill;
-
 import com.knowledgegap.repository.AssessmentAnswerRepository;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
@@ -392,25 +392,47 @@ public class AssessmentService {
         // =====================================================
         // CREATE SUBMITTED ANSWER MAP
         // =====================================================
+        //
+        // AssessmentSubmitRequest.getAnswers()
+        // returns:
+        //
+        // List<AssessmentAnswerRequest>
+        //
+        // AssessmentAnswerRequest contains:
+        //
+        // questionId
+        // selectedAnswer
+        //
+        // We convert the list into a Map so the existing
+        // calculation logic below can remain unchanged.
+        //
+        // =====================================================
 
         Map<Long, String> submittedAnswers =
                 new HashMap<>();
 
         if (request.getAnswers() != null) {
 
-        for (
-                Map.Entry<Long, String> entry :
-                request.getAnswers().entrySet()
-        ) {
+            for (
+                    AssessmentAnswerRequest answerRequest :
+                    request.getAnswers()
+            ) {
 
-                if (entry.getKey() != null) {
-
-                submittedAnswers.put(
-                        entry.getKey(),
-                        entry.getValue()
-                );
+                if (answerRequest == null) {
+                    continue;
                 }
-        }
+
+                Long questionId =
+                        answerRequest.getQuestionId();
+
+                if (questionId != null) {
+
+                    submittedAnswers.put(
+                            questionId,
+                            answerRequest.getSelectedAnswer()
+                    );
+                }
+            }
         }
 
 

@@ -4,6 +4,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
+import DashboardLayout from "../layouts/DashboardLayout";
+
 // ==================================================
 // COMMON
 // ==================================================
@@ -84,6 +87,7 @@ import CourseCatalog from "../pages/CourseCatalog";
 // ==================================================
 
 import SystemAdministratorDashboard from "../pages/SystemAdministratorDashboard";
+import SystemAdministratorReports from "../pages/SystemAdministratorReports";
 
 // ==================================================
 // GET ROLE FROM JWT
@@ -644,17 +648,6 @@ function AppRoutes() {
       />
 
       <Route
-        path="/peer-mentoring"
-        element={
-          <ProtectedRoute
-            allowedRoles={["EMPLOYEE"]}
-          >
-            <Mentorship />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/employee/mentorship"
         element={
           <ProtectedRoute
@@ -665,17 +658,6 @@ function AppRoutes() {
             <DashboardLayout>
               <Mentorship />
             </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/employee/peer-mentoring"
-        element={
-          <ProtectedRoute
-            allowedRoles={["EMPLOYEE"]}
-          >
-            <Mentorship />
           </ProtectedRoute>
         }
       />
@@ -897,6 +879,10 @@ function AppRoutes() {
         }
       />
 
+      {/* ==================================================
+          HR REPORTS
+      ================================================== */}
+
       <Route
         path="/hr/reports"
         element={
@@ -907,6 +893,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR USER MANAGEMENT
+      ================================================== */}
 
       <Route
         path="/system-administrator/users"
@@ -923,6 +913,13 @@ function AppRoutes() {
         }
       />
 
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR REPORTS
+          
+          IMPORTANT:
+          This is intentionally NOT HRReports.
+      ================================================== */}
+
       <Route
         path="/system-administrator/reports"
         element={
@@ -933,10 +930,14 @@ function AppRoutes() {
               "ADMIN",
             ]}
           >
-            <HRReports />
+            <SystemAdministratorReports />
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR NOTIFICATIONS
+      ================================================== */}
 
       <Route
         path="/system-administrator/notifications"
@@ -1147,156 +1148,8 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          HIGH RISK GAPS
+          MANAGER NOTIFICATIONS
       ================================================== */}
-
-      <Route
-        path="/high-risk-gaps"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          EMPLOYEE PROGRESS
-      ================================================== */}
-
-      <Route
-        path="/employee-progress"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerEmployeeProgress />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager/employee-progress"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerEmployeeProgress />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          MANAGER ASSESSMENT
-      ================================================== */}
-
-      <Route
-        path="/manager-assessment"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerAssessment />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          MANAGER REPORTS
-      ================================================== */}
-
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute
-            allowedRoles={[
-              "MANAGER",
-              "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
-              "SYSTEM ADMINISTRATOR",
-              "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
-            ]}
-          >
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager-reports"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerReports />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager/reports"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerReports />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          MANAGER TRAINING
-      ================================================== */}
-
-      <Route
-        path="/training"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <TrainingLearning />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/training-adoption"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerTrainingAdoption />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager/training-adoption"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerTrainingAdoption />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          MANAGER LEARNING INTERVENTIONS
-      ================================================== */}
-
-      <Route
-        path="/learning-interventions"
-        element={
-          <ProtectedRoute
-            allowedRoles={["MANAGER"]}
-          >
-            <ManagerDashboard />
-          </ProtectedRoute>
-        }
-      />
 
       <Route
         path="/manager/notifications"
@@ -1503,7 +1356,7 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          SYSTEM ADMINISTRATOR
+          SYSTEM ADMINISTRATOR DASHBOARD
       ================================================== */}
 
       <Route

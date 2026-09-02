@@ -1,26 +1,24 @@
 package com.knowledgegap.service;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knowledgegap.dto.AuthResponse;
 import com.knowledgegap.dto.LoginRequest;
 import com.knowledgegap.dto.SignupRequest;
-import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.Role;
 import com.knowledgegap.entity.Competency;
+import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.Role;
 import com.knowledgegap.entity.Skill;
-
-import com.knowledgegap.repository.EmployeeRepository;
-import com.knowledgegap.repository.RoleRepository;
 import com.knowledgegap.repository.CompetencyRepository;
+import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.RoleRepository;
 import com.knowledgegap.repository.SkillRepository;
-
 import com.knowledgegap.security.JWTService;
-
-import java.util.List;
 
 @Service
 public class AuthenticationService {
@@ -33,6 +31,12 @@ public class AuthenticationService {
     private final SkillRepository skillRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
 
+    // =========================================================
+    // NOTIFICATION SERVICE
+    // =========================================================
+
+    private final NotificationService notificationService;
+
     public AuthenticationService(
             EmployeeRepository employeeRepository,
             RoleRepository roleRepository,
@@ -40,7 +44,8 @@ public class AuthenticationService {
             JWTService jwtService,
             CompetencyRepository competencyRepository,
             SkillRepository skillRepository,
-            EmployeeSkillRepository employeeSkillRepository) {
+            EmployeeSkillRepository employeeSkillRepository,
+            NotificationService notificationService) {
 
         this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
@@ -49,6 +54,9 @@ public class AuthenticationService {
         this.competencyRepository = competencyRepository;
         this.skillRepository = skillRepository;
         this.employeeSkillRepository = employeeSkillRepository;
+
+        // NEW
+        this.notificationService = notificationService;
     }
 
     // ============================================================
@@ -239,6 +247,24 @@ public class AuthenticationService {
         // --------------------------------------------------------
 
         employeeRepository.save(employee);
+
+        // --------------------------------------------------------
+        // 6.1 NOTIFY SYSTEM ADMINISTRATORS
+        // --------------------------------------------------------
+        //
+        // This does NOT change the employee signup process.
+        // It simply creates a notification for every
+        // SYSTEM_ADMINISTRATOR after the employee is saved.
+        // --------------------------------------------------------
+
+        notificationService.notifySystemAdministrators(
+                "NEW_USER",
+                "A new employee, "
+                        + employee.getFirstName()
+                        + " "
+                        + employee.getLastName()
+                        + ", has registered on the platform."
+        );
 
         // --------------------------------------------------------
         // 7. DEFAULT SKILLS
