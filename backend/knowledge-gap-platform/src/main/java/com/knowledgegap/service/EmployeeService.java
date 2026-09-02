@@ -5,6 +5,7 @@ import com.knowledgegap.repository.EmployeeRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,29 +15,102 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
-    public EmployeeService(EmployeeRepository employeeRepository,
-                           PasswordEncoder passwordEncoder) {
+    public EmployeeService(
+            EmployeeRepository employeeRepository,
+            PasswordEncoder passwordEncoder,
+            NotificationService notificationService) {
+
         this.employeeRepository = employeeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService = notificationService;
     }
 
     // =========================================================
     // CREATE EMPLOYEE
     // =========================================================
 
+    @Transactional
     public Employee saveEmployee(Employee employee) {
 
-        // Encrypt password before saving
+        // =====================================================
+        // CHECK WHETHER THIS IS A NEW EMPLOYEE
+        // =====================================================
+
+        boolean isNewEmployee =
+                employee.getId() == null;
+
+        // =====================================================
+        // ENCRYPT PASSWORD BEFORE SAVING
+        // =====================================================
+
         if (employee.getPassword() != null &&
             !employee.getPassword().isEmpty()) {
 
             employee.setPassword(
-                    passwordEncoder.encode(employee.getPassword())
+                    passwordEncoder.encode(
+                            employee.getPassword()
+                    )
             );
         }
 
-        return employeeRepository.save(employee);
+        // =====================================================
+        // SAVE EMPLOYEE
+        // =====================================================
+
+        Employee savedEmployee =
+                employeeRepository.save(employee);
+
+        // =====================================================
+        // NOTIFY HR ONLY FOR NEW EMPLOYEES
+        // =====================================================
+
+        if (isNewEmployee) {
+
+            String employeeName =
+                    (savedEmployee.getFirstName() != null
+                            ? savedEmployee.getFirstName()
+                            : "")
+                    + " "
+                    + (savedEmployee.getLastName() != null
+                            ? savedEmployee.getLastName()
+                            : "");
+
+            employeeName = employeeName.trim();
+
+            if (employeeName.isEmpty()) {
+                employeeName = "A new employee";
+            }
+
+            String employeeIdentifier =
+                    savedEmployee.getEmployeeId();
+
+            String message;
+
+            if (employeeIdentifier != null &&
+                !employeeIdentifier.trim().isEmpty()) {
+
+                message =
+                        employeeName
+                        + " ("
+                        + employeeIdentifier
+                        + ") has joined the organization.";
+
+            } else {
+
+                message =
+                        employeeName
+                        + " has joined the organization.";
+            }
+
+            notificationService.notifyHR(
+                    "NEW_EMPLOYEE",
+                    message
+            );
+        }
+
+        return savedEmployee;
     }
 
     // =========================================================
@@ -44,6 +118,7 @@ public class EmployeeService {
     // =========================================================
 
     public List<Employee> getAllEmployees() {
+
         return employeeRepository.findAll();
     }
 
@@ -52,6 +127,7 @@ public class EmployeeService {
     // =========================================================
 
     public Optional<Employee> getEmployeeById(Long id) {
+
         return employeeRepository.findById(id);
     }
 
@@ -60,8 +136,12 @@ public class EmployeeService {
     // Example: EMP001
     // =========================================================
 
-    public Optional<Employee> getEmployeeByEmployeeId(String employeeId) {
-        return employeeRepository.findByEmployeeId(employeeId);
+    public Optional<Employee> getEmployeeByEmployeeId(
+            String employeeId) {
+
+        return employeeRepository.findByEmployeeId(
+                employeeId
+        );
     }
 
     // =========================================================
@@ -77,13 +157,18 @@ public class EmployeeService {
             return Optional.empty();
         }
 
-        Optional<Employee> employee = Optional.empty();
+        Optional<Employee> employee =
+                Optional.empty();
 
         try {
 
-            Long id = Long.parseLong(employeeIdentifier);
+            Long id =
+                    Long.parseLong(
+                            employeeIdentifier
+                    );
 
-            employee = employeeRepository.findById(id);
+            employee =
+                    employeeRepository.findById(id);
 
         } catch (NumberFormatException ignored) {
 
@@ -105,6 +190,7 @@ public class EmployeeService {
     // =========================================================
 
     public Employee updateEmployee(Employee employee) {
+
         return employeeRepository.save(employee);
     }
 
@@ -113,6 +199,7 @@ public class EmployeeService {
     // =========================================================
 
     public void deleteEmployee(Long id) {
+
         employeeRepository.deleteById(id);
     }
 }

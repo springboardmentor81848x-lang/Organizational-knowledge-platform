@@ -2,6 +2,7 @@ package com.knowledgegap.service;
 
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.Notification;
+import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.NotificationRepository;
 
 import org.springframework.stereotype.Service;
@@ -15,11 +16,14 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final EmployeeRepository employeeRepository;
 
     public NotificationService(
-            NotificationRepository notificationRepository) {
+            NotificationRepository notificationRepository,
+            EmployeeRepository employeeRepository) {
 
         this.notificationRepository = notificationRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     // =========================================================
@@ -52,6 +56,27 @@ public class NotificationService {
         notification.setCreatedDate(LocalDateTime.now());
 
         return notificationRepository.save(notification);
+    }
+
+    // =========================================================
+    // CREATE NOTIFICATION FOR ALL HR USERS
+    // =========================================================
+
+    public void notifyHR(
+            String type,
+            String message) {
+
+        List<Employee> hrEmployees =
+                employeeRepository.findByRoleRoleName("HR");
+
+        for (Employee hr : hrEmployees) {
+
+            createNotification(
+                    hr,
+                    type,
+                    message
+            );
+        }
     }
 
     // =========================================================

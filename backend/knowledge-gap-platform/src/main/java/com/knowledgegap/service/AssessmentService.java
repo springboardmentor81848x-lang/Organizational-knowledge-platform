@@ -57,6 +57,11 @@ public class AssessmentService {
 
     private final KnowledgeGapService knowledgeGapService;
 
+    // =========================================================
+    // HR NOTIFICATION SERVICE
+    // =========================================================
+
+    private final NotificationService notificationService;
 
     // =========================================================
     // CONSTRUCTOR
@@ -72,7 +77,8 @@ public class AssessmentService {
             EmployeeSkillService employeeSkillService,
             EmployeeSkillRepository employeeSkillRepository,
             SkillRepository skillRepository,
-            KnowledgeGapService knowledgeGapService) {
+            KnowledgeGapService knowledgeGapService,
+            NotificationService notificationService) {
 
         this.assessmentRepository =
                 assessmentRepository;
@@ -103,8 +109,10 @@ public class AssessmentService {
 
         this.knowledgeGapService =
                 knowledgeGapService;
-    }
 
+        this.notificationService =
+                notificationService;
+    }
 
     // =========================================================
     // GET ACTIVE ASSESSMENTS
@@ -114,7 +122,6 @@ public class AssessmentService {
 
         return assessmentRepository.findByActiveTrue();
     }
-
 
     // =========================================================
     // GET ASSESSMENT BY ID
@@ -131,7 +138,6 @@ public class AssessmentService {
                         )
                 );
     }
-
 
     // =========================================================
     // GET ASSESSMENT BY TARGET ROLE
@@ -152,7 +158,6 @@ public class AssessmentService {
                 );
     }
 
-
     // =========================================================
     // GET ASSESSMENT BY ROLE ID
     // =========================================================
@@ -162,7 +167,6 @@ public class AssessmentService {
 
         return getAssessmentByTargetRole(roleId);
     }
-
 
     // =========================================================
     // GET QUESTIONS BY ASSESSMENT
@@ -177,12 +181,11 @@ public class AssessmentService {
                 );
     }
 
-
     // =========================================================
     // SUBMIT ASSESSMENT
     // =========================================================
     //
-    // MODULE 5:
+    // Handles:
     //
     // SELF
     // PEER
@@ -199,6 +202,7 @@ public class AssessmentService {
     // 7. Employee skill update
     // 8. Gap calculation
     // 9. Automatic knowledge gap recalculation
+    // 10. HR assessment completed notification
     //
     // =========================================================
 
@@ -225,7 +229,6 @@ public class AssessmentService {
             );
         }
 
-
         // -----------------------------------------------------
         // VALIDATE ASSESSMENT TYPE
         // -----------------------------------------------------
@@ -240,7 +243,6 @@ public class AssessmentService {
                             + "Use SELF, PEER or MANAGER."
             );
         }
-
 
         // -----------------------------------------------------
         // GET ASSESSMENT
@@ -259,7 +261,6 @@ public class AssessmentService {
             );
         }
 
-
         // -----------------------------------------------------
         // GET EMPLOYEE BEING ASSESSED
         // -----------------------------------------------------
@@ -275,7 +276,6 @@ public class AssessmentService {
                                                 + employeeIdentifier
                                 )
                         );
-
 
         // =====================================================
         // GET EVALUATOR
@@ -321,7 +321,6 @@ public class AssessmentService {
                                     )
                             );
 
-
             /*
              * An employee cannot evaluate themselves
              * as PEER or MANAGER.
@@ -336,7 +335,6 @@ public class AssessmentService {
                 );
             }
         }
-
 
         // -----------------------------------------------------
         // GET QUESTIONS
@@ -354,7 +352,6 @@ public class AssessmentService {
                     "No questions found for this assessment."
             );
         }
-
 
         // =====================================================
         // CREATE ASSESSMENT ATTEMPT
@@ -390,7 +387,6 @@ public class AssessmentService {
                         attempt
                 );
 
-
         // =====================================================
         // CREATE SUBMITTED ANSWER MAP
         // =====================================================
@@ -418,7 +414,6 @@ public class AssessmentService {
             }
         }
 
-
         // =====================================================
         // MARK CALCULATION
         // =====================================================
@@ -434,7 +429,6 @@ public class AssessmentService {
         int obtainedMarks = 0;
 
         int correctAnswers = 0;
-
 
         // =====================================================
         // PROCESS EVERY QUESTION
@@ -452,7 +446,6 @@ public class AssessmentService {
 
             totalMarks += marks;
 
-
             // -------------------------------------------------
             // SELECTED ANSWER
             // -------------------------------------------------
@@ -462,7 +455,6 @@ public class AssessmentService {
                             question.getId()
                     );
 
-
             // -------------------------------------------------
             // CORRECT ANSWER
             // -------------------------------------------------
@@ -471,7 +463,6 @@ public class AssessmentService {
                     getCorrectAnswerText(
                             question
                     );
-
 
             // -------------------------------------------------
             // CHECK ANSWER
@@ -486,7 +477,6 @@ public class AssessmentService {
                                     correctAnswer.trim()
                             );
 
-
             // -------------------------------------------------
             // OVERALL SCORE
             // -------------------------------------------------
@@ -497,7 +487,6 @@ public class AssessmentService {
 
                 correctAnswers++;
             }
-
 
             // -------------------------------------------------
             // SKILL NAME
@@ -517,7 +506,6 @@ public class AssessmentService {
             skillName =
                     skillName.trim();
 
-
             // -------------------------------------------------
             // TOTAL MARKS FOR SKILL
             // -------------------------------------------------
@@ -529,7 +517,6 @@ public class AssessmentService {
                             0
                     ) + marks
             );
-
 
             // -------------------------------------------------
             // CORRECT MARKS FOR SKILL
@@ -545,7 +532,6 @@ public class AssessmentService {
                         ) + marks
                 );
             }
-
 
             // =================================================
             // SAVE ANSWER
@@ -571,7 +557,6 @@ public class AssessmentService {
             );
         }
 
-
         // =====================================================
         // CALCULATE OVERALL SCORE
         // =====================================================
@@ -587,7 +572,6 @@ public class AssessmentService {
                         overallScore * 100.0
                 ) / 100.0;
 
-
         // =====================================================
         // PERFORMANCE LEVEL
         // =====================================================
@@ -596,7 +580,6 @@ public class AssessmentService {
                 getPerformanceLevel(
                         overallScore
                 );
-
 
         // =====================================================
         // UPDATE ATTEMPT
@@ -614,14 +597,12 @@ public class AssessmentService {
                 attempt
         );
 
-
         // =====================================================
         // SKILL RESULTS
         // =====================================================
 
         List<AssessmentSkillResultResponse> skillResults =
                 new ArrayList<>();
-
 
         // =====================================================
         // PROCESS EACH SKILL
@@ -644,7 +625,6 @@ public class AssessmentService {
                             0
                     );
 
-
             // -------------------------------------------------
             // SKILL SCORE
             // -------------------------------------------------
@@ -657,13 +637,11 @@ public class AssessmentService {
                             )
                             : 0;
 
-
             // -------------------------------------------------
             // REQUIRED SCORE
             // -------------------------------------------------
 
             int requiredScore = 70;
-
 
             // -------------------------------------------------
             // PERCENTAGE GAP
@@ -675,7 +653,6 @@ public class AssessmentService {
                             0
                     );
 
-
             // -------------------------------------------------
             // GAP SEVERITY
             // -------------------------------------------------
@@ -684,7 +661,6 @@ public class AssessmentService {
                     getGapSeverity(
                             gap
                     );
-
 
             // =================================================
             // FIND SKILL
@@ -696,26 +672,8 @@ public class AssessmentService {
                                     skillName
                             );
 
-
             // =================================================
             // GET PREVIOUS LEVEL
-            // =================================================
-            //
-            // IMPORTANT:
-            //
-            // We read the employee's CURRENT level
-            // BEFORE updating it.
-            //
-            // Example:
-            //
-            // Java = 2
-            //
-            // Assessment score = 80
-            //
-            // Assessed level = 4
-            //
-            // Improvement = 4 - 2 = +2
-            //
             // =================================================
 
             int previousLevel = 1;
@@ -746,17 +704,8 @@ public class AssessmentService {
                 }
             }
 
-
             // =================================================
             // CONVERT SCORE TO EXISTING 1-5 LEVEL
-            // =================================================
-            //
-            // 90-100 = 5 Expert
-            // 75-89  = 4 Advanced
-            // 60-74  = 3 Competent
-            // 40-59  = 2 Intermediate
-            // 0-39   = 1 Beginner
-            //
             // =================================================
 
             int assessedLevel =
@@ -764,14 +713,12 @@ public class AssessmentService {
                             actualScore
                     );
 
-
             // =================================================
             // CALCULATE IMPROVEMENT
             // =================================================
 
             int improvement =
                     assessedLevel - previousLevel;
-
 
             // =================================================
             // SAVE ASSESSMENT GAP RESULT
@@ -824,7 +771,6 @@ public class AssessmentService {
                     gapResult
             );
 
-
             // =================================================
             // ADD RESULT
             // =================================================
@@ -840,15 +786,8 @@ public class AssessmentService {
             );
         }
 
-
         // =====================================================
         // UPDATE EMPLOYEE SKILL INVENTORY
-        // =====================================================
-        //
-        // This updates existing skills and adds new skills.
-        //
-        // It does NOT delete the employee's other skills.
-        //
         // =====================================================
 
         employeeSkillService
@@ -857,14 +796,8 @@ public class AssessmentService {
                         skillResults
                 );
 
-
         // =====================================================
         // AUTOMATIC KNOWLEDGE GAP RECALCULATION
-        // =====================================================
-        //
-        // After EmployeeSkill is updated, recalculate the
-        // employee's KnowledgeGap records.
-        //
         // =====================================================
 
         try {
@@ -887,6 +820,64 @@ public class AssessmentService {
             );
         }
 
+        // =====================================================
+        // NOTIFY HR - ASSESSMENT COMPLETED
+        // =====================================================
+
+        String employeeName =
+                (employee.getFirstName() != null
+                        ? employee.getFirstName()
+                        : "")
+                + " "
+                + (employee.getLastName() != null
+                        ? employee.getLastName()
+                        : "");
+
+        employeeName =
+                employeeName.trim();
+
+        if (employeeName.isEmpty()) {
+            employeeName = "An employee";
+        }
+
+        String employeeId =
+                employee.getEmployeeId();
+
+        String assessmentTypeName =
+                assessmentType.name();
+
+        String notificationMessage;
+
+        if (employeeId != null &&
+                !employeeId.trim().isEmpty()) {
+
+            notificationMessage =
+                    employeeName
+                    + " ("
+                    + employeeId
+                    + ") completed a "
+                    + assessmentTypeName
+                    + " assessment."
+                    + " Overall score: "
+                    + overallScore
+                    + "%.";
+
+        } else {
+
+            notificationMessage =
+                    employeeName
+                    + " completed a "
+                    + assessmentTypeName
+                    + " assessment."
+                    + " Overall score: "
+                    + overallScore
+                    + "%.";
+        }
+
+        notificationService.notifyHR(
+                "ASSESSMENT_COMPLETED",
+                notificationMessage
+        );
 
         // =====================================================
         // RETURN RESULT
@@ -903,7 +894,6 @@ public class AssessmentService {
                 skillResults
         );
     }
-
 
     // =========================================================
     // GET ASSESSMENT GAP RESULTS
@@ -926,16 +916,8 @@ public class AssessmentService {
                 .findByAttempt(attempt);
     }
 
-
     // =========================================================
     // GET CORRECT ANSWER TEXT
-    // =========================================================
-    //
-    // Supports:
-    //
-    // 1. Full answer text
-    // 2. A / B / C / D option letter
-    //
     // =========================================================
 
     private String getCorrectAnswerText(
@@ -974,19 +956,8 @@ public class AssessmentService {
         }
     }
 
-
     // =========================================================
     // CONVERT SCORE TO EXISTING 1-5 LEVEL
-    // =========================================================
-    //
-    // YOUR EXISTING PROJECT SCALE
-    //
-    // 1 = Beginner
-    // 2 = Intermediate
-    // 3 = Competent
-    // 4 = Advanced
-    // 5 = Expert
-    //
     // =========================================================
 
     private int convertScoreToLevel(
@@ -1020,7 +991,6 @@ public class AssessmentService {
         return 1;
     }
 
-
     // =========================================================
     // NORMALIZE LEVEL
     // =========================================================
@@ -1040,7 +1010,6 @@ public class AssessmentService {
                 )
         );
     }
-
 
     // =========================================================
     // PERFORMANCE LEVEL
@@ -1067,7 +1036,6 @@ public class AssessmentService {
 
         return "Beginner";
     }
-
 
     // =========================================================
     // GAP SEVERITY

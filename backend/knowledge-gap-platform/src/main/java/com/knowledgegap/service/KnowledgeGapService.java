@@ -33,18 +33,25 @@ public class KnowledgeGapService {
     private final EmployeeRepository employeeRepository;
     private final SkillRepository skillRepository;
 
+    // NEW
+    private final NotificationService notificationService;
+
     public KnowledgeGapService(
             KnowledgeGapRepository knowledgeGapRepository,
             AssessmentAttemptRepository assessmentAttemptRepository,
             AssessmentGapResultRepository assessmentGapResultRepository,
             EmployeeRepository employeeRepository,
-            SkillRepository skillRepository) {
+            SkillRepository skillRepository,
+            NotificationService notificationService) {
 
         this.knowledgeGapRepository = knowledgeGapRepository;
         this.assessmentAttemptRepository = assessmentAttemptRepository;
         this.assessmentGapResultRepository = assessmentGapResultRepository;
         this.employeeRepository = employeeRepository;
         this.skillRepository = skillRepository;
+
+        // NEW
+        this.notificationService = notificationService;
     }
 
     // =========================================================
@@ -357,7 +364,7 @@ public class KnowledgeGapService {
 
             // -------------------------------------------------
             // SAVE ONLY ACTUAL GAPS
-            // -------------------------------------------------
+            // -----------------------------------------------------
 
             if (assessmentGap > 0) {
 
@@ -436,10 +443,71 @@ public class KnowledgeGapService {
             }
         }
 
+        // -----------------------------------------------------
+        // 7. TOTAL KNOWLEDGE GAPS
+        // -----------------------------------------------------
+
         System.out.println(
                 "Total Knowledge Gaps Saved: "
                         + gapResults.size()
         );
+
+        // =====================================================
+        // 8. NOTIFY HR - KNOWLEDGE GAP DETECTED
+        // =====================================================
+
+        if (!gapResults.isEmpty()) {
+
+            String employeeName =
+                    (employee.getFirstName() != null
+                            ? employee.getFirstName()
+                            : "")
+                    + " "
+                    + (employee.getLastName() != null
+                            ? employee.getLastName()
+                            : "");
+
+            employeeName =
+                    employeeName.trim();
+
+            if (employeeName.isEmpty()) {
+                employeeName = "An employee";
+            }
+
+            String employeeId =
+                    employee.getEmployeeId();
+
+            String notificationMessage;
+
+            if (employeeId != null &&
+                    !employeeId.trim().isEmpty()) {
+
+                notificationMessage =
+                        employeeName
+                        + " ("
+                        + employeeId
+                        + ") has "
+                        + gapResults.size()
+                        + " knowledge gap"
+                        + (gapResults.size() > 1 ? "s" : "")
+                        + " detected after assessment.";
+
+            } else {
+
+                notificationMessage =
+                        employeeName
+                        + " has "
+                        + gapResults.size()
+                        + " knowledge gap"
+                        + (gapResults.size() > 1 ? "s" : "")
+                        + " detected after assessment.";
+            }
+
+            notificationService.notifyHR(
+                    "KNOWLEDGE_GAP_DETECTED",
+                    notificationMessage
+            );
+        }
 
         System.out.println(
                 "=================================="
