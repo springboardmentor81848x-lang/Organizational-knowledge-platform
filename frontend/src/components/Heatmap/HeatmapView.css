@@ -1,0 +1,132 @@
+.heatmap-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-top: 24px;
+}
+
+.heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.heatmap-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.legend-box.critical { background-color: #ef4444; }
+.legend-box.moderate { background-color: #f59e0b; }
+.legend-box.minor { background-color: #10b981; }
+.legend-box.met { background-color: #3b82f6; }
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.heatmap-tile {
+  border-radius: 10px;
+  padding: 16px;
+  color: #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.heatmap-tile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.heatmap-tile.critical {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.heatmap-tile.moderate {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.heatmap-tile.minor {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.heatmap-tile.met {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.tile-skill-name {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: #ffffff;
+}
+
+.tile-category {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tile-levels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.tile-status-badge {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+}
