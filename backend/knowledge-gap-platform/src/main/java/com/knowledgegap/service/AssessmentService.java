@@ -15,7 +15,6 @@ import com.knowledgegap.dto.AssessmentAnswerRequest;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
-
 import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentAnswer;
 import com.knowledgegap.entity.AssessmentAttempt;
@@ -25,7 +24,6 @@ import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.Skill;
-
 import com.knowledgegap.repository.AssessmentAnswerRepository;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
@@ -390,6 +388,21 @@ public class AssessmentService {
         // =====================================================
         // CREATE SUBMITTED ANSWER MAP
         // =====================================================
+        //
+        // AssessmentSubmitRequest.getAnswers()
+        // returns:
+        //
+        // List<AssessmentAnswerRequest>
+        //
+        // AssessmentAnswerRequest contains:
+        //
+        // questionId
+        // selectedAnswer
+        //
+        // We convert the list into a Map so the existing
+        // calculation logic below can remain unchanged.
+        //
+        // =====================================================
 
         Map<Long, String> submittedAnswers =
                 new HashMap<>();
@@ -401,13 +414,17 @@ public class AssessmentService {
                     request.getAnswers()
             ) {
 
-                if (
-                        answerRequest != null &&
-                        answerRequest.getQuestionId() != null
-                ) {
+                if (answerRequest == null) {
+                    continue;
+                }
+
+                Long questionId =
+                        answerRequest.getQuestionId();
+
+                if (questionId != null) {
 
                     submittedAnswers.put(
-                            answerRequest.getQuestionId(),
+                            questionId,
                             answerRequest.getSelectedAnswer()
                     );
                 }

@@ -1,3 +1,4 @@
+
 package com.knowledgegap.dto;
 
 import java.util.List;
@@ -5,6 +6,8 @@ import java.util.List;
 import com.knowledgegap.entity.AssessmentType;
 
 public class AssessmentSubmitRequest {
+
+    private Long employeeId;
 
     private Long assessmentId;
 
@@ -19,9 +22,7 @@ public class AssessmentSubmitRequest {
     /*
      * Required only for PEER and MANAGER assessments.
      *
-     * This should contain the evaluator's employee identifier,
-     * for example:
-     *
+     * Example:
      * EMP1002
      *
      * For SELF assessment this can be null.
@@ -36,7 +37,19 @@ public class AssessmentSubmitRequest {
     }
 
     // =========================================================
-    // GETTERS / SETTERS
+    // EMPLOYEE ID
+    // =========================================================
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    // =========================================================
+    // ASSESSMENT ID
     // =========================================================
 
     public Long getAssessmentId() {
@@ -47,25 +60,33 @@ public class AssessmentSubmitRequest {
         this.assessmentId = assessmentId;
     }
 
+    // =========================================================
+    // ANSWERS
+    // =========================================================
+
     public List<AssessmentAnswerRequest> getAnswers() {
         return answers;
     }
 
-    public void setAnswers(
-            List<AssessmentAnswerRequest> answers) {
-
+    public void setAnswers(List<AssessmentAnswerRequest> answers) {
         this.answers = answers;
     }
+
+    // =========================================================
+    // ASSESSMENT TYPE
+    // =========================================================
 
     public AssessmentType getAssessmentType() {
         return assessmentType;
     }
 
-    public void setAssessmentType(
-            AssessmentType assessmentType) {
-
+    public void setAssessmentType(AssessmentType assessmentType) {
         this.assessmentType = assessmentType;
     }
+
+    // =========================================================
+    // EVALUATOR ID
+    // =========================================================
 
     public String getEvaluatorId() {
         return evaluatorId;

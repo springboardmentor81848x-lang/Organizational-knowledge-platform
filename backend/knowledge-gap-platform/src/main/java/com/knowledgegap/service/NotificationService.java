@@ -1,15 +1,15 @@
 package com.knowledgegap.service;
 
-import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.Notification;
-import com.knowledgegap.repository.EmployeeRepository;
-import com.knowledgegap.repository.NotificationRepository;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.entity.Notification;
+import com.knowledgegap.repository.EmployeeRepository;
+import com.knowledgegap.repository.NotificationRepository;
 
 @Service
 @Transactional
@@ -80,6 +80,29 @@ public class NotificationService {
     }
 
     // =========================================================
+    // CREATE NOTIFICATION FOR ALL SYSTEM ADMINISTRATORS
+    // =========================================================
+
+    public void notifySystemAdministrators(
+            String type,
+            String message) {
+
+        List<Employee> systemAdministrators =
+                employeeRepository.findByRoleRoleName(
+                        "SYSTEM_ADMINISTRATOR"
+                );
+
+        for (Employee administrator : systemAdministrators) {
+
+            createNotification(
+                    administrator,
+                    type,
+                    message
+            );
+        }
+    }
+
+    // =========================================================
     // GET ALL NOTIFICATIONS FOR EMPLOYEE
     // =========================================================
 
@@ -122,8 +145,6 @@ public class NotificationService {
 
         notification.setReadStatus(true);
 
-        return notificationRepository.save(
-                notification
-        );
+        return notificationRepository.save(notification);
     }
 }
