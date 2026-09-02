@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.PeerAssessmentSubmitRequest;
 import com.knowledgegap.dto.PeerEmployeeResponse;
+import com.knowledgegap.dto.PeerReviewResponse;
 import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.service.PeerAssessmentService;
 
@@ -30,41 +31,36 @@ public class PeerAssessmentController {
     public PeerAssessmentController(
             PeerAssessmentService peerAssessmentService) {
 
-        this.peerAssessmentService =
-                peerAssessmentService;
+        this.peerAssessmentService = peerAssessmentService;
     }
 
     // =========================================================
-    // GET COLLEAGUES
+    // GET EMPLOYEES AVAILABLE FOR PEER ASSESSMENT
     // =========================================================
 
     @GetMapping("/employees/{evaluatorIdentifier}")
-    public ResponseEntity<List<PeerEmployeeResponse>>
-    getPeerEmployees(
+    public ResponseEntity<List<PeerEmployeeResponse>> getPeerEmployees(
             @PathVariable String evaluatorIdentifier) {
 
         return ResponseEntity.ok(
-                peerAssessmentService
-                        .getPeerEmployees(
-                                evaluatorIdentifier
-                        )
+                peerAssessmentService.getPeerEmployees(
+                        evaluatorIdentifier
+                )
         );
     }
 
     // =========================================================
-    // GET SKILLS OF EMPLOYEE
+    // GET SKILLS OF EMPLOYEE BEING EVALUATED
     // =========================================================
 
     @GetMapping("/employees/{employeeIdentifier}/skills")
-    public ResponseEntity<List<EmployeeSkill>>
-    getEmployeeSkills(
+    public ResponseEntity<List<EmployeeSkill>> getEmployeeSkills(
             @PathVariable String employeeIdentifier) {
 
         return ResponseEntity.ok(
-                peerAssessmentService
-                        .getEmployeeSkills(
-                                employeeIdentifier
-                        )
+                peerAssessmentService.getEmployeeSkills(
+                        employeeIdentifier
+                )
         );
     }
 
@@ -73,17 +69,30 @@ public class PeerAssessmentController {
     // =========================================================
 
     @PostMapping("/submit/{evaluatorIdentifier}")
-    public ResponseEntity<AssessmentResultResponse>
-    submitPeerAssessment(
+    public ResponseEntity<AssessmentResultResponse> submitPeerAssessment(
             @PathVariable String evaluatorIdentifier,
             @RequestBody PeerAssessmentSubmitRequest request) {
 
         return ResponseEntity.ok(
-                peerAssessmentService
-                        .submitPeerAssessment(
-                                evaluatorIdentifier,
-                                request
-                        )
+                peerAssessmentService.submitPeerAssessment(
+                        evaluatorIdentifier,
+                        request
+                )
+        );
+    }
+
+    // =========================================================
+    // GET PEER REVIEWS RECEIVED BY EMPLOYEE
+    // =========================================================
+
+    @GetMapping("/reviews/{employeeIdentifier}")
+    public ResponseEntity<List<PeerReviewResponse>> getPeerReviews(
+            @PathVariable String employeeIdentifier) {
+
+        return ResponseEntity.ok(
+                peerAssessmentService.getPeerReviews(
+                        employeeIdentifier
+                )
         );
     }
 }

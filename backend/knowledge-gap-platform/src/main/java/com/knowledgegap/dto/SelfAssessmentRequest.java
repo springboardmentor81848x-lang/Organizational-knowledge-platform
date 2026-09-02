@@ -4,26 +4,41 @@ import java.util.List;
 
 public class SelfAssessmentRequest {
 
-    private Long employeeId;
-
-    private List<SkillAssessmentRequest> skills;
+    private List<SelfSkillRatingRequest> ratings;
 
     public SelfAssessmentRequest() {
     }
 
-    public Long getEmployeeId() {
-        return employeeId;
+    public List<SelfSkillRatingRequest> getRatings() {
+        return ratings;
     }
 
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
+    public void setRatings(List<SelfSkillRatingRequest> ratings) {
+        this.ratings = ratings;
     }
 
-    public List<SkillAssessmentRequest> getSkills() {
-        return skills;
-    }
+    public static class SelfSkillRatingRequest {
 
-    public void setSkills(List<SkillAssessmentRequest> skills) {
-        this.skills = skills;
+        private String skillName;
+        private Integer level;
+
+        public SelfSkillRatingRequest() {
+        }
+
+        public String getSkillName() {
+            return skillName;
+        }
+
+        public void setSkillName(String skillName) {
+            this.skillName = skillName;
+        }
+
+        public Integer getLevel() {
+            return level;
+        }
+
+        public void setLevel(Integer level) {
+            this.level = level;
+        }
     }
 }

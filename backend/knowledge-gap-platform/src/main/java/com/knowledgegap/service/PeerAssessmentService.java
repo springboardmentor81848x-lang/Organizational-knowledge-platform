@@ -12,19 +12,21 @@ import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.PeerAssessmentSubmitRequest;
 import com.knowledgegap.dto.PeerEmployeeResponse;
+import com.knowledgegap.dto.PeerReviewResponse;
 import com.knowledgegap.dto.PeerSkillRatingRequest;
+import com.knowledgegap.dto.PeerSkillReviewResponse;
 import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentAttempt;
-import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.EmployeeSkill;
+import com.knowledgegap.entity.PeerAssessmentResult;
 import com.knowledgegap.entity.Skill;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
-import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.AssessmentRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
+import com.knowledgegap.repository.PeerAssessmentResultRepository;
 import com.knowledgegap.repository.SkillRepository;
 
 @Service
@@ -35,8 +37,8 @@ public class PeerAssessmentService {
     private final SkillRepository skillRepository;
     private final AssessmentRepository assessmentRepository;
     private final AssessmentAttemptRepository assessmentAttemptRepository;
-    private final AssessmentGapResultRepository assessmentGapResultRepository;
-    private final KnowledgeGapService knowledgeGapService;
+    private final PeerAssessmentResultRepository peerAssessmentResultRepository;
+    private final NotificationService notificationService;
 
     public PeerAssessmentService(
             EmployeeRepository employeeRepository,
@@ -44,16 +46,16 @@ public class PeerAssessmentService {
             SkillRepository skillRepository,
             AssessmentRepository assessmentRepository,
             AssessmentAttemptRepository assessmentAttemptRepository,
-            AssessmentGapResultRepository assessmentGapResultRepository,
-            KnowledgeGapService knowledgeGapService) {
+            PeerAssessmentResultRepository peerAssessmentResultRepository,
+            NotificationService notificationService) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.skillRepository = skillRepository;
         this.assessmentRepository = assessmentRepository;
         this.assessmentAttemptRepository = assessmentAttemptRepository;
-        this.assessmentGapResultRepository = assessmentGapResultRepository;
-        this.knowledgeGapService = knowledgeGapService;
+        this.peerAssessmentResultRepository = peerAssessmentResultRepository;
+        this.notificationService = notificationService;
     }
 
     // =========================================================
@@ -230,22 +232,29 @@ public class PeerAssessmentService {
                         );
 
         // -----------------------------------------------------
-        // CREATE ATTEMPT
+        // CREATE PEER ASSESSMENT ATTEMPT
         // -----------------------------------------------------
 
         AssessmentAttempt attempt =
                 new AssessmentAttempt();
 
         attempt.setEmployee(employee);
+
         attempt.setAssessment(assessment);
+
         attempt.setAssessmentType(
                 AssessmentType.PEER
         );
+
+        // Employee who gave the peer assessment
         attempt.setEvaluator(evaluator);
+
         attempt.setCompletedAt(
                 LocalDateTime.now()
         );
+
         attempt.setOverallScore(0.0);
+
         attempt.setPerformanceLevel(
                 "Not Calculated"
         );
@@ -254,7 +263,7 @@ public class PeerAssessmentService {
                 assessmentAttemptRepository.save(attempt);
 
         // -----------------------------------------------------
-        // PROCESS RATINGS
+        // PROCESS PEER RATINGS
         // -----------------------------------------------------
 
         List<AssessmentSkillResultResponse> skillResults =
@@ -323,7 +332,7 @@ public class PeerAssessmentService {
                     getGapSeverity(gap);
 
             // -------------------------------------------------
-            // FIND SKILL
+            // VALIDATE SKILL EXISTS
             // -------------------------------------------------
 
             Optional<Skill> skillOptional =
@@ -332,68 +341,32 @@ public class PeerAssessmentService {
                                     skillName
                             );
 
-            // -------------------------------------------------
-            // GET PREVIOUS LEVEL
-            // -------------------------------------------------
+            if (skillOptional.isEmpty()) {
 
-            int previousLevel = 1;
-
-            if (skillOptional.isPresent()) {
-
-                Skill skill =
-                        skillOptional.get();
-
-                Optional<EmployeeSkill>
-                        existingEmployeeSkill =
-                        employeeSkillRepository
-                                .findByEmployeeAndSkill(
-                                        employee,
-                                        skill
-                                );
-
-                if (existingEmployeeSkill.isPresent() &&
-                        existingEmployeeSkill.get()
-                                .getCurrentLevel() != null) {
-
-                    previousLevel =
-                            normalizeLevel(
-                                    existingEmployeeSkill
-                                            .get()
-                                            .getCurrentLevel()
-                            );
-                }
+                throw new RuntimeException(
+                        "Skill not found: " + skillName
+                );
             }
 
             // -------------------------------------------------
-            // IMPROVEMENT
+            // SAVE PEER ASSESSMENT RESULT
             // -------------------------------------------------
 
-            int improvement =
-                    level - previousLevel;
+            PeerAssessmentResult peerResult =
+                    new PeerAssessmentResult();
 
-            // -------------------------------------------------
-            // SAVE GAP RESULT
-            // -------------------------------------------------
+            peerResult.setAttempt(attempt);
 
-            AssessmentGapResult gapResult =
-                    new AssessmentGapResult();
+            peerResult.setSkillName(skillName);
 
-            gapResult.setAttempt(attempt);
-            gapResult.setSkillName(skillName);
-            gapResult.setActualScore(actualScore);
-            gapResult.setRequiredScore(requiredScore);
-            gapResult.setGap(gap);
-            gapResult.setGapSeverity(gapSeverity);
-            gapResult.setPreviousLevel(previousLevel);
-            gapResult.setAssessedLevel(level);
-            gapResult.setImprovement(improvement);
+            peerResult.setRating(level);
 
-            assessmentGapResultRepository.save(
-                    gapResult
+            peerAssessmentResultRepository.save(
+                    peerResult
             );
 
             // -------------------------------------------------
-            // ADD RESULT
+            // ADD RESULT FOR RESPONSE
             // -------------------------------------------------
 
             skillResults.add(
@@ -407,6 +380,7 @@ public class PeerAssessmentService {
             );
 
             totalScore += actualScore;
+
             ratingCount++;
         }
 
@@ -422,7 +396,7 @@ public class PeerAssessmentService {
         }
 
         // -----------------------------------------------------
-        // OVERALL SCORE
+        // CALCULATE OVERALL SCORE
         // -----------------------------------------------------
 
         double overallScore =
@@ -458,37 +432,38 @@ public class PeerAssessmentService {
                 attempt
         );
 
-        // -----------------------------------------------------
-        // UPDATE EMPLOYEE SKILLS
-        // -----------------------------------------------------
+        // =====================================================
+        // SEND NOTIFICATION TO EMPLOYEE BEING REVIEWED
+        // =====================================================
 
-        updateEmployeeSkills(
+        String evaluatorName =
+                evaluator.getFirstName();
+
+        if (evaluator.getLastName() != null &&
+                !evaluator.getLastName().isBlank()) {
+
+            evaluatorName +=
+                    " " + evaluator.getLastName();
+        }
+
+        notificationService.createNotification(
                 employee,
-                request.getRatings()
+                "PEER_ASSESSMENT_COMPLETED",
+                evaluatorName +
+                        " has completed a peer assessment for you."
         );
 
         // -----------------------------------------------------
-        // RECALCULATE KNOWLEDGE GAPS
+        // IMPORTANT
         // -----------------------------------------------------
-
-        try {
-
-            knowledgeGapService
-                    .detectAndSaveGaps(employee);
-
-            System.out.println(
-                    "Knowledge gaps recalculated "
-                            + "after peer assessment."
-            );
-
-        } catch (Exception e) {
-
-            System.out.println(
-                    "WARNING: Knowledge gap "
-                            + "recalculation failed: "
-                            + e.getMessage()
-            );
-        }
+        // We DO NOT:
+        //
+        // 1. Update EmployeeSkill.currentLevel
+        // 2. Call KnowledgeGapService
+        // 3. Save AssessmentGapResult
+        //
+        // Peer assessment is stored as peer feedback only.
+        // -----------------------------------------------------
 
         // -----------------------------------------------------
         // RETURN RESULT
@@ -507,79 +482,160 @@ public class PeerAssessmentService {
     }
 
     // =========================================================
-    // UPDATE EMPLOYEE SKILLS
+    // GET PEER REVIEWS RECEIVED BY EMPLOYEE
     // =========================================================
 
-    private void updateEmployeeSkills(
-            Employee employee,
-            List<PeerSkillRatingRequest> ratings) {
+    @Transactional(readOnly = true)
+    public List<PeerReviewResponse> getPeerReviews(
+            String employeeIdentifier) {
 
-        for (PeerSkillRatingRequest rating : ratings) {
+        // -----------------------------------------------------
+        // GET EMPLOYEE
+        // -----------------------------------------------------
 
-            if (rating == null ||
-                    rating.getSkillName() == null ||
-                    rating.getSkillName().isBlank()) {
+        Employee employee =
+                employeeRepository
+                        .findByEmployeeId(employeeIdentifier)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found: "
+                                                + employeeIdentifier
+                                )
+                        );
 
-                continue;
-            }
+        // -----------------------------------------------------
+        // GET PEER ASSESSMENT ATTEMPTS
+        // -----------------------------------------------------
 
-            String skillName =
-                    rating.getSkillName().trim();
+        List<AssessmentAttempt> attempts =
+                assessmentAttemptRepository
+                        .findByEmployeeAndAssessmentTypeOrderByCompletedAtDesc(
+                                employee,
+                                AssessmentType.PEER
+                        );
 
-            int level =
-                    normalizeLevel(
-                            rating.getLevel()
-                    );
+        List<PeerReviewResponse> reviews =
+                new ArrayList<>();
 
-            Skill skill =
-                    skillRepository
-                            .findBySkillNameIgnoreCase(
-                                    skillName
-                            )
-                            .orElseThrow(() ->
-                                    new RuntimeException(
-                                            "Skill not found: "
-                                                    + skillName
-                                    )
-                            );
+        // -----------------------------------------------------
+        // PROCESS EACH REVIEW
+        // -----------------------------------------------------
 
-            Optional<EmployeeSkill>
-                    existingSkill =
-                    employeeSkillRepository
-                            .findByEmployeeAndSkill(
-                                    employee,
-                                    skill
-                            );
+        for (AssessmentAttempt attempt : attempts) {
 
-            EmployeeSkill employeeSkill;
+            PeerReviewResponse response =
+                    new PeerReviewResponse();
 
-            if (existingSkill.isPresent()) {
-
-                employeeSkill =
-                        existingSkill.get();
-
-            } else {
-
-                employeeSkill =
-                        new EmployeeSkill();
-
-                employeeSkill.setEmployee(
-                        employee
-                );
-
-                employeeSkill.setSkill(
-                        skill
-                );
-            }
-
-            employeeSkill.setCurrentLevel(level);
-
-            employeeSkillRepository.save(
-                    employeeSkill
+            response.setAttemptId(
+                    attempt.getId()
             );
+
+            response.setCompletedAt(
+                    attempt.getCompletedAt()
+            );
+
+            response.setOverallScore(
+                    attempt.getOverallScore()
+            );
+
+            response.setPerformanceLevel(
+                    attempt.getPerformanceLevel()
+            );
+
+            // -------------------------------------------------
+            // GET REVIEWER
+            // -------------------------------------------------
+
+            Employee evaluator =
+                    attempt.getEvaluator();
+
+            if (evaluator != null) {
+
+                String reviewerName =
+                        evaluator.getFirstName();
+
+                if (evaluator.getLastName() != null &&
+                        !evaluator.getLastName().isBlank()) {
+
+                    reviewerName +=
+                            " " + evaluator.getLastName();
+                }
+
+                response.setReviewerName(
+                        reviewerName
+                );
+
+                response.setReviewerIdentifier(
+                        evaluator.getEmployeeId()
+                );
+            }
+
+            // -------------------------------------------------
+            // GET SKILL RATINGS
+            // -------------------------------------------------
+
+            List<PeerAssessmentResult> results =
+                    peerAssessmentResultRepository
+                            .findByAttempt(attempt);
+
+            List<PeerSkillReviewResponse> skillRatings =
+                    new ArrayList<>();
+
+            for (PeerAssessmentResult result :
+                    results) {
+
+                skillRatings.add(
+                        new PeerSkillReviewResponse(
+                                result.getSkillName(),
+                                result.getRating(),
+                                getRatingLevel(
+                                        result.getRating()
+                                )
+                        )
+                );
+            }
+
+            response.setSkillRatings(
+                    skillRatings
+            );
+
+            reviews.add(response);
         }
 
-        employeeSkillRepository.flush();
+        return reviews;
+    }
+
+    // =========================================================
+    // RATING -> LEVEL NAME
+    // =========================================================
+
+    private String getRatingLevel(
+            Integer rating) {
+
+        if (rating == null) {
+            return "Not Rated";
+        }
+
+        switch (rating) {
+
+            case 1:
+                return "Beginner";
+
+            case 2:
+                return "Intermediate";
+
+            case 3:
+                return "Competent";
+
+            case 4:
+                return "Advanced";
+
+            case 5:
+                return "Expert";
+
+            default:
+                return "Unknown";
+        }
     }
 
     // =========================================================
