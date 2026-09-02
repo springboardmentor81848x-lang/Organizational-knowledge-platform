@@ -6,7 +6,7 @@ import api from "./api";
 
 export const detectGaps = async (employeeIdentifier) => {
   return await api.post(
-    `/gaps/detect/${encodeURIComponent(employeeIdentifier)}`
+    `/knowledge-gaps/detect/${encodeURIComponent(employeeIdentifier)}`
   );
 };
 
@@ -14,7 +14,7 @@ export const getKnowledgeGapsByEmployee = async (
   employeeIdentifier
 ) => {
   return await api.get(
-    `/gaps/employee/${encodeURIComponent(employeeIdentifier)}`
+    `/knowledge-gaps/employee/${encodeURIComponent(employeeIdentifier)}`
   );
 };
 
@@ -22,7 +22,7 @@ export const getTargetRole = async (
   employeeIdentifier
 ) => {
   return await api.get(
-    `/gaps/employee/${encodeURIComponent(employeeIdentifier)}/target-role`
+    `/knowledge-gaps/employee/${encodeURIComponent(employeeIdentifier)}/target-role`
   );
 };
 
