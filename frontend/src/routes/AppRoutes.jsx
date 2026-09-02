@@ -313,9 +313,7 @@ function AppRoutes() {
         path="/employee"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <EmployeeDashboard />
@@ -328,9 +326,7 @@ function AppRoutes() {
         path="/employee-dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <EmployeeDashboard />
@@ -340,16 +336,14 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          SKILL INVENTORY
+          EMPLOYEE SKILL INVENTORY
       ================================================== */}
 
       <Route
         path="/skills"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <Skills />
@@ -359,16 +353,14 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          ORIGINAL SKILL ASSESSMENT
+          EMPLOYEE SKILL ASSESSMENT
       ================================================== */}
 
       <Route
         path="/employee-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <EmployeeSkillAssessment />
@@ -381,9 +373,7 @@ function AppRoutes() {
         path="/employee/skill-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <EmployeeSkillAssessment />
@@ -396,9 +386,7 @@ function AppRoutes() {
         path="/skill-assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <EmployeeSkillAssessment />
@@ -415,9 +403,7 @@ function AppRoutes() {
         path="/employee/assessment"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <Assessment />
@@ -430,9 +416,7 @@ function AppRoutes() {
         path="/employee/assessment/result"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <AssessmentResult />
           </ProtectedRoute>
@@ -499,9 +483,7 @@ function AppRoutes() {
         path="/knowledge-gap"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <KnowledgeGap />
@@ -518,9 +500,7 @@ function AppRoutes() {
         path="/learning-path"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <LearningPath />
@@ -537,9 +517,7 @@ function AppRoutes() {
         path="/training-learning"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <TrainingLearning />
@@ -552,9 +530,7 @@ function AppRoutes() {
         path="/employee/training-learning"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <TrainingLearning />
@@ -571,9 +547,7 @@ function AppRoutes() {
         path="/learning-progress"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <LearningProgress />
@@ -586,9 +560,7 @@ function AppRoutes() {
         path="/employee/learning-progress"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <LearningProgress />
@@ -618,16 +590,14 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          MENTORSHIP & PEER MENTORING
+          MENTORSHIP
       ================================================== */}
 
       <Route
         path="/mentorship"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <Mentorship />
@@ -651,9 +621,7 @@ function AppRoutes() {
         path="/employee/mentorship"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <Mentorship />
@@ -674,7 +642,7 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          PEER MENTORING MESSAGES / CHAT
+          MESSAGES
       ================================================== */}
 
       <Route
@@ -750,9 +718,7 @@ function AppRoutes() {
         path="/employee/expert-directory"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "EMPLOYEE",
-            ]}
+            allowedRoles={["EMPLOYEE"]}
           >
             <DashboardLayout>
               <ExpertDirectory />
@@ -762,16 +728,14 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          HR
+          HR DASHBOARD
       ================================================== */}
 
       <Route
         path="/hr"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <DashboardLayout>
               <HRDashboard />
@@ -784,9 +748,7 @@ function AppRoutes() {
         path="/hr/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
             <DashboardLayout>
               <HRDashboard />
@@ -795,51 +757,77 @@ function AppRoutes() {
         }
       />
 
+      {/* ==================================================
+          HR GAP INTELLIGENCE
+      ================================================== */}
+
       <Route
         path="/hr/gap-intelligence"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "HR",
-            ]}
+            allowedRoles={["HR"]}
           >
-            <GapIntelligence />
+            <DashboardLayout>
+              <GapIntelligence />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          HR WORKFORCE SKILLS
+      ================================================== */}
+
       <Route
-        path="/manager"
+        path="/hr/workforce-skills"
         element={
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <WorkforceSkillInventory />
+            <DashboardLayout>
+              <WorkforceSkillInventory />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          HR COMPETENCY FRAMEWORK
+      ================================================== */}
+
       <Route
-        path="/team-skills"
+        path="/hr/competency-framework"
         element={
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <CompetencyFramework />
+            <DashboardLayout>
+              <CompetencyFramework />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
+      {/* ==================================================
+          HR MENTOR ALLOCATION
+      ================================================== */}
+
       <Route
-        path="/team-gaps"
+        path="/hr/mentor-allocation"
         element={
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <MentorAllocation />
+            <DashboardLayout>
+              <MentorAllocation />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          HR TRAINING EFFECTIVENESS
+      ================================================== */}
 
       <Route
         path="/training-effectiveness"
@@ -847,10 +835,16 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <TrainingEffectiveness />
+            <DashboardLayout>
+              <TrainingEffectiveness />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          HR SKILL FORECAST
+      ================================================== */}
 
       <Route
         path="/skill-forecast"
@@ -858,10 +852,16 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <SkillForecast />
+            <DashboardLayout>
+              <SkillForecast />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          USER MANAGEMENT
+      ================================================== */}
 
       <Route
         path="/users"
@@ -874,7 +874,9 @@ function AppRoutes() {
               "ADMIN",
             ]}
           >
-            <UserManagement />
+            <DashboardLayout>
+              <UserManagement />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -889,73 +891,45 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["HR"]}
           >
-            <HRReports />
+            <DashboardLayout>
+              <HRReports />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          SYSTEM ADMINISTRATOR USER MANAGEMENT
+          MANAGER DASHBOARD
       ================================================== */}
 
       <Route
-        path="/system-administrator/users"
+        path="/manager"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "SYSTEM ADMINISTRATOR",
-              "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
-            ]}
+            allowedRoles={["MANAGER"]}
           >
-            <UserManagement />
+            <DashboardLayout>
+              <ManagerDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
-
-      {/* ==================================================
-          SYSTEM ADMINISTRATOR REPORTS
-          
-          IMPORTANT:
-          This is intentionally NOT HRReports.
-      ================================================== */}
 
       <Route
-        path="/system-administrator/reports"
+        path="/manager/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "SYSTEM ADMINISTRATOR",
-              "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
-            ]}
+            allowedRoles={["MANAGER"]}
           >
-            <SystemAdministratorReports />
+            <DashboardLayout>
+              <ManagerDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          SYSTEM ADMINISTRATOR NOTIFICATIONS
-      ================================================== */}
-
-      <Route
-        path="/system-administrator/notifications"
-        element={
-          <ProtectedRoute
-            allowedRoles={[
-              "SYSTEM ADMINISTRATOR",
-              "SYSTEM_ADMINISTRATOR",
-              "ADMIN",
-            ]}
-          >
-            <Notifications />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ==================================================
-          HIGH RISK GAPS
+          MANAGER HIGH RISK GAPS
       ================================================== */}
 
       <Route
@@ -964,13 +938,15 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerDashboard />
+            <DashboardLayout>
+              <ManagerDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          EMPLOYEE PROGRESS
+          MANAGER EMPLOYEE PROGRESS
       ================================================== */}
 
       <Route
@@ -979,7 +955,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerEmployeeProgress />
+            <DashboardLayout>
+              <ManagerEmployeeProgress />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -990,7 +968,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerEmployeeProgress />
+            <DashboardLayout>
+              <ManagerEmployeeProgress />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1005,7 +985,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerAssessment />
+            <DashboardLayout>
+              <ManagerAssessment />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1027,7 +1009,9 @@ function AppRoutes() {
               "ADMIN",
             ]}
           >
-            <Reports />
+            <DashboardLayout>
+              <Reports />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1038,7 +1022,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerReports />
+            <DashboardLayout>
+              <ManagerReports />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1049,7 +1035,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerReports />
+            <DashboardLayout>
+              <ManagerReports />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1064,7 +1052,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <TrainingLearning />
+            <DashboardLayout>
+              <TrainingLearning />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1075,7 +1065,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerTrainingAdoption />
+            <DashboardLayout>
+              <ManagerTrainingAdoption />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1086,7 +1078,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerTrainingAdoption />
+            <DashboardLayout>
+              <ManagerTrainingAdoption />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1101,13 +1095,15 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerDashboard />
+            <DashboardLayout>
+              <ManagerDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          TEAM SKILL COVERAGE
+          MANAGER TEAM SKILL COVERAGE
       ================================================== */}
 
       <Route
@@ -1116,13 +1112,15 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <TeamCoverage />
+            <DashboardLayout>
+              <TeamCoverage />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          TEAM SKILL GAPS
+          MANAGER TEAM SKILL GAPS
       ================================================== */}
 
       <Route
@@ -1131,7 +1129,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerTeamSkillGaps />
+            <DashboardLayout>
+              <ManagerTeamSkillGaps />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1142,7 +1142,9 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerTeamSkillGaps />
+            <DashboardLayout>
+              <ManagerTeamSkillGaps />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1157,13 +1159,15 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={["MANAGER"]}
           >
-            <ManagerNotifications />
+            <DashboardLayout>
+              <ManagerNotifications />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ==================================================
-          DEPARTMENT HEAD
+          DEPARTMENT HEAD DASHBOARD
       ================================================== */}
 
       <Route
@@ -1175,7 +1179,9 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <DepartmentDashboard />
+            <DashboardLayout>
+              <DepartmentDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1189,10 +1195,16 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <DepartmentDashboard />
+            <DashboardLayout>
+              <DepartmentDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          DEPARTMENT HEAD SKILL COVERAGE
+      ================================================== */}
 
       <Route
         path="/department-head/skill-coverage"
@@ -1203,7 +1215,9 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <SkillCoverage />
+            <DashboardLayout>
+              <SkillCoverage />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1217,10 +1231,16 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <SkillCoverage />
+            <DashboardLayout>
+              <SkillCoverage />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ==================================================
+          DEPARTMENT HEAD TRAINING ADOPTION
+      ================================================== */}
 
       <Route
         path="/department-head/training-adoption"
@@ -1231,7 +1251,9 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <TrainingAdoption />
+            <DashboardLayout>
+              <TrainingAdoption />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1249,7 +1271,9 @@ function AppRoutes() {
               "DEPARTMENT_HEAD",
             ]}
           >
-            <Reports />
+            <DashboardLayout>
+              <Reports />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1273,16 +1297,14 @@ function AppRoutes() {
       />
 
       {/* ==================================================
-          MENTOR
+          MENTOR DASHBOARD
       ================================================== */}
 
       <Route
         path="/mentor"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <DashboardLayout>
               <MentorDashboard />
@@ -1295,9 +1317,7 @@ function AppRoutes() {
         path="/mentor/dashboard"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <DashboardLayout>
               <MentorDashboard />
@@ -1306,13 +1326,15 @@ function AppRoutes() {
         }
       />
 
+      {/* ==================================================
+          MENTOR LEARNING ANALYTICS
+      ================================================== */}
+
       <Route
         path="/learning-analytics"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
             <DashboardLayout>
               <LearningAnalytics />
@@ -1329,11 +1351,11 @@ function AppRoutes() {
         path="/mentor-management"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
-            <MentorManagement />
+            <DashboardLayout>
+              <MentorManagement />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1346,11 +1368,11 @@ function AppRoutes() {
         path="/training-catalog"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "MENTOR",
-            ]}
+            allowedRoles={["MENTOR"]}
           >
-            <CourseCatalog />
+            <DashboardLayout>
+              <CourseCatalog />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />
@@ -1389,6 +1411,67 @@ function AppRoutes() {
             <DashboardLayout>
               <SystemAdministratorDashboard />
             </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR USER MANAGEMENT
+      ================================================== */}
+
+      <Route
+        path="/system-administrator/users"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <DashboardLayout>
+              <UserManagement />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR REPORTS
+      ================================================== */}
+
+      <Route
+        path="/system-administrator/reports"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <DashboardLayout>
+              <SystemAdministratorReports />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          SYSTEM ADMINISTRATOR NOTIFICATIONS
+      ================================================== */}
+
+      <Route
+        path="/system-administrator/notifications"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "SYSTEM ADMINISTRATOR",
+              "SYSTEM_ADMINISTRATOR",
+              "ADMIN",
+            ]}
+          >
+            <Notifications />
           </ProtectedRoute>
         }
       />
