@@ -24,10 +24,12 @@ import DepartmentNotifications from "../pages/DepartmentNotifications";
 import EmployeeDashboard from "../pages/EmployeeDashboard";
 import Skills from "../pages/Skills";
 import EmployeeSkillAssessment from "../pages/EmployeeSkillAssessment";
+import SelfAssessment from "../pages/SelfAssessment";
 import Assessment from "../pages/Assessment";
 import AssessmentResult from "../pages/AssessmentResult";
 import Reassessment from "../pages/Reassessment";
 import PeerAssessment from "../pages/PeerAssessment";
+import PeerReviews from "../pages/PeerReviews";
 import KnowledgeGap from "../pages/KnowledgeGap";
 import LearningPath from "../pages/LearningPath";
 import TrainingLearning from "../pages/TrainingLearning";
@@ -354,6 +356,7 @@ function AppRoutes() {
 
       {/* ==================================================
           EMPLOYEE SKILL ASSESSMENT
+          EXISTING - UNCHANGED
       ================================================== */}
 
       <Route
@@ -396,7 +399,40 @@ function AppRoutes() {
       />
 
       {/* ==================================================
+          SELF ASSESSMENT
+          NEW - COMPLETELY SEPARATE FROM SKILL ASSESSMENT
+      ================================================== */}
+
+      <Route
+        path="/employee/self-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <DashboardLayout>
+              <SelfAssessment />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Optional alternate URL */}
+      <Route
+        path="/self-assessment"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <DashboardLayout>
+              <SelfAssessment />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
           ASSESSMENT
+          EXISTING - UNCHANGED
       ================================================== */}
 
       <Route
@@ -471,6 +507,23 @@ function AppRoutes() {
             allowedRoles={["EMPLOYEE"]}
           >
             <PeerAssessment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================
+          PEER REVIEWS
+      ================================================== */}
+
+      <Route
+        path="/employee/peer-reviews"
+        element={
+          <ProtectedRoute
+            allowedRoles={["EMPLOYEE"]}
+          >
+            <DashboardLayout>
+              <PeerReviews />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />

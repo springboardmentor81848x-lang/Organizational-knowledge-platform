@@ -48,4 +48,24 @@ public interface AssessmentAttemptRepository
     List<AssessmentAttempt> findByEmployeeOrderByCompletedAtAsc(
             Employee employee
     );
+
+    // =========================================================
+    // ALL PEER ASSESSMENTS RECEIVED BY EMPLOYEE
+    // =========================================================
+
+    List<AssessmentAttempt>
+    findByEmployeeAndAssessmentTypeOrderByCompletedAtDesc(
+            Employee employee,
+            AssessmentType assessmentType
+    );
+
+    // =========================================================
+    // PEER ASSESSMENTS GIVEN BY A PARTICULAR EMPLOYEE
+    // =========================================================
+
+    List<AssessmentAttempt>
+    findByEvaluatorAndAssessmentTypeOrderByCompletedAtDesc(
+            Employee evaluator,
+            AssessmentType assessmentType
+    );
 }

@@ -23,6 +23,8 @@ import {
   FileText,
   PieChart,
   MessageSquare,
+  Star,
+  UserRoundCheck,
 } from "lucide-react";
 
 function Sidebar({ role }) {
@@ -69,10 +71,7 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "HR" && (
           <>
-            <NavLink
-              to="/hr"
-              className={navLinkClass}
-            >
+            <NavLink to="/hr" className={navLinkClass}>
               <LayoutDashboard size={20} />
               HR Dashboard
             </NavLink>
@@ -93,14 +92,7 @@ function Sidebar({ role }) {
               Workforce Skills
             </NavLink>
 
-            {/* ==================================================
-                CORRECTED: COMPETENCY FRAMEWORK
-                AppRoutes.jsx -> /team-skills
-            ================================================== */}
-            <NavLink
-              to="/team-skills"
-              className={navLinkClass}
-            >
+            <NavLink to="/team-skills" className={navLinkClass}>
               <ClipboardList size={20} />
               Competency Framework
             </NavLink>
@@ -121,22 +113,12 @@ function Sidebar({ role }) {
               Skill Forecast
             </NavLink>
 
-            {/* ==================================================
-                CORRECTED: MENTOR ALLOCATION
-                AppRoutes.jsx -> /team-gaps
-            ================================================== */}
-            <NavLink
-              to="/team-gaps"
-              className={navLinkClass}
-            >
+            <NavLink to="/team-gaps" className={navLinkClass}>
               <UserCheck size={20} />
               Mentor Allocation
             </NavLink>
 
-            <NavLink
-              to="/users"
-              className={navLinkClass}
-            >
+            <NavLink to="/users" className={navLinkClass}>
               <UserCog size={20} />
               User Management
             </NavLink>
@@ -164,10 +146,7 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "MANAGER" && (
           <>
-            <NavLink
-              to="/manager"
-              className={navLinkClass}
-            >
+            <NavLink to="/manager" className={navLinkClass}>
               <LayoutDashboard size={20} />
               Manager Dashboard
             </NavLink>
@@ -221,14 +200,6 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/manager-reports"
-              className={navLinkClass}
-            >
-              <FileText size={20} />
-              Reports
-            </NavLink>
-
-            <NavLink
               to="/manager/notifications"
               className={navLinkClass}
             >
@@ -267,10 +238,7 @@ function Sidebar({ role }) {
               Training Adoption
             </NavLink>
 
-            <NavLink
-              to="/reports"
-              className={navLinkClass}
-            >
+            <NavLink to="/reports" className={navLinkClass}>
               <BarChart3 size={20} />
               Reports
             </NavLink>
@@ -290,10 +258,7 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "MENTOR" && (
           <>
-            <NavLink
-              to="/mentor"
-              className={navLinkClass}
-            >
+            <NavLink to="/mentor" className={navLinkClass}>
               <LayoutDashboard size={20} />
               Mentor Dashboard
             </NavLink>
@@ -345,30 +310,24 @@ function Sidebar({ role }) {
         ================================================== */}
         {normalizedRole === "EMPLOYEE" && (
           <>
-            <NavLink
-              to="/employee"
-              className={navLinkClass}
-            >
+            <NavLink to="/employee" className={navLinkClass}>
               <LayoutDashboard size={20} />
               Dashboard
             </NavLink>
 
-            <NavLink
-              to="/profile"
-              className={navLinkClass}
-            >
+            <NavLink to="/profile" className={navLinkClass}>
               <User size={20} />
               My Profile
             </NavLink>
 
-            <NavLink
-              to="/skills"
-              className={navLinkClass}
-            >
+            <NavLink to="/skills" className={navLinkClass}>
               <BookOpen size={20} />
               Skill Inventory
             </NavLink>
 
+            {/* ==================================================
+                EXISTING SKILL ASSESSMENT
+            ================================================== */}
             <NavLink
               to="/employee-assessment"
               className={navLinkClass}
@@ -377,6 +336,20 @@ function Sidebar({ role }) {
               Skill Assessment
             </NavLink>
 
+            {/* ==================================================
+                SELF ASSESSMENT
+            ================================================== */}
+            <NavLink
+              to="/employee/self-assessment"
+              className={navLinkClass}
+            >
+              <UserRoundCheck size={20} />
+              Self Assessment
+            </NavLink>
+
+            {/* ==================================================
+                REASSESSMENT
+            ================================================== */}
             <NavLink
               to="/reassessment"
               className={navLinkClass}
@@ -385,12 +358,26 @@ function Sidebar({ role }) {
               Reassessment
             </NavLink>
 
+            {/* ==================================================
+                PEER ASSESSMENT
+            ================================================== */}
             <NavLink
               to="/peer-assessment"
               className={navLinkClass}
             >
               <Users size={20} />
               Peer Assessment
+            </NavLink>
+
+            {/* ==================================================
+                PEER REVIEWS
+            ================================================== */}
+            <NavLink
+              to="/employee/peer-reviews"
+              className={navLinkClass}
+            >
+              <Star size={20} />
+              Peer Reviews
             </NavLink>
 
             <NavLink
@@ -536,4 +523,3 @@ function Sidebar({ role }) {
 }
 
 export default Sidebar;
-
