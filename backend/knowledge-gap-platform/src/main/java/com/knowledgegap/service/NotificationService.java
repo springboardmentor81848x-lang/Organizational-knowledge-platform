@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.knowledgegap.dto.NotificationResponse;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.Notification;
 import com.knowledgegap.repository.EmployeeRepository;
@@ -106,33 +107,38 @@ public class NotificationService {
     // GET ALL NOTIFICATIONS FOR EMPLOYEE
     // =========================================================
 
-    public List<Notification> getNotifications(
+    public List<NotificationResponse> getNotifications(
             Employee employee) {
 
         return notificationRepository
-                .findByRecipientOrderByCreatedDateDesc(
-                        employee
-                );
+                .findByRecipientOrderByCreatedDateDesc(employee)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     // =========================================================
     // GET UNREAD NOTIFICATIONS
     // =========================================================
 
-    public List<Notification> getUnreadNotifications(
+    public List<NotificationResponse> getUnreadNotifications(
             Employee employee) {
 
         return notificationRepository
                 .findByRecipientAndReadStatusFalseOrderByCreatedDateDesc(
                         employee
-                );
+                )
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     // =========================================================
     // MARK NOTIFICATION AS READ
     // =========================================================
 
-    public Notification markAsRead(Long notificationId) {
+    public NotificationResponse markAsRead(
+            Long notificationId) {
 
         Notification notification =
                 notificationRepository
@@ -145,6 +151,26 @@ public class NotificationService {
 
         notification.setReadStatus(true);
 
-        return notificationRepository.save(notification);
+        Notification savedNotification =
+                notificationRepository.save(notification);
+
+        return toResponse(savedNotification);
+    }
+
+    // =========================================================
+    // CONVERT ENTITY TO SAFE RESPONSE DTO
+    // =========================================================
+
+    private NotificationResponse toResponse(
+            Notification notification) {
+
+        return new NotificationResponse(
+                notification.getId(),
+                notification.getRecipient().getEmployeeId(),
+                notification.getType(),
+                notification.getMessage(),
+                notification.isReadStatus(),
+                notification.getCreatedDate()
+        );
     }
 }

@@ -70,76 +70,84 @@ function Sidebar({ role }) {
             HR
         ================================================== */}
         {normalizedRole === "HR" && (
-          <>
-            <NavLink to="/hr" className={navLinkClass}>
-              <LayoutDashboard size={20} />
-              HR Dashboard
-            </NavLink>
+  <>
+    <NavLink to="/hr" className={navLinkClass}>
+      <LayoutDashboard size={20} />
+      HR Dashboard
+    </NavLink>
 
-            <NavLink
-              to="/hr/gap-intelligence"
-              className={navLinkClass}
-            >
-              <Brain size={20} />
-              Gap Intelligence
-            </NavLink>
+    <NavLink
+      to="/hr/gap-intelligence"
+      className={navLinkClass}
+    >
+      <Brain size={20} />
+      Gap Intelligence
+    </NavLink>
 
-            <NavLink
-              to="/hr/workforce-skills"
-              className={navLinkClass}
-            >
-              <BookOpen size={20} />
-              Workforce Skills
-            </NavLink>
+    <NavLink
+      to="/hr/workforce-skills"
+      className={navLinkClass}
+    >
+      <BookOpen size={20} />
+      Workforce Skills
+    </NavLink>
 
-            <NavLink to="/team-skills" className={navLinkClass}>
-              <ClipboardList size={20} />
-              Competency Framework
-            </NavLink>
+    {/* Competency Framework */}
+    <NavLink
+      to="/hr/competency-framework"
+      className={navLinkClass}
+    >
+      <ClipboardList size={20} />
+      Competency Framework
+    </NavLink>
 
-            <NavLink
-              to="/training-effectiveness"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training Effectiveness
-            </NavLink>
+    <NavLink
+      to="/training-effectiveness"
+      className={navLinkClass}
+    >
+      <GraduationCap size={20} />
+      Training Effectiveness
+    </NavLink>
 
-            <NavLink
-              to="/skill-forecast"
-              className={navLinkClass}
-            >
-              <TrendingUp size={20} />
-              Skill Forecast
-            </NavLink>
+    <NavLink
+      to="/skill-forecast"
+      className={navLinkClass}
+    >
+      <TrendingUp size={20} />
+      Skill Forecast
+    </NavLink>
 
-            <NavLink to="/team-gaps" className={navLinkClass}>
-              <UserCheck size={20} />
-              Mentor Allocation
-            </NavLink>
+    {/* Mentor Allocation */}
+    <NavLink
+      to="/hr/mentor-allocation"
+      className={navLinkClass}
+    >
+      <UserCheck size={20} />
+      Mentor Allocation
+    </NavLink>
 
-            <NavLink to="/users" className={navLinkClass}>
-              <UserCog size={20} />
-              User Management
-            </NavLink>
+    <NavLink to="/users" className={navLinkClass}>
+      <UserCog size={20} />
+      User Management
+    </NavLink>
 
-            <NavLink
-              to="/hr/reports"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              HR Reports
-            </NavLink>
+    <NavLink
+      to="/hr/reports"
+      className={navLinkClass}
+    >
+      <BarChart3 size={20} />
+      HR Reports
+    </NavLink>
 
-            <NavLink
-              to="/notifications"
-              className={navLinkClass}
-            >
-              <Bell size={20} />
-              Notifications
-            </NavLink>
-          </>
-        )}
+    <NavLink
+      to="/notifications"
+      className={navLinkClass}
+    >
+      <Bell size={20} />
+      Notifications
+    </NavLink>
+  </>
+)}
 
         {/* ==================================================
             MANAGER

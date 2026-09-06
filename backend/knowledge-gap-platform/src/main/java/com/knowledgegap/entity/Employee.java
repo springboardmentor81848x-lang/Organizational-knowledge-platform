@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 public class Employee {
@@ -19,6 +20,7 @@ public class Employee {
     private String firstName;
     private String lastName;
     private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String designation;
 

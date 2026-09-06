@@ -10,8 +10,9 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.knowledgegap.dto.AssessmentQuestionResponse;
 import com.knowledgegap.dto.AssessmentAnswerRequest;
+import com.knowledgegap.dto.AssessmentGapResultResponse;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
@@ -170,14 +171,29 @@ public class AssessmentService {
     // GET QUESTIONS BY ASSESSMENT
     // =========================================================
 
-    public List<AssessmentQuestion> getQuestionsByAssessment(
-            Long assessmentId) {
+    public List<AssessmentQuestionResponse> getQuestionsByAssessment(
+        Long assessmentId) {
 
-        return assessmentQuestionRepository
-                .findByAssessmentId(
-                        assessmentId
-                );
-    }
+    List<AssessmentQuestion> questions =
+            assessmentQuestionRepository
+                    .findByAssessmentId(assessmentId);
+
+    return questions.stream()
+            .map(question ->
+                    new AssessmentQuestionResponse(
+                            question.getId(),
+                            question.getSkillName(),
+                            question.getQuestion(),
+                            question.getOptionA(),
+                            question.getOptionB(),
+                            question.getOptionC(),
+                            question.getOptionD(),
+                            question.getDifficulty(),
+                            question.getMarks()
+                    )
+            )
+            .toList();
+}
 
     // =========================================================
     // SUBMIT ASSESSMENT
@@ -387,21 +403,6 @@ public class AssessmentService {
 
         // =====================================================
         // CREATE SUBMITTED ANSWER MAP
-        // =====================================================
-        //
-        // AssessmentSubmitRequest.getAnswers()
-        // returns:
-        //
-        // List<AssessmentAnswerRequest>
-        //
-        // AssessmentAnswerRequest contains:
-        //
-        // questionId
-        // selectedAnswer
-        //
-        // We convert the list into a Map so the existing
-        // calculation logic below can remain unchanged.
-        //
         // =====================================================
 
         Map<Long, String> submittedAnswers =
@@ -769,7 +770,7 @@ public class AssessmentService {
             );
 
             // -------------------------------------------------
-            // MODULE 5 HISTORICAL COMPARISON
+            // HISTORICAL COMPARISON
             // -------------------------------------------------
 
             gapResult.setPreviousLevel(
@@ -915,8 +916,24 @@ public class AssessmentService {
     // =========================================================
     // GET ASSESSMENT GAP RESULTS
     // =========================================================
+    //
+    // SECURITY FIX:
+    //
+    // Do NOT return AssessmentGapResult entity directly.
+    //
+    // AssessmentGapResult contains:
+    //
+    //     attempt
+    //          ↓
+    //     employee
+    //          ↓
+    //     password
+    //
+    // Instead, convert the entity into a safe DTO.
+    //
+    // =========================================================
 
-    public List<AssessmentGapResult> getAssessmentGapResults(
+    public List<AssessmentGapResultResponse> getAssessmentGapResults(
             Long attemptId) {
 
         AssessmentAttempt attempt =
@@ -929,8 +946,25 @@ public class AssessmentService {
                                 )
                         );
 
-        return assessmentGapResultRepository
-                .findByAttempt(attempt);
+        List<AssessmentGapResult> results =
+                assessmentGapResultRepository
+                        .findByAttempt(attempt);
+
+        return results.stream()
+                .map(result ->
+                        new AssessmentGapResultResponse(
+                                result.getId(),
+                                result.getSkillName(),
+                                result.getActualScore(),
+                                result.getRequiredScore(),
+                                result.getGap(),
+                                result.getGapSeverity(),
+                                result.getPreviousLevel(),
+                                result.getAssessedLevel(),
+                                result.getImprovement()
+                        )
+                )
+                .toList();
     }
 
     // =========================================================

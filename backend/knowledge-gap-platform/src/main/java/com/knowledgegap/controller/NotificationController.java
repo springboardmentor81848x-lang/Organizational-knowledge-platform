@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.knowledgegap.dto.NotificationResponse;
 import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.Notification;
 import com.knowledgegap.service.EmployeeService;
 import com.knowledgegap.service.NotificationService;
 
@@ -37,7 +37,7 @@ public class NotificationController {
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}")
-    public ResponseEntity<List<Notification>>
+    public ResponseEntity<List<NotificationResponse>>
     getEmployeeNotifications(
             @PathVariable String employeeIdentifier) {
 
@@ -62,7 +62,7 @@ public class NotificationController {
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}/unread")
-    public ResponseEntity<List<Notification>>
+    public ResponseEntity<List<NotificationResponse>>
     getUnreadNotifications(
             @PathVariable String employeeIdentifier) {
 
@@ -92,7 +92,7 @@ public class NotificationController {
 
         try {
 
-            Notification notification =
+            NotificationResponse notification =
                     notificationService.markAsRead(id);
 
             return ResponseEntity.ok(notification);
