@@ -1,76 +1,68 @@
-# KGap Intel — Android Native Mobile Client
+# KGap Intel — Enterprise Knowledge Gap & AI-Driven Upskilling Intelligence Platform
 
-Native Android mobile application built with Java, Material Design 3, Retrofit 2, and Android Jetpack Architecture Components for the KGap Intel Enterprise Knowledge Platform.
-
----
-
-## 📱 Features & Highlights
-
-- **Dynamic Role-Based Dashboards**: Custom-tailored dashboard experiences for Employee, Manager, HR, L&D Admin, Department Head, Mentor, and System Administrator.
-- **Unread Notification Badging**: Real-time unread badge counts (`tv_notif_badge`) on the bell icon for every role dashboard.
-- **Role-Aware Notification Privacy**: L&D Admins receive enterprise training/session/milestone alerts with private chat messages filtered out.
-- **Interactive Knowledge Hub**:
-  - Live session schedules with one-tap Google Meet launcher (`Intent.ACTION_VIEW`).
-  - Searchable mentor selection with live `TextWatcher` filtering across name and expertise.
-  - Multi-tier assessments (Self, Peer, Manager) with real-time scoring.
-  - Direct 1-on-1 employee-to-mentor messaging.
+KGap Intel is a full-stack enterprise platform built to identify, track, benchmark, and resolve organizational knowledge gaps through real-time competency diagnostics, adaptive AI recommendations, curated internal/external learning pathways, peer knowledge-sharing sessions, and role-based talent management.
 
 ---
 
-## 🛠️ Technology Stack & Libraries
+## 🌟 Key Pillars & Core Capabilities
 
-- **Language & Platform**: Java 8 / 17 / 21, Android SDK (Min API 24, Target API 34)
-- **UI & Components**: Material Design 3, View Binding, ConstraintLayout, NestedScrollView
-- **Architecture**: MVVM (Model-View-ViewModel), Repository Pattern, LiveData
-- **Networking**: Retrofit 2, OkHttp 3, Gson Converter
-- **Visuals & Charts**: MPAndroidChart (radar charts, heatmaps, progress analytics)
-- **Local Storage**: Encrypted / SharedPreferences via `SharedPrefManager`
+- **Competency & Skill Gap Engine**: Multi-tier assessment matrix (Self, Peer, Manager) benchmarking current employee proficiency against enterprise role requirements.
+- **Adaptive AI Upskilling Recommendations**: Real-time scoring and curation of internal bootcamps and external courses (Coursera, Udemy, VMware Tanzu, AWS, Google Cloud) tailored to bridge active gaps.
+- **Interactive Knowledge Hub & Mentorship**: Real-time 1-on-1 employee/mentor chat, live Google Meet sessions, and structured mentor matching.
+- **Multi-Role Governance**: 7 dedicated role dashboards with live telemetry, unread notification badges, and granular security policies:
+  1. 👤 **Employee** — Self-assessments, progress tracking, training enrollments, and mentor messaging.
+  2. 🎓 **Learning & Development Admin** — Enterprise catalog curation, adaptive learning paths, session links, and training telemetry.
+  3. 👔 **Engineering Manager** — Team gap radar, training ROI tracking, and assessment nudges.
+  4. 💼 **HR Talent Leader** — Strategic workforce inventory, department skill benchmarks, and talent forecasting.
+  5. 🛡️ **System Administrator** — User access controls, audit trail security logs, and database health monitoring.
+  6. 📊 **Department Head** — Departmental heatmap coverage, high-risk gap interventions, and mentor assignments.
+  7. 🤝 **Mentor** — Mentee guidance, doubt clearing sessions, and live session scheduling.
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Repository Structure
 
 ```
-Frontend/app/src/main/
-├── java/com/kgap/intel/
-│   ├── activities/      # MainActivity, LoginActivity, RegisterActivity
-│   ├── adapters/        # BannerAdapter, CatalogAdapter, MentorAdapter, NotificationAdapter
-│   ├── api/             # Retrofit ApiService interfaces & ApiClient configuration
-│   ├── fragments/       # Role Dashboards, Skills, Gaps, Catalog, Chat, Notifications
-│   ├── models/          # POJO models mapped with @SerializedName
-│   ├── repository/      # LiveData repository layer handling API calls & caching
-│   ├── utils/           # SharedPrefManager, Constants, UI formatters
-│   └── viewmodel/       # AndroidX ViewModels managing state & observables
-└── res/
-    ├── layout/          # XML Layout definitions & Data Binding layouts
-    ├── drawable/        # Vector icons, shape backgrounds, badge drawables
-    └── values/          # Colors, strings, themes, styles
+KGap_Intel Project/
+├── Backend/                 # Spring Boot 3 / Java 21 REST API & PostgreSQL Database
+│   ├── src/main/java/       # Controllers, Services, Repositories, Entities, Security
+│   ├── src/main/resources/  # application.properties, schema & migration configs
+│   ├── pom.xml              # Maven dependencies & plugins
+│   └── README.md            # Backend-specific architecture & setup guide
+├── Frontend/                # Native Android App (Java / Material Design 3)
+│   ├── app/src/main/java/   # Activities, Fragments, ViewModels, Repositories, Adapters
+│   ├── app/src/main/res/    # Layouts, XML drawables, colors, styles, navigations
+│   ├── build.gradle.kts     # Gradle build configurations & dependencies
+│   └── README.md            # Frontend-specific architecture & run guide
+└── README.md                # Master project documentation
 ```
 
 ---
 
-## 🔧 Building & Installing
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Android Studio Ladybug / Meerkat or Gradle CLI
-- Android Virtual Device (AVD) or physical device running Android 7.0+ (API 24+)
+- **Java Development Kit (JDK)**: Version 21
+- **PostgreSQL**: Version 14+ running on port `5432` with database `knowledge_gap_db`
+- **Android Studio**: Ladybug / Meerkat or Android SDK Build Tools (API 34/35)
 
-### Build APK via Gradle
+### 1. Launch Backend Service
 ```bash
-# Windows
-cmd /c gradlew.bat assembleDebug
+cd Backend
+./mvnw clean compile
+./mvnw spring-boot:run
+```
+*Backend runs on `http://localhost:8080` (or `http://10.0.2.2:8080` for Android Emulator).*
 
-# macOS / Linux
+### 2. Build & Launch Android App
+```bash
+cd Frontend
 ./gradlew assembleDebug
 ```
-
-Output APK will be generated at:
-`Frontend/app/build/outputs/apk/debug/app-debug.apk`
+*Deploy the APK to your connected Android virtual device or physical device via Android Studio.*
 
 ---
 
-## 📡 Backend Network Configuration
-
-When running locally with the Spring Boot backend:
-- **Android Emulator**: Set base URL to `http://10.0.2.2:8080/`
-- **Physical Device**: Set base URL to your computer's local Wi-Fi IP address (e.g. `http://192.168.1.X:8080/`) in `ApiClient.java`.
+## 🔒 Security & RBAC
+- **Stateless Authentication**: JWT (JSON Web Tokens) with BCrypt-hashed credentials.
+- **Role-Based Access Control**: Pre-authorized endpoint policies guarding organizational audit data, while maintaining open broadcast channels for real-time notification alerts.
