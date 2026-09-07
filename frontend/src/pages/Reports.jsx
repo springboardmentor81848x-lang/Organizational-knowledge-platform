@@ -217,63 +217,54 @@ function Reports() {
           </h1>
         </div>
 
-        {/* ==================================================
-            NAVIGATION
-        ================================================== */}
-
         <nav className="flex-1 mt-6 overflow-y-auto">
 
-          {/* Department Dashboard */}
+  {/* Department Dashboard */}
+  <NavLink
+    to="/department-head"
+    className={navLinkClass}
+  >
+    <LayoutDashboard size={20} />
+    Department Dashboard
+  </NavLink>
 
-          <NavLink
-            to="/department-head"
-            className={navLinkClass}
-          >
-            <LayoutDashboard size={20} />
-            Department Dashboard
-          </NavLink>
+  {/* Skill Coverage */}
+  <NavLink
+    to="/department-head/skill-coverage"
+    className={navLinkClass}
+  >
+    <Users size={20} />
+    Skill Coverage
+  </NavLink>
 
-          {/* Skill Coverage */}
+  {/* Training Adoption */}
+  <NavLink
+    to="/department-head/training-adoption"
+    className={navLinkClass}
+  >
+    <GraduationCap size={20} />
+    Training Adoption
+  </NavLink>
 
-          <NavLink
-            to="/department-head/skill-coverage"
-            className={navLinkClass}
-          >
-            <Users size={20} />
-            Skill Coverage
-          </NavLink>
+  {/* Reports */}
+  <NavLink
+    to="/reports"
+    className={navLinkClass}
+  >
+    <BarChart3 size={20} />
+    Reports
+  </NavLink>
 
-          {/* Training Adoption */}
+  {/* Notifications */}
+  <NavLink
+    to="/department-head/notifications"
+    className={navLinkClass}
+  >
+    <Bell size={20} />
+    Notifications
+  </NavLink>
 
-          <NavLink
-            to="/department-head/training-adoption"
-            className={navLinkClass}
-          >
-            <GraduationCap size={20} />
-            Training Adoption
-          </NavLink>
-
-          {/* Reports */}
-
-          <NavLink
-            to="/reports"
-            className={navLinkClass}
-          >
-            <BarChart3 size={20} />
-            Reports
-          </NavLink>
-
-          {/* Notifications */}
-
-          <NavLink
-            to="/notifications"
-            className={navLinkClass}
-          >
-            <Bell size={20} />
-            Notifications
-          </NavLink>
-
-        </nav>
+</nav>
 
         {/* ==================================================
             LOGOUT

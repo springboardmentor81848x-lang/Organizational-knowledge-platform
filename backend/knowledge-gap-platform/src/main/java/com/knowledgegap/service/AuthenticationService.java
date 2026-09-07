@@ -54,8 +54,6 @@ public class AuthenticationService {
         this.competencyRepository = competencyRepository;
         this.skillRepository = skillRepository;
         this.employeeSkillRepository = employeeSkillRepository;
-
-        // NEW
         this.notificationService = notificationService;
     }
 
@@ -251,11 +249,12 @@ public class AuthenticationService {
         // --------------------------------------------------------
         // 6.1 NOTIFY SYSTEM ADMINISTRATORS
         // --------------------------------------------------------
-        //
-        // This does NOT change the employee signup process.
-        // It simply creates a notification for every
-        // SYSTEM_ADMINISTRATOR after the employee is saved.
-        // --------------------------------------------------------
+
+        /*
+         * This does NOT change the employee signup process.
+         * It simply creates a notification for every
+         * SYSTEM_ADMINISTRATOR after the employee is saved.
+         */
 
         notificationService.notifySystemAdministrators(
                 "NEW_USER",
@@ -403,28 +402,28 @@ public class AuthenticationService {
         switch (normalizedTargetRole) {
 
             case "software developer":
-                return 2L;
+                return 1L;
 
             case "software tester":
-                return 3L;
+                return 2L;
 
             case "data analyst":
-                return 4L;
+                return 3L;
 
             case "data scientist":
-                return 5L;
+                return 4L;
 
             case "devops engineer":
-                return 6L;
+                return 5L;
 
             case "ui/ux designer":
-                return 7L;
+                return 6L;
 
             case "cybersecurity analyst":
-                return 8L;
+                return 7L;
 
             case "database administrator":
-                return 9L;
+                return 8L;
 
             default:
                 throw new RuntimeException(

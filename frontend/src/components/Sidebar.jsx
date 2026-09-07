@@ -117,15 +117,6 @@ function Sidebar({ role }) {
       Skill Forecast
     </NavLink>
 
-    {/* Mentor Allocation */}
-    <NavLink
-      to="/hr/mentor-allocation"
-      className={navLinkClass}
-    >
-      <UserCheck size={20} />
-      Mentor Allocation
-    </NavLink>
-
     <NavLink to="/users" className={navLinkClass}>
       <UserCog size={20} />
       User Management
