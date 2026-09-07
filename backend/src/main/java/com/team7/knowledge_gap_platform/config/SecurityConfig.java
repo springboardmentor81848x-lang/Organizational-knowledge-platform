@@ -79,12 +79,21 @@ public class SecurityConfig {
                                 "/auth/**"
                         ).permitAll()
 
-                        // Employee specific access to their OWN gaps, heatmap and recommendations
+                        // Employee specific access to their OWN gaps, heatmap, courses, learning paths, mentors, sessions and recommendations
                         .requestMatchers(
                                 "/skill-gaps/employee/**",
                                 "/heatmap/employee/**",
                                 "/recommendations/employee/**",
-                                "/recommendations/generate/**"
+                                "/recommendations/generate/**",
+                                "/external-courses/**",
+                                "/learning-paths/**",
+                                "/course-recommendations/**",
+                                "/mentors/**",
+                                "/knowledge-sessions/**",
+                                "/knowledge-session-registrations/**",
+                                "/knowledge-session-feedback/**",
+                                "/mentorship-requests/**",
+                                "/training-enrollments/**"
                         )
                         .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN")
 
@@ -93,10 +102,7 @@ public class SecurityConfig {
                                 "/knowledge-gaps/**",
                                 "/skill-gaps/**",
                                 "/heatmap/**",
-                                "/course-recommendations/**",
-                                "/recommendations/**",
-                                "/learning-paths/**",
-                                "/external-courses/**"
+                                "/recommendations/**"
                         )
                         .hasAnyAuthority("ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN")
 
