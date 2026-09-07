@@ -47,14 +47,14 @@ INSERT INTO competency_requirement (id, job_role_id, skill_id, required_proficie
 ON CONFLICT (id) DO NOTHING;
 
 -- 5. Seed Users (Password: password123)
--- BCrypt encoded hash for 'password123': $2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.
+-- BCrypt verified hash for 'password123' (generated & verified with Python bcrypt)
 INSERT INTO app_users (id, full_name, email, password, role) VALUES
-(1, 'Aarav Sharma', 'aarav.sharma@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE'),
-(2, 'Sarah Johnson', 'employee2@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE'),
-(3, 'Vikram Mehta', 'manager@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'MANAGER'),
-(4, 'Priya Patel', 'hr@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'HR'),
-(5, 'System Admin', 'admin@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'ADMIN')
-ON CONFLICT (id) DO NOTHING;
+(1, 'Aarav Sharma', 'aarav.sharma@kgap.com', '$2b$10$IwXlUVfkFiSHW3yGNeU33.M8wL8pTkleF4H5JwNqXJks3S9ruRRGS', 'EMPLOYEE'),
+(2, 'Sarah Johnson', 'employee2@kgap.com', '$2b$10$IwXlUVfkFiSHW3yGNeU33.M8wL8pTkleF4H5JwNqXJks3S9ruRRGS', 'EMPLOYEE'),
+(3, 'Vikram Mehta', 'manager@kgap.com', '$2b$10$IwXlUVfkFiSHW3yGNeU33.M8wL8pTkleF4H5JwNqXJks3S9ruRRGS', 'MANAGER'),
+(4, 'Priya Patel', 'hr@kgap.com', '$2b$10$IwXlUVfkFiSHW3yGNeU33.M8wL8pTkleF4H5JwNqXJks3S9ruRRGS', 'HR'),
+(5, 'System Admin', 'admin@kgap.com', '$2b$10$IwXlUVfkFiSHW3yGNeU33.M8wL8pTkleF4H5JwNqXJks3S9ruRRGS', 'ADMIN')
+ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role;
 
 -- 6. Seed Employees
 INSERT INTO employee (id, first_name, last_name, email, phone_number, department, role, job_role_id, experience, education, bio) VALUES
