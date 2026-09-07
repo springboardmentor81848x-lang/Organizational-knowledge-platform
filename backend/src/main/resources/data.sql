@@ -4,7 +4,7 @@
 -- =============================================================
 
 -- 1. Departments
-INSERT INTO department (id, name, description) VALUES
+INSERT INTO department (id, department_name, description) VALUES
 (1, 'Software Engineering', 'Core product design, architecture and platform backend development.'),
 (2, 'Data & AI', 'Data engineering, machine learning analytics, and intelligence modeling.'),
 (3, 'Product Management', 'Product strategy, roadmap planning, and UI/UX design execution.'),
@@ -12,7 +12,7 @@ INSERT INTO department (id, name, description) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Job Roles
-INSERT INTO job_role (id, role_name, department, description) VALUES
+INSERT INTO job_role (id, role_name, department_name, description) VALUES
 (1, 'Senior Java Backend Engineer', 'Software Engineering', 'Architects scalable microservices and Spring Boot REST APIs.'),
 (2, 'AI/ML Data Scientist', 'Data & AI', 'Builds predictive analytics, Llama models, and NLP intelligent platform features.'),
 (3, 'Lead Product Manager', 'Product Management', 'Drives feature roadmap, agile milestones, and knowledge management.'),
@@ -94,23 +94,23 @@ INSERT INTO skill_gaps (id, employee_id, job_role_id, skill_id, current_proficie
 ON CONFLICT (id) DO NOTHING;
 
 -- 9. AI Recommendations
-INSERT INTO ai_recommendations (id, employee_id, skill_id, gap_level, recommendation, source, created_at) VALUES
+INSERT INTO ai_recommendations (id, employee_id, skill_id, gap_level, recommendation, model_name, generated_at) VALUES
 (1, 2, 7, 'HIGH', 'Focus on Technical Documentation & Writing. Step 1: Complete Technical Communication Course. Step 2: Practice drafting software specification docs. Step 3: Review standard template frameworks.', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP),
 (2, 2, 4, 'MEDIUM', 'Enhance Product Lifecycle Management. Step 1: Study Advanced Agile Leadership. Step 2: Participate in roadmap planning. Step 3: Earn PMP or Certified Scrum Master credential.', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP),
 (3, 1, 1, 'MEDIUM', 'Master Advanced Spring Boot. Step 1: Study Spring Security & OAuth2. Step 2: Implement microservice caching with Redis. Step 3: Build reactive REST endpoints using Spring WebFlux.', 'HuggingFace/Llama-3.1-8B-Instruct', CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- 10. External Courses
-INSERT INTO external_courses (id, course_name, provider, skill_name, level, duration, url) VALUES
-(1, 'Spring Boot 3, Spring 6 & Hibernate for Beginners', 'Udemy', 'Java & Spring Boot', 'Beginner', '30 Hours', 'https://www.udemy.com'),
-(2, 'Mastering PostgreSQL 16', 'Coursera', 'PostgreSQL Database Management', 'Intermediate', '20 Hours', 'https://www.coursera.org'),
-(3, 'Docker and Kubernetes: The Complete Guide', 'Udemy', 'Docker & Containerization', 'Intermediate', '22 Hours', 'https://www.udemy.com')
+INSERT INTO external_courses (id, provider, title, description, skill_name, level, duration_hours, course_link) VALUES
+(1, 'Udemy', 'Spring Boot 3, Spring 6 & Hibernate for Beginners', 'Complete Spring Boot guide from basics to advanced microservices.', 'Java & Spring Boot', 'Beginner', 30, 'https://www.udemy.com'),
+(2, 'Coursera', 'Mastering PostgreSQL 16', 'Comprehensive database administration, indexing and SQL optimization.', 'PostgreSQL Database Management', 'Intermediate', 20, 'https://www.coursera.org'),
+(3, 'Udemy', 'Docker and Kubernetes: The Complete Guide', 'Container orchestration and Docker packaging for microservices.', 'Docker & Containerization', 'Intermediate', 22, 'https://www.udemy.com')
 ON CONFLICT (id) DO NOTHING;
 
 -- 11. Learning Paths
-INSERT INTO learning_paths (id, employee_id, skill_id, title, description, target_level, estimated_hours, created_at) VALUES
-(1, 1, 1, 'Full-Stack Java Cloud Mastery', 'Deep dive into microservices, reactive streams, and production deployment on cloud platforms.', 'EXPERT', 40, CURRENT_TIMESTAMP),
-(2, 2, 7, 'Executive Technical Communication', 'Writing enterprise RFCs, architecture proposals, and executive leadership summaries.', 'ADVANCED', 25, CURRENT_TIMESTAMP)
+INSERT INTO learning_paths (id, employee_id, skill_id, current_level, target_level, course_title, course_level, sequence_order, estimated_hours, course_link, created_at) VALUES
+(1, 1, 1, 'INTERMEDIATE', 'EXPERT', 'Full-Stack Java Cloud Mastery', 'Advanced', 1, 40, 'https://www.udemy.com', CURRENT_TIMESTAMP),
+(2, 2, 7, 'BEGINNER', 'ADVANCED', 'Executive Technical Communication', 'Intermediate', 1, 25, 'https://www.coursera.org', CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset PostgreSQL Sequences safely
