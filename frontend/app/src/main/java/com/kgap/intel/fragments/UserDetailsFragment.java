@@ -98,14 +98,25 @@ public class UserDetailsFragment extends Fragment {
             showTrainingProgressDialog(user);
         });
 
-        binding.btnGenerateReport.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, ReportsFragment.newInstance(user.getId()))
-                .addToBackStack(null)
-                .commit();
-        });
-
+        Long myUserId = SharedPrefManager.getInstance(getContext()).getUserId();
         String userRole = SharedPrefManager.getInstance(getContext()).getUserRole();
+        String uRoleUpper = userRole != null ? userRole.toUpperCase() : "EMPLOYEE";
+        boolean isMentor = uRoleUpper.contains("MENTOR");
+        boolean isSelf = user.getId() != null && user.getId().equals(myUserId);
+
+        if (isSelf || isMentor) {
+            binding.btnGenerateReport.setVisibility(View.VISIBLE);
+            binding.btnGenerateReport.setOnClickListener(v -> {
+                getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, ReportsFragment.newInstance(user.getId()))
+                    .addToBackStack(null)
+                    .commit();
+            });
+        } else {
+            // Managers and Admins download Organization Summary reports, not individual employee reports
+            binding.btnGenerateReport.setVisibility(View.GONE);
+        }
+
         boolean isSystemAdmin = userRole != null && (
                 "ADMIN".equalsIgnoreCase(userRole) ||
                 "SYSTEM_ADMIN".equalsIgnoreCase(userRole) ||

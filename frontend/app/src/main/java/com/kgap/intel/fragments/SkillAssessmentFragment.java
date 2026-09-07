@@ -148,7 +148,7 @@ public class SkillAssessmentFragment extends Fragment {
     private void navigateToResult(AssessmentApiService.AssessmentResult result) {
         Long currentUserId = SharedPrefManager.getInstance(getContext()).getUserId();
         if (currentUserId == null || currentUserId <= 0) {
-            currentUserId = 4L;
+            currentUserId = 1L;
         }
         Long targetId = targetEmployeeId != null ? targetEmployeeId : currentUserId;
         com.kgap.intel.repository.NotificationRepository notifRepo = new com.kgap.intel.repository.NotificationRepository(requireContext());

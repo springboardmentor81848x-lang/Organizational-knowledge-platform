@@ -20,9 +20,16 @@ import com.team7.knowledge_gap_platform.repository.EmployeeRepository;
 public class MentorController {
 
     private final EmployeeRepository employeeRepository;
+    private final com.team7.knowledge_gap_platform.repository.EmployeeSkillRepository employeeSkillRepository;
+    private final com.team7.knowledge_gap_platform.repository.SkillRepository skillRepository;
 
-    public MentorController(EmployeeRepository employeeRepository) {
+    public MentorController(
+            EmployeeRepository employeeRepository,
+            com.team7.knowledge_gap_platform.repository.EmployeeSkillRepository employeeSkillRepository,
+            com.team7.knowledge_gap_platform.repository.SkillRepository skillRepository) {
         this.employeeRepository = employeeRepository;
+        this.employeeSkillRepository = employeeSkillRepository;
+        this.skillRepository = skillRepository;
     }
 
     public static class MentorDto {
@@ -33,8 +40,11 @@ public class MentorController {
         private Integer experienceYears;
         private String availability;
         private String bio;
+        private String role;
+        private Boolean canRequestMentorship;
+        private List<String> higherSkills;
 
-        public MentorDto(Long id, Long employeeId, String employeeName, String expertise, Integer experienceYears, String availability, String bio) {
+        public MentorDto(Long id, Long employeeId, String employeeName, String expertise, Integer experienceYears, String availability, String bio, String role, Boolean canRequestMentorship, List<String> higherSkills) {
             this.id = id;
             this.employeeId = employeeId;
             this.employeeName = employeeName;
@@ -42,6 +52,9 @@ public class MentorController {
             this.experienceYears = experienceYears;
             this.availability = availability;
             this.bio = bio;
+            this.role = role;
+            this.canRequestMentorship = canRequestMentorship;
+            this.higherSkills = higherSkills;
         }
 
         public Long getId() { return id; }
@@ -51,6 +64,20 @@ public class MentorController {
         public Integer getExperienceYears() { return experienceYears; }
         public String getAvailability() { return availability; }
         public String getBio() { return bio; }
+        public String getRole() { return role; }
+        public Boolean getCanRequestMentorship() { return canRequestMentorship; }
+        public List<String> getHigherSkills() { return higherSkills; }
+    }
+
+    private int getProficiencyRank(String level) {
+        if (level == null) return 0;
+        switch (level.trim().toUpperCase()) {
+            case "EXPERT": return 4;
+            case "ADVANCED": return 3;
+            case "INTERMEDIATE": return 2;
+            case "BEGINNER": return 1;
+            default: return 0;
+        }
     }
 
     @GetMapping
@@ -60,13 +87,58 @@ public class MentorController {
         List<Employee> all = employeeRepository.findAll();
         List<MentorDto> mentors = new ArrayList<>();
 
+        // Load skill name cache
+        Map<Long, String> skillNameMap = skillRepository.findAll().stream()
+                .collect(Collectors.toMap(com.team7.knowledge_gap_platform.entity.Skill::getId,
+                        com.team7.knowledge_gap_platform.entity.Skill::getSkillName,
+                        (a, b) -> a));
+
+        // Map requester's skills and proficiency ranks if requesterId is provided
+        Map<Long, Integer> requesterProficiencyMap = new java.util.HashMap<>();
+        if (requesterId != null) {
+            List<com.team7.knowledge_gap_platform.entity.EmployeeSkill> reqSkills = employeeSkillRepository.findByEmployeeId(requesterId);
+            for (com.team7.knowledge_gap_platform.entity.EmployeeSkill es : reqSkills) {
+                requesterProficiencyMap.put(es.getSkillId(), getProficiencyRank(es.getProficiencyLevel()));
+            }
+        }
+
         for (Employee emp : all) {
-            // Exclude requester if provided
+            // Exclude requester themself
             if (requesterId != null && emp.getId().equals(requesterId)) {
                 continue;
             }
 
-            int expYears = 5;
+            // Strictly filter out non-peer employees (ADMIN, HR, MANAGER, DEPARTMENT_HEAD, formal MENTOR)
+            // Peer connections are ONLY between employees
+            String empRole = emp.getRole();
+            if (empRole == null || !"EMPLOYEE".equalsIgnoreCase(empRole.trim())) {
+                continue;
+            }
+
+            // Retrieve candidate's skills
+            List<com.team7.knowledge_gap_platform.entity.EmployeeSkill> candSkills = employeeSkillRepository.findByEmployeeId(emp.getId());
+            List<String> higherSkillNames = new ArrayList<>();
+            List<String> allSkillNames = new ArrayList<>();
+
+            for (com.team7.knowledge_gap_platform.entity.EmployeeSkill cs : candSkills) {
+                String sName = skillNameMap.getOrDefault(cs.getSkillId(), "Skill #" + cs.getSkillId());
+                allSkillNames.add(sName);
+
+                int candRank = getProficiencyRank(cs.getProficiencyLevel());
+                int reqRank = requesterProficiencyMap.getOrDefault(cs.getSkillId(), 0);
+
+                if (candRank > reqRank) {
+                    higherSkillNames.add(sName + " (" + cs.getProficiencyLevel() + ")");
+                }
+            }
+
+            // Rule: Requester can only send mentorship requests to peer employees who have a higher skill level
+            // If requesterId is provided and candidate has NO higher skills, filter candidate out
+            if (requesterId != null && higherSkillNames.isEmpty()) {
+                continue;
+            }
+
+            int expYears = 3;
             if (emp.getExperience() != null) {
                 String expStr = emp.getExperience().replaceAll("[^0-9]", "");
                 if (!expStr.isEmpty()) {
@@ -74,16 +146,8 @@ public class MentorController {
                 }
             }
 
-            String expertise = emp.getDepartment() != null ? emp.getDepartment() : "General";
-            if ("Software Engineering".equalsIgnoreCase(emp.getDepartment())) {
-                expertise = "Java & Spring Boot, PostgreSQL, Microservices";
-            } else if ("Product Management".equalsIgnoreCase(emp.getDepartment())) {
-                expertise = "Product Strategy, Agile Milestone Tracking, Agile Leadership";
-            } else if ("Human Resources".equalsIgnoreCase(emp.getDepartment())) {
-                expertise = "Organizational HR, Competency Mapping, Talent Development";
-            } else if ("Data & AI".equalsIgnoreCase(emp.getDepartment())) {
-                expertise = "Machine Learning, LLM Architecture, Python";
-            }
+            String expertise = !higherSkillNames.isEmpty() ? String.join(", ", higherSkillNames) :
+                    (!allSkillNames.isEmpty() ? String.join(", ", allSkillNames) : (emp.getDepartment() != null ? emp.getDepartment() : "Software Engineering"));
 
             String fullName = (emp.getFirstName() != null ? emp.getFirstName() : "") + " " + (emp.getLastName() != null ? emp.getLastName() : "");
 
@@ -94,15 +158,11 @@ public class MentorController {
                     expertise,
                     expYears,
                     "Available",
-                    emp.getBio() != null ? emp.getBio() : "Experienced mentor in " + expertise
+                    emp.getBio() != null ? emp.getBio() : "Peer developer with higher proficiency in " + expertise,
+                    emp.getRole(),
+                    true,
+                    higherSkillNames
             ));
-        }
-
-        // Add additional senior peer mentors for rich catalog
-        if (mentors.size() < 6) {
-            mentors.add(new MentorDto(15L, 15L, "Amit Desai", "System Design, Microservices, Cloud Architecture", 10, "Available", "Specialized in large-scale distributed systems and enterprise microservices."));
-            mentors.add(new MentorDto(16L, 16L, "Michael Chen", "Machine Learning, Deep Learning, Python, NLP", 9, "Available", "Leading AI/ML data science teams and intelligent platform development."));
-            mentors.add(new MentorDto(17L, 17L, "Sophia Martinez", "Docker, Kubernetes, CI/CD, AWS", 7, "Available", "Cloud infrastructure, DevOps automation and continuous deployment expert."));
         }
 
         return ResponseEntity.ok(mentors);

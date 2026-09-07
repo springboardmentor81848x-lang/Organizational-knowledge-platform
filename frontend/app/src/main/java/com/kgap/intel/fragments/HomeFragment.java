@@ -73,7 +73,7 @@ public class HomeFragment extends Fragment {
 
     private void openMentorChat() {
         Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
-        if (userId == null || userId <= 0) userId = 4L;
+        if (userId == null || userId <= 0) userId = 1L;
 
         ApiClient.getMentorAssignmentApiService(requireContext()).getCurrentAssignmentForEmployee(userId)
                 .enqueue(new retrofit2.Callback<com.kgap.intel.models.MentorAssignment>() {

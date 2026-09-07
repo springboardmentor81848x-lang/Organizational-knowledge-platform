@@ -214,7 +214,10 @@ INSERT INTO app_users (id, full_name, email, password, role) VALUES
 (2, 'Sarah Johnson', 'employee2@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE'),
 (3, 'Vikram Mehta', 'manager@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'MANAGER'),
 (4, 'Priya Patel', 'hr@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'HR'),
-(5, 'System Admin', 'admin@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'ADMIN');
+(5, 'System Admin', 'admin@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'ADMIN'),
+(6, 'Elena Rostova', 'elena.rostova@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE'),
+(7, 'Dev Patel', 'dev.patel@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE'),
+(8, 'Anita Roy', 'anita.roy@kgap.com', '$2a$10$7793j7Z.qBw.H.j996V3ce3cM/5xKzPjVqJ8N4Jt9w3Z3L.L3b7K.', 'EMPLOYEE');
 
 -- Seed Employees
 INSERT INTO employee (id, first_name, last_name, email, phone_number, department, role, job_role_id, experience, education, bio) VALUES
@@ -222,7 +225,10 @@ INSERT INTO employee (id, first_name, last_name, email, phone_number, department
 (2, 'Sarah', 'Johnson', 'employee2@kgap.com', '+1-555-0102', 'Product Management', 'EMPLOYEE', 3, '5 Years in PM & Agile Strategy', 'MBA, Stanford University', 'Passionate about building products that users love and solving complex organizational problems with data-driven insights.'),
 (3, 'Vikram', 'Mehta', 'manager@kgap.com', '+91-9876543211', 'Software Engineering', 'MANAGER', 1, '8+ Years in Engineering Management', 'M.Tech in Software Engineering', 'Engineering Lead driving platform backend architecture and cross-team execution.'),
 (4, 'Priya', 'Patel', 'hr@kgap.com', '+91-9876543212', 'Human Resources', 'HR', 4, '6 Years in Organizational HR', 'MA in Human Resource Management', 'HR Lead specializing in organizational learning, competency mapping, and employee development.'),
-(5, 'System', 'Admin', 'admin@kgap.com', '+91-9876543213', 'Software Engineering', 'ADMIN', 1, '10+ Years in Systems Administration', 'B.S. in Information Technology', 'Platform Administrator managing role permissions, system configuration, and organizational catalogs.');
+(5, 'System', 'Admin', 'admin@kgap.com', '+91-9876543213', 'Software Engineering', 'ADMIN', 1, '10+ Years in Systems Administration', 'B.S. in Information Technology', 'Platform Administrator managing role permissions, system configuration, and organizational catalogs.'),
+(6, 'Elena', 'Rostova', 'elena.rostova@kgap.com', '+1-555-0106', 'Software Engineering', 'EMPLOYEE', 1, '4+ Years Backend', 'M.S. in Computer Science', 'Specialist in Cloud Architecture and Kubernetes microservices.'),
+(7, 'Dev', 'Patel', 'dev.patel@kgap.com', '+91-9876543217', 'Software Engineering', 'EMPLOYEE', 1, '5+ Years in Database Architecture', 'B.Tech in CS', 'Senior peer developer with deep expertise in PostgreSQL optimization and Microservices.'),
+(8, 'Anita', 'Roy', 'anita.roy@kgap.com', '+91-9876543218', 'Software Engineering', 'EMPLOYEE', 1, '1 Year Junior Backend', 'B.Tech in IT', 'Junior developer focusing on Spring Boot basics.');
 
 -- Employee Skills
 -- Aarav Sharma (Emp 1, Java Backend)
@@ -249,6 +255,22 @@ INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
 INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
 (4, 7, 'EXPERT'),
 (4, 4, 'ADVANCED');
+
+-- Elena Rostova (Emp 6, Senior Cloud/Microservices)
+INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
+(6, 1, 'ADVANCED'),
+(6, 5, 'ADVANCED'),
+(6, 6, 'ADVANCED');
+
+-- Dev Patel (Emp 7, Senior Database Architect)
+INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
+(7, 2, 'EXPERT'),
+(7, 6, 'ADVANCED');
+
+-- Anita Roy (Emp 8, Junior Backend)
+INSERT INTO employee_skill (employee_id, skill_id, proficiency_level) VALUES
+(8, 1, 'BEGINNER'),
+(8, 2, 'BEGINNER');
 
 -- Skill Gaps (Initial Analyzed State)
 INSERT INTO skill_gaps (employee_id, job_role_id, skill_id, current_proficiency, required_proficiency, gap_score, gap_level, analyzed_at) VALUES

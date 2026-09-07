@@ -32,6 +32,8 @@ import com.kgap.intel.models.EmployeeResponse;
 
 public class MentorshipHomeFragment extends Fragment {
     private FragmentMentorshipHomeBinding binding;
+    private final Map<Long, String> connectionStatusMap = new HashMap<>();
+    private GenericAdapter<com.kgap.intel.models.MentorProfileResponse> recommendedAdapter;
 
     @Nullable
     @Override
@@ -46,6 +48,7 @@ public class MentorshipHomeFragment extends Fragment {
 
         setupHub();
         setupSummaryCards();
+        loadConnectionStatuses();
         setupMyMentor();
         setupRequestedMentors();
         setupMyMentees();
@@ -187,7 +190,7 @@ public class MentorshipHomeFragment extends Fragment {
 
         Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
         if (userId == null || userId == -1L) {
-            userId = 4L; // Default Aarav Sharma
+            userId = 1L; // Default Aarav Sharma
         }
 
         new MentorAssignmentRepository(requireContext()).getCurrentAssignmentForEmployee(userId).observe(getViewLifecycleOwner(), assignment -> {
@@ -268,7 +271,7 @@ public class MentorshipHomeFragment extends Fragment {
         binding.rvRequestedMentors.setAdapter(adapter);
 
         Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
-        if (userId == null || userId == -1L) userId = 4L;
+        if (userId == null || userId == -1L) userId = 1L;
 
         new MentorshipRequestRepository(requireContext()).getRequestsForMentee(userId).observe(getViewLifecycleOwner(), requests -> {
             if (requests != null && !requests.isEmpty()) {
@@ -360,7 +363,7 @@ public class MentorshipHomeFragment extends Fragment {
         binding.rvMyMentees.setAdapter(adapter);
 
         Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
-        if (userId == null || userId == -1L) userId = 4L;
+        if (userId == null || userId == -1L) userId = 1L;
 
         new MentorshipRequestRepository(requireContext()).getRequestsForMentor(userId).observe(getViewLifecycleOwner(), requests -> {
             if (requests != null && !requests.isEmpty()) {
@@ -419,11 +422,39 @@ public class MentorshipHomeFragment extends Fragment {
         });
     }
 
+    private void loadConnectionStatuses() {
+        Long myUserId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (myUserId == null || myUserId <= 0) myUserId = 1L;
+        MentorshipRequestRepository reqRepo = new MentorshipRequestRepository(requireContext());
+        reqRepo.getRequestsForMentee(myUserId).observe(getViewLifecycleOwner(), requests -> {
+            if (requests != null) {
+                for (MentorshipRequest req : requests) {
+                    if (req.getMentorId() != null) {
+                        connectionStatusMap.put(req.getMentorId(), req.getStatus());
+                    }
+                }
+                if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
+            }
+        });
+        reqRepo.getRequestsForMentor(myUserId).observe(getViewLifecycleOwner(), requests -> {
+            if (requests != null) {
+                for (MentorshipRequest req : requests) {
+                    if (req.getMenteeId() != null) {
+                        connectionStatusMap.put(req.getMenteeId(), req.getStatus());
+                    }
+                }
+                if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
     private void setupRecommendedMentors() {
         binding.rvRecommendedMentors.setLayoutManager(new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
         List<com.kgap.intel.models.MentorProfileResponse> mentorsList = new ArrayList<>();
-        
-        GenericAdapter<com.kgap.intel.models.MentorProfileResponse> adapter = new GenericAdapter<com.kgap.intel.models.MentorProfileResponse>(mentorsList) {
+        Long myUserId = SharedPrefManager.getInstance(requireContext()).getUserId();
+        if (myUserId == null || myUserId <= 0) myUserId = 1L;
+
+        recommendedAdapter = new GenericAdapter<com.kgap.intel.models.MentorProfileResponse>(mentorsList) {
             @Override
             public void onBind(View view, com.kgap.intel.models.MentorProfileResponse item) {
                 ItemMentorCardModernBinding b = ItemMentorCardModernBinding.bind(view);
@@ -433,21 +464,41 @@ public class MentorshipHomeFragment extends Fragment {
                 b.tvMentorRating.setText(item.getRatingFormatted());
                 b.tvAvailabilityBadge.setText(item.getAvailability());
 
-                b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
-                b.btnRequestMentorship.setText("💬 Chat");
-                b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(item.getDisplayName(), item.getEffectiveMentorId())));
-                view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), item.getEffectiveMentorId()));
+                Long targetId = item.getEffectiveMentorId();
+                String status = connectionStatusMap.get(targetId);
+
+                if (status != null && "ACCEPTED".equalsIgnoreCase(status)) {
+                    b.btnRequestMentorship.setText("💬 Chat");
+                    b.btnRequestMentorship.setEnabled(true);
+                    b.btnRequestMentorship.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#00B894")));
+                    b.btnRequestMentorship.setOnClickListener(v -> navigateTo(ChatFragment.newInstance(item.getDisplayName(), targetId)));
+                } else if (status != null && "PENDING".equalsIgnoreCase(status)) {
+                    b.btnRequestMentorship.setText("⏳ Pending");
+                    b.btnRequestMentorship.setEnabled(false);
+                    b.btnRequestMentorship.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
+                } else {
+                    b.btnRequestMentorship.setText("Connect");
+                    b.btnRequestMentorship.setEnabled(true);
+                    b.btnRequestMentorship.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#00B894")));
+                    b.btnRequestMentorship.setOnClickListener(v -> {
+                        MentorshipRequestBottomSheet bottomSheet = MentorshipRequestBottomSheet.newInstance(item.getDisplayName(), targetId);
+                        bottomSheet.show(getChildFragmentManager(), "MentorshipRequest");
+                    });
+                }
+
+                b.btnViewProfile.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), targetId));
+                view.setOnClickListener(v -> openMentorProfile(item.getDisplayName(), targetId));
             }
             @Override
             public int getLayout() { return R.layout.item_mentor_card_modern; }
         };
-        binding.rvRecommendedMentors.setAdapter(adapter);
+        binding.rvRecommendedMentors.setAdapter(recommendedAdapter);
 
-        new com.kgap.intel.repository.RealMentorRepository(requireContext()).getMentors().observe(getViewLifecycleOwner(), response -> {
+        new com.kgap.intel.repository.RealMentorRepository(requireContext()).getMentors(myUserId).observe(getViewLifecycleOwner(), response -> {
             if (response != null && !response.isEmpty()) {
                 mentorsList.clear();
                 mentorsList.addAll(response);
-                adapter.notifyDataSetChanged();
+                if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
             }
         });
     }

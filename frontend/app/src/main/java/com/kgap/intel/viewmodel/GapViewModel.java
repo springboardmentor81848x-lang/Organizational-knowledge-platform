@@ -73,7 +73,7 @@ public class GapViewModel extends AndroidViewModel {
                 if (gaps != null) {
                     // Filter out System Admin completely
                     List<SkillGapResponse> cleanGaps = gaps.stream()
-                        .filter(g -> g.getEmployeeName() != null && !g.getEmployeeName().toLowerCase().contains("admin") && (g.getEmployeeId() == null || g.getEmployeeId() != 1L))
+                        .filter(g -> g.getEmployeeName() != null && !g.getEmployeeName().toLowerCase().contains("admin"))
                         .collect(Collectors.toList());
 
                     if ("MANAGER".equalsIgnoreCase(role) || "DEPARTMENT_HEAD".equalsIgnoreCase(role) || "DEPT_HEAD".equalsIgnoreCase(role)) {
@@ -162,7 +162,7 @@ public class GapViewModel extends AndroidViewModel {
                 if (data != null) {
                     // Filter out System Admin
                     List<HeatmapResponse> cleanData = data.stream()
-                        .filter(h -> h.getEmployeeName() != null && !h.getEmployeeName().toLowerCase().contains("admin") && (h.getEmployeeId() == null || h.getEmployeeId() != 1L))
+                        .filter(h -> h.getEmployeeName() != null && !h.getEmployeeName().toLowerCase().contains("admin"))
                         .collect(Collectors.toList());
 
                     if ("MANAGER".equalsIgnoreCase(role) || "DEPARTMENT_HEAD".equalsIgnoreCase(role) || "DEPT_HEAD".equalsIgnoreCase(role)) {
@@ -267,7 +267,7 @@ public class GapViewModel extends AndroidViewModel {
             isLoading.setValue(false);
             if (gaps != null) {
                 List<SkillGapResponse> cleanGaps = gaps.stream()
-                    .filter(g -> g.getEmployeeName() != null && !g.getEmployeeName().toLowerCase().contains("admin") && (g.getEmployeeId() == null || g.getEmployeeId() != 1L))
+                    .filter(g -> g.getEmployeeName() != null && !g.getEmployeeName().toLowerCase().contains("admin"))
                     .collect(Collectors.toList());
                 skillGaps.setValue(cleanGaps);
             } else if (errorMessage.getValue() == null) {
@@ -281,7 +281,7 @@ public class GapViewModel extends AndroidViewModel {
             isLoading.setValue(false);
             if (gaps != null) {
                 List<SkillGapResponse> cleanGaps = gaps.stream()
-                    .filter(g -> (g.getEmployeeName() == null || !g.getEmployeeName().toLowerCase().contains("admin")) && (g.getEmployeeId() == null || g.getEmployeeId() != 1L))
+                    .filter(g -> g.getEmployeeName() == null || !g.getEmployeeName().toLowerCase().contains("admin"))
                     .collect(Collectors.toList());
                 skillGaps.setValue(cleanGaps);
             } else if (errorMessage.getValue() == null) {

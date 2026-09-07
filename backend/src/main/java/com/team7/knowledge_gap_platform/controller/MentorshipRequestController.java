@@ -23,18 +23,25 @@ public class MentorshipRequestController {
 
     private final AtomicLong requestSeq = new AtomicLong(10);
     private final List<Map<String, Object>> requests = new ArrayList<>();
+    private final com.team7.knowledge_gap_platform.repository.EmployeeRepository employeeRepository;
+    private final com.team7.knowledge_gap_platform.repository.EmployeeSkillRepository employeeSkillRepository;
 
-    public MentorshipRequestController() {
-        requests.add(new ConcurrentHashMap<>(Map.of(
-                "id", 1L,
-                "menteeId", 1L,
-                "mentorId", 3L,
-                "skillId", 1L,
-                "learningGoal", "Master Microservice Architecture & Event Driven Systems",
-                "message", "Hi Vikram, I would like guidance on scalable Java Spring Boot backend design.",
-                "status", "ACCEPTED",
-                "createdAt", LocalDateTime.now().minusDays(5).toString()
-        )));
+    public MentorshipRequestController(
+            com.team7.knowledge_gap_platform.repository.EmployeeRepository employeeRepository,
+            com.team7.knowledge_gap_platform.repository.EmployeeSkillRepository employeeSkillRepository) {
+        this.employeeRepository = employeeRepository;
+        this.employeeSkillRepository = employeeSkillRepository;
+    }
+
+    private int getProficiencyRank(String level) {
+        if (level == null) return 0;
+        switch (level.trim().toUpperCase()) {
+            case "EXPERT": return 4;
+            case "ADVANCED": return 3;
+            case "INTERMEDIATE": return 2;
+            case "BEGINNER": return 1;
+            default: return 0;
+        }
     }
 
     @GetMapping("/mentor/{mentorId}")
@@ -54,7 +61,54 @@ public class MentorshipRequestController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> sendRequest(@RequestBody Map<String, Object> req) {
+    public ResponseEntity<?> sendRequest(@RequestBody Map<String, Object> req) {
+        try {
+            Long menteeId = Long.valueOf(String.valueOf(req.get("menteeId")));
+            Long targetId = Long.valueOf(String.valueOf(req.get("mentorId")));
+
+            // Prevent self-request
+            if (menteeId.equals(targetId)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "You cannot send a mentorship request to yourself."));
+            }
+
+            com.team7.knowledge_gap_platform.entity.Employee targetEmp = employeeRepository.findById(targetId).orElse(null);
+            if (targetEmp != null) {
+                String role = targetEmp.getRole();
+                // Rule 1: Employees cannot send requests to formal mentors, managers, or admins
+                // Formal mentors are assigned by L&D Admin or Manager
+                if (role != null && ("MENTOR".equalsIgnoreCase(role) || "MANAGER".equalsIgnoreCase(role) ||
+                        "ADMIN".equalsIgnoreCase(role) || "HR".equalsIgnoreCase(role) ||
+                        "LEARNING_DEVELOPMENT_ADMIN".equalsIgnoreCase(role))) {
+                    return ResponseEntity.badRequest().body(Map.of("message",
+                            "Formal mentors and managers are assigned by L&D Admin or Manager. Mentorship requests can only be sent to eligible peer employees."));
+                }
+
+                // Rule 2: Employee can only send requests to peer employees who have a higher skill level
+                List<com.team7.knowledge_gap_platform.entity.EmployeeSkill> menteeSkills = employeeSkillRepository.findByEmployeeId(menteeId);
+                Map<Long, Integer> menteeProficiency = new java.util.HashMap<>();
+                for (com.team7.knowledge_gap_platform.entity.EmployeeSkill es : menteeSkills) {
+                    menteeProficiency.put(es.getSkillId(), getProficiencyRank(es.getProficiencyLevel()));
+                }
+
+                List<com.team7.knowledge_gap_platform.entity.EmployeeSkill> targetSkills = employeeSkillRepository.findByEmployeeId(targetId);
+                boolean hasHigherSkill = false;
+                for (com.team7.knowledge_gap_platform.entity.EmployeeSkill ts : targetSkills) {
+                    int targetRank = getProficiencyRank(ts.getProficiencyLevel());
+                    int menteeRank = menteeProficiency.getOrDefault(ts.getSkillId(), 0);
+                    if (targetRank > menteeRank) {
+                        hasHigherSkill = true;
+                        break;
+                    }
+                }
+
+                if (!hasHigherSkill) {
+                    return ResponseEntity.badRequest().body(Map.of("message",
+                            "Mentorship requests can only be sent to peer employees who have a higher skill level in the competency."));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
         long id = requestSeq.incrementAndGet();
         req.put("id", id);
         req.put("status", "PENDING");

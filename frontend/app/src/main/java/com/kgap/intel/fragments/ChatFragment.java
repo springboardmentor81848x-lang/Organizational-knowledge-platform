@@ -36,7 +36,7 @@ public class ChatFragment extends Fragment {
 
     private String otherUserName = "Chat Contact";
     private Long otherUserId = 17L;
-    private Long currentUserId = 4L;
+    private Long currentUserId = 1L;
     private String currentUserName = "User";
 
     private final Handler pollHandler = new Handler(Looper.getMainLooper());
@@ -67,7 +67,7 @@ public class ChatFragment extends Fragment {
 
         currentUserId = SharedPrefManager.getInstance(requireContext()).getUserId();
         currentUserName = SharedPrefManager.getInstance(requireContext()).getUserName();
-        if (currentUserId == null || currentUserId <= 0) currentUserId = 4L;
+        if (currentUserId == null || currentUserId <= 0) currentUserId = 1L;
 
         if (getArguments() != null) {
             otherUserName = getArguments().getString(ARG_RECIPIENT_NAME, "Chat Contact");

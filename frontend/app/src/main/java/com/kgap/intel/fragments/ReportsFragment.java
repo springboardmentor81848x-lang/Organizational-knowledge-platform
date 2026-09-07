@@ -139,6 +139,9 @@ public class ReportsFragment extends Fragment {
             if (binding != null && binding.cardEmployeeSelector != null) {
                 binding.cardEmployeeSelector.setVisibility(View.GONE);
             }
+            if (preselectedEmployeeId != null && !preselectedEmployeeId.equals(myUserId)) {
+                Toast.makeText(requireContext(), "Employees can only download their own personal report.", Toast.LENGTH_LONG).show();
+            }
             populateSpinner();
             return;
         }
@@ -179,6 +182,9 @@ public class ReportsFragment extends Fragment {
             binding.cardEmployeeSelector.setVisibility(View.VISIBLE);
         }
         targetList.add(new EmployeeTarget(0L, "🏢 Organization Summary Report (Enterprise-Wide)", "Enterprise Organization", "All Departments", "Organization", false, true));
+        if (preselectedEmployeeId != null && !preselectedEmployeeId.equals(myUserId)) {
+            Toast.makeText(requireContext(), "Managers and Admins can download Organization reports and self reports. Individual reports are reserved for employees and mentors.", Toast.LENGTH_LONG).show();
+        }
         populateSpinner();
     }
 
@@ -215,6 +221,10 @@ public class ReportsFragment extends Fragment {
 
         // Check if a preselected employee was requested
         int selectedIndex = 0;
+        String userRole = SharedPrefManager.getInstance(requireContext()).getUserRole();
+        String uRole = userRole != null ? userRole.toUpperCase() : "EMPLOYEE";
+        boolean isManagerOrAdmin = !"EMPLOYEE".equals(uRole) && !"ROLE_EMPLOYEE".equals(uRole) && !"MENTOR".equals(uRole) && !"ROLE_MENTOR".equals(uRole);
+
         if (preselectedEmployeeId != null) {
             for (int i = 0; i < targetList.size(); i++) {
                 if (preselectedEmployeeId.equals(targetList.get(i).id)) {
@@ -222,6 +232,8 @@ public class ReportsFragment extends Fragment {
                     break;
                 }
             }
+        } else if (isManagerOrAdmin && targetList.size() > 1) {
+            selectedIndex = 1; // Default to Organization Report for Managers and Admins
         }
 
         binding.spinnerEmployees.setSelection(selectedIndex);

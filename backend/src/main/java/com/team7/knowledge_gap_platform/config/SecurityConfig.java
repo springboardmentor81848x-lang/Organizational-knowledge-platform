@@ -93,7 +93,9 @@ public class SecurityConfig {
                                 "/knowledge-session-registrations/**",
                                 "/knowledge-session-feedback/**",
                                 "/mentorship-requests/**",
-                                "/training-enrollments/**"
+                                "/training-enrollments/**",
+                                "/assessments/**",
+                                "/reports/**"
                         )
                         .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN")
 

@@ -77,7 +77,7 @@ public class MentorProfileFragment extends Fragment {
         });
 
         Long userId = SharedPrefManager.getInstance(requireContext()).getUserId();
-        if (userId == null || userId == -1L) userId = 4L;
+        if (userId == null || userId == -1L) userId = 1L;
         final Long currentUserId = userId;
 
         // Default: hide message button until connection verified
