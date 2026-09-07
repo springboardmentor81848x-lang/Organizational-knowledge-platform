@@ -93,6 +93,10 @@ public class SecurityConfig {
                                 "/knowledge-session-registrations/**",
                                 "/knowledge-session-feedback/**",
                                 "/mentorship-requests/**",
+                                "/mentorship-sessions/**",
+                                "/notifications/**",
+                                "/api/chat/**",
+                                "/mentor-assignments/**",
                                 "/training-enrollments/**",
                                 "/assessments/**",
                                 "/reports/**"

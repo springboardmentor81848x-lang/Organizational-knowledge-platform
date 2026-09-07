@@ -1,7 +1,7 @@
 package com.team7.knowledge_gap_platform.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,86 +16,36 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.team7.knowledge_gap_platform.entity.KnowledgeSession;
+import com.team7.knowledge_gap_platform.repository.KnowledgeSessionRepository;
+
 @RestController
 @RequestMapping
 public class KnowledgeSessionController {
 
-    private final AtomicLong sessionSeq = new AtomicLong(10);
+    private final KnowledgeSessionRepository knowledgeSessionRepository;
     private final AtomicLong regSeq = new AtomicLong(10);
-
-    private final List<Map<String, Object>> sessions = new ArrayList<>();
     private final Map<Long, List<Map<String, Object>>> userRegistrations = new ConcurrentHashMap<>();
 
-    public KnowledgeSessionController() {
-        sessions.add(createSessionMap(
-                1L,
-                "Advanced Spring Boot Microservices Architecture",
-                "Deep dive into reactive microservice patterns, distributed tracing, and resilience mechanisms.",
-                "Architecture",
-                3L,
-                "2026-09-15T15:00:00",
-                60,
-                "https://meet.google.com/kgap-session-1",
-                50,
-                "UPCOMING",
-                "2026-09-01T10:00:00"
-        ));
-        sessions.add(createSessionMap(
-                2L,
-                "PostgreSQL Indexing & High-Performance Query Optimization",
-                "Learn query execution plans, vacuuming strategies, partitioning, and indexing best practices.",
-                "System Design",
-                1L,
-                "2026-09-18T16:00:00",
-                45,
-                "https://meet.google.com/kgap-session-2",
-                40,
-                "UPCOMING",
-                "2026-09-02T10:00:00"
-        ));
-        sessions.add(createSessionMap(
-                3L,
-                "Production GenAI & LLM Integration in Enterprise",
-                "Practical guide to RAG pipelines, fine-tuning Llama models, and embedding vector stores.",
-                "Cloud",
-                2L,
-                "2026-09-22T14:00:00",
-                75,
-                "https://meet.google.com/kgap-session-3",
-                60,
-                "UPCOMING",
-                "2026-09-03T10:00:00"
-        ));
-    }
-
-    private static Map<String, Object> createSessionMap(Long id, String title, String desc, String topic, Long createdBy, String scheduledAt, int duration, String link, int maxPart, String status, String createdAt) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", id);
-        map.put("title", title);
-        map.put("description", desc);
-        map.put("topic", topic);
-        map.put("createdByEmployeeId", createdBy);
-        map.put("scheduledAt", scheduledAt);
-        map.put("durationMinutes", duration);
-        map.put("meetingLink", link);
-        map.put("maxParticipants", maxPart);
-        map.put("status", status);
-        map.put("createdAt", createdAt);
-        return map;
+    public KnowledgeSessionController(KnowledgeSessionRepository knowledgeSessionRepository) {
+        this.knowledgeSessionRepository = knowledgeSessionRepository;
     }
 
     @GetMapping("/knowledge-sessions")
-    public ResponseEntity<List<Map<String, Object>>> getAllSessions() {
-        return ResponseEntity.ok(sessions);
+    public ResponseEntity<List<KnowledgeSession>> getAllSessions() {
+        List<KnowledgeSession> list = knowledgeSessionRepository.findAll();
+        return ResponseEntity.ok(list);
     }
 
     @PostMapping("/knowledge-sessions")
-    public ResponseEntity<Map<String, Object>> createSession(@RequestBody Map<String, Object> session) {
-        long id = sessionSeq.incrementAndGet();
-        session.put("id", id);
-        session.put("status", "UPCOMING");
-        sessions.add(session);
-        return ResponseEntity.ok(session);
+    public ResponseEntity<KnowledgeSession> createSession(@RequestBody KnowledgeSession session) {
+        if (session.getCreatedAt() == null) {
+            session.setCreatedAt(LocalDateTime.now());
+        }
+        if (session.getStatus() == null) {
+            session.setStatus("UPCOMING");
+        }
+        return ResponseEntity.ok(knowledgeSessionRepository.save(session));
     }
 
     @PostMapping("/knowledge-session-registrations")
