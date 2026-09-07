@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import com.kgap.intel.utils.SharedPrefManager;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://10.0.2.2:8080/";
+    private static final String BASE_URL = "https://kgap-intel.onrender.com/";
     private static Retrofit retrofit = null;
 
     private static Retrofit getRetrofit(android.content.Context context) {
@@ -34,9 +34,9 @@ public class ApiClient {
                         }
                         return chain.proceed(original);
                     })
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
                     .build();
 
             retrofit = new Retrofit.Builder()
