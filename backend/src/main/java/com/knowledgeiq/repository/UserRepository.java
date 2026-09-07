@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     java.util.List<User> findByDepartmentId(UUID departmentId);
     java.util.List<User> findByManagerId(UUID managerId);
     java.util.List<User> findByDepartmentIdAndCompanyIgnoreCase(UUID departmentId, String company);
+    java.util.List<User> findByDepartmentIdAndSystemRole(UUID departmentId, SystemRole systemRole);
+    java.util.List<User> findBySystemRole(SystemRole systemRole);
     java.util.List<User> findByDepartmentIdAndCompanyIgnoreCaseAndSystemRole(UUID departmentId, String company, SystemRole systemRole);
     Optional<User> findFirstBySystemRoleAndCompanyIgnoreCaseAndDepartmentId(SystemRole systemRole, String company, UUID departmentId);
     java.util.List<User> findBySystemRoleAndCompanyIgnoreCaseAndDepartmentIdAndManagerIsNull(SystemRole systemRole, String company, UUID departmentId);

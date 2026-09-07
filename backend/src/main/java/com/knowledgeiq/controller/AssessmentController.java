@@ -141,4 +141,15 @@ public class AssessmentController {
             return ResponseEntity.status(400).body(error);
         }
     }
+
+    @GetMapping("/{id}/results")
+    public ResponseEntity<?> getAssessmentResults(@PathVariable("id") java.util.UUID id) {
+        try {
+            return ResponseEntity.ok(assessmentService.getAssessmentResults(id));
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(404).body(error);
+        }
+    }
 }

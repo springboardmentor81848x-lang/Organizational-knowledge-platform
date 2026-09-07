@@ -508,7 +508,13 @@ public class AssessmentService {
         return assessmentRepository.save(assessment);
     }
 
-    private AssessmentDto mapToDto(Assessment assessment) {
+    public AssessmentDto getAssessmentResults(UUID assessmentId) {
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new RuntimeException("Assessment not found with id: " + assessmentId));
+        return mapToDto(assessment);
+    }
+
+    public AssessmentDto mapToDto(Assessment assessment) {
         AssessmentDto dto = new AssessmentDto();
         dto.setId(assessment.getId());
         dto.setTitle(assessment.getTitle());

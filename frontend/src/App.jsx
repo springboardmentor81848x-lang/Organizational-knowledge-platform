@@ -15,7 +15,8 @@ import {
   AdminDashboard, AdminUsers, AdminRoles, AdminSkills, AdminAudit, AdminSettings
 } from './pages/AdminPages.jsx'
 import {
-  ManagerDashboard, TeamSkillGapHeatmap, TeamProfilesOverview, ActionableInterventionsPanel, EmployeeProgressTracker
+  ManagerDashboard, TeamSkillGapHeatmap, TeamProfilesOverview, ActionableInterventionsPanel, EmployeeProgressTracker,
+  ManagerAssessmentsPage, ManagerReportsPage
 } from './pages/ManagerPages.jsx'
 import { EmployeeSkills as SkillsShared } from './pages/EmployeePages.jsx'
 import { ProfilePage, NotificationsPage } from './pages/SharedPages.jsx'
@@ -317,6 +318,8 @@ function PageRouter({ role, page, onNav, user }) {
       case 'gaps': return <ManagerDashboard onNav={onNav} user={user} />
       case 'progress': return <EmployeeProgressTracker user={user} onNav={onNav} />
       case 'interventions': return <ManagerDashboard initialTab="interventions" onNav={onNav} user={user} />
+      case 'assessments': return <ManagerAssessmentsPage user={user} onNav={onNav} />
+      case 'reports': return <ManagerReportsPage user={user} onNav={onNav} />
       default: return <NotFound onNav={onNav} />
     }
   }

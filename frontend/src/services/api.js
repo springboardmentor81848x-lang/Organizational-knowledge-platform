@@ -580,6 +580,10 @@ export const api = {
     return request('/hr/departments-list')
   },
 
+  getHrDirectory: async () => {
+    return request('/hr/users')
+  },
+
   createHrDepartment: async (payload) => {
     return request('/hr/departments', {
       method: 'POST',
@@ -776,6 +780,88 @@ export const api = {
     return request(`/ldadmin/mentorship/${id}/reassign`, {
       method: 'PUT',
       body: JSON.stringify({ newMentorId })
+    })
+  },
+
+  // ── MILESTONE 3: LEARNING MILESTONES & PROGRESS APIS ──────────────────
+  getCourseMilestones: async (courseId) => {
+    return request(`/courses/${courseId}/milestones`)
+  },
+
+  toggleEnrollmentMilestone: async (enrollmentId, milestoneId) => {
+    return request(`/enrollments/${enrollmentId}/milestones/${milestoneId}/toggle`, {
+      method: 'POST'
+    })
+  },
+
+  updateEnrollmentProgress: async (enrollmentId, progressPercent) => {
+    return request(`/enrollments/${enrollmentId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ progressPercent })
+    })
+  },
+
+  completeEnrollment: async (enrollmentId) => {
+    return request(`/enrollments/${enrollmentId}/complete`, {
+      method: 'POST'
+    })
+  },
+
+  // ── MILESTONE 3: ENTERPRISE REPORTS APIS ──────────────────────────────
+  getEmployeeReport: async (employeeId) => {
+    return request(`/reports/employee/${employeeId}`)
+  },
+
+  getDepartmentReport: async (deptId) => {
+    const query = deptId ? `?deptId=${deptId}` : ''
+    return request(`/reports/department/${deptId || ''}${query}`)
+  },
+
+  getSkillGapReport: async (deptId) => {
+    const query = deptId ? `?deptId=${deptId}` : ''
+    return request(`/reports/gaps${query}`)
+  },
+
+  getTrainingEffectivenessReport: async (deptId) => {
+    const query = deptId ? `?deptId=${deptId}` : ''
+    return request(`/reports/training-effectiveness${query}`)
+  },
+
+  // ── MILESTONE 3: ASSESSMENTS & EVALUATIONS ─────────────────────────────
+  getAssessmentResults: async (assessmentId) => {
+    return request(`/assessments/${assessmentId}/results`)
+  },
+
+  getManagerAssessments: async () => {
+    return request('/manager/assessments')
+  },
+
+  getTeamProfiles: async () => {
+    return request('/manager/team-profiles')
+  },
+
+  getTeamGaps: async () => {
+    return request('/manager/team-gaps')
+  },
+
+  getTeamHeatmap: async () => {
+    return request('/manager/heatmap')
+  },
+
+  getTeamProgress: async () => {
+    return request('/manager/team-progress')
+  },
+
+  submitManagerEvaluation: async (employeeId, payload) => {
+    return request(`/manager/employee/${employeeId}/evaluate`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  triggerReminders: async () => {
+    return request('/notifications/trigger-reminders', {
+      method: 'POST'
     })
   }
 }

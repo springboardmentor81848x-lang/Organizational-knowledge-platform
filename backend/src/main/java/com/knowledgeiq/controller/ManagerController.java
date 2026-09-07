@@ -109,4 +109,26 @@ public class ManagerController {
         } catch (Exception ignored) {}
         return ResponseEntity.ok(managerService.assignCourseToEmployee(manager, dto));
     }
+
+    @GetMapping("/assessments")
+    public ResponseEntity<List<AssessmentDto>> getManagerAssessments(Authentication auth) {
+        User manager = getAuthenticatedUser(auth);
+        if (manager == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(managerService.getTeamAssessments(manager));
+    }
+
+    @PostMapping("/employee/{id}/evaluate")
+    public ResponseEntity<AssessmentDto> evaluateEmployee(
+            @PathVariable("id") String employeeIdStr,
+            @RequestBody AssessmentSubmissionDto dto,
+            Authentication auth) {
+        User manager = getAuthenticatedUser(auth);
+        if (manager == null) {
+            return ResponseEntity.status(401).build();
+        }
+        UUID employeeId = UUID.fromString(employeeIdStr);
+        return ResponseEntity.ok(managerService.evaluateEmployee(manager, employeeId, dto));
+    }
 }

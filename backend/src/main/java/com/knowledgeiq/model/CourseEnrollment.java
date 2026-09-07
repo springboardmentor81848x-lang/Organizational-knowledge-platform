@@ -38,6 +38,12 @@ public class CourseEnrollment {
     @Column(name = "progress_percent")
     private Integer progressPercent = 0;
 
+    @Column(name = "expected_completion_date")
+    private ZonedDateTime expectedCompletionDate;
+
+    @Column(name = "completed_milestones", columnDefinition = "TEXT")
+    private String completedMilestoneIds = "";
+
     public CourseEnrollment() {}
 
     public UUID getId() { return id; }
@@ -59,4 +65,11 @@ public class CourseEnrollment {
 
     public ZonedDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(ZonedDateTime completedAt) { this.completedAt = completedAt; }
+
+    public ZonedDateTime getExpectedCompletionDate() { return expectedCompletionDate; }
+    public void setExpectedCompletionDate(ZonedDateTime expectedCompletionDate) { this.expectedCompletionDate = expectedCompletionDate; }
+
+    public String getCompletedMilestoneIds() { return completedMilestoneIds; }
+    public void setCompletedMilestoneIds(String completedMilestoneIds) { this.completedMilestoneIds = completedMilestoneIds; }
 }
+

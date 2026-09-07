@@ -82,19 +82,19 @@ public class DashboardService {
             totalRequired += gap.getRequiredLevel();
             if (gap.getCurrentLevel() < gap.getRequiredLevel()) gapCount++;
 
-            skillsTable.add(Map.of(
-                    "skill", gap.getSkillName(),
-                    "category", gap.getCategoryName(),
-                    "level", getProficiencyText(gap.getCurrentLevel()),
-                    "proficiency", gap.getCurrentLevel() * 20, // 1-5 scale to percentage
-                    "isCritical", gap.getIsCritical() != null ? gap.getIsCritical() : false
-            ));
+            Map<String, Object> skillItem = new HashMap<>();
+            skillItem.put("skill", gap.getSkillName() != null ? gap.getSkillName() : "Skill");
+            skillItem.put("category", gap.getCategoryName() != null ? gap.getCategoryName() : "General");
+            skillItem.put("level", getProficiencyText(gap.getCurrentLevel()));
+            skillItem.put("proficiency", gap.getCurrentLevel() * 20);
+            skillItem.put("isCritical", gap.getIsCritical() != null ? gap.getIsCritical() : false);
+            skillsTable.add(skillItem);
 
-            radar.add(Map.of(
-                    "label", gap.getSkillName(),
-                    "you", gap.getCurrentLevel() * 20,
-                    "benchmark", gap.getRequiredLevel() * 20
-            ));
+            Map<String, Object> radarItem = new HashMap<>();
+            radarItem.put("label", gap.getSkillName() != null ? gap.getSkillName() : "Skill");
+            radarItem.put("you", gap.getCurrentLevel() * 20);
+            radarItem.put("benchmark", gap.getRequiredLevel() * 20);
+            radar.add(radarItem);
         }
 
         int skillScore = totalRequired > 0 ? (int) Math.round((totalCurrent / totalRequired) * 100) : 0;

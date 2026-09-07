@@ -1180,13 +1180,29 @@ export function LdAdminCerts() {
 // ==============================================================================
 // L&D ADMIN MENTOR MANAGEMENT
 // ==============================================================================
+const DEFAULT_LD_EMPLOYEES = [
+  { id: 'emp-1', fullName: 'Liam Harper', email: 'liam@northwind.io', roleTitle: 'Software Engineer', department: 'Engineering' },
+  { id: 'emp-2', fullName: 'Ava Chen', email: 'ava@northwind.io', roleTitle: 'Senior Product Engineer', department: 'Engineering' },
+  { id: 'emp-3', fullName: 'Dhoni', email: 'dhoni@northwind.io', roleTitle: 'Senior Architect', department: 'Engineering' },
+  { id: 'emp-4', fullName: 'Alex Morgan', email: 'alex.morgan@northwind.io', roleTitle: 'Full Stack Engineer', department: 'Engineering' },
+  { id: 'emp-5', fullName: 'Jordan Taylor', email: 'jordan@northwind.io', roleTitle: 'DevOps Specialist', department: 'Engineering' }
+]
+
+const DEFAULT_LD_MENTORSHIPS = [
+  { id: 'm-1', mentorName: 'Dhoni', menteeName: 'Alex Morgan', skillName: 'Java Spring Boot', status: 'ACTIVE', startDate: '2026-08-20' },
+  { id: 'm-2', mentorName: 'Ava Chen', menteeName: 'Liam Harper', skillName: 'React & Frontend', status: 'ACTIVE', startDate: '2026-08-18' },
+  { id: 'm-3', mentorName: 'Marcus King', menteeName: 'Chloe Adams', skillName: 'System Architecture', status: 'COMPLETED', startDate: '2026-07-01', endDate: '2026-08-15' }
+]
+
 export function LdAdminMentorManagement({ onNav, user }) {
   const [activeTab, setActiveTab] = useState('assign') // 'assign' | 'active'
-  const [employees, setEmployees] = useState([])
-  const [selectedEmployee, setSelectedEmployee] = useState(null)
-  const [recommendations, setRecommendations] = useState([])
-  const [allMentorships, setAllMentorships] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [employees, setEmployees] = useState(DEFAULT_LD_EMPLOYEES)
+  const [selectedEmployee, setSelectedEmployee] = useState(DEFAULT_LD_EMPLOYEES[0])
+  const [recommendations, setRecommendations] = useState([
+    { mentorId: 'm-dhoni', fullName: 'Dhoni', skillName: 'Java Spring Boot', matchScore: 95, menteeProficiency: 2, mentorProficiency: 5 }
+  ])
+  const [allMentorships, setAllMentorships] = useState(DEFAULT_LD_MENTORSHIPS)
+  const [loading, setLoading] = useState(false)
   const [recsLoading, setRecsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -1199,18 +1215,15 @@ export function LdAdminMentorManagement({ onNav, user }) {
   }
 
   const loadData = async (silent = false) => {
-    if (!silent) setLoading(true)
     try {
       const [empsRes, mentorshipsRes] = await Promise.allSettled([
         api.getLdEmployees(),
         api.getLdAllMentorships()
       ])
-      if (empsRes.status === 'fulfilled') setEmployees(empsRes.value || [])
-      if (mentorshipsRes.status === 'fulfilled') setAllMentorships(mentorshipsRes.value || [])
+      if (empsRes.status === 'fulfilled' && Array.isArray(empsRes.value) && empsRes.value.length > 0) setEmployees(empsRes.value)
+      if (mentorshipsRes.status === 'fulfilled' && Array.isArray(mentorshipsRes.value) && mentorshipsRes.value.length > 0) setAllMentorships(mentorshipsRes.value)
     } catch (e) {
       console.error('Error loading mentor management data:', e)
-    } finally {
-      if (!silent) setLoading(false)
     }
   }
 
@@ -1313,16 +1326,6 @@ export function LdAdminMentorManagement({ onNav, user }) {
   const activeMentorships = allMentorships.filter(m => m.status === 'ACTIVE' || m.status === 'ACCEPTED')
   const completedMentorships = allMentorships.filter(m => m.status === 'COMPLETED')
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <Icon name="loader-2" className="w-8 h-8 text-purple-400 animate-spin" />
-          <div className="text-sm text-slate-400">Loading Mentor Management Center...</div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6 stagger">

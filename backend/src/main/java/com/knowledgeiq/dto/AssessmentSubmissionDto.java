@@ -7,6 +7,7 @@ public class AssessmentSubmissionDto {
     private UUID assessmentId;
     private String title;
     private String type;
+    private String notes;
     private List<SubmissionItem> responses;
 
     public AssessmentSubmissionDto() {}
@@ -19,6 +20,9 @@ public class AssessmentSubmissionDto {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
     public List<SubmissionItem> getResponses() { return responses; }
     public void setResponses(List<SubmissionItem> responses) { this.responses = responses; }

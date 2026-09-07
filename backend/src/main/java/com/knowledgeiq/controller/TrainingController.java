@@ -74,6 +74,31 @@ public class TrainingController {
         return ResponseEntity.ok(trainingService.updateEnrollmentStatus(enrollmentId, status));
     }
 
+    @PutMapping("/enrollments/{enrollmentId}/progress")
+    public ResponseEntity<CourseEnrollment> updateProgress(@PathVariable UUID enrollmentId, @RequestBody Map<String, Object> request) {
+        int progressPercent = Integer.parseInt(request.get("progressPercent").toString());
+        return ResponseEntity.ok(trainingService.updateEnrollmentProgress(enrollmentId, progressPercent));
+    }
+
+    @PutMapping("/enrollments/{enrollmentId}/complete")
+    public ResponseEntity<CourseEnrollment> completeEnrollment(@PathVariable UUID enrollmentId) {
+        return ResponseEntity.ok(trainingService.updateEnrollmentStatus(enrollmentId, "COMPLETED"));
+    }
+
+    @GetMapping("/courses/{courseId}/milestones")
+    public ResponseEntity<List<com.knowledgeiq.dto.LearningMilestoneDto>> getCourseMilestones(
+            @PathVariable UUID courseId,
+            @RequestParam(required = false) UUID enrollmentId) {
+        return ResponseEntity.ok(trainingService.getCourseMilestones(courseId, enrollmentId));
+    }
+
+    @PutMapping("/enrollments/{enrollmentId}/milestones/{milestoneId}/toggle")
+    public ResponseEntity<Map<String, Object>> toggleMilestone(
+            @PathVariable UUID enrollmentId,
+            @PathVariable UUID milestoneId) {
+        return ResponseEntity.ok(trainingService.toggleMilestone(enrollmentId, milestoneId));
+    }
+
     @GetMapping("/recommendations/me")
     public ResponseEntity<List<TrainingCourse>> getMyRecommendations(Authentication auth) {
         String userIdStr = (String) auth.getPrincipal();

@@ -6,6 +6,7 @@ import {
 import Icon from '../components/Icon.jsx'
 import { Pill, SectionHead, StatCard, statusColor, sevColor, heatColor } from '../components/Bits.jsx'
 import api from '../services/api.js'
+import { exportReportToPdf, exportReportToExcel } from '../services/reportExportUtil.js'
 
 // ----------------------------------------------------------------------
 // Dynamic Domain Team Grouping for Department Managers
@@ -270,7 +271,7 @@ const DEFAULT_MANAGER_DATA = {
 export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, user }) {
   const [heatmapData, setHeatmapData] = useState(null)
   const [teamProfiles, setTeamProfiles] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!customHeatmapData)
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('ALL')
   const [connectModal, setConnectModal] = useState(null)
@@ -291,7 +292,7 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
 
   useEffect(() => {
     let isMounted = true
-    setLoading(true)
+    if (!customHeatmapData) setLoading(true)
     Promise.all([
       api.getManagerHeatmapData().catch(() => null),
       api.getManagerTeamProfiles().catch(() => [])
@@ -304,7 +305,7 @@ export function TeamSkillGapHeatmap({ onSelectMember, customHeatmapData, onNav, 
       if (isMounted) setLoading(false)
     })
     return () => { isMounted = false }
-  }, [])
+  }, [customHeatmapData])
 
   const isDemoManager = user?.email === 'manager@northwind.io' || (!user?.email && user?.name === 'Marcus Lee')
   const domainTeams = groupMembersIntoDomainTeams(teamProfiles, user?.department)
@@ -1367,14 +1368,19 @@ export function ManagerDashboard({ onNav, user, initialTab = 'overview' }) {
     let isMounted = true
     setLoading(true)
 
-    Promise.all([
-      api.getManagerTeamGaps().catch(() => null),
-      api.getManagerTeamProfiles().catch(() => []),
-      api.getManagerHeatmapData().catch(() => null)
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve([null, [], null]), 1200))
+
+    Promise.race([
+      Promise.all([
+        api.getManagerTeamGaps().catch(() => null),
+        api.getManagerTeamProfiles().catch(() => []),
+        api.getManagerHeatmapData().catch(() => null)
+      ]),
+      timeoutPromise
     ]).then(([gapsRes, profilesRes, heatRes]) => {
       if (isMounted) {
-        setTeamGaps(gapsRes)
-        setTeamProfiles(profilesRes || [])
+        if (gapsRes) setTeamGaps(gapsRes)
+        if (profilesRes && profilesRes.length > 0) setTeamProfiles(profilesRes)
         if (heatRes) setHeatmapData(heatRes)
       }
     }).finally(() => {
@@ -1899,6 +1905,815 @@ export function EmployeeProgressTracker({ user }) {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+// ----------------------------------------------------------------------
+// Manager Assessments Page (Direct Evaluations & Historical Reviews)
+// ----------------------------------------------------------------------
+const DEFAULT_MANAGER_TEAM_MEMBERS = [
+  { id: 'tm-1', fullName: 'Ava Chen', roleTitle: 'Senior Product Engineer', department: 'Engineering', skills: [
+    { skillId: 's1', skillName: 'React & Frontend Architecture', categoryName: 'Frontend', proficiencyLevel: 4 },
+    { skillId: 's2', skillName: 'Java Spring Boot', categoryName: 'Backend', proficiencyLevel: 3 },
+    { skillId: 's3', skillName: 'System Design & Scalability', categoryName: 'Architecture', proficiencyLevel: 4 }
+  ]},
+  { id: 'tm-2', fullName: 'Liam Harper', roleTitle: 'Software Engineer', department: 'Engineering', skills: [
+    { skillId: 's1', skillName: 'Java Spring Boot', categoryName: 'Backend', proficiencyLevel: 3 },
+    { skillId: 's2', skillName: 'SQL Database', categoryName: 'Database', proficiencyLevel: 3 }
+  ]},
+  { id: 'tm-3', fullName: 'Chloe Adams', roleTitle: 'Junior Developer', department: 'Engineering', skills: [
+    { skillId: 's1', skillName: 'Java Spring Boot', categoryName: 'Backend', proficiencyLevel: 2 },
+    { skillId: 's2', skillName: 'Cloud Infrastructure & AWS', categoryName: 'DevOps', proficiencyLevel: 2 }
+  ]}
+]
+
+const DEFAULT_HISTORICAL_ASSESSMENTS = [
+  { id: 'a-1', title: 'Q3 Direct Manager Performance Review', userName: 'Ava Chen', type: 'MANAGER_EVALUATION', overallScore: 85, createdAt: '2026-08-25T14:00:00Z' },
+  { id: 'a-2', title: 'Competency Baseline Evaluation', userName: 'Liam Harper', type: 'SELF_ASSESSMENT', overallScore: 78, createdAt: '2026-08-15T11:00:00Z' }
+]
+
+export function ManagerAssessmentsPage({ user, onNav }) {
+  const [teamMembers, setTeamMembers] = useState(DEFAULT_MANAGER_TEAM_MEMBERS)
+  const [assessments, setAssessments] = useState(DEFAULT_HISTORICAL_ASSESSMENTS)
+  const [selectedMember, setSelectedMember] = useState(DEFAULT_MANAGER_TEAM_MEMBERS[0])
+  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [toastMsg, setToastMsg] = useState(null)
+  const [viewModal, setViewModal] = useState(null)
+
+  // Evaluation Form State
+  const [evalTitle, setEvalTitle] = useState('Manager Performance Evaluation - Ava Chen')
+  const [evalNotes, setEvalNotes] = useState('Senior engineer demonstrating strong frontend velocity. Prioritizing backend system design scalability.')
+  const [ratings, setRatings] = useState({ s1: 4, s2: 3, s3: 4 }) // skillId -> level (1-5)
+  const [comments, setComments] = useState({ s1: 'Strong React mastery', s2: 'Closing gap via Spring course', s3: 'Good architectural foundation' }) // skillId -> string
+
+  const proficiencyLabels = {
+    1: '1 - Novice',
+    2: '2 - Beginner',
+    3: '3 - Intermediate',
+    4: '4 - Advanced',
+    5: '5 - Expert'
+  }
+
+  function showToast(msg) {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 4000)
+  }
+
+  function loadData() {
+    Promise.allSettled([
+      api.getTeamProfiles(),
+      api.getManagerAssessments()
+    ]).then(([profilesRes, assessmentsRes]) => {
+      if (profilesRes.status === 'fulfilled' && Array.isArray(profilesRes.value) && profilesRes.value.length > 0) {
+        setTeamMembers(profilesRes.value)
+      }
+      if (assessmentsRes.status === 'fulfilled' && Array.isArray(assessmentsRes.value) && assessmentsRes.value.length > 0) {
+        setAssessments(assessmentsRes.value)
+      }
+    })
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  function selectEmployee(member) {
+    setSelectedMember(member)
+    setEvalTitle(`Manager Performance Evaluation - ${member.fullName || 'Team Member'}`)
+    setEvalNotes('')
+    
+    // Initialize skill ratings based on member's current skills or defaults
+    const initialRatings = {}
+    const initialComments = {}
+    const skillsList = member.skills && member.skills.length > 0 
+      ? member.skills 
+      : [
+          { skillId: 's1', skillName: 'Java Spring Boot', categoryName: 'Backend' },
+          { skillId: 's2', skillName: 'React & Frontend Architecture', categoryName: 'Frontend' },
+          { skillId: 's3', skillName: 'Cloud Infrastructure & AWS', categoryName: 'DevOps' },
+          { skillId: 's4', skillName: 'System Design & Scalability', categoryName: 'Architecture' },
+          { skillId: 's5', skillName: 'Technical Leadership & Collaboration', categoryName: 'Soft Skills' }
+        ]
+
+    skillsList.forEach(s => {
+      const sId = s.skillId || s.id || s.name
+      initialRatings[sId] = s.proficiencyLevel || s.currentLevel || 3
+      initialComments[sId] = ''
+    })
+    setRatings(initialRatings)
+    setComments(initialComments)
+  }
+
+  function handleSubmitEvaluation(e) {
+    e.preventDefault()
+    if (!selectedMember) return
+
+    setSubmitting(true)
+    const skillsList = selectedMember.skills && selectedMember.skills.length > 0 
+      ? selectedMember.skills 
+      : [
+          { skillId: null, skillName: 'Java Spring Boot' },
+          { skillId: null, skillName: 'React & Frontend Architecture' },
+          { skillId: null, skillName: 'Cloud Infrastructure & AWS' },
+          { skillId: null, skillName: 'System Design & Scalability' },
+          { skillId: null, skillName: 'Technical Leadership & Collaboration' }
+        ]
+
+    const responses = skillsList.map(s => {
+      const sId = s.skillId || s.id || s.name
+      return {
+        skillId: (s.skillId && typeof s.skillId === 'string' && s.skillId.length > 10) ? s.skillId : null,
+        skillName: s.skillName || s.name,
+        proficiencyLevel: ratings[sId] || 3,
+        notes: comments[sId] || ''
+      }
+    })
+
+    const payload = {
+      title: evalTitle || `Manager Evaluation: ${selectedMember.fullName}`,
+      notes: evalNotes,
+      responses
+    }
+
+    api.submitManagerEvaluation(selectedMember.id, payload)
+      .then(res => {
+        showToast(`✓ Evaluation successfully submitted for ${selectedMember.fullName}! Skill proficiency and gaps updated.`)
+        loadData()
+      })
+      .catch(err => {
+        showToast(`❌ Evaluation error: ${err.message}`)
+      })
+      .finally(() => setSubmitting(false))
+  }
+
+  return (
+    <div className="fade-in space-y-6 max-w-7xl mx-auto">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white border border-lime-400/40 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold animate-bounce">
+          <Icon name="check-circle" className="w-4 h-4 text-lime-400" />
+          {toastMsg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
+            Team Skill Evaluations & Performance Reviews
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Conduct direct manager evaluations to calibrate competency levels and trigger real-time skill gap recalculations.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+            {teamMembers.length} Direct Reports
+          </span>
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            {assessments.length} Completed Reviews
+          </span>
+        </div>
+      </div>
+
+      {loading && teamMembers.length === 0 ? (
+        <div className="flex items-center justify-center h-64">
+          <Icon name="loader-2" className="w-8 h-8 text-lime-400 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Direct Reports List (4 cols) */}
+          <div className="lg:col-span-4 space-y-3">
+            <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Direct Reports</span>
+                <span className="text-[11px] text-slate-500">Select to Evaluate</span>
+              </div>
+              <div className="space-y-2">
+                {teamMembers.map(member => {
+                  const isSelected = selectedMember?.id === member.id
+                  const initials = member.fullName ? member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2) : 'EM'
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => selectEmployee(member)}
+                      className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${
+                        isSelected
+                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500/50 shadow-sm'
+                          : 'bg-slate-50/50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10'
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{member.fullName}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{member.roleTitle || 'Software Engineer'}</div>
+                      </div>
+                      {isSelected && <Icon name="chevron-right" className="w-4 h-4 text-indigo-500" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Active Direct Evaluation Form (8 cols) */}
+          <div className="lg:col-span-8">
+            {selectedMember ? (
+              <form onSubmit={handleSubmitEvaluation} className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5 gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Direct Manager Evaluation</span>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{selectedMember.fullName}</h2>
+                    <p className="text-xs text-slate-400">{selectedMember.roleTitle} · {selectedMember.department || 'Engineering'}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-md transition-all self-start sm:self-auto"
+                  >
+                    {submitting ? <Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <Icon name="check-circle" className="w-4 h-4" />}
+                    Submit Evaluation
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Evaluation Title
+                  </label>
+                  <input
+                    type="text"
+                    value={evalTitle}
+                    onChange={e => setEvalTitle(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="e.g. Q3 Manager Performance Review"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Manager Review Notes & Executive Summary
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={evalNotes}
+                    onChange={e => setEvalNotes(e.target.value)}
+                    placeholder="Provide overarching feedback, leadership observations, and strategic growth priorities..."
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                {/* Skill Ratings Stepper / Level Selector */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Competency Assessment & Proficiency Ratings (1 - 5)
+                    </h3>
+                    <span className="text-[11px] text-slate-500">1: Novice ➔ 5: Expert</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {Object.keys(ratings).map((sId, index) => {
+                      const skill = (selectedMember.skills || []).find(s => (s.skillId || s.id || s.name) === sId)
+                      const sName = skill?.skillName || skill?.name || sId
+                      const currentVal = ratings[sId] || 3
+
+                      return (
+                        <div key={sId || index} className="p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="text-xs font-bold text-slate-900 dark:text-white">{sName}</div>
+                              <div className="text-[10px] text-slate-400">Current Rating: {proficiencyLabels[currentVal]}</div>
+                            </div>
+                            
+                            {/* 1-5 clickable pills */}
+                            <div className="flex items-center gap-1.5">
+                              {[1, 2, 3, 4, 5].map(lvl => (
+                                <button
+                                  key={lvl}
+                                  type="button"
+                                  onClick={() => setRatings(prev => ({ ...prev, [sId]: lvl }))}
+                                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                                    currentVal === lvl
+                                      ? 'bg-indigo-600 text-white shadow-sm scale-105'
+                                      : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:border-indigo-400'
+                                  }`}
+                                >
+                                  {lvl}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <input
+                            type="text"
+                            value={comments[sId] || ''}
+                            onChange={e => setComments(prev => ({ ...prev, [sId]: e.target.value }))}
+                            placeholder="Optional manager feedback notes for this skill..."
+                            className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-12 text-center text-slate-400 text-xs">
+                Select a direct report to conduct a skill evaluation.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Historical Evaluations Table */}
+      <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <SectionHead title="Team Assessment History" sub="Historical manager, peer, and self-assessments completed across your team" />
+          <span className="text-xs text-slate-400">{assessments.length} Total Records</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 text-[11px] uppercase">
+                <th className="py-2.5 px-3">Title</th>
+                <th className="py-2.5 px-3">Employee</th>
+                <th className="py-2.5 px-3">Type</th>
+                <th className="py-2.5 px-3">Overall Score</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              {assessments.length > 0 ? (
+                assessments.map(a => (
+                  <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white">
+                      {a.title || 'Competency Review'}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                      {a.userName || 'Team Member'}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        {a.type || 'MANAGER_EVALUATION'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="font-bold text-emerald-400">
+                        {a.overallScore != null ? `${a.overallScore}%` : 'N/A'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-slate-400">
+                      {a.submittedAt ? new Date(a.submittedAt).toLocaleDateString() : 'Recent'}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => {
+                          api.getAssessmentResults(a.id)
+                            .then(res => setViewModal(res))
+                            .catch(() => setViewModal(a))
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-colors"
+                      >
+                        View Results
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    No completed evaluations recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Result Modal */}
+      {viewModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0F1420] border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">{viewModal.title}</h3>
+                <p className="text-xs text-slate-400">Employee: {viewModal.userName} · Overall Score: {viewModal.overallScore}%</p>
+              </div>
+              <button onClick={() => setViewModal(null)} className="text-slate-400 hover:text-white">
+                <Icon name="x" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <span className="font-bold text-slate-400 uppercase tracking-wider">Skill Rating Breakdown</span>
+              <div className="space-y-2">
+                {(viewModal.responses || []).map((r, i) => (
+                  <div key={i} className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{r.skillName}</div>
+                      <div className="text-[10px] text-slate-400">{r.notes || 'No individual notes recorded.'}</div>
+                    </div>
+                    <span className="font-bold text-indigo-400 text-sm">
+                      {r.proficiencyLevel} / 5
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end">
+              <button
+                onClick={() => setViewModal(null)}
+                className="px-4 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white rounded-xl text-xs font-bold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const DEFAULT_REPORT_EMPLOYEES = [
+  { id: 'emp-1', fullName: 'Liam Harper', roleTitle: 'Software Engineer' },
+  { id: 'emp-2', fullName: 'Ava Chen', roleTitle: 'Senior Product Engineer' },
+  { id: 'emp-3', fullName: 'Alex Morgan', roleTitle: 'Full Stack Software Engineer' },
+  { id: 'emp-4', fullName: 'Chloe Adams', roleTitle: 'Junior Developer' }
+]
+
+const DEFAULT_EMPLOYEE_REPORT = {
+  employeeName: 'Liam Harper',
+  department: 'Engineering',
+  roleTitle: 'Software Engineer',
+  totalSkills: 8,
+  openGapsCount: 1,
+  completedCourses: 3,
+  averageTrainingProgress: 76,
+  skills: [
+    { skillName: 'Java Spring Boot', category: 'Backend', currentLevel: 3, requiredLevel: 5, gap: 2, severity: 'HIGH', isCritical: false },
+    { skillName: 'React & Frontend', category: 'Frontend', currentLevel: 4, requiredLevel: 4, gap: 0, severity: 'NORMAL', isCritical: false },
+    { skillName: 'SQL & Databases', category: 'Database', currentLevel: 4, requiredLevel: 4, gap: 0, severity: 'NORMAL', isCritical: false },
+    { skillName: 'Cloud Infrastructure (AWS)', category: 'DevOps', currentLevel: 2, requiredLevel: 4, gap: 2, severity: 'CRITICAL', isCritical: true },
+    { skillName: 'RESTful API Architecture', category: 'Architecture', currentLevel: 4, requiredLevel: 4, gap: 0, severity: 'NORMAL', isCritical: false }
+  ],
+  trainings: [
+    { title: 'Spring Boot & Microservices Development', level: 'Advanced', progressPercent: 76, status: 'IN_PROGRESS', enrollmentDate: '2026-08-15' },
+    { title: 'Full Stack React & Modern State Management', level: 'Intermediate', progressPercent: 100, status: 'COMPLETED', enrollmentDate: '2026-07-10' },
+    { title: 'AWS Cloud Architecture & Kubernetes', level: 'Intermediate', progressPercent: 40, status: 'IN_PROGRESS', enrollmentDate: '2026-08-20' }
+  ]
+}
+
+// ----------------------------------------------------------------------
+// Manager Reports Page (PDF & Excel Exports for Reports 1, 2, 3)
+// ----------------------------------------------------------------------
+export function ManagerReportsPage({ user, onNav }) {
+  const [activeTab, setActiveTab] = useState('employee') // 'employee' | 'department' | 'gaps'
+  const [teamMembers, setTeamMembers] = useState(DEFAULT_REPORT_EMPLOYEES)
+  const [selectedMemberId, setSelectedMemberId] = useState('emp-1')
+  const [reportData, setReportData] = useState(DEFAULT_EMPLOYEE_REPORT)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    api.getTeamProfiles().then(profiles => {
+      if (Array.isArray(profiles) && profiles.length > 0) {
+        setTeamMembers(profiles)
+        setSelectedMemberId(profiles[0].id)
+      }
+    }).catch(err => console.error('Error loading profiles:', err))
+  }, [])
+
+  useEffect(() => {
+    loadActiveReport()
+  }, [activeTab, selectedMemberId])
+
+  function loadActiveReport() {
+    if (activeTab === 'employee') {
+      if (!selectedMemberId) return
+      api.getEmployeeReport(selectedMemberId)
+        .then(res => { if (res) setReportData(res) })
+        .catch(err => console.error(err))
+    } else if (activeTab === 'department') {
+      api.getDepartmentReport()
+        .then(res => setReportData(res))
+        .catch(err => console.error(err))
+        .finally(() => setLoading(false))
+    } else if (activeTab === 'gaps') {
+      api.getSkillGapReport()
+        .then(res => setReportData(res))
+        .catch(err => console.error(err))
+        .finally(() => setLoading(false))
+    }
+  }
+
+  function handleDownloadPdf() {
+    if (!reportData) return
+    const type = activeTab === 'employee' ? 'EMPLOYEE_LEARNING_REPORT' :
+                 activeTab === 'department' ? 'DEPARTMENT_TRAINING_REPORT' : 'SKILL_GAP_REPORT'
+    const title = activeTab === 'employee' ? `Employee Learning Report - ${reportData.employeeName}` :
+                  activeTab === 'department' ? `Department Training Report - ${reportData.departmentName}` :
+                  'Team & Org Skill Gap Intelligence Report'
+    exportReportToPdf(type, reportData, title)
+  }
+
+  function handleDownloadExcel() {
+    if (!reportData) return
+    const type = activeTab === 'employee' ? 'EMPLOYEE_LEARNING_REPORT' :
+                 activeTab === 'department' ? 'DEPARTMENT_TRAINING_REPORT' : 'SKILL_GAP_REPORT'
+    const title = activeTab === 'employee' ? `Employee Learning Report - ${reportData.employeeName}` :
+                  activeTab === 'department' ? `Department Training Report - ${reportData.departmentName}` :
+                  'Team & Org Skill Gap Intelligence Report'
+    exportReportToExcel(type, reportData, title)
+  }
+
+  return (
+    <div className="fade-in space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
+            Team Knowledge & Learning Reports
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Enterprise analytics covering individual progress, department training metrics, and team skill deficits.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={!reportData || loading}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition-all shadow-sm disabled:opacity-50"
+          >
+            <Icon name="file-text" className="w-3.5 h-3.5" />
+            Download PDF
+          </button>
+          <button
+            onClick={handleDownloadExcel}
+            disabled={!reportData || loading}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm disabled:opacity-50"
+          >
+            <Icon name="file-spreadsheet" className="w-3.5 h-3.5" />
+            Download Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-white/10 gap-4 text-xs font-bold">
+        <button
+          onClick={() => setActiveTab('employee')}
+          className={`pb-3 border-b-2 transition-all ${
+            activeTab === 'employee' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Report 1: Employee Learning
+        </button>
+        <button
+          onClick={() => setActiveTab('department')}
+          className={`pb-3 border-b-2 transition-all ${
+            activeTab === 'department' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Report 2: Department Training
+        </button>
+        <button
+          onClick={() => setActiveTab('gaps')}
+          className={`pb-3 border-b-2 transition-all ${
+            activeTab === 'gaps' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Report 3: Skill Gap Analysis
+        </button>
+      </div>
+
+      {/* Sub-Filter for Employee Report */}
+      {activeTab === 'employee' && (
+        <div className="flex items-center gap-3 bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-xl p-3 shadow-sm">
+          <span className="text-xs font-semibold text-slate-400">Select Direct Report:</span>
+          <select
+            value={selectedMemberId}
+            onChange={e => setSelectedMemberId(e.target.value)}
+            className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-indigo-500"
+          >
+            {teamMembers.map(m => (
+              <option key={m.id} value={m.id} className="text-black dark:text-white">
+                {m.fullName} ({m.roleTitle || 'Employee'})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Report Content Preview */}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <Icon name="loader-2" className="w-8 h-8 text-lime-400 animate-spin" />
+        </div>
+      ) : reportData ? (
+        <div className="space-y-6">
+          {/* TAB 1: EMPLOYEE LEARNING REPORT */}
+          {activeTab === 'employee' && (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard icon="layers" label="Total Skills Assessed" value={reportData.totalSkills || 0} tint="bg-indigo-500/10 text-indigo-400" />
+                <StatCard icon="alert-circle" label="Open Skill Gaps" value={reportData.openGapsCount || 0} tint="bg-amber-500/10 text-amber-400" />
+                <StatCard icon="award" label="Completed Courses" value={reportData.completedCourses || 0} tint="bg-emerald-500/10 text-emerald-400" />
+                <StatCard icon="trending-up" label="Avg Training Progress" value={`${reportData.averageTrainingProgress || 0}%`} tint="bg-purple-500/10 text-purple-400" />
+              </div>
+
+              {/* Skills Table */}
+              <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3">
+                <SectionHead title="Assessed Competencies & Role Benchmarks" sub="Current level vs target role proficiency benchmark" />
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 text-[11px] uppercase">
+                        <th className="py-2.5 px-3">Skill</th>
+                        <th className="py-2.5 px-3">Category</th>
+                        <th className="py-2.5 px-3">Current</th>
+                        <th className="py-2.5 px-3">Required</th>
+                        <th className="py-2.5 px-3">Deficit</th>
+                        <th className="py-2.5 px-3">Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {(reportData.skills || []).map((s, i) => (
+                        <tr key={i}>
+                          <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">{s.skillName}</td>
+                          <td className="py-2.5 px-3 text-slate-400">{s.category}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-700 dark:text-slate-200">{s.currentLevel} / 5</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-400">{s.requiredLevel} / 5</td>
+                          <td className="py-2.5 px-3">
+                            {s.gap > 0 ? (
+                              <span className="text-rose-400 font-bold">-{s.gap}</span>
+                            ) : (
+                              <span className="text-emerald-400 font-bold">Met</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              s.isCritical ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-slate-500/10 text-slate-400'
+                            }`}>
+                              {s.severity || (s.isCritical ? 'CRITICAL' : 'NORMAL')}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Training Courses Table */}
+              <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3">
+                <SectionHead title="Course Enrollments & Completion History" sub="Learning paths assigned and in-progress" />
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 text-[11px] uppercase">
+                        <th className="py-2.5 px-3">Course Title</th>
+                        <th className="py-2.5 px-3">Level</th>
+                        <th className="py-2.5 px-3">Progress</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3">Enrolled Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {(reportData.trainings || []).map((t, i) => (
+                        <tr key={i}>
+                          <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">{t.title}</td>
+                          <td className="py-2.5 px-3 text-slate-400">{t.level}</td>
+                          <td className="py-2.5 px-3 font-bold text-indigo-400">{t.progressPercent}%</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              t.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {t.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-400">
+                            {t.enrollmentDate ? new Date(t.enrollmentDate).toLocaleDateString() : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: DEPARTMENT TRAINING REPORT */}
+          {activeTab === 'department' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard icon="users" label="Total Department Staff" value={reportData.totalEmployees || 0} tint="bg-blue-500/10 text-blue-400" />
+                <StatCard icon="book-open" label="Staff In Training" value={reportData.enrolledEmployees || 0} tint="bg-indigo-500/10 text-indigo-400" />
+                <StatCard icon="award" label="Completed Courses" value={reportData.completedEmployees || 0} tint="bg-emerald-500/10 text-emerald-400" />
+                <StatCard icon="pie-chart" label="Training Completion Rate" value={`${reportData.completionPercentage || 0}%`} tint="bg-lime-500/10 text-lime-400" />
+              </div>
+
+              <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3">
+                <SectionHead title="Department Training Roster" sub="Employee-by-employee enrollment and completion metrics" />
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 text-[11px] uppercase">
+                        <th className="py-2.5 px-3">Employee Name</th>
+                        <th className="py-2.5 px-3">Role Title</th>
+                        <th className="py-2.5 px-3">Courses Enrolled</th>
+                        <th className="py-2.5 px-3">Courses Completed</th>
+                        <th className="py-2.5 px-3">Average Progress</th>
+                        <th className="py-2.5 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {(reportData.employees || []).map((e, i) => (
+                        <tr key={i}>
+                          <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">{e.fullName}</td>
+                          <td className="py-2.5 px-3 text-slate-400">{e.roleTitle}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-700 dark:text-slate-200">{e.enrolledCount}</td>
+                          <td className="py-2.5 px-3 font-bold text-emerald-400">{e.completedCount}</td>
+                          <td className="py-2.5 px-3 font-bold text-indigo-400">{e.averageProgress}%</td>
+                          <td className="py-2.5 px-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-300">
+                              {e.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SKILL GAP REPORT */}
+          {activeTab === 'gaps' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard icon="users" label="Assessed Headcount" value={reportData.totalAssessedEmployees || 0} tint="bg-indigo-500/10 text-indigo-400" />
+                <StatCard icon="layers" label="Unique Skills Evaluated" value={reportData.uniqueSkillsEvaluated || 0} tint="bg-cyan-500/10 text-cyan-400" />
+                <StatCard icon="alert-triangle" label="Critical Deficits" value={reportData.criticalGapsCount || 0} tint="bg-rose-500/10 text-rose-400" />
+                <StatCard icon="target" label="Top Deficit Skill" value={reportData.topDeficitSkill || 'None'} tint="bg-amber-500/10 text-amber-400" />
+              </div>
+
+              <div className="card bg-white dark:bg-[#0F1420] border border-slate-200/70 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3">
+                <SectionHead title="Team Skill Deficit & Urgency Analysis" sub="Aggregated competency gaps across team members" />
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 text-[11px] uppercase">
+                        <th className="py-2.5 px-3">Skill Name</th>
+                        <th className="py-2.5 px-3">Category</th>
+                        <th className="py-2.5 px-3">Affected Staff</th>
+                        <th className="py-2.5 px-3">Avg Current</th>
+                        <th className="py-2.5 px-3">Role Benchmark</th>
+                        <th className="py-2.5 px-3">Avg Gap</th>
+                        <th className="py-2.5 px-3">Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {(reportData.skillsAnalysis || []).map((g, i) => (
+                        <tr key={i}>
+                          <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">{g.skillName}</td>
+                          <td className="py-2.5 px-3 text-slate-400">{g.category}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-700 dark:text-slate-200">{g.affectedEmployeesCount} members</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-400">{g.averageCurrentLevel} / 5</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-400">{g.averageRequiredLevel} / 5</td>
+                          <td className="py-2.5 px-3 font-bold text-rose-400">-{g.averageGap}</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              g.criticalDeficit ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {g.criticalDeficit ? 'CRITICAL' : 'ELEVATED'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }

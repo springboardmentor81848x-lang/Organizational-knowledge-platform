@@ -272,4 +272,57 @@ public class NotificationService {
                 "/employee/inventory"
         );
     }
+
+    @Autowired(required = false)
+    private com.knowledgeiq.repository.AssessmentRepository assessmentRepository;
+
+    @Autowired(required = false)
+    private com.knowledgeiq.repository.CourseEnrollmentRepository enrollmentRepository;
+
+    public int triggerReminders() {
+        int triggered = 0;
+        if (assessmentRepository != null) {
+            List<com.knowledgeiq.model.Assessment> pending = assessmentRepository.findAll().stream()
+                    .filter(a -> a.getStatus() == com.knowledgeiq.model.AssessmentStatus.PENDING)
+                    .collect(Collectors.toList());
+            for (com.knowledgeiq.model.Assessment a : pending) {
+                if (a.getUser() != null && !Boolean.TRUE.equals(a.getReminderSent())) {
+                    createNotification(
+                            a.getUser(),
+                            "ASSESSMENT_REMINDER",
+                            "Reminder: Pending Assessment Due",
+                            "Please remember to complete your assessment: " + a.getTitle(),
+                            "MEDIUM",
+                            "ASSESSMENT",
+                            a.getId().toString(),
+                            "/assessments"
+                    );
+                    a.setReminderSent(true);
+                    assessmentRepository.save(a);
+                    triggered++;
+                }
+            }
+        }
+        if (enrollmentRepository != null) {
+            List<com.knowledgeiq.model.CourseEnrollment> active = enrollmentRepository.findAll().stream()
+                    .filter(e -> "IN_PROGRESS".equalsIgnoreCase(e.getStatus()))
+                    .collect(Collectors.toList());
+            for (com.knowledgeiq.model.CourseEnrollment e : active) {
+                if (e.getUser() != null && e.getCourse() != null) {
+                    createNotification(
+                            e.getUser(),
+                            "TRAINING_REMINDER",
+                            "Training Progress Reminder",
+                            "Continue your progress on '" + e.getCourse().getTitle() + "'. You are currently at " + (e.getProgressPercent() != null ? e.getProgressPercent() : 0) + "%!",
+                            "LOW",
+                            "COURSE",
+                            e.getCourse().getId().toString(),
+                            "/training"
+                    );
+                    triggered++;
+                }
+            }
+        }
+        return triggered;
+    }
 }

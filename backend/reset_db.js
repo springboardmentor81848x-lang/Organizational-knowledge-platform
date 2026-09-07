@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const connectionString = process.env.DATABASE_URL || process.env.DB_URL || 'postgresql://postgres:1OEt7ZLANvR6ZK9n@db.utdvsjyzybvwhudovgyn.supabase.co:5432/postgres';
+const connectionString = process.env.DATABASE_URL || process.env.DB_URL || 'postgresql://postgres:password@localhost:5432/knowledgeiq';
 
 const client = new Client({
   connectionString: connectionString

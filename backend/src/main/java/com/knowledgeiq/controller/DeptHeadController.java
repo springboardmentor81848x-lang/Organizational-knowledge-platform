@@ -90,22 +90,44 @@ public class DeptHeadController {
         long criticalGaps = 0;
         double totalCompletion = 0;
         int enrollmentCount = 0;
+        int totalEnrolledEmployees = 0;
+        int totalCompletedEmployees = 0;
+        Map<String, Integer> gapCountBySkill = new HashMap<>();
 
         for (User emp : employees) {
             if (emp == null || emp.getId() == null) continue;
             List<SkillGapDto> gaps = userGapsCache.getOrDefault(emp.getId(), Collections.emptyList());
-            criticalGaps += gaps.stream().filter(g -> g.getIsCritical() != null && g.getIsCritical()).count();
+            for (SkillGapDto g : gaps) {
+                if (g.getCurrentLevel() < g.getRequiredLevel()) {
+                    gapCountBySkill.put(g.getSkillName(), gapCountBySkill.getOrDefault(g.getSkillName(), 0) + 1);
+                    if (Boolean.TRUE.equals(g.getIsCritical())) {
+                        criticalGaps++;
+                    }
+                }
+            }
 
             List<CourseEnrollment> enrollments = enrollmentRepository.findByUserId(emp.getId());
             if (!enrollments.isEmpty()) {
+                totalEnrolledEmployees++;
                 long completed = enrollments.stream().filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus())).count();
+                if (completed > 0) {
+                    totalCompletedEmployees++;
+                }
                 totalCompletion += (double) completed / enrollments.size() * 100.0;
                 enrollmentCount++;
             }
         }
 
+        String topGap = gapCountBySkill.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("Cloud Architecture");
+
         data.put("criticalGaps", criticalGaps);
         data.put("avgCompletion", enrollmentCount > 0 ? (int) Math.round(totalCompletion / enrollmentCount) : 80);
+        data.put("trainingEnrolled", totalEnrolledEmployees);
+        data.put("trainingCompleted", totalCompletedEmployees);
+        data.put("topGap", topGap);
 
         // Alerts mapping
         List<Map<String, String>> alerts = new ArrayList<>();

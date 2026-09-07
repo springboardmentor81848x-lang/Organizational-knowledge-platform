@@ -49,4 +49,10 @@ public class NotificationController {
         notificationService.markAllAsRead(UUID.fromString(userIdStr));
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/trigger-reminders")
+    public ResponseEntity<java.util.Map<String, Object>> triggerReminders() {
+        int count = notificationService.triggerReminders();
+        return ResponseEntity.ok(java.util.Map.of("message", "Automated reminders processed", "remindersTriggered", count));
+    }
 }

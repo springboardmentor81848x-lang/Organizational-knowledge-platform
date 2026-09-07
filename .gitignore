@@ -77,5 +77,10 @@ Desktop.ini
 # Temporary Test Files & Artifacts
 test_aws_cert.pdf
 *.pdf
+*.docx
+screenshots/
+postman/
+scripts/
 coverage/
 *.zip
+

@@ -40,4 +40,38 @@ public class AnalyticsController {
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(csvContent);
     }
+
+    @Autowired
+    private com.knowledgeiq.service.DashboardService dashboardService;
+
+    @Autowired
+    private com.knowledgeiq.service.ManagerService managerService;
+
+    @Autowired
+    private com.knowledgeiq.repository.UserRepository userRepository;
+
+    @GetMapping("/employee/{id}")
+    public ResponseEntity<?> getEmployeeAnalytics(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(dashboardService.getEmployeeDashboard(id));
+    }
+
+    @GetMapping("/team/{id}")
+    public ResponseEntity<?> getTeamAnalytics(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        com.knowledgeiq.model.User manager = userRepository.findById(id).orElse(null);
+        if (manager != null) {
+            return ResponseEntity.ok(managerService.getTeamGaps(manager));
+        }
+        return ResponseEntity.ok(analyticsService.getDashboardSummary());
+    }
+
+    @GetMapping("/department/{id}")
+    public ResponseEntity<?> getDepartmentAnalytics(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(analyticsService.getDashboardSummary());
+    }
+
+    @GetMapping("/organization")
+    public ResponseEntity<?> getOrganizationAnalytics() {
+        return ResponseEntity.ok(analyticsService.getDashboardSummary());
+    }
 }
+

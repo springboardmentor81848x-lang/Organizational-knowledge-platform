@@ -20,6 +20,18 @@ public class ManagerService {
     private EmployeeSkillRepository employeeSkillRepository;
 
     @Autowired
+    private SkillRepository skillRepository;
+
+    @Autowired
+    private AssessmentRepository assessmentRepository;
+
+    @Autowired
+    private AssessmentResponseRepository assessmentResponseRepository;
+
+    @Autowired
+    private AssessmentService assessmentService;
+
+    @Autowired
     private RoleSkillBenchmarkRepository benchmarkRepository;
 
     @Autowired
@@ -388,6 +400,102 @@ public class ManagerService {
         }
 
         return enrollment;
+    }
+
+    public List<AssessmentDto> getTeamAssessments(User manager) {
+        List<User> members = getTeamMembersForManager(manager);
+        Set<Assessment> all = new LinkedHashSet<>();
+        if (manager != null) {
+            all.addAll(assessmentRepository.findByEvaluatorIdOrderByCreatedAtDesc(manager.getId()));
+        }
+        for (User m : members) {
+            all.addAll(assessmentRepository.findByUserIdOrderByCreatedAtDesc(m.getId()));
+        }
+        return all.stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(assessmentService::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public AssessmentDto evaluateEmployee(User manager, UUID employeeId, AssessmentSubmissionDto dto) {
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + employeeId));
+
+        Assessment assessment = new Assessment();
+        assessment.setUser(employee);
+        assessment.setEvaluator(manager);
+        assessment.setTitle(dto.getTitle() != null && !dto.getTitle().isBlank() 
+                ? dto.getTitle() 
+                : "Manager Performance Evaluation - " + employee.getFullName());
+        assessment.setType(AssessmentType.MANAGER_EVALUATION);
+        assessment.setStatus(AssessmentStatus.COMPLETED);
+        assessment.setSubmittedAt(java.time.ZonedDateTime.now());
+        assessment.setNotes(dto.getNotes());
+        assessment = assessmentRepository.save(assessment);
+
+        List<AssessmentSubmissionDto.SubmissionItem> items = dto.getResponses() != null ? dto.getResponses() : Collections.emptyList();
+        double totalScore = 0.0;
+        int count = 0;
+
+        for (AssessmentSubmissionDto.SubmissionItem item : items) {
+            if (item.getProficiencyLevel() == null || item.getProficiencyLevel() < 1 || item.getProficiencyLevel() > 5) {
+                continue;
+            }
+            Skill skill = null;
+            if (item.getSkillId() != null) {
+                skill = skillRepository.findById(item.getSkillId()).orElse(null);
+            }
+            if (skill == null && item.getSkillName() != null) {
+                skill = skillRepository.findAllByName(item.getSkillName()).stream().findFirst().orElse(null);
+            }
+            if (skill == null) continue;
+
+            AssessmentResponse response = new AssessmentResponse();
+            response.setAssessment(assessment);
+            response.setSkill(skill);
+            response.setProficiencyLevel(item.getProficiencyLevel());
+            response.setNotes(item.getNotes());
+            assessmentResponseRepository.save(response);
+
+            // Update EmployeeSkill table directly
+            final Skill targetSkill = skill;
+            EmployeeSkill employeeSkill = employeeSkillRepository.findByUserIdAndSkillId(employee.getId(), targetSkill.getId())
+                    .orElseGet(() -> {
+                        EmployeeSkill es = new EmployeeSkill();
+                        es.setUser(employee);
+                        es.setSkill(targetSkill);
+                        return es;
+                    });
+            employeeSkill.setProficiencyLevel(item.getProficiencyLevel());
+            employeeSkillRepository.save(employeeSkill);
+
+            totalScore += item.getProficiencyLevel();
+            count++;
+        }
+
+        double overallScore = count > 0 ? Math.round((totalScore / count) * 20.0 * 10.0) / 10.0 : 80.0;
+        assessment.setOverallScore(overallScore);
+        assessment = assessmentRepository.save(assessment);
+
+        // Recalculate skill gaps
+        gapAnalysisService.recalculateUserGaps(employee.getId());
+
+        // Notify employee
+        try {
+            notificationService.createNotification(
+                    employee,
+                    "ASSESSMENT",
+                    "Manager Performance Evaluation Completed",
+                    (manager != null ? manager.getFullName() : "Your Manager") + " has submitted a skill evaluation with score " + overallScore + "%.",
+                    "HIGH",
+                    "ASSESSMENT",
+                    assessment.getId().toString(),
+                    "/assessments"
+            );
+        } catch (Exception ignored) {}
+
+        return assessmentService.mapToDto(assessment);
     }
 
     private static class SkillGapAccumulator {

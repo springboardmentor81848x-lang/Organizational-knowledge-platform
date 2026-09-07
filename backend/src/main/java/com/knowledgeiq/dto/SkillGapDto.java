@@ -31,4 +31,9 @@ public class SkillGapDto {
     public Integer getGapScore() { return gapScore; }
     public void setGapScore(Integer gapScore) { this.gapScore = gapScore; }
     public Boolean getIsCritical() { return isCritical; }
+    public String getSeverity() {
+        if (Boolean.TRUE.equals(isCritical) || (gapScore != null && gapScore >= 3)) return "HIGH";
+        if (gapScore != null && gapScore >= 2) return "MEDIUM";
+        return "LOW";
+    }
 }

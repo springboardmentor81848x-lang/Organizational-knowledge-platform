@@ -32,7 +32,9 @@ export const NAV = {
     ]},
     { section: 'Management', items: [
       { id: 'progress', label: 'Employee Progress Tracker', icon: 'trending-up' },
-      { id: 'interventions', label: 'Learning Interventions', icon: 'sparkles' }
+      { id: 'interventions', label: 'Learning Interventions', icon: 'sparkles' },
+      { id: 'assessments', label: 'Team Evaluations', icon: 'clipboard-check' },
+      { id: 'reports', label: 'Reports & Analytics', icon: 'bar-chart' }
     ]},
     { section: 'Account', items: [
       { id: 'profile', label: 'Profile', icon: 'user-circle' },

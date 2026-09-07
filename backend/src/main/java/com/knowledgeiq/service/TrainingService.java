@@ -1,5 +1,6 @@
 package com.knowledgeiq.service;
 
+import com.knowledgeiq.dto.LearningMilestoneDto;
 import com.knowledgeiq.dto.PersonalizedLearningPathDto;
 import com.knowledgeiq.dto.PersonalizedRecommendationDto;
 import com.knowledgeiq.dto.SkillGapDto;
@@ -22,6 +23,9 @@ public class TrainingService {
 
     @Autowired
     private CourseEnrollmentRepository enrollmentRepository;
+
+    @Autowired
+    private LearningMilestoneRepository milestoneRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -113,8 +117,117 @@ public class TrainingService {
                     enrollment.setUser(user);
                     enrollment.setCourse(course);
                     enrollment.setStatus("IN_PROGRESS");
+                    enrollment.setProgressPercent(0);
+                    enrollment.setExpectedCompletionDate(ZonedDateTime.now().plusWeeks(3));
                     return enrollmentRepository.save(enrollment);
                 });
+    }
+
+    public List<LearningMilestoneDto> getCourseMilestones(UUID courseId, UUID enrollmentId) {
+        List<LearningMilestone> milestones = milestoneRepository.findByCourseIdOrderBySequenceOrderAsc(courseId);
+        if (milestones.isEmpty()) {
+            TrainingCourse course = courseRepository.findById(courseId).orElse(null);
+            if (course != null) {
+                milestones = seedDefaultMilestones(course);
+            }
+        }
+
+        Set<String> completedIds = new HashSet<>();
+        if (enrollmentId != null) {
+            enrollmentRepository.findById(enrollmentId).ifPresent(e -> {
+                if (e.getCompletedMilestoneIds() != null && !e.getCompletedMilestoneIds().isBlank()) {
+                    completedIds.addAll(Arrays.asList(e.getCompletedMilestoneIds().split(",")));
+                }
+            });
+        }
+
+        return milestones.stream().map(m -> new LearningMilestoneDto(
+                m.getId(),
+                courseId,
+                m.getTitle(),
+                m.getDescription(),
+                m.getSequenceOrder(),
+                m.getCompletionPercentage(),
+                completedIds.contains(m.getId().toString())
+        )).collect(Collectors.toList());
+    }
+
+    private List<LearningMilestone> seedDefaultMilestones(TrainingCourse course) {
+        String title = course.getTitle() != null ? course.getTitle() : "Skill Learning";
+        List<LearningMilestone> list = Arrays.asList(
+                new LearningMilestone(course, "1. Foundations & Setup", "Master prerequisite tools, configuration, and fundamental idioms for " + title + ".", 1, 25),
+                new LearningMilestone(course, "2. Core Architecture & Patterns", "Design scalable components and implement domain patterns in " + title + ".", 2, 50),
+                new LearningMilestone(course, "3. Implementation & API Integration", "Build end-to-end features, connect services, and validate integrations for " + title + ".", 3, 75),
+                new LearningMilestone(course, "4. Production Tuning & Security", "Optimize performance, enforce enterprise security standards, and deploy " + title + ".", 4, 100)
+        );
+        return milestoneRepository.saveAll(list);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Map<String, Object> toggleMilestone(UUID enrollmentId, UUID milestoneId) {
+        CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new RuntimeException("Enrollment not found: " + enrollmentId));
+
+        Set<String> completed = new LinkedHashSet<>();
+        if (enrollment.getCompletedMilestoneIds() != null && !enrollment.getCompletedMilestoneIds().isBlank()) {
+            completed.addAll(Arrays.asList(enrollment.getCompletedMilestoneIds().split(",")));
+        }
+
+        String mIdStr = milestoneId.toString();
+        if (completed.contains(mIdStr)) {
+            completed.remove(mIdStr);
+        } else {
+            completed.add(mIdStr);
+        }
+
+        enrollment.setCompletedMilestoneIds(String.join(",", completed));
+
+        List<LearningMilestone> totalMilestones = milestoneRepository.findByCourseIdOrderBySequenceOrderAsc(enrollment.getCourse().getId());
+        if (totalMilestones.isEmpty()) {
+            totalMilestones = seedDefaultMilestones(enrollment.getCourse());
+        }
+
+        int totalCount = totalMilestones.size();
+        int completedCount = 0;
+        for (LearningMilestone m : totalMilestones) {
+            if (completed.contains(m.getId().toString())) {
+                completedCount++;
+            }
+        }
+
+        int progressPct = totalCount > 0 ? (int) Math.round(((double) completedCount / totalCount) * 100.0) : 0;
+        enrollment.setProgressPercent(progressPct);
+
+        if (progressPct >= 100) {
+            updateEnrollmentStatus(enrollmentId, "COMPLETED");
+        } else {
+            enrollment.setStatus("IN_PROGRESS");
+            enrollmentRepository.save(enrollment);
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("enrollmentId", enrollmentId);
+        res.put("progressPercent", progressPct);
+        res.put("status", enrollment.getStatus());
+        res.put("completedMilestoneIds", enrollment.getCompletedMilestoneIds());
+        res.put("milestones", getCourseMilestones(enrollment.getCourse().getId(), enrollmentId));
+        return res;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public CourseEnrollment updateEnrollmentProgress(UUID enrollmentId, int progressPercent) {
+        CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new RuntimeException("Enrollment not found: " + enrollmentId));
+
+        int clamped = Math.max(0, Math.min(100, progressPercent));
+        enrollment.setProgressPercent(clamped);
+
+        if (clamped >= 100) {
+            return updateEnrollmentStatus(enrollmentId, "COMPLETED");
+        } else {
+            enrollment.setStatus("IN_PROGRESS");
+            return enrollmentRepository.save(enrollment);
+        }
     }
 
     public List<CourseEnrollment> getUserEnrollments(UUID userId) {
