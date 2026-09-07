@@ -78,7 +78,11 @@ public class AuthService {
                 savedUser.getEmail(),
                 savedUser.getRole());
 
-        return new AuthResponse(token, savedUser.getRole(), savedUser.getFullName(), savedUser.getEmail());
+        Long employeeId = employeeRepository.findByEmail(savedUser.getEmail())
+                .map(emp -> emp.getId())
+                .orElse(null);
+
+        return new AuthResponse(employeeId, token, savedUser.getRole(), savedUser.getFullName(), savedUser.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -115,7 +119,12 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole());
 
-        return new AuthResponse(token, user.getRole(), user.getFullName(), user.getEmail());
+        // Fetch the employee record to get the employee id
+        Long employeeId = employeeRepository.findByEmail(user.getEmail())
+                .map(emp -> emp.getId())
+                .orElse(null);
+
+        return new AuthResponse(employeeId, token, user.getRole(), user.getFullName(), user.getEmail());
     }
 
     private String normalizeRole(String role) {

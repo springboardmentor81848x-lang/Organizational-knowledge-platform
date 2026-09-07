@@ -41,16 +41,16 @@ public class LoginActivity extends AppCompatActivity {
             binding.btnSignIn.setEnabled(false);
             binding.pbLoading.setVisibility(View.VISIBLE);
 
-            // Timeout fallback - Removed automatic demo mode trigger for "real data only" requirement
+            // Extended timeout for Render free tier cold start (can take up to 60 seconds)
             final Handler handler = new Handler();
             final Runnable timeoutTask = () -> {
                 if (binding.pbLoading.getVisibility() == View.VISIBLE) {
                     binding.pbLoading.setVisibility(View.GONE);
                     binding.btnSignIn.setEnabled(true);
-                    Toast.makeText(LoginActivity.this, "Connection timeout. Please check your server.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginActivity.this, "Server is taking too long. The server may be waking up — please try again in 30 seconds.", Toast.LENGTH_LONG).show();
                 }
             };
-            handler.postDelayed(timeoutTask, 5000);
+            handler.postDelayed(timeoutTask, 75000);
 
             viewModel.login(email, password).observe(this, response -> {
                 handler.removeCallbacks(timeoutTask);
