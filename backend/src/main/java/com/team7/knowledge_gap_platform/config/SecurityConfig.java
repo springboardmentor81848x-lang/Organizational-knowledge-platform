@@ -74,6 +74,8 @@ public class SecurityConfig {
 
                         // Public APIs
                         .requestMatchers(
+                                "/",
+                                "/health",
                                 "/auth/**"
                         ).permitAll()
 
