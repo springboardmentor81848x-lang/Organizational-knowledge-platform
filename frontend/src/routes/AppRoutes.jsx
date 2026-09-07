@@ -1336,19 +1336,20 @@ function AppRoutes() {
       ================================================== */}
 
       <Route
-        path="/department-head/notifications"
-        element={
-          <ProtectedRoute
-            allowedRoles={[
-              "DEPARTMENT HEAD",
-              "DEPARTMENT_HEAD",
-            ]}
-          >
-            <DepartmentNotifications />
-          </ProtectedRoute>
-        }
-      />
-
+    path="/department-head/notifications"
+    element={
+    <ProtectedRoute
+      allowedRoles={[
+        "DEPARTMENT HEAD",
+        "DEPARTMENT_HEAD",
+      ]}
+    >
+      <DashboardLayout>
+        <DepartmentNotifications />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
       {/* ==================================================
           MENTOR DASHBOARD
       ================================================== */}

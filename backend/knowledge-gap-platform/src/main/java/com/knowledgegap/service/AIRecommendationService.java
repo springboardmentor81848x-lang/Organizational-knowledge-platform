@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Service
@@ -14,6 +15,9 @@ public class AIRecommendationService {
 
     @Value("${gemini.api.key}")
     private String apiKey;
+
+    private static final String GEMINI_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=";
 
     public AIRecommendationService(RestClient restClient) {
         this.restClient = restClient;
@@ -29,103 +33,48 @@ public class AIRecommendationService {
             List<String> missingSkills,
             int score) {
 
-        try {
+        String prompt = """
+                You are an HR Learning Assistant.
 
-            String prompt = """
-                    You are an HR Learning Assistant.
+                Employee Role:
+                %s
 
-                    Employee Role:
-                    %s
+                Assessment Score:
+                %d%%
 
-                    Assessment Score:
-                    %d%%
+                Current Skills:
+                %s
 
-                    Current Skills:
-                    %s
+                Missing Skills:
+                %s
 
-                    Missing Skills:
-                    %s
+                Give:
+                1. Learning Priority
+                2. Courses
+                3. Practice Project
+                4. Estimated Learning Time
 
-                    Give:
-                    1. Learning Priority
-                    2. Courses
-                    3. Practice Project
-                    4. Estimated Learning Time
+                Keep response below 250 words.
+                """
+                .formatted(
+                        role,
+                        score,
+                        String.join(", ", currentSkills),
+                        String.join(", ", missingSkills)
+                );
 
-                    Keep response below 250 words.
-                    """
-                    .formatted(
-                            role,
-                            score,
-                            String.join(", ", currentSkills),
-                            String.join(", ", missingSkills)
-                    );
+        Map<String, Object> requestBody = createRequestBody(prompt);
 
-            Map<String, Object> requestBody =
-                    Map.of(
-                            "contents",
-                            List.of(
-                                    Map.of(
-                                            "parts",
-                                            List.of(
-                                                    Map.of("text", prompt)
-                                            )
-                                    )
-                            )
-                    );
-
-            String url =
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key="
-                            + apiKey;
-
-            Map response =
-                    restClient.post()
-                            .uri(url)
-                            .body(requestBody)
-                            .retrieve()
-                            .body(Map.class);
-
-            System.out.println("Response: " + response);
-
-            List candidates =
-                    (List) response.get("candidates");
-
-            Map candidate =
-                    (Map) candidates.get(0);
-
-            Map content =
-                    (Map) candidate.get("content");
-
-            List parts =
-                    (List) content.get("parts");
-
-            Map firstPart =
-                    (Map) parts.get(0);
-
-            return firstPart.get("text").toString();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            return "ERROR: " + e.getMessage();
-        }
+        return callGeminiWithRetry(requestBody, "Recommendation");
     }
 
-
     // =========================================================
-    // Ask AI Question
+    // Ask AI Question with Personalized Learning Path Context
     // =========================================================
 
-    // =========================================================
-// Ask AI Question with Personalized Learning Path Context
-// =========================================================
-
-public String askQuestion(
-        String question,
-        String learningPath) {
-
-    try {
+    public String askQuestion(
+            String question,
+            String learningPath) {
 
         String prompt = """
                 You are an HR Learning Assistant.
@@ -171,54 +120,148 @@ public String askQuestion(
                         question
                 );
 
-        Map<String, Object> requestBody =
-                Map.of(
-                        "contents",
-                        List.of(
-                                Map.of(
-                                        "parts",
-                                        List.of(
-                                                Map.of("text", prompt)
-                                        )
+        Map<String, Object> requestBody = createRequestBody(prompt);
+
+        return callGeminiWithRetry(requestBody, "Question");
+    }
+
+    // =========================================================
+    // Create Gemini Request Body
+    // =========================================================
+
+    private Map<String, Object> createRequestBody(String prompt) {
+
+        return Map.of(
+                "contents",
+                List.of(
+                        Map.of(
+                                "parts",
+                                List.of(
+                                        Map.of("text", prompt)
                                 )
                         )
+                )
+        );
+    }
+
+    // =========================================================
+    // Gemini API Call with Retry Handling
+    // =========================================================
+
+    private String callGeminiWithRetry(
+            Map<String, Object> requestBody,
+            String requestType) {
+
+        int maxAttempts = 3;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+
+            try {
+
+                System.out.println(
+                        "Gemini " + requestType +
+                        " attempt " + attempt + "/" + maxAttempts
                 );
 
-        String url =
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key="
-                        + apiKey;
+                String url = GEMINI_URL + apiKey;
 
-        Map response =
-                restClient.post()
-                        .uri(url)
-                        .body(requestBody)
-                        .retrieve()
-                        .body(Map.class);
+                Map<String, Object> response =
+                        restClient.post()
+                                .uri(url)
+                                .body(requestBody)
+                                .retrieve()
+                                .body(Map.class);
 
-        System.out.println("Question Response: " + response);
+                System.out.println(
+                        "Gemini " + requestType +
+                        " Response: " + response
+                );
 
-        List candidates =
-                (List) response.get("candidates");
+                return extractResponseText(response);
 
-        Map candidate =
-                (Map) candidates.get(0);
+            } catch (HttpServerErrorException.ServiceUnavailable e) {
 
-        Map content =
-                (Map) candidate.get("content");
+                System.err.println(
+                        "Gemini service temporarily unavailable. "
+                        + "Attempt " + attempt + "/" + maxAttempts
+                );
 
-        List parts =
-                (List) content.get("parts");
+                if (attempt == maxAttempts) {
 
-        Map firstPart =
-                (Map) parts.get(0);
+                    return "AI service is temporarily unavailable. "
+                            + "Please try again after a few moments.";
+                }
 
-        return firstPart.get("text").toString();
+                // Exponential backoff:
+                // Attempt 1 -> wait 2 seconds
+                // Attempt 2 -> wait 4 seconds
 
-    } catch (Exception e) {
+                long waitTime = 2000L * attempt;
 
-        e.printStackTrace();
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException interruptedException) {
 
-        return "ERROR: " + e.getMessage();
+                    Thread.currentThread().interrupt();
+
+                    return "AI request was interrupted. "
+                            + "Please try again.";
+                }
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+
+                return "Unable to get a response from the AI service. "
+                        + "Please try again later.";
+            }
+        }
+
+        return "AI service is temporarily unavailable. "
+                + "Please try again later.";
     }
-}
+
+    // =========================================================
+    // Extract Text from Gemini Response
+    // =========================================================
+
+    private String extractResponseText(Map<String, Object> response) {
+
+        if (response == null) {
+            return "AI returned an empty response.";
+        }
+
+        List<Map<String, Object>> candidates =
+                (List<Map<String, Object>>) response.get("candidates");
+
+        if (candidates == null || candidates.isEmpty()) {
+            return "AI did not return any response.";
+        }
+
+        Map<String, Object> candidate = candidates.get(0);
+
+        Map<String, Object> content =
+                (Map<String, Object>) candidate.get("content");
+
+        if (content == null) {
+            return "AI response content is unavailable.";
+        }
+
+        List<Map<String, Object>> parts =
+                (List<Map<String, Object>>) content.get("parts");
+
+        if (parts == null || parts.isEmpty()) {
+            return "AI response text is unavailable.";
+        }
+
+        Map<String, Object> firstPart = parts.get(0);
+
+        Object text = firstPart.get("text");
+
+        if (text == null) {
+            return "AI response text is unavailable.";
+        }
+
+        return text.toString();
+    }
 }

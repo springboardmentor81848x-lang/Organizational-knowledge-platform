@@ -1,6 +1,7 @@
 package com.knowledgegap.controller;
 
 import com.knowledgegap.dto.MentorRecommendationDTO;
+import com.knowledgegap.dto.MentorshipResponse;
 import com.knowledgegap.entity.Employee;
 import com.knowledgegap.entity.Mentorship;
 import com.knowledgegap.service.EmployeeService;
@@ -33,11 +34,16 @@ public class MentorshipController {
     // =========================================================
 
     @GetMapping
-    public ResponseEntity<List<Mentorship>>
+    public ResponseEntity<List<MentorshipResponse>>
     getAllMentorships() {
 
+        List<Mentorship> mentorships =
+                mentorshipService.getAllMentorships();
+
         return ResponseEntity.ok(
-                mentorshipService.getAllMentorships()
+                mentorships.stream()
+                        .map(this::toResponse)
+                        .toList()
         );
     }
 
@@ -46,7 +52,7 @@ public class MentorshipController {
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}")
-    public ResponseEntity<List<Mentorship>>
+    public ResponseEntity<List<MentorshipResponse>>
     getEmployeeMentorships(
             @PathVariable String employeeIdentifier) {
 
@@ -56,17 +62,20 @@ public class MentorshipController {
                 );
 
         if (employee.isEmpty()) {
-
             return ResponseEntity
                     .notFound()
                     .build();
         }
 
+        List<Mentorship> mentorships =
+                mentorshipService.getMentorshipsByMentee(
+                        employee.get()
+                );
+
         return ResponseEntity.ok(
-                mentorshipService
-                        .getMentorshipsByMentee(
-                                employee.get()
-                        )
+                mentorships.stream()
+                        .map(this::toResponse)
+                        .toList()
         );
     }
 
@@ -75,7 +84,7 @@ public class MentorshipController {
     // =========================================================
 
     @GetMapping("/mentor/{employeeIdentifier}")
-    public ResponseEntity<List<Mentorship>>
+    public ResponseEntity<List<MentorshipResponse>>
     getMentorRequests(
             @PathVariable String employeeIdentifier) {
 
@@ -85,17 +94,20 @@ public class MentorshipController {
                 );
 
         if (mentor.isEmpty()) {
-
             return ResponseEntity
                     .notFound()
                     .build();
         }
 
+        List<Mentorship> mentorships =
+                mentorshipService.getMentorshipsByMentor(
+                        mentor.get()
+                );
+
         return ResponseEntity.ok(
-                mentorshipService
-                        .getMentorshipsByMentor(
-                                mentor.get()
-                        )
+                mentorships.stream()
+                        .map(this::toResponse)
+                        .toList()
         );
     }
 
@@ -114,21 +126,17 @@ public class MentorshipController {
                 );
 
         if (employee.isEmpty()) {
-
             return ResponseEntity
                     .notFound()
                     .build();
         }
 
         List<MentorRecommendationDTO> mentors =
-                mentorshipService
-                        .getMentorRecommendations(
-                                employee.get()
-                        );
+                mentorshipService.getMentorRecommendations(
+                        employee.get()
+                );
 
-        return ResponseEntity.ok(
-                mentors
-        );
+        return ResponseEntity.ok(mentors);
     }
 
     // =========================================================
@@ -149,13 +157,11 @@ public class MentorshipController {
             // -------------------------------------------------
 
             Optional<Employee> mentee =
-                    employeeService
-                            .getEmployeeByIdentifier(
-                                    menteeIdentifier
-                            );
+                    employeeService.getEmployeeByIdentifier(
+                            menteeIdentifier
+                    );
 
             if (mentee.isEmpty()) {
-
                 return ResponseEntity
                         .badRequest()
                         .body(
@@ -168,13 +174,11 @@ public class MentorshipController {
             // -------------------------------------------------
 
             Optional<Employee> mentor =
-                    employeeService
-                            .getEmployeeByIdentifier(
-                                    mentorIdentifier
-                            );
+                    employeeService.getEmployeeByIdentifier(
+                            mentorIdentifier
+                    );
 
             if (mentor.isEmpty()) {
-
                 return ResponseEntity
                         .badRequest()
                         .body(
@@ -195,7 +199,7 @@ public class MentorshipController {
                     );
 
             return ResponseEntity.ok(
-                    mentorship
+                    toResponse(mentorship)
             );
 
         } catch (Exception e) {
@@ -225,7 +229,7 @@ public class MentorshipController {
                             .acceptMentorship(id);
 
             return ResponseEntity.ok(
-                    mentorship
+                    toResponse(mentorship)
             );
 
         } catch (Exception e) {
@@ -253,7 +257,7 @@ public class MentorshipController {
                             .rejectMentorship(id);
 
             return ResponseEntity.ok(
-                    mentorship
+                    toResponse(mentorship)
             );
 
         } catch (Exception e) {
@@ -281,7 +285,7 @@ public class MentorshipController {
                             .activateMentorship(id);
 
             return ResponseEntity.ok(
-                    mentorship
+                    toResponse(mentorship)
             );
 
         } catch (Exception e) {
@@ -309,7 +313,7 @@ public class MentorshipController {
                             .completeMentorship(id);
 
             return ResponseEntity.ok(
-                    mentorship
+                    toResponse(mentorship)
             );
 
         } catch (Exception e) {
@@ -320,5 +324,88 @@ public class MentorshipController {
                             e.getMessage()
                     );
         }
+    }
+
+    // =========================================================
+    // CONVERT MENTORSHIP ENTITY TO SAFE RESPONSE DTO
+    // =========================================================
+
+    private MentorshipResponse toResponse(
+            Mentorship mentorship) {
+
+        Employee mentee = mentorship.getMentee();
+        Employee mentor = mentorship.getMentor();
+
+        String menteeName = null;
+
+        if (mentee != null) {
+
+            String firstName =
+                    mentee.getFirstName() != null
+                            ? mentee.getFirstName()
+                            : "";
+
+            String lastName =
+                    mentee.getLastName() != null
+                            ? mentee.getLastName()
+                            : "";
+
+            menteeName =
+                    (firstName + " " + lastName).trim();
+        }
+
+        String mentorName = null;
+
+        if (mentor != null) {
+
+            String firstName =
+                    mentor.getFirstName() != null
+                            ? mentor.getFirstName()
+                            : "";
+
+            String lastName =
+                    mentor.getLastName() != null
+                            ? mentor.getLastName()
+                            : "";
+
+            mentorName =
+                    (firstName + " " + lastName).trim();
+        }
+
+        Long skillId = null;
+        String skillName = null;
+
+        if (mentorship.getSkill() != null) {
+
+            skillId =
+                    mentorship.getSkill().getId();
+
+            skillName =
+                    mentorship.getSkill().getSkillName();
+        }
+
+        return new MentorshipResponse(
+                mentorship.getId(),
+
+                mentee != null
+                        ? mentee.getEmployeeId()
+                        : null,
+
+                menteeName,
+
+                mentor != null
+                        ? mentor.getEmployeeId()
+                        : null,
+
+                mentorName,
+
+                skillId,
+                skillName,
+
+                mentorship.getGoal(),
+                mentorship.getStatus(),
+                mentorship.getStartDate(),
+                mentorship.getEndDate()
+        );
     }
 }

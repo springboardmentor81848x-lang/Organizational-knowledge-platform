@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.PeerAssessmentSubmitRequest;
 import com.knowledgegap.dto.PeerEmployeeResponse;
+import com.knowledgegap.dto.PeerEmployeeSkillResponse;
 import com.knowledgegap.dto.PeerReviewResponse;
-import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.service.PeerAssessmentService;
 
 @RestController
@@ -30,7 +30,6 @@ public class PeerAssessmentController {
 
     public PeerAssessmentController(
             PeerAssessmentService peerAssessmentService) {
-
         this.peerAssessmentService = peerAssessmentService;
     }
 
@@ -54,7 +53,7 @@ public class PeerAssessmentController {
     // =========================================================
 
     @GetMapping("/employees/{employeeIdentifier}/skills")
-    public ResponseEntity<List<EmployeeSkill>> getEmployeeSkills(
+    public ResponseEntity<List<PeerEmployeeSkillResponse>> getEmployeeSkills(
             @PathVariable String employeeIdentifier) {
 
         return ResponseEntity.ok(

@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.knowledgegap.dto.AssessmentGapResultResponse;
 import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSubmitRequest;
 import com.knowledgegap.entity.Assessment;
-import com.knowledgegap.entity.AssessmentGapResult;
-import com.knowledgegap.entity.AssessmentQuestion;
+import com.knowledgegap.dto.AssessmentQuestionResponse;
 import com.knowledgegap.service.AssessmentService;
 
 @RestController
@@ -64,15 +64,6 @@ public class AssessmentController {
     // =========================================================
     // ASSESSMENT BY TARGET ROLE
     // =========================================================
-    //
-    // Frontend calls:
-    //
-    // GET /api/assessments/role/{roleId}
-    //
-    // Example:
-    // GET /api/assessments/role/2
-    //
-    // =========================================================
 
     @GetMapping("/assessments/role/{roleId}")
     public ResponseEntity<Assessment>
@@ -89,26 +80,17 @@ public class AssessmentController {
     // =========================================================
 
     @GetMapping("/assessments/{assessmentId}/questions")
-    public ResponseEntity<List<AssessmentQuestion>>
-    getQuestions(
-            @PathVariable Long assessmentId) {
+        public ResponseEntity<List<AssessmentQuestionResponse>> getQuestions(
+        @PathVariable Long assessmentId) {
 
-        return ResponseEntity.ok(
-                assessmentService.getQuestionsByAssessment(
-                        assessmentId
-                )
-        );
-    }
-
+    return ResponseEntity.ok(
+            assessmentService.getQuestionsByAssessment(
+                    assessmentId
+            )
+    );
+}
     // =========================================================
     // SUBMIT ASSESSMENT
-    // =========================================================
-    //
-    // Kept for backward compatibility.
-    //
-    // Frontend should use:
-    // /employee/assessment/submit/{employeeIdentifier}
-    //
     // =========================================================
 
     @PostMapping("/employee/assessment/submit")
@@ -145,11 +127,25 @@ public class AssessmentController {
     // =========================================================
     // GET ASSESSMENT GAP RESULTS
     // =========================================================
+    //
+    // IMPORTANT:
+    // Do NOT return AssessmentGapResult entity directly.
+    //
+    // We return AssessmentGapResultResponse DTO instead.
+    //
+    // This prevents nested:
+    //
+    // AssessmentGapResult
+    //      -> AssessmentAttempt
+    //          -> Employee
+    //              -> password
+    //
+    // =========================================================
 
     @GetMapping(
             "/employee/assessment/result/{attemptId}"
     )
-    public ResponseEntity<List<AssessmentGapResult>>
+    public ResponseEntity<List<AssessmentGapResultResponse>>
     getAssessmentGapResults(
             @PathVariable Long attemptId) {
 

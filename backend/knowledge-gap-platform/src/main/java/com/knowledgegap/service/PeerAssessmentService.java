@@ -12,6 +12,7 @@ import com.knowledgegap.dto.AssessmentResultResponse;
 import com.knowledgegap.dto.AssessmentSkillResultResponse;
 import com.knowledgegap.dto.PeerAssessmentSubmitRequest;
 import com.knowledgegap.dto.PeerEmployeeResponse;
+import com.knowledgegap.dto.PeerEmployeeSkillResponse;
 import com.knowledgegap.dto.PeerReviewResponse;
 import com.knowledgegap.dto.PeerSkillRatingRequest;
 import com.knowledgegap.dto.PeerSkillReviewResponse;
@@ -19,7 +20,6 @@ import com.knowledgegap.entity.Assessment;
 import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Employee;
-import com.knowledgegap.entity.EmployeeSkill;
 import com.knowledgegap.entity.PeerAssessmentResult;
 import com.knowledgegap.entity.Skill;
 import com.knowledgegap.repository.AssessmentAttemptRepository;
@@ -111,7 +111,7 @@ public class PeerAssessmentService {
     // GET SKILLS OF EMPLOYEE BEING EVALUATED
     // =========================================================
 
-    public List<EmployeeSkill> getEmployeeSkills(
+    public List<PeerEmployeeSkillResponse> getEmployeeSkills(
             String employeeIdentifier) {
 
         Employee employee =
@@ -125,7 +125,17 @@ public class PeerAssessmentService {
                         );
 
         return employeeSkillRepository
-                .findByEmployee(employee);
+                .findByEmployee(employee)
+                .stream()
+                .map(employeeSkill ->
+                        new PeerEmployeeSkillResponse(
+                                employeeSkill.getId(),
+                                employeeSkill.getSkill().getId(),
+                                employeeSkill.getSkill().getSkillName(),
+                                employeeSkill.getCurrentLevel()
+                        )
+                )
+                .toList();
     }
 
     // =========================================================
@@ -352,8 +362,8 @@ public class PeerAssessmentService {
             // SAVE PEER ASSESSMENT RESULT
             // -------------------------------------------------
 
-            PeerAssessmentResult peerResult =
-                    new PeerAssessmentResult();
+            com.knowledgegap.entity.PeerAssessmentResult peerResult =
+                    new com.knowledgegap.entity.PeerAssessmentResult();
 
             peerResult.setAttempt(attempt);
 
