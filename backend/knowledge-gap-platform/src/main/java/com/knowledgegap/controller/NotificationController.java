@@ -1,3 +1,4 @@
+
 package com.knowledgegap.controller;
 
 import java.util.List;
@@ -91,7 +92,7 @@ public class NotificationController {
     // =========================================================
 
     @GetMapping("/department-head")
-    public ResponseEntity<List<Notification>>
+    public ResponseEntity<List<NotificationResponse>>
     getDepartmentHeadNotifications(
             Authentication authentication) {
 
@@ -123,7 +124,7 @@ public class NotificationController {
     // =========================================================
 
     @GetMapping("/department-head/unread")
-    public ResponseEntity<List<Notification>>
+    public ResponseEntity<List<NotificationResponse>>
     getUnreadDepartmentHeadNotifications(
             Authentication authentication) {
 

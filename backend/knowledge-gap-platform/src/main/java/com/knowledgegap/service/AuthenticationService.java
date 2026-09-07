@@ -1,12 +1,20 @@
+
 package com.knowledgegap.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knowledgegap.dto.AuthResponse;
+import com.knowledgegap.dto.ForgotPasswordRequest;
 import com.knowledgegap.dto.LoginRequest;
+import com.knowledgegap.dto.ResetPasswordRequest;
 import com.knowledgegap.dto.SignupRequest;
 import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.Employee;
@@ -30,12 +38,22 @@ public class AuthenticationService {
     private final CompetencyRepository competencyRepository;
     private final SkillRepository skillRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
-
-    // =========================================================
-    // NOTIFICATION SERVICE
-    // =========================================================
-
     private final NotificationService notificationService;
+    private final JavaMailSender mailSender;
+
+    // =========================================================
+    // OTP STORAGE
+    // =========================================================
+
+    private final Map<String, String> otpStorage =
+            new ConcurrentHashMap<>();
+
+    private final Map<String, LocalDateTime> otpExpiryStorage =
+            new ConcurrentHashMap<>();
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public AuthenticationService(
             EmployeeRepository employeeRepository,
@@ -45,7 +63,8 @@ public class AuthenticationService {
             CompetencyRepository competencyRepository,
             SkillRepository skillRepository,
             EmployeeSkillRepository employeeSkillRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            JavaMailSender mailSender) {
 
         this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
@@ -55,6 +74,7 @@ public class AuthenticationService {
         this.skillRepository = skillRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.notificationService = notificationService;
+        this.mailSender = mailSender;
     }
 
     // ============================================================
@@ -129,7 +149,7 @@ public class AuthenticationService {
         System.out.println("==============================");
 
         // --------------------------------------------------------
-        // RETURN EMPLOYEE DATA + TARGET ROLE + DATABASE ID
+        // RETURN EMPLOYEE DATA
         // --------------------------------------------------------
 
         return new AuthResponse(
@@ -250,12 +270,6 @@ public class AuthenticationService {
         // 6.1 NOTIFY SYSTEM ADMINISTRATORS
         // --------------------------------------------------------
 
-        /*
-         * This does NOT change the employee signup process.
-         * It simply creates a notification for every
-         * SYSTEM_ADMINISTRATOR after the employee is saved.
-         */
-
         notificationService.notifySystemAdministrators(
                 "NEW_USER",
                 "A new employee, "
@@ -294,7 +308,6 @@ public class AuthenticationService {
                     employeeSkill.setEmployee(employee);
                     employeeSkill.setSkill(skill);
 
-                    // New employee starts at Beginner
                     employeeSkill.setCurrentLevel(1);
 
                     employeeSkillRepository.save(
@@ -327,6 +340,315 @@ public class AuthenticationService {
                 employee.getDesignation(),
                 employee.getTargetRoleId(),
                 employee.getId()
+        );
+    }
+
+    // ============================================================
+    // FORGOT PASSWORD
+    // SEND OTP
+    // ============================================================
+
+    public void forgotPassword(
+            ForgotPasswordRequest request) {
+
+        if (request == null
+                || request.getEmail() == null
+                || request.getEmail().isBlank()) {
+
+            throw new RuntimeException(
+                    "Email is required"
+            );
+        }
+
+        String email =
+                request.getEmail()
+                        .trim()
+                        .toLowerCase();
+
+        // --------------------------------------------------------
+        // FIND EMPLOYEE
+        // --------------------------------------------------------
+
+        Employee employee =
+                employeeRepository
+                        .findByEmail(email)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "No account found with this email"
+                                )
+                        );
+
+        // --------------------------------------------------------
+        // GENERATE 6 DIGIT OTP
+        // --------------------------------------------------------
+
+        String otp = String.format(
+                "%06d",
+                new java.util.Random()
+                        .nextInt(1_000_000)
+        );
+
+        // --------------------------------------------------------
+        // CREATE EMAIL
+        // --------------------------------------------------------
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(email);
+
+        message.setSubject(
+                "Password Reset OTP - Organizational Knowledge Platform"
+        );
+
+        message.setText(
+                "Hello "
+                        + employee.getFirstName()
+                        + ",\n\n"
+
+                        + "Your OTP for resetting your password is:\n\n"
+
+                        + otp
+                        + "\n\n"
+
+                        + "This OTP is valid for 10 minutes.\n\n"
+
+                        + "If you did not request a password reset, "
+                        + "please ignore this email.\n\n"
+
+                        + "Regards,\n"
+                        + "Organizational Knowledge Intelligence Platform"
+        );
+
+        // --------------------------------------------------------
+        // SEND EMAIL
+        // --------------------------------------------------------
+
+        try {
+
+            System.out.println(
+                    "======================================"
+            );
+
+            System.out.println(
+                    "ATTEMPTING TO SEND PASSWORD RESET OTP"
+            );
+
+            System.out.println(
+                    "Recipient: " + email
+            );
+
+            mailSender.send(message);
+
+            // Store OTP only after successful email sending
+            otpStorage.put(
+                    email,
+                    otp
+            );
+
+            otpExpiryStorage.put(
+                    email,
+                    LocalDateTime.now()
+                            .plusMinutes(10)
+            );
+
+            System.out.println(
+                    "PASSWORD RESET OTP SENT SUCCESSFULLY"
+            );
+
+            System.out.println(
+                    "Email: " + email
+            );
+
+            System.out.println(
+                    "======================================"
+            );
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "======================================"
+            );
+
+            System.err.println(
+                    "FAILED TO SEND PASSWORD RESET OTP"
+            );
+
+            System.err.println(
+                    "Recipient: " + email
+            );
+
+            System.err.println(
+                    "Error Type: "
+                            + e.getClass().getName()
+            );
+
+            System.err.println(
+                    "Error Message: "
+                            + e.getMessage()
+            );
+
+            e.printStackTrace();
+
+            System.err.println(
+                    "======================================"
+            );
+
+            throw new RuntimeException(
+                    "Unable to send OTP. Please check email configuration.",
+                    e
+            );
+        }
+    }
+
+    // ============================================================
+    // RESET PASSWORD
+    // ============================================================
+
+    public void resetPassword(
+            ResetPasswordRequest request) {
+
+        if (request == null) {
+
+            throw new RuntimeException(
+                    "Invalid request"
+            );
+        }
+
+        String email = request.getEmail();
+        String otp = request.getOtp();
+        String newPassword = request.getNewPassword();
+
+        // --------------------------------------------------------
+        // VALIDATE INPUT
+        // --------------------------------------------------------
+
+        if (email == null
+                || email.isBlank()) {
+
+            throw new RuntimeException(
+                    "Email is required"
+            );
+        }
+
+        if (otp == null
+                || otp.isBlank()) {
+
+            throw new RuntimeException(
+                    "OTP is required"
+            );
+        }
+
+        if (newPassword == null
+                || newPassword.isBlank()) {
+
+            throw new RuntimeException(
+                    "New password is required"
+            );
+        }
+
+        email = email
+                .trim()
+                .toLowerCase();
+
+        otp = otp.trim();
+
+        // --------------------------------------------------------
+        // GET STORED OTP
+        // --------------------------------------------------------
+
+        String storedOtp =
+                otpStorage.get(email);
+
+        if (storedOtp == null) {
+
+            throw new RuntimeException(
+                    "OTP not found or expired"
+            );
+        }
+
+        // --------------------------------------------------------
+        // CHECK EXPIRY
+        // --------------------------------------------------------
+
+        LocalDateTime expiry =
+                otpExpiryStorage.get(email);
+
+        if (expiry == null
+                || LocalDateTime.now()
+                        .isAfter(expiry)) {
+
+            otpStorage.remove(email);
+            otpExpiryStorage.remove(email);
+
+            throw new RuntimeException(
+                    "OTP has expired"
+            );
+        }
+
+        // --------------------------------------------------------
+        // CHECK OTP
+        // --------------------------------------------------------
+
+        if (!storedOtp.equals(otp)) {
+
+            throw new RuntimeException(
+                    "Invalid OTP"
+            );
+        }
+
+        // --------------------------------------------------------
+        // PASSWORD VALIDATION
+        // --------------------------------------------------------
+
+        if (newPassword.length() < 6) {
+
+            throw new RuntimeException(
+                    "Password must contain at least 6 characters"
+            );
+        }
+
+        // --------------------------------------------------------
+        // FIND EMPLOYEE
+        // --------------------------------------------------------
+
+        Employee employee =
+                employeeRepository
+                        .findByEmail(email)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found"
+                                )
+                        );
+
+        // --------------------------------------------------------
+        // ENCODE NEW PASSWORD
+        // --------------------------------------------------------
+
+        employee.setPassword(
+                passwordEncoder.encode(
+                        newPassword
+                )
+        );
+
+        // --------------------------------------------------------
+        // SAVE
+        // --------------------------------------------------------
+
+        employeeRepository.save(employee);
+
+        // --------------------------------------------------------
+        // REMOVE OTP
+        // PREVENT REUSE
+        // --------------------------------------------------------
+
+        otpStorage.remove(email);
+
+        otpExpiryStorage.remove(email);
+
+        System.out.println(
+                "Password successfully reset for: "
+                        + email
         );
     }
 
@@ -386,7 +708,8 @@ public class AuthenticationService {
     // TARGET ROLE ID MAPPING
     // ============================================================
 
-    private Long getTargetRoleId(String targetRole) {
+    private Long getTargetRoleId(
+            String targetRole) {
 
         if (targetRole == null
                 || targetRole.isBlank()) {
@@ -397,7 +720,9 @@ public class AuthenticationService {
         }
 
         String normalizedTargetRole =
-                targetRole.trim().toLowerCase();
+                targetRole
+                        .trim()
+                        .toLowerCase();
 
         switch (normalizedTargetRole) {
 
@@ -437,7 +762,8 @@ public class AuthenticationService {
     // NORMALIZE SYSTEM ROLE
     // ============================================================
 
-    private String normalizeRoleName(String roleName) {
+    private String normalizeRoleName(
+            String roleName) {
 
         if (roleName == null
                 || roleName.isBlank()) {
@@ -445,6 +771,8 @@ public class AuthenticationService {
             return "EMPLOYEE";
         }
 
-        return roleName.trim().toUpperCase();
+        return roleName
+                .trim()
+                .toUpperCase();
     }
 }
