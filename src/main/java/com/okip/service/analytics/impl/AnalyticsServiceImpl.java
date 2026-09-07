@@ -410,36 +410,45 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         summary.setDepartment(employee.getDepartment() != null ? employee.getDepartment().getDepartmentName() : "N/A");
 
         List<EmployeeJobRole> roles = employeeJobRoleRepository.findByEmployeeAndActiveTrue(employee);
-        summary.setJobRole(roles.isEmpty() ? "Associate" : roles.get(0).getJobRole().getJobRoleName());
-
-        List<KnowledgeGap> gaps = getEmployeeGaps(employee);
-        summary.setTotalSkillsRequired(gaps.size());
-
-        int mastered = 0;
-        int openGaps = 0;
-        double totalGap = 0.0;
-
-        for (KnowledgeGap g : gaps) {
-            if ("COMPLETE".equals(g.getGapType().name()) || g.getStatus() == GapStatus.CLOSED) {
-                mastered++;
-            } else {
-                openGaps++;
-            }
-            if (g.getGapPercentage() != null) {
-                totalGap += g.getGapPercentage();
-            }
-        }
-
-        summary.setSkillsMastered(mastered);
-        summary.setOpenGaps(openGaps);
-
-        if (!gaps.isEmpty()) {
-            double avgGap = totalGap / gaps.size();
-            summary.setOverallGapPercentage(round(avgGap));
-            summary.setReadinessPercentage(round(100.0 - avgGap));
+        if (roles.isEmpty()) {
+            summary.setJobRole("No active job role assigned");
+            summary.setTotalSkillsRequired(0);
+            summary.setSkillsMastered(0);
+            summary.setOpenGaps(0);
+            summary.setOverallGapPercentage(null);
+            summary.setReadinessPercentage(null);
         } else {
-            summary.setOverallGapPercentage(0.0);
-            summary.setReadinessPercentage(100.0);
+            summary.setJobRole(roles.get(0).getJobRole().getJobRoleName());
+
+            List<KnowledgeGap> gaps = getEmployeeGaps(employee);
+            summary.setTotalSkillsRequired(gaps.size());
+
+            int mastered = 0;
+            int openGaps = 0;
+            double totalGap = 0.0;
+
+            for (KnowledgeGap g : gaps) {
+                if ("COMPLETE".equals(g.getGapType().name()) || g.getStatus() == GapStatus.CLOSED) {
+                    mastered++;
+                } else {
+                    openGaps++;
+                }
+                if (g.getGapPercentage() != null) {
+                    totalGap += g.getGapPercentage();
+                }
+            }
+
+            summary.setSkillsMastered(mastered);
+            summary.setOpenGaps(openGaps);
+
+            if (!gaps.isEmpty()) {
+                double avgGap = totalGap / gaps.size();
+                summary.setOverallGapPercentage(round(avgGap));
+                summary.setReadinessPercentage(round(100.0 - avgGap));
+            } else {
+                summary.setOverallGapPercentage(null);
+                summary.setReadinessPercentage(null);
+            }
         }
 
         List<TrainingEnrollment> enrollments = trainingEnrollmentRepository.findByEmployee(employee);

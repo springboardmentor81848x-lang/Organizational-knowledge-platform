@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .permitAll()
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/hr/**").hasRole("HR")
+                .requestMatchers("/api/hr/**").hasAnyRole("ADMIN", "HR", "MANAGER")
 
                 .requestMatchers("/api/profile/**").authenticated()
                 .requestMatchers("/api/skills/**").authenticated()

@@ -56,6 +56,8 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setPincode(request.getPincode());
         profile.setDateOfBirth(request.getDateOfBirth());
         profile.setGender(request.getGender());
+        if (request.getBio() != null) profile.setBio(request.getBio());
+        if (request.getAvailableAsMentor() != null) profile.setAvailableAsMentor(request.getAvailableAsMentor());
 
         profile = profileRepository.save(profile);
 
@@ -96,6 +98,8 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setPincode(request.getPincode());
         profile.setDateOfBirth(request.getDateOfBirth());
         profile.setGender(request.getGender());
+        if (request.getBio() != null) profile.setBio(request.getBio());
+        if (request.getAvailableAsMentor() != null) profile.setAvailableAsMentor(request.getAvailableAsMentor());
 
         profile = profileRepository.save(profile);
 
@@ -140,6 +144,8 @@ public class ProfileServiceImpl implements ProfileService {
         response.setPincode(profile.getPincode());
         response.setDateOfBirth(profile.getDateOfBirth());
         response.setGender(profile.getGender());
+        response.setBio(profile.getBio());
+        response.setAvailableAsMentor(profile.getAvailableAsMentor() != null ? profile.getAvailableAsMentor() : true);
 
         return response;
     }

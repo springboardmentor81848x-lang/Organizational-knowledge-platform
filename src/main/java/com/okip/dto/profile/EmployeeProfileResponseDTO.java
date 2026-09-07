@@ -16,6 +16,8 @@ public class EmployeeProfileResponseDTO {
     private String pincode;
     private LocalDate dateOfBirth;
     private String gender;
+    private String bio;
+    private Boolean availableAsMentor;
 
     public EmployeeProfileResponseDTO() {
     }
@@ -106,5 +108,21 @@ public class EmployeeProfileResponseDTO {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public Boolean getAvailableAsMentor() {
+        return availableAsMentor;
+    }
+
+    public void setAvailableAsMentor(Boolean availableAsMentor) {
+        this.availableAsMentor = availableAsMentor;
     }
 }

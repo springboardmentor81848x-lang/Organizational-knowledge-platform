@@ -5,8 +5,8 @@ public class DashboardSummaryDTO {
     private String employeeName;
     private String jobRole;
     private String department;
-    private double readinessPercentage;
-    private double overallGapPercentage;
+    private Double readinessPercentage;
+    private Double overallGapPercentage;
     private int totalSkillsRequired;
     private int skillsMastered;
     private int openGaps;
@@ -31,11 +31,11 @@ public class DashboardSummaryDTO {
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
 
-    public double getReadinessPercentage() { return readinessPercentage; }
-    public void setReadinessPercentage(double readinessPercentage) { this.readinessPercentage = readinessPercentage; }
+    public Double getReadinessPercentage() { return readinessPercentage; }
+    public void setReadinessPercentage(Double readinessPercentage) { this.readinessPercentage = readinessPercentage; }
 
-    public double getOverallGapPercentage() { return overallGapPercentage; }
-    public void setOverallGapPercentage(double overallGapPercentage) { this.overallGapPercentage = overallGapPercentage; }
+    public Double getOverallGapPercentage() { return overallGapPercentage; }
+    public void setOverallGapPercentage(Double overallGapPercentage) { this.overallGapPercentage = overallGapPercentage; }
 
     public int getTotalSkillsRequired() { return totalSkillsRequired; }
     public void setTotalSkillsRequired(int totalSkillsRequired) { this.totalSkillsRequired = totalSkillsRequired; }

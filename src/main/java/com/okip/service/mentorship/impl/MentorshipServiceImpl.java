@@ -157,7 +157,8 @@ public class MentorshipServiceImpl implements MentorshipService {
         List<MentorshipRequest> activeMentorships = mentorshipRepository.findActiveMentorshipsForEmployee(emp);
         long activeCount = activeMentorships.stream().filter(m -> m.getMentor().getEmployeeId().equals(emp.getEmployeeId())).count();
         profile.setActiveMenteesCount((int) activeCount);
-        profile.setAvailableForMentorship(activeCount < 5);
+        boolean isOptedIn = empProfile == null || Boolean.TRUE.equals(empProfile.getAvailableAsMentor());
+        profile.setAvailableForMentorship(activeCount < 5 && isOptedIn);
 
         return profile;
     }

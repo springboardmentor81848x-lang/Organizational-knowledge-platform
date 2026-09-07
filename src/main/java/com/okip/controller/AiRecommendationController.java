@@ -34,6 +34,16 @@ public class AiRecommendationController {
                         .generateRecommendation(employeeId));
     }
 
+    @PostMapping("/recommendation/my")
+    public ResponseEntity<AiRecommendationResponseDTO> generateMyRecommendation() {
+        return ResponseEntity.ok(aiRecommendationService.generateMyRecommendation());
+    }
+
+    @GetMapping("/recommendation/my")
+    public ResponseEntity<AiRecommendationResponseDTO> getMyRecommendation() {
+        return ResponseEntity.ok(aiRecommendationService.generateMyRecommendation());
+    }
+
     @GetMapping("/learning-path")
     public String getRoleLearningPath(
             @RequestParam String role) {

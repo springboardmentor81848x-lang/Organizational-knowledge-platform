@@ -7,6 +7,8 @@ public interface AiRecommendationService {
     AiRecommendationResponseDTO generateRecommendation(
             Long employeeId);
 
+    AiRecommendationResponseDTO generateMyRecommendation();
+
     String generateRoleLearningPath(
             String desiredRole);
 }

@@ -188,6 +188,28 @@ public class KnowledgeSessionServiceImpl implements KnowledgeSessionService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public SessionRegistrationDTO updateAttendance(Long sessionId, Long registrationId, String status) {
+        Employee loggedIn = getLoggedInEmployee();
+        KnowledgeSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Knowledge session not found."));
+
+        SessionRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session registration not found."));
+
+        AttendanceStatus targetStatus;
+        try {
+            targetStatus = AttendanceStatus.valueOf(status.toUpperCase());
+        } catch (Exception e) {
+            targetStatus = AttendanceStatus.ATTENDED;
+        }
+
+        registration.setAttendanceStatus(targetStatus);
+        SessionRegistration updated = registrationRepository.save(registration);
+        return convertRegistrationDTO(updated);
+    }
+
     private Employee getLoggedInEmployee() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();

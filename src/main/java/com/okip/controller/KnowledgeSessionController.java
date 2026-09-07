@@ -74,4 +74,12 @@ public class KnowledgeSessionController {
     public ResponseEntity<List<SessionRegistrationDTO>> getSessionRegistrations(@PathVariable Long sessionId) {
         return ResponseEntity.ok(sessionService.getSessionRegistrations(sessionId));
     }
+
+    @PutMapping("/{sessionId}/registrations/{registrationId}/attendance")
+    public ResponseEntity<SessionRegistrationDTO> updateAttendance(
+            @PathVariable Long sessionId,
+            @PathVariable Long registrationId,
+            @RequestParam String status) {
+        return ResponseEntity.ok(sessionService.updateAttendance(sessionId, registrationId, status));
+    }
 }

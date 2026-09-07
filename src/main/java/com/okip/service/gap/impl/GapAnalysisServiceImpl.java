@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.okip.dto.gap.GapAnalysisResponseDTO;
 import com.okip.dto.gap.KnowledgeGapResponseDTO;
@@ -53,6 +54,7 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 
 	
 	@Override
+	@Transactional
 	public GapAnalysisResponseDTO runGapAnalysis(Long employeeId) {
 
 		Employee employee = employeeRepository.findById(employeeId)
@@ -219,6 +221,7 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public GapAnalysisResponseDTO getEmployeeGapAnalysis(Long employeeId) {
 
 	    Employee employee = employeeRepository.findById(employeeId)
@@ -246,6 +249,7 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public GapAnalysisResponseDTO getMyGapAnalysis() {
 
 	    Authentication authentication =
@@ -304,9 +308,9 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 			response.setReadinessPercentage(100 - averageGap);
 		} else {
 
-			response.setOverallGapPercentage(0.0);
+			response.setOverallGapPercentage(null);
 
-			response.setReadinessPercentage(100.0);
+			response.setReadinessPercentage(null);
 		}
 
 		List<KnowledgeGapResponseDTO> gapResponses = new ArrayList<>();

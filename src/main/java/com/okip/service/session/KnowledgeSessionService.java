@@ -16,4 +16,5 @@ public interface KnowledgeSessionService {
     List<SessionRegistrationDTO> getMyRegisteredSessions();
     SessionRegistrationDTO submitFeedback(Long sessionId, SessionFeedbackDTO feedback);
     List<SessionRegistrationDTO> getSessionRegistrations(Long sessionId);
+    SessionRegistrationDTO updateAttendance(Long sessionId, Long registrationId, String status);
 }

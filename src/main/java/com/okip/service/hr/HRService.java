@@ -2,6 +2,7 @@ package com.okip.service.hr;
 
 import java.util.List;
 
+import com.okip.dto.hr.ApprovedEmployeeDTO;
 import com.okip.dto.hr.EmployeeApprovalResponseDTO;
 import com.okip.dto.hr.PendingEmployeeDTO;
 
@@ -13,4 +14,5 @@ public interface HRService {
     
     List<PendingEmployeeDTO> getPendingEmployees();
 
-}
+    List<ApprovedEmployeeDTO> getAllApprovedEmployees();
+}

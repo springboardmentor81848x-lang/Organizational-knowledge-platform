@@ -129,13 +129,29 @@ public class AuthServiceImpl implements AuthService {
                     "Your account is awaiting HR approval.");
         }
 
-        String token =
-                jwtService.generateToken(employee.getOfficialEmail());
+        String roleName = employee.getRole() != null ? employee.getRole().getRoleName().name() : "ROLE_EMPLOYEE";
+        String cleanRole = roleName.replace("ROLE_", "");
+
+        java.util.Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("role", roleName);
+        claims.put("roles", java.util.List.of(roleName));
+        claims.put("employeeId", employee.getEmployeeId());
+        claims.put("employeeCode", employee.getEmployeeCode());
+        claims.put("firstName", employee.getFirstName());
+        claims.put("lastName", employee.getLastName());
+        claims.put("department", employee.getDepartment() != null ? employee.getDepartment().getDepartmentName() : "N/A");
+
+        String token = jwtService.generateToken(employee.getOfficialEmail(), claims);
 
         LoginResponseDTO response = new LoginResponseDTO();
-
         response.setToken(token);
         response.setMessage("Login Successful.");
+        response.setRole(cleanRole);
+        response.setEmployeeId(employee.getEmployeeId());
+        response.setEmployeeCode(employee.getEmployeeCode());
+        response.setFirstName(employee.getFirstName());
+        response.setLastName(employee.getLastName());
+        response.setDepartment(employee.getDepartment() != null ? employee.getDepartment().getDepartmentName() : "N/A");
 
         return response;
     }

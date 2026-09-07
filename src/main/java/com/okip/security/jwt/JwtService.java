@@ -24,13 +24,23 @@ public class JwtService {
      * Generate JWT Token
      */
     public String generateToken(String username) {
+        return generateToken(username, java.util.Collections.emptyMap());
+    }
 
-        return Jwts.builder()
+    /**
+     * Generate JWT Token with Custom Claims
+     */
+    public String generateToken(String username, java.util.Map<String, Object> extraClaims) {
+        var builder = Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey())
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration));
+
+        if (extraClaims != null && !extraClaims.isEmpty()) {
+            builder.claims(extraClaims);
+        }
+
+        return builder.signWith(getSigningKey()).compact();
     }
 
     /**

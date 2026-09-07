@@ -57,6 +57,9 @@ public class EmployeeProfile {
     @Column(name = "bio", length = 1000)
     private String bio;
 
+    @Column(name = "available_as_mentor")
+    private Boolean availableAsMentor = true;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -153,6 +156,14 @@ public class EmployeeProfile {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public Boolean getAvailableAsMentor() {
+        return availableAsMentor;
+    }
+
+    public void setAvailableAsMentor(Boolean availableAsMentor) {
+        this.availableAsMentor = availableAsMentor;
     }
 
     public LocalDateTime getCreatedAt() {

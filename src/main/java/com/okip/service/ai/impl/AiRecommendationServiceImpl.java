@@ -125,6 +125,15 @@ public class AiRecommendationServiceImpl
     }
 
     @Override
+    public AiRecommendationResponseDTO generateMyRecommendation() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        Employee employee = employeeRepository.findByOfficialEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in employee not found."));
+        return generateRecommendation(employee.getEmployeeId());
+    }
+
+    @Override
     public String generateRoleLearningPath(
             String desiredRole) {
 

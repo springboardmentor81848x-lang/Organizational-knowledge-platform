@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.okip.dto.hr.ApprovedEmployeeDTO;
 import com.okip.dto.hr.EmployeeApprovalResponseDTO;
 import com.okip.dto.hr.PendingEmployeeDTO;
 import com.okip.service.hr.HRService;
@@ -43,4 +44,11 @@ public class HRController {
         return ResponseEntity.ok(
                 hrService.getPendingEmployees());
     }
-}
+
+    @GetMapping("/employees")
+    public ResponseEntity<List<ApprovedEmployeeDTO>> getAllEmployees() {
+
+        return ResponseEntity.ok(
+                hrService.getAllApprovedEmployees());
+    }
+}
