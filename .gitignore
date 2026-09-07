@@ -1,0 +1,28 @@
+# ==============================
+# Frontend
+# ==============================
+Frontend/node_modules/
+Frontend/dist/
+
+# ==============================
+# Backend
+# ==============================
+Backend/organizational-knowledge-gap-platform/target/
+
+# ==============================
+# IDE files
+# ==============================
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# ==============================
+# Environment / secrets
+# ==============================
+.env
+.env.*
+!.env.exampleBackend/organizational-knowledge-gap-platform/.git_backup/
+**/.metadata/
+**/.git_backup/
