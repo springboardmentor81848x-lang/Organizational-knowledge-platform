@@ -10,6 +10,8 @@
 .env.test.local
 .env.production.local
 *.env
+application-local.properties
+*-local.properties
 !.env.example
 !backend/.env.example
 !frontend/.env.example
