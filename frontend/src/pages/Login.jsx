@@ -59,15 +59,6 @@ function Login() {
       // =====================================================
       // SAVE DATABASE USER ID
       // =====================================================
-      // IMPORTANT:
-      // id = database primary key
-      // Example: 43
-      //
-      // This is different from employeeId:
-      // employeeId = MEN001
-      //
-      // Knowledge Session backend expects the database ID.
-      // =====================================================
 
       if (response.data.id != null) {
         localStorage.setItem(
@@ -108,11 +99,6 @@ function Login() {
 
       // =====================================================
       // SAVE EMPLOYEE ID
-      // =====================================================
-      // Example:
-      // employeeId = MEN001
-      //
-      // Keep this separate from userId.
       // =====================================================
 
       if (response.data.employeeId) {
@@ -466,7 +452,7 @@ function Login() {
 
             </div>
 
-            {/* REMEMBER ME */}
+            {/* REMEMBER ME + FORGOT PASSWORD */}
 
             <div className="flex justify-between items-center text-sm">
 
@@ -480,12 +466,14 @@ function Login() {
 
               </label>
 
-              <a
-                href="#"
+              {/* FORGOT PASSWORD */}
+
+              <Link
+                to="/forgot-password"
                 className="text-indigo-600 hover:underline"
               >
                 Forgot Password?
-              </a>
+              </Link>
 
             </div>
 
