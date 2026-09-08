@@ -24,7 +24,6 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JWTAuthenticationFilter jwtAuthenticationFilter) {
-
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -37,9 +36,11 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         http
+
             // ----------------------------------------------------
             // CORS
             // ----------------------------------------------------
+
             .cors(cors ->
                 cors.configurationSource(corsConfigurationSource())
             )
@@ -47,11 +48,13 @@ public class SecurityConfig {
             // ----------------------------------------------------
             // CSRF
             // ----------------------------------------------------
+
             .csrf(csrf -> csrf.disable())
 
             // ----------------------------------------------------
             // SESSION
             // ----------------------------------------------------
+
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
                     SessionCreationPolicy.STATELESS
@@ -61,11 +64,13 @@ public class SecurityConfig {
             // ----------------------------------------------------
             // AUTHORIZATION
             // ----------------------------------------------------
+
             .authorizeHttpRequests(auth -> auth
 
                 // ------------------------------------------------
                 // AUTHENTICATION APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/auth/**"
                 ).permitAll()
@@ -73,8 +78,10 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // AI APIs
                 // ------------------------------------------------
+
                 // Temporarily public so we can test the AI
                 // endpoints from Postman without a JWT token.
+
                 .requestMatchers(
                     "/api/ai/**"
                 ).permitAll()
@@ -82,6 +89,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // SWAGGER
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/swagger-ui.html",
@@ -91,6 +99,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // MANAGER DASHBOARD
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/manager-dashboard/**"
                 ).hasRole("MANAGER")
@@ -98,6 +107,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // MANAGER APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/manager/**"
                 ).hasRole("MANAGER")
@@ -105,6 +115,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // HR APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/hr/**"
                 ).hasRole("HR")
@@ -112,6 +123,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // MENTOR APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/mentor/**"
                 ).hasRole("MENTOR")
@@ -119,6 +131,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // DEPARTMENT HEAD APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/department-head/**"
                 ).hasRole("DEPARTMENT_HEAD")
@@ -126,6 +139,7 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // SYSTEM ADMINISTRATOR APIs
                 // ------------------------------------------------
+
                 .requestMatchers(
                     "/api/admin/**"
                 ).hasRole("SYSTEM_ADMINISTRATOR")
@@ -133,12 +147,14 @@ public class SecurityConfig {
                 // ------------------------------------------------
                 // EVERYTHING ELSE
                 // ------------------------------------------------
+
                 .anyRequest().authenticated()
             )
 
             // ----------------------------------------------------
             // JWT FILTER
             // ----------------------------------------------------
+
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
@@ -153,7 +169,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
@@ -169,10 +184,14 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(
             List.of(
+                // Local development
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://127.0.0.1:5173",
-                "http://127.0.0.1:5174"
+                "http://127.0.0.1:5174",
+
+                // Production frontend
+                "https://organizational-knowledge-platform-1.onrender.com"
             )
         );
 
