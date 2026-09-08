@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import api from "../services/api";
 
 import Navbar from "../components/Navbar";
@@ -12,8 +13,6 @@ import {
   Save,
   Star,
 } from "lucide-react";
-
-
 
 const LEVELS = [
   {
@@ -66,7 +65,6 @@ const SelfAssessment = () => {
   const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -75,7 +73,6 @@ const SelfAssessment = () => {
   // =========================================================
 
   const employeeId = localStorage.getItem("employeeId");
-  const token = localStorage.getItem("token");
 
   // IMPORTANT:
   // Sidebar needs the role prop.
@@ -103,27 +100,21 @@ const SelfAssessment = () => {
       setError("");
       setSuccess("");
 
-      const headers = token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {};
-
       const [skillsResponse, ratingsResponse] =
         await Promise.all([
-          axios.get(
-            `${API_BASE_URL}/self-assessment/${employeeId}/skills`,
-            { headers }
+          api.get(
+            `/self-assessment/${employeeId}/skills`
           ),
-
-          axios.get(
-            `${API_BASE_URL}/self-assessment/${employeeId}`,
-            { headers }
+          api.get(
+            `/self-assessment/${employeeId}`
           ),
         ]);
 
-      const employeeSkills = skillsResponse.data || [];
-      const savedRatings = ratingsResponse.data || [];
+      const employeeSkills =
+        skillsResponse.data || [];
+
+      const savedRatings =
+        ratingsResponse.data || [];
 
       setSkills(employeeSkills);
 
@@ -135,8 +126,9 @@ const SelfAssessment = () => {
 
       savedRatings.forEach((item) => {
         if (item.skillName && item.level) {
-          ratingMap[item.skillName.toLowerCase()] =
-            Number(item.level);
+          ratingMap[
+            item.skillName.toLowerCase()
+          ] = Number(item.level);
         }
       });
 
@@ -171,7 +163,10 @@ const SelfAssessment = () => {
   // CHANGE RATING
   // =========================================================
 
-  const handleRatingChange = (skillName, level) => {
+  const handleRatingChange = (
+    skillName,
+    level
+  ) => {
     setRatings((previous) => ({
       ...previous,
       [skillName.toLowerCase()]: Number(level),
@@ -200,16 +195,20 @@ const SelfAssessment = () => {
     // CHECK ALL SKILLS ARE RATED
     // =====================================================
 
-    const unratedSkills = skills.filter((employeeSkill) => {
-      const skillName =
-        employeeSkill?.skill?.skillName;
+    const unratedSkills = skills.filter(
+      (employeeSkill) => {
+        const skillName =
+          employeeSkill?.skill?.skillName;
 
-      if (!skillName) {
-        return true;
+        if (!skillName) {
+          return true;
+        }
+
+        return !ratings[
+          skillName.toLowerCase()
+        ];
       }
-
-      return !ratings[skillName.toLowerCase()];
-    });
+    );
 
     if (unratedSkills.length > 0) {
       setError(
@@ -221,28 +220,25 @@ const SelfAssessment = () => {
     try {
       setSaving(true);
 
-      const headers = token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {};
-
       // =====================================================
       // REQUEST BODY
       // =====================================================
 
       const requestBody = {
-        ratings: skills.map((employeeSkill) => {
-          const skillName =
-            employeeSkill.skill.skillName;
+        ratings: skills.map(
+          (employeeSkill) => {
+            const skillName =
+              employeeSkill.skill.skillName;
 
-          return {
-            skillName: skillName,
-            level: ratings[
-              skillName.toLowerCase()
-            ],
-          };
-        }),
+            return {
+              skillName: skillName,
+              level:
+                ratings[
+                  skillName.toLowerCase()
+                ],
+            };
+          }
+        ),
       };
 
       console.log(
@@ -250,10 +246,9 @@ const SelfAssessment = () => {
         requestBody
       );
 
-      await axios.post(
-        `${API_BASE_URL}/self-assessment/submit/${employeeId}`,
-        requestBody,
-        { headers }
+      await api.post(
+        `/self-assessment/submit/${employeeId}`,
+        requestBody
       );
 
       setSuccess(
@@ -338,14 +333,12 @@ const SelfAssessment = () => {
         ================================================== */}
 
         <main className="flex-1 p-6 lg:p-8 overflow-x-auto">
-
           {/* ==================================================
               HEADER
           ================================================== */}
 
           <div className="mb-8">
             <div className="flex items-center gap-4">
-
               <div className="p-4 bg-indigo-100 rounded-2xl">
                 <ClipboardCheck className="w-8 h-8 text-indigo-600" />
               </div>
@@ -360,7 +353,6 @@ const SelfAssessment = () => {
                   your own knowledge and experience.
                 </p>
               </div>
-
             </div>
           </div>
 
@@ -371,7 +363,6 @@ const SelfAssessment = () => {
           {success && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700">
               <CheckCircle className="w-5 h-5 flex-shrink-0" />
-
               <span>{success}</span>
             </div>
           )}
@@ -383,7 +374,6 @@ const SelfAssessment = () => {
           {error && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
-
               <span>{error}</span>
             </div>
           )}
@@ -394,7 +384,6 @@ const SelfAssessment = () => {
 
           {skills.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
-
               <ClipboardCheck className="w-12 h-12 mx-auto text-gray-400" />
 
               <h2 className="mt-4 text-lg font-semibold text-gray-900">
@@ -413,7 +402,6 @@ const SelfAssessment = () => {
                 <RefreshCw className="w-4 h-4" />
                 Refresh
               </button>
-
             </div>
           ) : (
             <>
@@ -422,7 +410,6 @@ const SelfAssessment = () => {
               ================================================== */}
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-
                 <h2 className="text-lg font-semibold text-gray-900">
                   How to rate yourself
                 </h2>
@@ -435,7 +422,6 @@ const SelfAssessment = () => {
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-5">
-
                   {LEVELS.map((level) => (
                     <div
                       key={level.value}
@@ -453,7 +439,8 @@ const SelfAssessment = () => {
                       </div>
 
                       <p className="font-medium text-gray-900 mt-3">
-                        {level.value}. {level.label}
+                        {level.value}.{" "}
+                        {level.label}
                       </p>
 
                       <p className="text-xs text-gray-500 mt-2">
@@ -461,7 +448,6 @@ const SelfAssessment = () => {
                       </p>
                     </div>
                   ))}
-
                 </div>
               </div>
 
@@ -470,11 +456,8 @@ const SelfAssessment = () => {
               ================================================== */}
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
                 <div className="px-6 py-5 border-b border-gray-200">
-
                   <div className="flex items-center justify-between">
-
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
                         Rate Your Skills
@@ -493,7 +476,6 @@ const SelfAssessment = () => {
                       <ClipboardCheck className="w-4 h-4" />
                       Self Rating
                     </div>
-
                   </div>
                 </div>
 
@@ -502,10 +484,8 @@ const SelfAssessment = () => {
                 ================================================== */}
 
                 <div className="divide-y divide-gray-100">
-
                   {skills.map(
                     (employeeSkill, index) => {
-
                       const skill =
                         employeeSkill.skill;
 
@@ -525,27 +505,20 @@ const SelfAssessment = () => {
                           }
                           className="p-6 hover:bg-gray-50 transition"
                         >
-
                           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
                             {/* ==================================================
                                 SKILL INFORMATION
                             ================================================== */}
 
                             <div className="lg:w-1/3">
-
                               <div className="flex items-center gap-3">
-
                                 <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-
                                   <span className="font-bold text-indigo-600">
                                     {index + 1}
                                   </span>
-
                                 </div>
 
                                 <div>
-
                                   <h3 className="font-semibold text-gray-900">
                                     {skillName}
                                   </h3>
@@ -555,9 +528,7 @@ const SelfAssessment = () => {
                                       {skill.category}
                                     </p>
                                   )}
-
                                 </div>
-
                               </div>
 
                               {skill.description && (
@@ -565,7 +536,6 @@ const SelfAssessment = () => {
                                   {skill.description}
                                 </p>
                               )}
-
                             </div>
 
                             {/* ==================================================
@@ -573,12 +543,9 @@ const SelfAssessment = () => {
                             ================================================== */}
 
                             <div className="flex-1">
-
                               <div className="grid grid-cols-5 gap-2">
-
                                 {LEVELS.map(
                                   (level) => {
-
                                     const selected =
                                       currentRating ===
                                       level.value;
@@ -601,9 +568,7 @@ const SelfAssessment = () => {
                                             : "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50"
                                         }`}
                                       >
-
                                         <div className="flex justify-center mb-2">
-
                                           {Array.from(
                                             {
                                               length:
@@ -626,7 +591,6 @@ const SelfAssessment = () => {
                                               />
                                             )
                                           )}
-
                                         </div>
 
                                         <p
@@ -651,12 +615,10 @@ const SelfAssessment = () => {
                                         {selected && (
                                           <CheckCircle className="absolute -top-2 -right-2 w-5 h-5 text-indigo-600 bg-white rounded-full" />
                                         )}
-
                                       </button>
                                     );
                                   }
                                 )}
-
                               </div>
 
                               {/* ==================================================
@@ -664,7 +626,6 @@ const SelfAssessment = () => {
                               ================================================== */}
 
                               <div className="mt-3 min-h-[20px]">
-
                                 {currentRating >
                                   0 && (
                                   <p className="text-sm text-indigo-600">
@@ -673,26 +634,19 @@ const SelfAssessment = () => {
                                         currentRating
                                       )}
                                     </span>
-
                                     {" — "}
-
                                     {getLevelDescription(
                                       currentRating
                                     )}
                                   </p>
                                 )}
-
                               </div>
-
                             </div>
-
                           </div>
-
                         </div>
                       );
                     }
                   )}
-
                 </div>
 
                 {/* ==================================================
@@ -700,9 +654,7 @@ const SelfAssessment = () => {
                 ================================================== */}
 
                 <div className="border-t border-gray-200 px-6 py-5 bg-gray-50">
-
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-
                     <p className="text-sm text-gray-500">
                       Please make sure you have rated every
                       skill before saving.
@@ -713,7 +665,6 @@ const SelfAssessment = () => {
                       disabled={saving}
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
                     >
-
                       {saving ? (
                         <>
                           <RefreshCw className="w-5 h-5 animate-spin" />
@@ -725,17 +676,12 @@ const SelfAssessment = () => {
                           Save Self Assessment
                         </>
                       )}
-
                     </button>
-
                   </div>
-
                 </div>
-
               </div>
             </>
           )}
-
         </main>
       </div>
     </div>

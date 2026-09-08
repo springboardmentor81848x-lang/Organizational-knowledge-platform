@@ -55,7 +55,7 @@ function TrainingAdoption() {
           response
         );
 
-        // Axios response
+        // API response
         const result = response?.data ?? response;
 
         console.log(
@@ -112,33 +112,23 @@ function TrainingAdoption() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-
         <Sidebar role="DEPARTMENT HEAD" />
 
-        <div className="flex-1 min-w-0">
-
+        <div className="min-w-0 flex-1">
           <Navbar title="Training Adoption" />
 
           <main className="p-8">
-
-            <div className="flex items-center justify-center h-96">
-
+            <div className="flex h-96 items-center justify-center">
               <div className="text-center">
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600" />
 
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-
-                <p className="text-gray-500 mt-4">
+                <p className="mt-4 text-gray-500">
                   Loading training adoption...
                 </p>
-
               </div>
-
             </div>
-
           </main>
-
         </div>
-
       </div>
     );
   }
@@ -150,20 +140,15 @@ function TrainingAdoption() {
   if (error) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-
         <Sidebar role="DEPARTMENT HEAD" />
 
-        <div className="flex-1 min-w-0">
-
+        <div className="min-w-0 flex-1">
           <Navbar title="Training Adoption" />
 
           <main className="p-8">
-
-            <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-700">
-
+            <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
               <div className="flex items-center gap-3">
-
-                <div className="p-2 bg-red-100 rounded-lg">
+                <div className="rounded-lg bg-red-100 p-2">
                   <BarChart3 size={22} />
                 </div>
 
@@ -172,19 +157,14 @@ function TrainingAdoption() {
                     Unable to load Training Adoption
                   </p>
 
-                  <p className="text-sm mt-1">
+                  <p className="mt-1 text-sm">
                     {error}
                   </p>
                 </div>
-
               </div>
-
             </div>
-
           </main>
-
         </div>
-
       </div>
     );
   }
@@ -225,7 +205,6 @@ function TrainingAdoption() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-
       {/* ==================================================
           SIDEBAR
       ================================================== */}
@@ -236,8 +215,7 @@ function TrainingAdoption() {
           MAIN CONTENT
       ================================================== */}
 
-      <div className="flex-1 min-w-0">
-
+      <div className="min-w-0 flex-1">
         {/* ==================================================
             NAVBAR
         ================================================== */}
@@ -249,16 +227,13 @@ function TrainingAdoption() {
         ================================================== */}
 
         <main className="p-8">
-
           {/* ==================================================
               PAGE HEADER
           ================================================== */}
 
           <div className="mb-8">
-
             <div className="flex items-center gap-3">
-
-              <div className="p-3 bg-blue-100 rounded-xl">
+              <div className="rounded-xl bg-blue-100 p-3">
                 <GraduationCap
                   size={28}
                   className="text-blue-600"
@@ -266,142 +241,115 @@ function TrainingAdoption() {
               </div>
 
               <div>
-
                 <h1 className="text-3xl font-bold text-slate-800">
                   Training Adoption
                 </h1>
 
-                <p className="text-gray-500 mt-1">
+                <p className="mt-1 text-gray-500">
                   Department-wide training participation
                   and learning engagement.
                 </p>
-
               </div>
-
             </div>
-
           </div>
 
           {/* ==================================================
               SUMMARY CARDS
           ================================================== */}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-
+          <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-3">
             {/* TOTAL EMPLOYEES */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
-
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Total Employees
                   </p>
 
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {totalEmployees}
                   </p>
 
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="mt-2 text-sm text-gray-500">
                     Employees in department
                   </p>
-
                 </div>
 
-                <div className="p-3 bg-blue-50 rounded-xl">
+                <div className="rounded-xl bg-blue-50 p-3">
                   <Users
                     size={25}
                     className="text-blue-600"
                   />
                 </div>
-
               </div>
-
             </div>
 
             {/* ENROLLED EMPLOYEES */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
-
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Employees Enrolled
                   </p>
 
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {enrolledEmployees}
                   </p>
 
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="mt-2 text-sm text-gray-500">
                     Employees participating
                   </p>
-
                 </div>
 
-                <div className="p-3 bg-green-50 rounded-xl">
+                <div className="rounded-xl bg-green-50 p-3">
                   <BookOpen
                     size={25}
                     className="text-green-600"
                   />
                 </div>
-
               </div>
-
             </div>
 
             {/* ADOPTION RATE */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
-
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Training Adoption Rate
                   </p>
 
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {adoptionRate}%
                   </p>
 
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="mt-2 text-sm text-gray-500">
                     Department participation
                   </p>
-
                 </div>
 
-                <div className="p-3 bg-purple-50 rounded-xl">
+                <div className="rounded-xl bg-purple-50 p-3">
                   <TrendingUp
                     size={25}
                     className="text-purple-600"
                   />
                 </div>
-
               </div>
-
             </div>
-
           </div>
 
           {/* ==================================================
               ENROLLMENT STATUS
           ================================================== */}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
-
+          <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-4">
             {/* TOTAL */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3">
-
-                <div className="p-2.5 bg-blue-50 rounded-lg">
+                <div className="rounded-lg bg-blue-50 p-2.5">
                   <BarChart3
                     size={22}
                     className="text-blue-600"
@@ -409,7 +357,6 @@ function TrainingAdoption() {
                 </div>
 
                 <div>
-
                   <p className="text-sm text-gray-500">
                     Total Enrollments
                   </p>
@@ -417,20 +364,15 @@ function TrainingAdoption() {
                   <p className="text-2xl font-bold text-gray-900">
                     {totalEnrollments}
                   </p>
-
                 </div>
-
               </div>
-
             </div>
 
             {/* NOT STARTED */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3">
-
-                <div className="p-2.5 bg-gray-100 rounded-lg">
+                <div className="rounded-lg bg-gray-100 p-2.5">
                   <Clock
                     size={22}
                     className="text-gray-600"
@@ -438,7 +380,6 @@ function TrainingAdoption() {
                 </div>
 
                 <div>
-
                   <p className="text-sm text-gray-500">
                     Not Started
                   </p>
@@ -446,20 +387,15 @@ function TrainingAdoption() {
                   <p className="text-2xl font-bold text-gray-900">
                     {notStartedEnrollments}
                   </p>
-
                 </div>
-
               </div>
-
             </div>
 
             {/* IN PROGRESS */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3">
-
-                <div className="p-2.5 bg-orange-50 rounded-lg">
+                <div className="rounded-lg bg-orange-50 p-2.5">
                   <PlayCircle
                     size={22}
                     className="text-orange-600"
@@ -467,7 +403,6 @@ function TrainingAdoption() {
                 </div>
 
                 <div>
-
                   <p className="text-sm text-gray-500">
                     In Progress
                   </p>
@@ -475,20 +410,15 @@ function TrainingAdoption() {
                   <p className="text-2xl font-bold text-gray-900">
                     {inProgressEnrollments}
                   </p>
-
                 </div>
-
               </div>
-
             </div>
 
             {/* COMPLETED */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3">
-
-                <div className="p-2.5 bg-green-50 rounded-lg">
+                <div className="rounded-lg bg-green-50 p-2.5">
                   <CheckCircle
                     size={22}
                     className="text-green-600"
@@ -496,7 +426,6 @@ function TrainingAdoption() {
                 </div>
 
                 <div>
-
                   <p className="text-sm text-gray-500">
                     Completed
                   </p>
@@ -505,24 +434,18 @@ function TrainingAdoption() {
                     {completedEnrollments +
                       certifiedEnrollments}
                   </p>
-
                 </div>
-
               </div>
-
             </div>
-
           </div>
 
           {/* ==================================================
               COURSE ADOPTION TABLE
           ================================================== */}
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-
-            <div className="flex items-center gap-3 mb-6">
-
-              <div className="p-2.5 bg-blue-50 rounded-lg">
+          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="rounded-lg bg-blue-50 p-2.5">
                 <GraduationCap
                   size={22}
                   className="text-blue-600"
@@ -530,7 +453,6 @@ function TrainingAdoption() {
               </div>
 
               <div>
-
                 <h2 className="text-lg font-bold text-gray-900">
                   Training Course Adoption
                 </h2>
@@ -539,15 +461,11 @@ function TrainingAdoption() {
                   Course participation across employees
                   in your department.
                 </p>
-
               </div>
-
             </div>
 
             {courses.length === 0 ? (
-
               <div className="py-14 text-center">
-
                 <GraduationCap
                   size={48}
                   className="mx-auto text-gray-300"
@@ -561,75 +479,63 @@ function TrainingAdoption() {
                   Training participation will appear
                   here once employees enroll in courses.
                 </p>
-
               </div>
-
             ) : (
-
               <div className="overflow-x-auto">
-
                 <table className="w-full">
-
                   <thead>
-
                     <tr className="border-b border-gray-100">
-
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
                         Course
                       </th>
 
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
                         Skill
                       </th>
 
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
                         Enrolled
                       </th>
 
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
                         Completed
                       </th>
 
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
                         Adoption
                       </th>
 
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
                         Completion
                       </th>
-
                     </tr>
-
                   </thead>
 
                   <tbody>
-
                     {courses.map((course) => (
-
                       <tr
                         key={course.courseId}
                         className="border-b border-gray-50 hover:bg-gray-50"
                       >
-
-                        <td className="py-4 px-4">
+                        <td className="px-4 py-4">
                           <p className="font-medium text-gray-900">
                             {course.courseTitle}
                           </p>
                         </td>
 
-                        <td className="py-4 px-4">
+                        <td className="px-4 py-4">
                           <span className="text-sm text-gray-600">
                             {course.skillName || "—"}
                           </span>
                         </td>
 
-                        <td className="py-4 px-4 text-center">
+                        <td className="px-4 py-4 text-center">
                           <span className="font-semibold text-gray-900">
                             {course.enrolledEmployees}
                           </span>
                         </td>
 
-                        <td className="py-4 px-4 text-center">
+                        <td className="px-4 py-4 text-center">
                           <span className="font-semibold text-gray-900">
                             {course.completedEmployees}
                           </span>
@@ -637,22 +543,17 @@ function TrainingAdoption() {
 
                         {/* ADOPTION */}
 
-                        <td className="py-4 px-4">
-
+                        <td className="px-4 py-4">
                           <div className="min-w-[130px]">
-
-                            <div className="flex items-center justify-between mb-1">
-
+                            <div className="mb-1 flex items-center justify-between">
                               <span className="text-sm font-semibold text-gray-700">
                                 {course.adoptionPercentage}%
                               </span>
-
                             </div>
 
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-
+                            <div className="h-2 w-full rounded-full bg-gray-100">
                               <div
-                                className="bg-blue-600 h-2 rounded-full"
+                                className="h-2 rounded-full bg-blue-600"
                                 style={{
                                   width: `${Math.min(
                                     course.adoptionPercentage || 0,
@@ -660,31 +561,23 @@ function TrainingAdoption() {
                                   )}%`,
                                 }}
                               />
-
                             </div>
-
                           </div>
-
                         </td>
 
                         {/* COMPLETION */}
 
-                        <td className="py-4 px-4">
-
+                        <td className="px-4 py-4">
                           <div className="min-w-[130px]">
-
-                            <div className="flex items-center justify-between mb-1">
-
+                            <div className="mb-1 flex items-center justify-between">
                               <span className="text-sm font-semibold text-gray-700">
                                 {course.completionPercentage}%
                               </span>
-
                             </div>
 
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-
+                            <div className="h-2 w-full rounded-full bg-gray-100">
                               <div
-                                className="bg-green-500 h-2 rounded-full"
+                                className="h-2 rounded-full bg-green-500"
                                 style={{
                                   width: `${Math.min(
                                     course.completionPercentage || 0,
@@ -692,58 +585,39 @@ function TrainingAdoption() {
                                   )}%`,
                                 }}
                               />
-
                             </div>
-
                           </div>
-
                         </td>
-
                       </tr>
-
                     ))}
-
                   </tbody>
-
                 </table>
-
               </div>
-
             )}
-
           </div>
 
           {/* ==================================================
               INFORMATION NOTE
           ================================================== */}
 
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
             <div className="flex gap-3">
-
               <TrendingUp
                 size={20}
-                className="text-blue-600 mt-0.5"
+                className="mt-0.5 text-blue-600"
               />
 
               <p className="text-sm text-blue-800">
-
                 Training Adoption measures how actively
                 employees in the department participate in
                 available training. The adoption rate is based
                 on the number of unique employees enrolled in
                 at least one training course.
-
               </p>
-
             </div>
-
           </div>
-
         </main>
-
       </div>
-
     </div>
   );
 }

@@ -32,17 +32,6 @@ import {
 } from "recharts";
 
 // =========================================================
-// API
-// =========================================================
-// Do not define API_BASE_URL here.
-// All requests should use the shared api service:
-//
-// api.get("/endpoint")
-// api.post("/endpoint", data)
-// api.put("/endpoint", data)
-// api.delete("/endpoint")
-
-// =========================================================
 // LEARNING PROGRESS
 // =========================================================
 
@@ -51,8 +40,11 @@ function LearningProgress() {
   // EMPLOYEE INFORMATION
   // =========================================================
 
-  const firstName = localStorage.getItem("firstName") || "";
-  const lastName = localStorage.getItem("lastName") || "";
+  const firstName =
+    localStorage.getItem("firstName") || "";
+
+  const lastName =
+    localStorage.getItem("lastName") || "";
 
   const employeeIdentifier =
     localStorage.getItem("employeeId");
@@ -81,27 +73,12 @@ function LearningProgress() {
   const [error, setError] = useState("");
 
   // =========================================================
-  // AUTH HEADERS
-  // =========================================================
-
-  const getHeaders = () => {
-    const token = localStorage.getItem("token");
-
-    return {
-      headers: {
-        Authorization: token
-          ? `Bearer ${token}`
-          : "",
-        "Content-Type": "application/json",
-      },
-    };
-  };
-
-  // =========================================================
   // LOAD LEARNING PROGRESS
   // =========================================================
 
-  const loadLearningProgress = async (isRefresh = false) => {
+  const loadLearningProgress = async (
+    isRefresh = false
+  ) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
@@ -126,9 +103,8 @@ function LearningProgress() {
       // 1. GET TRAINING ENROLLMENTS
       // =======================================================
 
-      const enrollmentResponse = await axios.get(
-        `${API_BASE_URL}/training-enrollments/employee/${employeeIdentifier}`,
-        getHeaders()
+      const enrollmentResponse = await api.get(
+        `/training-enrollments/employee/${employeeIdentifier}`
       );
 
       const employeeEnrollments =
@@ -146,68 +122,68 @@ function LearningProgress() {
       // =======================================================
       // 2. GET MODULE DATA
       // =======================================================
-      //
+
       // Milestone details are NOT shown in the UI.
       // They are only used internally for:
       //
       // Total Modules
       // Completed Modules
       // Remaining Modules
-      //
-      // =======================================================
 
       const milestoneData = {};
 
       await Promise.all(
-        employeeEnrollments.map(async (enrollment) => {
-          const courseId =
-            enrollment?.course?.id;
+        employeeEnrollments.map(
+          async (enrollment) => {
+            const courseId =
+              enrollment?.course?.id;
 
-          if (!courseId) {
-            return;
+            if (!courseId) {
+              return;
+            }
+
+            try {
+              const response =
+                await api.get(
+                  `/employee-milestone-progress/employee/${employeeIdentifier}/course/${courseId}`
+                );
+
+              milestoneData[courseId] =
+                Array.isArray(response.data)
+                  ? response.data
+                  : [];
+            } catch (milestoneError) {
+              console.warn(
+                `No module progress available for course ${courseId}`,
+                milestoneError
+              );
+
+              milestoneData[courseId] = [];
+            }
           }
-
-          try {
-            const response = await axios.get(
-              `${API_BASE_URL}/employee-milestone-progress/employee/${employeeIdentifier}/course/${courseId}`,
-              getHeaders()
-            );
-
-            milestoneData[courseId] =
-              Array.isArray(response.data)
-                ? response.data
-                : [];
-          } catch (milestoneError) {
-            console.warn(
-              `No module progress available for course ${courseId}`,
-              milestoneError
-            );
-
-            milestoneData[courseId] = [];
-          }
-        })
+        )
       );
 
-      setMilestoneProgress(milestoneData);
+      setMilestoneProgress(
+        milestoneData
+      );
 
       // =======================================================
       // 3. GET LEARNING PROGRESS HISTORY
       // =======================================================
-      //
+
       // This data is used for Learning Analytics.
       //
       // Expected endpoint:
       //
       // GET
       // /learning-progress-history/employee/{employeeIdentifier}
-      //
-      // =======================================================
 
       try {
-        const historyResponse = await axios.get(
-          `${API_BASE_URL}/learning-progress-history/employee/${employeeIdentifier}`,
-          getHeaders()
-        );
+        const historyResponse =
+          await api.get(
+            `/learning-progress-history/employee/${employeeIdentifier}`
+          );
 
         const historyData =
           Array.isArray(historyResponse.data)
@@ -219,7 +195,9 @@ function LearningProgress() {
           historyData
         );
 
-        setLearningHistory(historyData);
+        setLearningHistory(
+          historyData
+        );
       } catch (historyError) {
         console.warn(
           "Learning progress history could not be loaded:",
@@ -238,7 +216,7 @@ function LearningProgress() {
 
       setError(
         err.response?.data?.message ||
-        "Unable to load learning progress."
+          "Unable to load learning progress."
       );
     } finally {
       setLoading(false);
@@ -294,39 +272,51 @@ function LearningProgress() {
     ) {
       case "COMPLETED":
         return {
-          badge: "bg-green-100 text-green-700",
-          icon: "text-green-600",
+          badge:
+            "bg-green-100 text-green-700",
+          icon:
+            "text-green-600",
         };
 
       case "IN_PROGRESS":
         return {
-          badge: "bg-blue-100 text-blue-700",
-          icon: "text-blue-600",
+          badge:
+            "bg-blue-100 text-blue-700",
+          icon:
+            "text-blue-600",
         };
 
       case "CERTIFIED":
         return {
-          badge: "bg-purple-100 text-purple-700",
-          icon: "text-purple-600",
+          badge:
+            "bg-purple-100 text-purple-700",
+          icon:
+            "text-purple-600",
         };
 
       case "EXPIRED":
       case "EXPIRED_RENEWAL":
         return {
-          badge: "bg-red-100 text-red-700",
-          icon: "text-red-600",
+          badge:
+            "bg-red-100 text-red-700",
+          icon:
+            "text-red-600",
         };
 
       case "CANCELLED":
         return {
-          badge: "bg-gray-100 text-gray-700",
-          icon: "text-gray-500",
+          badge:
+            "bg-gray-100 text-gray-700",
+          icon:
+            "text-gray-500",
         };
 
       default:
         return {
-          badge: "bg-yellow-100 text-yellow-700",
-          icon: "text-yellow-600",
+          badge:
+            "bg-yellow-100 text-yellow-700",
+          icon:
+            "text-yellow-600",
         };
     }
   };
@@ -341,7 +331,9 @@ function LearningProgress() {
     }
 
     try {
-      return new Date(date).toLocaleDateString(
+      return new Date(
+        date
+      ).toLocaleDateString(
         "en-IN",
         {
           day: "2-digit",
@@ -364,7 +356,9 @@ function LearningProgress() {
     }
 
     try {
-      return new Date(date).toLocaleDateString(
+      return new Date(
+        date
+      ).toLocaleDateString(
         "en-IN",
         {
           day: "2-digit",
@@ -432,22 +426,24 @@ function LearningProgress() {
   // =========================================================
 
   const getCompletedModules = (modules) => {
-    return modules.filter((module) => {
-      const status =
-        String(
-          module?.status || ""
-        ).toUpperCase();
+    return modules.filter(
+      (module) => {
+        const status =
+          String(
+            module?.status || ""
+          ).toUpperCase();
 
-      const progress =
-        Number(
-          module?.progressPercentage || 0
+        const progress =
+          Number(
+            module?.progressPercentage || 0
+          );
+
+        return (
+          status === "COMPLETED" ||
+          progress === 100
         );
-
-      return (
-        status === "COMPLETED" ||
-        progress === 100
-      );
-    }).length;
+      }
+    ).length;
   };
 
   // =========================================================
@@ -459,7 +455,8 @@ function LearningProgress() {
     completedModules
   ) => {
     return Math.max(
-      totalModules - completedModules,
+      totalModules -
+        completedModules,
       0
     );
   };
@@ -598,27 +595,31 @@ function LearningProgress() {
     enrollments.length;
 
   const completedCourses =
-    enrollments.filter((enrollment) => {
-      const status =
-        String(
-          enrollment?.status || ""
-        ).toUpperCase();
+    enrollments.filter(
+      (enrollment) => {
+        const status =
+          String(
+            enrollment?.status || ""
+          ).toUpperCase();
 
-      return (
-        status === "COMPLETED" ||
-        status === "CERTIFIED"
-      );
-    }).length;
+        return (
+          status === "COMPLETED" ||
+          status === "CERTIFIED"
+        );
+      }
+    ).length;
 
   const inProgressCourses =
-    enrollments.filter((enrollment) => {
-      const status =
-        String(
-          enrollment?.status || ""
-        ).toUpperCase();
+    enrollments.filter(
+      (enrollment) => {
+        const status =
+          String(
+            enrollment?.status || ""
+          ).toUpperCase();
 
-      return status === "IN_PROGRESS";
-    }).length;
+        return status === "IN_PROGRESS";
+      }
+    ).length;
 
   const averageProgress =
     totalCourses > 0
@@ -627,7 +628,8 @@ function LearningProgress() {
             (total, enrollment) =>
               total +
               Number(
-                enrollment?.progressPercentage ?? 0
+                enrollment?.progressPercentage ??
+                  0
               ),
             0
           ) / totalCourses
@@ -641,23 +643,27 @@ function LearningProgress() {
   const analyticsChartData =
     [...learningHistory]
       .sort((a, b) => {
-        const dateA = new Date(
-          a?.recordedAt || 0
-        ).getTime();
+        const dateA =
+          new Date(
+            a?.recordedAt || 0
+          ).getTime();
 
-        const dateB = new Date(
-          b?.recordedAt || 0
-        ).getTime();
+        const dateB =
+          new Date(
+            b?.recordedAt || 0
+          ).getTime();
 
         return dateA - dateB;
       })
       .map((history) => ({
-        date: formatHistoryDate(
-          history?.recordedAt
-        ),
+        date:
+          formatHistoryDate(
+            history?.recordedAt
+          ),
         progress:
           Number(
-            history?.progressPercentage ?? 0
+            history?.progressPercentage ??
+              0
           ),
         event:
           history?.eventType ||
@@ -708,14 +714,12 @@ function LearningProgress() {
         <Navbar title="Learning Progress" />
 
         <main className="p-8">
-
           {/* =================================================
               PAGE HEADER
           ================================================= */}
 
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
               <div>
                 <h1 className="text-3xl font-bold text-slate-800">
                   Learning Progress
@@ -726,10 +730,12 @@ function LearningProgress() {
 
                   {fullName && (
                     <>
-                      {" "}Welcome,{" "}
+                      {" "}
+                      Welcome,{" "}
                       <span className="font-semibold text-slate-700">
                         {fullName}
-                      </span>.
+                      </span>
+                      .
                     </>
                   )}
                 </p>
@@ -781,7 +787,6 @@ function LearningProgress() {
 
           {enrollments.length > 0 && (
             <div className="mb-8">
-
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-indigo-100 p-3 rounded-xl">
                   <BarChart3
@@ -806,12 +811,10 @@ function LearningProgress() {
               ================================================= */}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-
                 {/* TOTAL COURSES */}
 
                 <div className="bg-white rounded-2xl shadow border border-gray-100 p-5">
                   <div className="flex items-center gap-4">
-
                     <div className="bg-indigo-100 p-3 rounded-xl">
                       <BookOpen
                         size={25}
@@ -828,7 +831,6 @@ function LearningProgress() {
                         {totalCourses}
                       </p>
                     </div>
-
                   </div>
                 </div>
 
@@ -836,7 +838,6 @@ function LearningProgress() {
 
                 <div className="bg-white rounded-2xl shadow border border-gray-100 p-5">
                   <div className="flex items-center gap-4">
-
                     <div className="bg-green-100 p-3 rounded-xl">
                       <CheckCircle2
                         size={25}
@@ -853,7 +854,6 @@ function LearningProgress() {
                         {completedCourses}
                       </p>
                     </div>
-
                   </div>
                 </div>
 
@@ -861,7 +861,6 @@ function LearningProgress() {
 
                 <div className="bg-white rounded-2xl shadow border border-gray-100 p-5">
                   <div className="flex items-center gap-4">
-
                     <div className="bg-blue-100 p-3 rounded-xl">
                       <Activity
                         size={25}
@@ -878,7 +877,6 @@ function LearningProgress() {
                         {inProgressCourses}
                       </p>
                     </div>
-
                   </div>
                 </div>
 
@@ -886,7 +884,6 @@ function LearningProgress() {
 
                 <div className="bg-white rounded-2xl shadow border border-gray-100 p-5">
                   <div className="flex items-center gap-4">
-
                     <div className="bg-purple-100 p-3 rounded-xl">
                       <TrendingUp
                         size={25}
@@ -903,10 +900,8 @@ function LearningProgress() {
                         {averageProgress}%
                       </p>
                     </div>
-
                   </div>
                 </div>
-
               </div>
 
               {/* =================================================
@@ -914,9 +909,7 @@ function LearningProgress() {
               ================================================= */}
 
               <div className="bg-white rounded-2xl shadow border border-gray-100 p-6">
-
                 <div className="flex items-center justify-between mb-6">
-
                   <div>
                     <h3 className="text-xl font-bold text-slate-800">
                       Progress Over Time
@@ -933,18 +926,18 @@ function LearningProgress() {
                       className="text-indigo-600"
                     />
                   </div>
-
                 </div>
 
                 {analyticsChartData.length > 0 ? (
                   <div className="w-full h-[350px]">
-
                     <ResponsiveContainer
                       width="100%"
                       height="100%"
                     >
                       <LineChart
-                        data={analyticsChartData}
+                        data={
+                          analyticsChartData
+                        }
                         margin={{
                           top: 10,
                           right: 20,
@@ -952,7 +945,6 @@ function LearningProgress() {
                           bottom: 10,
                         }}
                       >
-
                         <CartesianGrid
                           strokeDasharray="3 3"
                         />
@@ -983,9 +975,7 @@ function LearningProgress() {
                             const item =
                               payload?.[0]?.payload;
 
-                            if (
-                              item?.course
-                            ) {
+                            if (item?.course) {
                               return `${label} • ${item.course}`;
                             }
 
@@ -1004,14 +994,11 @@ function LearningProgress() {
                             r: 7,
                           }}
                         />
-
                       </LineChart>
                     </ResponsiveContainer>
-
                   </div>
                 ) : (
                   <div className="h-[300px] flex flex-col items-center justify-center text-center">
-
                     <TrendingUp
                       size={50}
                       className="text-gray-300 mb-4"
@@ -1025,12 +1012,9 @@ function LearningProgress() {
                       Your progress chart will appear here
                       after you start or update a training course.
                     </p>
-
                   </div>
                 )}
-
               </div>
-
             </div>
           )}
 
@@ -1039,9 +1023,7 @@ function LearningProgress() {
           ================================================= */}
 
           {enrollments.length === 0 ? (
-
             <div className="bg-white rounded-2xl shadow border border-gray-100 p-12 text-center">
-
               <BookOpen
                 size={64}
                 className="mx-auto text-gray-400 mb-5"
@@ -1061,16 +1043,11 @@ function LearningProgress() {
                 Training & Learning to begin
                 tracking your progress.
               </p>
-
             </div>
-
           ) : (
-
             <div className="space-y-8">
-
               {enrollments.map(
                 (enrollment, index) => {
-
                   const courseId =
                     enrollment?.course?.id;
 
@@ -1120,7 +1097,8 @@ function LearningProgress() {
                     Math.min(
                       Math.max(
                         Number(
-                          enrollment?.progressPercentage ?? 0
+                          enrollment?.progressPercentage ??
+                            0
                         ),
                         0
                       ),
@@ -1151,7 +1129,6 @@ function LearningProgress() {
                     );
 
                   return (
-
                     <div
                       key={
                         enrollment?.id ||
@@ -1160,17 +1137,13 @@ function LearningProgress() {
                       }
                       className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
                     >
-
                       {/* =================================================
                           COURSE HEADER
                       ================================================= */}
 
                       <div className="p-6 border-b border-gray-100">
-
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-
                           <div className="flex items-start gap-4">
-
                             <div className="bg-indigo-100 p-4 rounded-xl">
                               <GraduationCap
                                 size={32}
@@ -1187,7 +1160,6 @@ function LearningProgress() {
                                 {courseDescription}
                               </p>
                             </div>
-
                           </div>
 
                           {/* STATUS */}
@@ -1199,9 +1171,7 @@ function LearningProgress() {
                               status
                             )}
                           </div>
-
                         </div>
-
                       </div>
 
                       {/* =================================================
@@ -1209,9 +1179,7 @@ function LearningProgress() {
                       ================================================= */}
 
                       <div className="p-6">
-
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
-
                           <div>
                             <p className="text-sm font-medium text-gray-500">
                               Overall Course Progress
@@ -1221,11 +1189,9 @@ function LearningProgress() {
                               {progress}%
                             </p>
                           </div>
-
                         </div>
 
                         <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-
                           <div
                             className={`h-4 rounded-full transition-all duration-500 ${
                               progress === 100
@@ -1236,14 +1202,10 @@ function LearningProgress() {
                               width: `${progress}%`,
                             }}
                           />
-
                         </div>
 
                         <div className="flex justify-between mt-2 text-xs text-gray-500">
-
-                          <span>
-                            0%
-                          </span>
+                          <span>0%</span>
 
                           <span className="font-semibold">
                             {progress === 100
@@ -1251,12 +1213,8 @@ function LearningProgress() {
                               : `${progress}% completed`}
                           </span>
 
-                          <span>
-                            100%
-                          </span>
-
+                          <span>100%</span>
                         </div>
-
                       </div>
 
                       {/* =================================================
@@ -1264,21 +1222,18 @@ function LearningProgress() {
                       ================================================= */}
 
                       <div className="px-6 pb-6">
-
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
                           {/* START DATE */}
 
                           <div className="bg-blue-50 rounded-xl p-4">
-
                             <div className="flex items-center gap-2 text-blue-600">
-
-                              <CalendarDays size={20} />
+                              <CalendarDays
+                                size={20}
+                              />
 
                               <span className="text-sm font-medium">
                                 Start Date
                               </span>
-
                             </div>
 
                             <p className="font-semibold text-slate-800 mt-2">
@@ -1286,21 +1241,19 @@ function LearningProgress() {
                                 enrollment?.startDate
                               )}
                             </p>
-
                           </div>
 
                           {/* EXPECTED COMPLETION */}
 
                           <div className="bg-purple-50 rounded-xl p-4">
-
                             <div className="flex items-center gap-2 text-purple-600">
-
-                              <Clock3 size={20} />
+                              <Clock3
+                                size={20}
+                              />
 
                               <span className="text-sm font-medium">
                                 Expected Completion
                               </span>
-
                             </div>
 
                             <p className="font-semibold text-slate-800 mt-2">
@@ -1308,21 +1261,19 @@ function LearningProgress() {
                                 enrollment?.expectedCompletionDate
                               )}
                             </p>
-
                           </div>
 
                           {/* ACTUAL COMPLETION */}
 
                           <div className="bg-green-50 rounded-xl p-4">
-
                             <div className="flex items-center gap-2 text-green-600">
-
-                              <CheckCircle2 size={20} />
+                              <CheckCircle2
+                                size={20}
+                              />
 
                               <span className="text-sm font-medium">
                                 Actual Completion
                               </span>
-
                             </div>
 
                             <p className="font-semibold text-slate-800 mt-2">
@@ -1330,21 +1281,19 @@ function LearningProgress() {
                                 enrollment?.actualCompletionDate
                               )}
                             </p>
-
                           </div>
 
                           {/* CURRENT STATUS */}
 
                           <div className="bg-orange-50 rounded-xl p-4">
-
                             <div className="flex items-center gap-2 text-orange-600">
-
-                              <TrendingUp size={20} />
+                              <TrendingUp
+                                size={20}
+                              />
 
                               <span className="text-sm font-medium">
                                 Current Status
                               </span>
-
                             </div>
 
                             <p className="font-semibold text-slate-800 mt-2">
@@ -1352,11 +1301,8 @@ function LearningProgress() {
                                 status
                               )}
                             </p>
-
                           </div>
-
                         </div>
-
                       </div>
 
                       {/* =================================================
@@ -1364,9 +1310,7 @@ function LearningProgress() {
                       ================================================= */}
 
                       {courseUrl && (
-
                         <div className="px-6 pb-6">
-
                           <button
                             onClick={() =>
                               openCourse(
@@ -1375,7 +1319,6 @@ function LearningProgress() {
                             }
                             className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
                           >
-
                             <BookOpen
                               size={18}
                             />
@@ -1385,11 +1328,8 @@ function LearningProgress() {
                             <ExternalLink
                               size={16}
                             />
-
                           </button>
-
                         </div>
-
                       )}
 
                       {/* =================================================
@@ -1397,22 +1337,17 @@ function LearningProgress() {
                       ================================================= */}
 
                       <div className="px-6 pb-6">
-
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
                           {/* TOTAL MODULES */}
 
                           <div className="border rounded-xl p-5">
-
                             <div className="flex items-center gap-3">
-
                               <BookOpen
                                 size={24}
                                 className="text-indigo-600"
                               />
 
                               <div>
-
                                 <p className="text-sm text-gray-500">
                                   Total Modules
                                 </p>
@@ -1420,26 +1355,20 @@ function LearningProgress() {
                                 <p className="text-2xl font-bold text-slate-800">
                                   {totalModules}
                                 </p>
-
                               </div>
-
                             </div>
-
                           </div>
 
                           {/* COMPLETED MODULES */}
 
                           <div className="border border-green-200 bg-green-50 rounded-xl p-5">
-
                             <div className="flex items-center gap-3">
-
                               <CheckCircle2
                                 size={24}
                                 className="text-green-600"
                               />
 
                               <div>
-
                                 <p className="text-sm text-green-600">
                                   Completed Modules
                                 </p>
@@ -1447,26 +1376,20 @@ function LearningProgress() {
                                 <p className="text-2xl font-bold text-green-700">
                                   {completedModules}
                                 </p>
-
                               </div>
-
                             </div>
-
                           </div>
 
                           {/* REMAINING MODULES */}
 
                           <div className="border border-orange-200 bg-orange-50 rounded-xl p-5">
-
                             <div className="flex items-center gap-3">
-
                               <Clock3
                                 size={24}
                                 className="text-orange-600"
                               />
 
                               <div>
-
                                 <p className="text-sm text-orange-600">
                                   Remaining Modules
                                 </p>
@@ -1474,15 +1397,10 @@ function LearningProgress() {
                                 <p className="text-2xl font-bold text-orange-700">
                                   {remainingModules}
                                 </p>
-
                               </div>
-
                             </div>
-
                           </div>
-
                         </div>
-
                       </div>
 
                       {/* =================================================
@@ -1490,30 +1408,23 @@ function LearningProgress() {
                       ================================================= */}
 
                       <div className="px-6 pb-6">
-
                         <div
                           className={`border rounded-2xl p-6 ${certificationStyle.container}`}
                         >
-
                           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-
                             {/* CERTIFICATION HEADER */}
 
                             <div className="flex items-start gap-4">
-
                               <div className="bg-white p-3 rounded-xl shadow-sm">
-
                                 <Award
                                   size={30}
                                   className={
                                     certificationStyle.icon
                                   }
                                 />
-
                               </div>
 
                               <div>
-
                                 <h3
                                   className={`text-xl font-bold ${certificationStyle.title}`}
                                 >
@@ -1525,49 +1436,41 @@ function LearningProgress() {
                                 >
                                   {certificationStatus}
                                 </p>
-
                               </div>
-
                             </div>
-
                           </div>
 
                           {/* CERTIFIED DETAILS */}
 
-                          {String(status).toUpperCase() ===
+                          {String(
+                            status
+                          ).toUpperCase() ===
                             "CERTIFIED" && (
-
                             <div className="mt-6">
-
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
                                 {/* CERTIFICATION NAME */}
 
                                 <div className="bg-white rounded-xl p-4">
-
                                   <div className="flex items-center gap-2 text-purple-600">
-
-                                    <Award size={19} />
+                                    <Award
+                                      size={19}
+                                    />
 
                                     <span className="text-sm font-medium">
                                       Certification Name
                                     </span>
-
                                   </div>
 
                                   <p className="font-semibold text-slate-800 mt-2">
                                     {enrollment?.certificationName ||
                                       "Not available"}
                                   </p>
-
                                 </div>
 
                                 {/* ISSUED DATE */}
 
                                 <div className="bg-white rounded-xl p-4">
-
                                   <div className="flex items-center gap-2 text-green-600">
-
                                     <CalendarCheck
                                       size={19}
                                     />
@@ -1575,7 +1478,6 @@ function LearningProgress() {
                                     <span className="text-sm font-medium">
                                       Issued Date
                                     </span>
-
                                   </div>
 
                                   <p className="font-semibold text-slate-800 mt-2">
@@ -1583,21 +1485,19 @@ function LearningProgress() {
                                       enrollment?.certificationIssuedDate
                                     )}
                                   </p>
-
                                 </div>
 
                                 {/* EXPIRY DATE */}
 
                                 <div className="bg-white rounded-xl p-4">
-
                                   <div className="flex items-center gap-2 text-orange-600">
-
-                                    <Clock3 size={19} />
+                                    <Clock3
+                                      size={19}
+                                    />
 
                                     <span className="text-sm font-medium">
                                       Expiry Date
                                     </span>
-
                                   </div>
 
                                   <p className="font-semibold text-slate-800 mt-2">
@@ -1605,15 +1505,12 @@ function LearningProgress() {
                                       enrollment?.certificationExpiryDate
                                     )}
                                   </p>
-
                                 </div>
-
                               </div>
 
                               {/* VIEW CERTIFICATE */}
 
                               {enrollment?.certificationUrl && (
-
                                 <button
                                   onClick={() =>
                                     openCertificate(
@@ -1622,7 +1519,6 @@ function LearningProgress() {
                                   }
                                   className="mt-5 flex items-center gap-2 px-5 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
                                 >
-
                                   <Award
                                     size={18}
                                   />
@@ -1632,31 +1528,25 @@ function LearningProgress() {
                                   <ExternalLink
                                     size={16}
                                   />
-
                                 </button>
-
                               )}
-
                             </div>
-
                           )}
 
                           {/* CERTIFICATION PENDING */}
 
-                          {String(status).toUpperCase() ===
+                          {String(
+                            status
+                          ).toUpperCase() ===
                             "COMPLETED" && (
-
                             <div className="mt-5 bg-white rounded-xl p-4 border border-orange-100">
-
                               <div className="flex items-start gap-3">
-
                                 <AlertCircle
                                   size={21}
                                   className="text-orange-500 mt-0.5"
                                 />
 
                                 <div>
-
                                   <p className="font-semibold text-slate-800">
                                     Certification Pending
                                   </p>
@@ -1666,35 +1556,31 @@ function LearningProgress() {
                                     Certification details will appear
                                     here once the certification is issued.
                                   </p>
-
                                 </div>
-
                               </div>
-
                             </div>
-
                           )}
 
                           {/* EXPIRED / RENEWAL */}
 
                           {(
-                            String(status).toUpperCase() ===
+                            String(
+                              status
+                            ).toUpperCase() ===
                               "EXPIRED" ||
-                            String(status).toUpperCase() ===
+                            String(
+                              status
+                            ).toUpperCase() ===
                               "EXPIRED_RENEWAL"
                           ) && (
-
                             <div className="mt-5 bg-white rounded-xl p-4 border border-red-100">
-
                               <div className="flex items-start gap-3">
-
                                 <RefreshCw
                                   size={21}
                                   className="text-red-500 mt-0.5"
                                 />
 
                                 <div>
-
                                   <p className="font-semibold text-slate-800">
                                     Certification Expired
                                   </p>
@@ -1703,29 +1589,18 @@ function LearningProgress() {
                                     This certification requires
                                     renewal.
                                   </p>
-
                                 </div>
-
                               </div>
-
                             </div>
-
                           )}
-
                         </div>
-
                       </div>
-
                     </div>
-
                   );
                 }
               )}
-
             </div>
-
           )}
-
         </main>
       </div>
     </div>
