@@ -104,6 +104,29 @@ public class NotificationService {
     }
 
     // =========================================================
+    // CREATE NOTIFICATION FOR ALL DEPARTMENT HEADS
+    // =========================================================
+
+    public void notifyDepartmentHeads(
+            String type,
+            String message) {
+
+        List<Employee> departmentHeads =
+                employeeRepository.findByRoleRoleName(
+                        "DEPARTMENT_HEAD"
+                );
+
+        for (Employee departmentHead : departmentHeads) {
+
+            createNotification(
+                    departmentHead,
+                    type,
+                    message
+            );
+        }
+    }
+
+    // =========================================================
     // GET ALL NOTIFICATIONS FOR EMPLOYEE
     // =========================================================
 

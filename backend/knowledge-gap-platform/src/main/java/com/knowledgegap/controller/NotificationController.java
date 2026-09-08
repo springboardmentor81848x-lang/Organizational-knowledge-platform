@@ -1,9 +1,11 @@
+
 package com.knowledgegap.controller;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +36,7 @@ public class NotificationController {
 
     // =========================================================
     // GET ALL NOTIFICATIONS FOR EMPLOYEE
+    // EXISTING ENDPOINT - DO NOT REMOVE
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}")
@@ -58,7 +61,8 @@ public class NotificationController {
     }
 
     // =========================================================
-    // GET UNREAD NOTIFICATIONS
+    // GET UNREAD NOTIFICATIONS FOR EMPLOYEE
+    // EXISTING ENDPOINT - DO NOT REMOVE
     // =========================================================
 
     @GetMapping("/employee/{employeeIdentifier}/unread")
@@ -83,7 +87,72 @@ public class NotificationController {
     }
 
     // =========================================================
+    // DEPARTMENT HEAD
+    // GET ALL NOTIFICATIONS FOR LOGGED-IN DEPARTMENT HEAD
+    // =========================================================
+
+    @GetMapping("/department-head")
+    public ResponseEntity<List<NotificationResponse>>
+    getDepartmentHeadNotifications(
+            Authentication authentication) {
+
+        if (authentication == null ||
+                authentication.getName() == null) {
+
+            return ResponseEntity.status(401).build();
+        }
+
+        String email = authentication.getName();
+
+        Optional<Employee> employee =
+                employeeService.getEmployeeByEmail(email);
+
+        if (employee.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(
+                notificationService.getNotifications(
+                        employee.get()
+                )
+        );
+    }
+
+    // =========================================================
+    // DEPARTMENT HEAD
+    // GET UNREAD NOTIFICATIONS
+    // =========================================================
+
+    @GetMapping("/department-head/unread")
+    public ResponseEntity<List<NotificationResponse>>
+    getUnreadDepartmentHeadNotifications(
+            Authentication authentication) {
+
+        if (authentication == null ||
+                authentication.getName() == null) {
+
+            return ResponseEntity.status(401).build();
+        }
+
+        String email = authentication.getName();
+
+        Optional<Employee> employee =
+                employeeService.getEmployeeByEmail(email);
+
+        if (employee.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(
+                notificationService.getUnreadNotifications(
+                        employee.get()
+                )
+        );
+    }
+
+    // =========================================================
     // MARK NOTIFICATION AS READ
+    // EXISTING ENDPOINT - DO NOT REMOVE
     // =========================================================
 
     @PutMapping("/{id}/read")

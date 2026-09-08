@@ -1,14 +1,14 @@
 package com.knowledgegap.service;
 
-import com.knowledgegap.entity.Employee;
-import com.knowledgegap.repository.EmployeeRepository;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import com.knowledgegap.entity.Employee;
+import com.knowledgegap.repository.EmployeeRepository;
 
 @Service
 public class EmployeeService {
@@ -27,24 +27,15 @@ public class EmployeeService {
         this.notificationService = notificationService;
     }
 
-    // =========================================================
-    // CREATE EMPLOYEE
-    // =========================================================
-
     @Transactional
     public Employee saveEmployee(Employee employee) {
-
-        // =====================================================
-        // CHECK WHETHER THIS IS A NEW EMPLOYEE
-        // =====================================================
 
         boolean isNewEmployee =
                 employee.getId() == null;
 
-        // =====================================================
-        // ENCRYPT PASSWORD BEFORE SAVING
-        // =====================================================
-
+        /*
+         * Encode password only when a new/plain password is supplied.
+         */
         if (employee.getPassword() != null &&
             !employee.getPassword().isEmpty()) {
 
@@ -55,17 +46,12 @@ public class EmployeeService {
             );
         }
 
-        // =====================================================
-        // SAVE EMPLOYEE
-        // =====================================================
-
         Employee savedEmployee =
                 employeeRepository.save(employee);
 
-        // =====================================================
-        // NOTIFY HR ONLY FOR NEW EMPLOYEES
-        // =====================================================
-
+        /*
+         * Create notifications only for newly created employees.
+         */
         if (isNewEmployee) {
 
             String employeeName =
@@ -104,7 +90,18 @@ public class EmployeeService {
                         + " has joined the organization.";
             }
 
+            /*
+             * Notify HR.
+             */
             notificationService.notifyHR(
+                    "NEW_EMPLOYEE",
+                    message
+            );
+
+            /*
+             * Notify Department Heads.
+             */
+            notificationService.notifyDepartmentHeads(
                     "NEW_EMPLOYEE",
                     message
             );
@@ -113,28 +110,15 @@ public class EmployeeService {
         return savedEmployee;
     }
 
-    // =========================================================
-    // GET ALL EMPLOYEES
-    // =========================================================
-
     public List<Employee> getAllEmployees() {
 
         return employeeRepository.findAll();
     }
 
-    // =========================================================
-    // GET EMPLOYEE BY DATABASE ID
-    // =========================================================
-
     public Optional<Employee> getEmployeeById(Long id) {
 
         return employeeRepository.findById(id);
     }
-
-    // =========================================================
-    // GET EMPLOYEE BY EMPLOYEE ID
-    // Example: EMP001
-    // =========================================================
 
     public Optional<Employee> getEmployeeByEmployeeId(
             String employeeId) {
@@ -144,10 +128,11 @@ public class EmployeeService {
         );
     }
 
-    // =========================================================
-    // GET EMPLOYEE BY ID OR EMPLOYEE ID
-    // =========================================================
-
+    /*
+     * Finds an employee using either:
+     * 1. Database numeric ID
+     * 2. Employee ID such as E005
+     */
     public Optional<Employee> getEmployeeByIdentifier(
             String employeeIdentifier) {
 
@@ -171,7 +156,6 @@ public class EmployeeService {
                     employeeRepository.findById(id);
 
         } catch (NumberFormatException ignored) {
-
             // Not a database ID.
             // Try business Employee ID instead.
         }
@@ -185,18 +169,32 @@ public class EmployeeService {
         );
     }
 
-    // =========================================================
-    // UPDATE EMPLOYEE PROFILE
-    // =========================================================
+    /*
+     * Finds employee using the email stored in the JWT.
+     *
+     * This is used by the Department Head notification
+     * endpoint so the frontend does not need to send an
+     * employee ID.
+     */
+    public Optional<Employee> getEmployeeByEmail(
+            String email) {
 
-    public Employee updateEmployee(Employee employee) {
+        if (email == null ||
+            email.trim().isEmpty()) {
+
+            return Optional.empty();
+        }
+
+        return employeeRepository.findByEmail(
+                email.trim()
+        );
+    }
+
+    public Employee updateEmployee(
+            Employee employee) {
 
         return employeeRepository.save(employee);
     }
-
-    // =========================================================
-    // DELETE EMPLOYEE
-    // =========================================================
 
     public void deleteEmployee(Long id) {
 

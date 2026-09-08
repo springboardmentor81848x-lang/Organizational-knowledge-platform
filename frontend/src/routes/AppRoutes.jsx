@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Routes,
@@ -13,6 +14,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import ForgotPassword from "../pages/ForgotPassword";
 import Profile from "../pages/Profile";
 import Notifications from "../pages/Notifications";
 import DepartmentNotifications from "../pages/DepartmentNotifications";
@@ -270,6 +272,16 @@ function AppRoutes() {
       />
 
       {/* ==================================================
+          FORGOT PASSWORD
+          PUBLIC ROUTE
+      ================================================== */}
+
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
+      />
+
+      {/* ==================================================
           COMMON
       ================================================== */}
 
@@ -417,6 +429,7 @@ function AppRoutes() {
       />
 
       {/* Optional alternate URL */}
+
       <Route
         path="/self-assessment"
         element={
@@ -1336,20 +1349,21 @@ function AppRoutes() {
       ================================================== */}
 
       <Route
-    path="/department-head/notifications"
-    element={
-    <ProtectedRoute
-      allowedRoles={[
-        "DEPARTMENT HEAD",
-        "DEPARTMENT_HEAD",
-      ]}
-    >
-      <DashboardLayout>
-        <DepartmentNotifications />
-      </DashboardLayout>
-    </ProtectedRoute>
-  }
-/>
+        path="/department-head/notifications"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "DEPARTMENT HEAD",
+              "DEPARTMENT_HEAD",
+            ]}
+          >
+            <DashboardLayout>
+              <DepartmentNotifications />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* ==================================================
           MENTOR DASHBOARD
       ================================================== */}
