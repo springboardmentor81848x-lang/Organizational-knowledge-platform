@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from "../services/api";
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import {
@@ -17,7 +17,7 @@ import {
   UserCheck
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+
 
 export default function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();

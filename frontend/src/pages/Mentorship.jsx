@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import api from "../services/api";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+
 import {
   Users,
   MessageSquare,
@@ -16,10 +19,8 @@ import {
   ShieldCheck,
   Send,
   RefreshCw,
-  Search
+  Search,
 } from "lucide-react";
-
-const API_BASE_URL = "http://localhost:8080/api";
 
 const levelNames = {
   1: "Beginner",

@@ -1,17 +1,4 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:8080/api";
-
-const getAuthConfig = () => {
-  const token = localStorage.getItem("token");
-
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  };
-};
+import api from "../services/api";
 
 // =========================================================
 // MENTOR PROFILE
@@ -22,9 +9,8 @@ const getAuthConfig = () => {
 
 export const getMentorProfile = async (employeeIdentifier) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/profile/${employeeIdentifier}`,
-      getAuthConfig()
+    const response = await api.get(
+      `/mentor-management/profile/${employeeIdentifier}`
     );
 
     return response.data;
@@ -33,6 +19,7 @@ export const getMentorProfile = async (employeeIdentifier) => {
       "Error fetching mentor profile:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -45,17 +32,19 @@ export const getMentorProfile = async (employeeIdentifier) => {
 
 export const getAllMentors = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/mentors`,
-      getAuthConfig()
+    const response = await api.get(
+      "/mentor-management/mentors"
     );
 
-    return Array.isArray(response.data) ? response.data : [];
+    return Array.isArray(response.data)
+      ? response.data
+      : [];
   } catch (error) {
     console.error(
       "Error fetching mentors:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -66,19 +55,23 @@ export const getAllMentors = async () => {
 // GET /api/mentor-management/mentors/{employeeIdentifier}/expertise
 // =========================================================
 
-export const getMentorExpertise = async (employeeIdentifier) => {
+export const getMentorExpertise = async (
+  employeeIdentifier
+) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/mentors/${employeeIdentifier}/expertise`,
-      getAuthConfig()
+    const response = await api.get(
+      `/mentor-management/mentors/${employeeIdentifier}/expertise`
     );
 
-    return Array.isArray(response.data) ? response.data : [];
+    return Array.isArray(response.data)
+      ? response.data
+      : [];
   } catch (error) {
     console.error(
       "Error fetching mentor expertise:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -91,9 +84,8 @@ export const getMentorExpertise = async (employeeIdentifier) => {
 
 export const getMentorManagementSummary = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/summary`,
-      getAuthConfig()
+    const response = await api.get(
+      "/mentor-management/summary"
     );
 
     return response.data;
@@ -102,6 +94,7 @@ export const getMentorManagementSummary = async () => {
       "Error fetching mentor management summary:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -114,17 +107,19 @@ export const getMentorManagementSummary = async () => {
 
 export const getMentorshipRequests = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/requests`,
-      getAuthConfig()
+    const response = await api.get(
+      "/mentor-management/requests"
     );
 
-    return Array.isArray(response.data) ? response.data : [];
+    return Array.isArray(response.data)
+      ? response.data
+      : [];
   } catch (error) {
     console.error(
       "Error fetching mentorship requests:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -137,17 +132,19 @@ export const getMentorshipRequests = async () => {
 
 export const getActiveMentorships = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/active`,
-      getAuthConfig()
+    const response = await api.get(
+      "/mentor-management/active"
     );
 
-    return Array.isArray(response.data) ? response.data : [];
+    return Array.isArray(response.data)
+      ? response.data
+      : [];
   } catch (error) {
     console.error(
       "Error fetching active mentorships:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -160,17 +157,19 @@ export const getActiveMentorships = async () => {
 
 export const getMentorshipHistory = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/mentor-management/history`,
-      getAuthConfig()
+    const response = await api.get(
+      "/mentor-management/history"
     );
 
-    return Array.isArray(response.data) ? response.data : [];
+    return Array.isArray(response.data)
+      ? response.data
+      : [];
   } catch (error) {
     console.error(
       "Error fetching mentorship history:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -181,12 +180,13 @@ export const getMentorshipHistory = async () => {
 // PUT /api/mentor-management/requests/{id}/accept
 // =========================================================
 
-export const acceptMentorship = async (mentorshipId) => {
+export const acceptMentorship = async (
+  mentorshipId
+) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/mentor-management/requests/${mentorshipId}/accept`,
-      {},
-      getAuthConfig()
+    const response = await api.put(
+      `/mentor-management/requests/${mentorshipId}/accept`,
+      {}
     );
 
     return response.data;
@@ -195,6 +195,7 @@ export const acceptMentorship = async (mentorshipId) => {
       "Error accepting mentorship:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -205,12 +206,13 @@ export const acceptMentorship = async (mentorshipId) => {
 // PUT /api/mentor-management/requests/{id}/reject
 // =========================================================
 
-export const rejectMentorship = async (mentorshipId) => {
+export const rejectMentorship = async (
+  mentorshipId
+) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/mentor-management/requests/${mentorshipId}/reject`,
-      {},
-      getAuthConfig()
+    const response = await api.put(
+      `/mentor-management/requests/${mentorshipId}/reject`,
+      {}
     );
 
     return response.data;
@@ -219,6 +221,7 @@ export const rejectMentorship = async (mentorshipId) => {
       "Error rejecting mentorship:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -229,12 +232,13 @@ export const rejectMentorship = async (mentorshipId) => {
 // PUT /api/mentor-management/mentorships/{id}/activate
 // =========================================================
 
-export const activateMentorship = async (mentorshipId) => {
+export const activateMentorship = async (
+  mentorshipId
+) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/mentor-management/mentorships/${mentorshipId}/activate`,
-      {},
-      getAuthConfig()
+    const response = await api.put(
+      `/mentor-management/mentorships/${mentorshipId}/activate`,
+      {}
     );
 
     return response.data;
@@ -243,6 +247,7 @@ export const activateMentorship = async (mentorshipId) => {
       "Error activating mentorship:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };
@@ -253,12 +258,13 @@ export const activateMentorship = async (mentorshipId) => {
 // PUT /api/mentor-management/mentorships/{id}/complete
 // =========================================================
 
-export const completeMentorship = async (mentorshipId) => {
+export const completeMentorship = async (
+  mentorshipId
+) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/mentor-management/mentorships/${mentorshipId}/complete`,
-      {},
-      getAuthConfig()
+    const response = await api.put(
+      `/mentor-management/mentorships/${mentorshipId}/complete`,
+      {}
     );
 
     return response.data;
@@ -267,6 +273,7 @@ export const completeMentorship = async (mentorshipId) => {
       "Error completing mentorship:",
       error.response?.data || error.message
     );
+
     throw error;
   }
 };

@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
+import api from "../services/api";
 import {
   Users,
   BarChart3,
@@ -32,15 +31,9 @@ function TeamCoverage() {
 
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(
-        `http://localhost:8080/api/manager-dashboard/team-skills/${managerEmployeeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await api.get(
+  `/manager-dashboard/team-skills/${managerEmployeeId}`
+);
       console.log("Team Skill Coverage:", response.data);
 
       setData(response.data);

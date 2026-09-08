@@ -1,17 +1,17 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api";
+
 import {
   ArrowLeft,
   LockKeyhole,
   Mail,
   Eye,
-  EyeOff
+  EyeOff,
 } from "lucide-react";
 
 function ForgotPassword() {
-
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -27,38 +27,28 @@ function ForgotPassword() {
   // ============================================================
   // SEND OTP
   // ============================================================
-
   const handleSendOTP = async (e) => {
-
     e.preventDefault();
 
     if (!email.trim()) {
-
       alert("Please enter your email.");
-
       return;
     }
 
     try {
-
       setLoading(true);
 
-      const response = await axios.post(
-        "http://localhost:8080/api/auth/forgot-password",
-        {
-          email: email.trim()
-        }
-      );
+      const response = await api.post("/auth/forgot-password", {
+        email: email.trim(),
+      });
 
       alert(
         response.data.message ||
-        "OTP sent successfully."
+          "OTP sent successfully."
       );
 
       setOtpSent(true);
-
     } catch (error) {
-
       console.error(
         "Forgot Password Error:",
         error
@@ -66,11 +56,9 @@ function ForgotPassword() {
 
       alert(
         error.response?.data?.message ||
-        "Unable to send OTP."
+          "Unable to send OTP."
       );
-
     } finally {
-
       setLoading(false);
     }
   };
@@ -78,56 +66,45 @@ function ForgotPassword() {
   // ============================================================
   // RESET PASSWORD
   // ============================================================
-
   const handleResetPassword = async (e) => {
-
     e.preventDefault();
 
     if (!otp.trim()) {
-
       alert("Please enter the OTP.");
-
       return;
     }
 
     if (!newPassword) {
-
       alert("Please enter a new password.");
-
       return;
     }
 
     if (newPassword.length < 6) {
-
       alert(
         "Password must contain at least 6 characters."
       );
-
       return;
     }
 
     try {
-
       setLoading(true);
 
-      const response = await axios.post(
-        "http://localhost:8080/api/auth/reset-password",
+      const response = await api.post(
+        "/auth/reset-password",
         {
           email: email.trim(),
           otp: otp.trim(),
-          newPassword: newPassword
+          newPassword: newPassword,
         }
       );
 
       alert(
         response.data.message ||
-        "Password reset successfully."
+          "Password reset successfully."
       );
 
       navigate("/login");
-
     } catch (error) {
-
       console.error(
         "Reset Password Error:",
         error
@@ -135,11 +112,9 @@ function ForgotPassword() {
 
       alert(
         error.response?.data?.message ||
-        "Unable to reset password."
+          "Unable to reset password."
       );
-
     } finally {
-
       setLoading(false);
     }
   };
@@ -147,14 +122,12 @@ function ForgotPassword() {
   // ============================================================
   // UI
   // ============================================================
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
 
         {/* BACK TO LOGIN */}
-
         <Link
           to="/login"
           className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 mb-6"
@@ -164,20 +137,15 @@ function ForgotPassword() {
         </Link>
 
         {/* HEADER */}
-
         <div className="text-center mb-8">
 
           <div className="flex justify-center mb-4">
-
             <div className="bg-indigo-100 p-4 rounded-full">
-
               <LockKeyhole
                 size={32}
                 className="text-indigo-600"
               />
-
             </div>
-
           </div>
 
           <h2 className="text-3xl font-bold">
@@ -195,7 +163,6 @@ function ForgotPassword() {
         {/* ================================================== */}
 
         {!otpSent ? (
-
           <form
             onSubmit={handleSendOTP}
             className="space-y-5"
@@ -238,30 +205,21 @@ function ForgotPassword() {
             </button>
 
           </form>
-
         ) : (
-
-          /* ================================================== */
-          /* OTP + NEW PASSWORD FORM */
-          /* ================================================== */
-
+          /* ==================================================
+             OTP + NEW PASSWORD FORM
+             ================================================== */
           <form
             onSubmit={handleResetPassword}
             className="space-y-5"
           >
 
             <div className="bg-green-50 text-green-700 p-3 rounded-lg text-sm">
-
               OTP sent to{" "}
-
-              <strong>
-                {email}
-              </strong>
-
+              <strong>{email}</strong>
             </div>
 
             {/* OTP */}
-
             <div>
 
               <label className="block mb-2 font-medium">
@@ -288,7 +246,6 @@ function ForgotPassword() {
             </div>
 
             {/* NEW PASSWORD */}
-
             <div>
 
               <label className="block mb-2 font-medium">
@@ -296,7 +253,6 @@ function ForgotPassword() {
               </label>
 
               {/* Password input with visibility button */}
-
               <div className="relative">
 
                 <input
@@ -341,7 +297,6 @@ function ForgotPassword() {
             </div>
 
             {/* RESET */}
-
             <button
               type="submit"
               disabled={loading}
@@ -353,7 +308,6 @@ function ForgotPassword() {
             </button>
 
             {/* CHANGE EMAIL */}
-
             <button
               type="button"
               onClick={() => {
@@ -371,7 +325,6 @@ function ForgotPassword() {
         )}
 
       </div>
-
     </div>
   );
 }

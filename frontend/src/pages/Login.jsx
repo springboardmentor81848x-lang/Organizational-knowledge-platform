@@ -1,9 +1,13 @@
-﻿import axios from "axios";
+﻿import api from "../services/api";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import { useState } from "react";
+
 import { Eye, EyeOff } from "lucide-react";
 
 import InputField from "../components/InputField";
+
 import Button from "../components/Button";
 
 function Login() {
@@ -22,8 +26,8 @@ function Login() {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/auth/login",
+      const response = await api.post(
+        "/auth/login",
         {
           email,
           password,
@@ -40,7 +44,6 @@ function Login() {
       // =====================================================
       // CLEAR OLD TARGET ROLE DATA
       // =====================================================
-
       localStorage.removeItem("targetRoleId");
       localStorage.removeItem("targetRole");
       localStorage.removeItem("targetAssessmentId");
@@ -48,7 +51,6 @@ function Login() {
       // =====================================================
       // SAVE TOKEN
       // =====================================================
-
       if (response.data.token) {
         localStorage.setItem(
           "token",
@@ -59,7 +61,6 @@ function Login() {
       // =====================================================
       // SAVE DATABASE USER ID
       // =====================================================
-
       if (response.data.id != null) {
         localStorage.setItem(
           "userId",
@@ -75,7 +76,6 @@ function Login() {
       // =====================================================
       // SAVE USER DETAILS
       // =====================================================
-
       if (response.data.designation) {
         localStorage.setItem(
           "designation",
@@ -100,7 +100,6 @@ function Login() {
       // =====================================================
       // SAVE EMPLOYEE ID
       // =====================================================
-
       if (response.data.employeeId) {
         localStorage.setItem(
           "employeeId",
@@ -111,7 +110,6 @@ function Login() {
       // =====================================================
       // SAVE TARGET ROLE ID
       // =====================================================
-
       if (response.data.targetRoleId != null) {
         const targetRoleId = Number(
           response.data.targetRoleId
@@ -130,7 +128,6 @@ function Login() {
         // ===================================================
         // SAVE TARGET ROLE NAME
         // ===================================================
-
         const targetRoles = {
           1: "Software Developer",
           2: "Software Tester",
@@ -165,12 +162,10 @@ function Login() {
       // =====================================================
       // GET ROLE FROM RESPONSE
       // =====================================================
-
       let role = response.data.role;
 
       // Backend may return:
       // role: { roleName: "Mentor" }
-
       if (
         role &&
         typeof role === "object"
@@ -181,7 +176,6 @@ function Login() {
       // =====================================================
       // GET ROLE FROM JWT IF NEEDED
       // =====================================================
-
       if (
         !role &&
         response.data.token
@@ -217,7 +211,6 @@ function Login() {
       // =====================================================
       // IF ROLE IS ARRAY
       // =====================================================
-
       if (Array.isArray(role)) {
         role = role[0];
       }
@@ -230,7 +223,6 @@ function Login() {
       // =====================================================
       // NORMALIZE ROLE
       // =====================================================
-
       const normalizedRole = role
         ?.toString()
         .trim()
@@ -245,7 +237,6 @@ function Login() {
       // =====================================================
       // SAVE SYSTEM ROLE
       // =====================================================
-
       if (normalizedRole) {
         localStorage.setItem(
           "role",
@@ -256,7 +247,6 @@ function Login() {
       // =====================================================
       // FINAL DEBUG INFORMATION
       // =====================================================
-
       console.log(
         "========== LOGIN STORAGE =========="
       );
@@ -293,7 +283,6 @@ function Login() {
       // =====================================================
       // ROLE BASED NAVIGATION
       // =====================================================
-
       switch (normalizedRole) {
         case "EMPLOYEE":
           navigate("/employee");
@@ -332,7 +321,6 @@ function Login() {
               role || "No role received"
             }`
           );
-
           break;
       }
     } catch (error) {
@@ -359,9 +347,7 @@ function Login() {
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
 
         {/* LEFT SIDE */}
-
         <div className="bg-slate-800 text-white flex flex-col justify-center items-center p-10">
-
           <h1 className="text-4xl font-bold text-center">
             Organizational Knowledge
           </h1>
@@ -374,13 +360,10 @@ function Login() {
             Empowering organizations through knowledge sharing,
             skill management and intelligent insights.
           </p>
-
         </div>
 
         {/* RIGHT SIDE */}
-
         <div className="p-10">
-
           <h2 className="text-3xl font-bold mb-2">
             Welcome Back
           </h2>
@@ -393,9 +376,7 @@ function Login() {
             className="space-y-5"
             onSubmit={handleLogin}
           >
-
             {/* EMAIL */}
-
             <InputField
               label="Email"
               type="email"
@@ -407,15 +388,12 @@ function Login() {
             />
 
             {/* PASSWORD */}
-
             <div>
-
               <label className="block mb-2 font-medium">
                 Password
               </label>
 
               <div className="flex border rounded-lg overflow-hidden">
-
                 <input
                   type={
                     showPassword
@@ -447,62 +425,45 @@ function Login() {
                     <Eye size={20} />
                   )}
                 </button>
-
               </div>
-
             </div>
 
             {/* REMEMBER ME + FORGOT PASSWORD */}
-
             <div className="flex justify-between items-center text-sm">
-
               <label className="flex items-center gap-2">
-
                 <input
                   type="checkbox"
                 />
-
                 Remember Me
-
               </label>
 
               {/* FORGOT PASSWORD */}
-
               <Link
                 to="/forgot-password"
                 className="text-indigo-600 hover:underline"
               >
                 Forgot Password?
               </Link>
-
             </div>
 
             {/* LOGIN */}
-
             <Button
               text="Login"
               type="submit"
             />
-
           </form>
 
           {/* SIGN UP */}
-
           <p className="text-center mt-6">
-
             Don't have an account?{" "}
-
             <Link
               to="/signup"
               className="text-indigo-700 font-semibold hover:underline"
             >
               Sign Up
             </Link>
-
           </p>
-
         </div>
-
       </div>
     </div>
   );

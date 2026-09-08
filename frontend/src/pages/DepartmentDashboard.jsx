@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 
-import axios from "axios";
+import api from "../services/api";
 
 import Navbar from "../components/Navbar";
+
 import Sidebar from "../components/Sidebar";
 
 import {
@@ -19,7 +20,6 @@ import {
 } from "lucide-react";
 
 const DepartmentDashboard = () => {
-
   // =========================================================
   // LOGGED-IN EMPLOYEE
   // =========================================================
@@ -45,33 +45,19 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   const fetchDashboard = async () => {
-
     try {
-
       setLoading(true);
       setError("");
 
       if (!employeeIdentifier) {
-
         throw new Error(
           "Employee ID not found. Please login again."
         );
       }
 
-      const token =
-        localStorage.getItem("token");
-
       const response =
-        await axios.get(
-          `http://localhost:8080/api/department-head/dashboard/${employeeIdentifier}`,
-          {
-            headers: token
-              ? {
-                  Authorization:
-                    `Bearer ${token}`,
-                }
-              : {},
-          }
+        await api.get(
+          `/department-head/dashboard/${employeeIdentifier}`
         );
 
       console.log(
@@ -80,9 +66,7 @@ const DepartmentDashboard = () => {
       );
 
       setDashboard(response.data);
-
     } catch (err) {
-
       console.error(
         "Error loading department dashboard:",
         err
@@ -90,15 +74,12 @@ const DepartmentDashboard = () => {
 
       setError(
         err.response?.data?.message ||
-        err.response?.data ||
-        err.message ||
-        "Failed to load department dashboard."
+          err.response?.data ||
+          err.message ||
+          "Failed to load department dashboard."
       );
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
@@ -107,9 +88,7 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   useEffect(() => {
-
     fetchDashboard();
-
   }, []);
 
   // =========================================================
@@ -117,7 +96,6 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   const getGapLabel = (gap) => {
-
     const value = Number(gap || 0);
 
     if (value === 0) return "No Gap";
@@ -129,7 +107,6 @@ const DepartmentDashboard = () => {
   };
 
   const getGapClass = (gap) => {
-
     const value = Number(gap || 0);
 
     if (value === 0) {
@@ -156,23 +133,16 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   if (loading) {
-
     return (
-
       <div className="flex min-h-screen bg-gray-50">
-
         <Sidebar role="DEPARTMENT HEAD" />
 
         <div className="flex-1 min-w-0">
-
           <Navbar title="Department Dashboard" />
 
           <main className="p-8">
-
             <div className="bg-white rounded-xl shadow-sm p-6">
-
               <div className="flex items-center gap-3">
-
                 <RefreshCw
                   size={24}
                   className="animate-spin text-blue-600"
@@ -181,15 +151,10 @@ const DepartmentDashboard = () => {
                 <p className="text-gray-600">
                   Loading department dashboard...
                 </p>
-
               </div>
-
             </div>
-
           </main>
-
         </div>
-
       </div>
     );
   }
@@ -199,32 +164,23 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   if (error) {
-
     return (
-
       <div className="flex min-h-screen bg-gray-50">
-
         <Sidebar role="DEPARTMENT HEAD" />
 
         <div className="flex-1 min-w-0">
-
           <Navbar title="Department Dashboard" />
 
           <main className="p-8">
-
             <div className="max-w-4xl">
-
               <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-
                 <div className="flex items-start gap-3">
-
                   <AlertCircle
                     className="text-red-600 mt-1"
                     size={24}
                   />
 
                   <div>
-
                     <h2 className="font-semibold text-red-800">
                       Unable to load department dashboard
                     </h2>
@@ -239,19 +195,12 @@ const DepartmentDashboard = () => {
                     >
                       Try Again
                     </button>
-
                   </div>
-
                 </div>
-
               </div>
-
             </div>
-
           </main>
-
         </div>
-
       </div>
     );
   }
@@ -261,21 +210,15 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   if (!dashboard) {
-
     return (
-
       <div className="flex min-h-screen bg-gray-50">
-
         <Sidebar role="DEPARTMENT HEAD" />
 
         <div className="flex-1 min-w-0">
-
           <Navbar title="Department Dashboard" />
 
           <main className="p-8">
-
             <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-
               <Building2
                 size={48}
                 className="mx-auto text-gray-400"
@@ -289,13 +232,9 @@ const DepartmentDashboard = () => {
                 Please make sure the Department Head
                 is assigned to a department.
               </p>
-
             </div>
-
           </main>
-
         </div>
-
       </div>
     );
   }
@@ -355,7 +294,6 @@ const DepartmentDashboard = () => {
   // =========================================================
 
   return (
-
     <div className="flex min-h-screen bg-gray-50">
 
       {/* =====================================================
@@ -379,22 +317,17 @@ const DepartmentDashboard = () => {
           ================================================= */}
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-
             <div>
-
               <div className="flex items-center gap-3">
 
                 <div className="p-3 bg-blue-100 rounded-xl">
-
                   <Building2
                     size={28}
                     className="text-blue-600"
                   />
-
                 </div>
 
                 <div>
-
                   <h1 className="text-3xl font-bold text-slate-800">
                     Department Dashboard
                   </h1>
@@ -403,24 +336,17 @@ const DepartmentDashboard = () => {
                     Department-level learning, training
                     and skill gap overview
                   </p>
-
                 </div>
-
               </div>
-
             </div>
 
             <button
               onClick={fetchDashboard}
               className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
             >
-
               <RefreshCw size={17} />
-
               Refresh
-
             </button>
-
           </div>
 
           {/* =================================================
@@ -428,20 +354,16 @@ const DepartmentDashboard = () => {
           ================================================= */}
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-
             <div className="flex items-start gap-4">
 
               <div className="p-3 bg-blue-50 rounded-xl">
-
                 <Building2
                   size={24}
                   className="text-blue-600"
                 />
-
               </div>
 
               <div>
-
                 <h2 className="text-xl font-bold text-gray-900">
                   {departmentName || "Department"}
                 </h2>
@@ -450,11 +372,8 @@ const DepartmentDashboard = () => {
                   {departmentDescription ||
                     "Department overview"}
                 </p>
-
               </div>
-
             </div>
-
           </div>
 
           {/* =================================================
@@ -466,11 +385,9 @@ const DepartmentDashboard = () => {
             {/* TOTAL EMPLOYEES */}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
               <div className="flex items-center justify-between">
 
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Total Employees
                   </p>
@@ -482,30 +399,23 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500 mt-2">
                     Employees in department
                   </p>
-
                 </div>
 
                 <div className="p-3 bg-blue-50 rounded-xl">
-
                   <Users
                     size={25}
                     className="text-blue-600"
                   />
-
                 </div>
-
               </div>
-
             </div>
 
             {/* TRAINING ENROLLED */}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
               <div className="flex items-center justify-between">
 
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Training Enrolled
                   </p>
@@ -517,30 +427,23 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500 mt-2">
                     Active training enrollments
                   </p>
-
                 </div>
 
                 <div className="p-3 bg-purple-50 rounded-xl">
-
                   <GraduationCap
                     size={25}
                     className="text-purple-600"
                   />
-
                 </div>
-
               </div>
-
             </div>
 
             {/* TRAINING COMPLETED */}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
               <div className="flex items-center justify-between">
 
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Training Completed
                   </p>
@@ -553,26 +456,20 @@ const DepartmentDashboard = () => {
                     {trainingCompletionRate}%
                     completion rate
                   </p>
-
                 </div>
 
                 <div className="p-3 bg-green-50 rounded-xl">
-
                   <CheckCircle
                     size={25}
                     className="text-green-600"
                   />
-
                 </div>
-
               </div>
-
             </div>
 
             {/* AVERAGE LEARNING PROGRESS */}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
               <div className="flex items-center justify-between">
 
                 <div className="flex-1">
@@ -586,37 +483,30 @@ const DepartmentDashboard = () => {
                   </p>
 
                   <div className="mt-3">
-
                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
 
                       <div
                         className="h-full bg-blue-600 rounded-full transition-all"
                         style={{
-                          width:
-                            `${Math.min(
-                              learningProgress,
-                              100
-                            )}%`,
+                          width: `${Math.min(
+                            learningProgress,
+                            100
+                          )}%`,
                         }}
                       />
 
                     </div>
-
                   </div>
-
                 </div>
 
                 <div className="p-3 bg-blue-50 rounded-xl ml-4">
-
                   <TrendingUp
                     size={25}
                     className="text-blue-600"
                   />
-
                 </div>
 
               </div>
-
             </div>
 
             {/* CRITICAL SKILL GAPS */}
@@ -626,7 +516,6 @@ const DepartmentDashboard = () => {
               <div className="flex items-center justify-between">
 
                 <div>
-
                   <p className="text-sm font-medium text-gray-500">
                     Critical Skill Gaps
                   </p>
@@ -638,16 +527,13 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500 mt-2">
                     High-priority gaps
                   </p>
-
                 </div>
 
                 <div className="p-3 bg-red-50 rounded-xl">
-
                   <AlertTriangle
                     size={25}
                     className="text-red-600"
                   />
-
                 </div>
 
               </div>
@@ -671,23 +557,20 @@ const DepartmentDashboard = () => {
                   </p>
 
                   <p className="text-sm text-gray-500 mt-2">
-
                     {affectedEmployees} employee
                     {affectedEmployees !== 1
                       ? "s"
-                      : ""} affected
-
+                      : ""}{" "}
+                    affected
                   </p>
 
                 </div>
 
                 <div className="p-3 bg-orange-50 rounded-xl ml-4">
-
                   <Target
                     size={25}
                     className="text-orange-600"
                   />
-
                 </div>
 
               </div>
@@ -702,23 +585,18 @@ const DepartmentDashboard = () => {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
 
-            {/* HEADER */}
-
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
               <div className="flex items-center gap-3">
 
                 <div className="p-2.5 bg-red-50 rounded-lg">
-
                   <Grid3X3
                     size={22}
                     className="text-red-600"
                   />
-
                 </div>
 
                 <div>
-
                   <h2 className="text-lg font-bold text-gray-900">
                     Team Skill Gap Map
                   </h2>
@@ -726,7 +604,6 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500">
                     Skill gaps across employees in your department
                   </p>
-
                 </div>
 
               </div>
@@ -742,53 +619,38 @@ const DepartmentDashboard = () => {
               </span>
 
               <div className="flex items-center gap-1.5">
-
                 <span className="w-4 h-4 rounded bg-gray-100 border border-gray-200"></span>
-
                 <span className="text-xs text-gray-600">
                   0 - No Gap
                 </span>
-
               </div>
 
               <div className="flex items-center gap-1.5">
-
                 <span className="w-4 h-4 rounded bg-yellow-100"></span>
-
                 <span className="text-xs text-gray-600">
                   1 - Low
                 </span>
-
               </div>
 
               <div className="flex items-center gap-1.5">
-
                 <span className="w-4 h-4 rounded bg-orange-200"></span>
-
                 <span className="text-xs text-gray-600">
                   2 - Moderate
                 </span>
-
               </div>
 
               <div className="flex items-center gap-1.5">
-
                 <span className="w-4 h-4 rounded bg-red-200"></span>
-
                 <span className="text-xs text-gray-600">
                   3 - High
                 </span>
-
               </div>
 
               <div className="flex items-center gap-1.5">
-
                 <span className="w-4 h-4 rounded bg-red-600"></span>
-
                 <span className="text-xs text-gray-600">
                   4+ - Critical
                 </span>
-
               </div>
 
             </div>
@@ -816,27 +678,16 @@ const DepartmentDashboard = () => {
 
             ) : (
 
-              /* =================================================
-                 HEATMAP TABLE
-              ================================================= */
-
               <div className="overflow-x-auto border border-gray-200 rounded-xl">
 
                 <table className="w-full border-collapse">
 
                   <thead>
-
                     <tr className="bg-gray-50">
 
-                      {/* SKILL HEADER */}
-
                       <th className="sticky left-0 z-10 bg-gray-50 border-b border-r border-gray-200 px-5 py-4 text-left text-sm font-semibold text-gray-700 min-w-[180px]">
-
                         Skill
-
                       </th>
-
-                      {/* EMPLOYEE HEADERS */}
 
                       {teamSkillGapMap[0]?.employees?.map(
                         (employee) => (
@@ -847,15 +698,11 @@ const DepartmentDashboard = () => {
                           >
 
                             <div className="text-sm font-semibold text-gray-800 whitespace-nowrap">
-
                               {employee.employeeName}
-
                             </div>
 
                             <div className="text-xs text-gray-400 mt-1">
-
                               {employee.employeeId}
-
                             </div>
 
                           </th>
@@ -864,7 +711,6 @@ const DepartmentDashboard = () => {
                       )}
 
                     </tr>
-
                   </thead>
 
                   <tbody>
@@ -881,19 +727,13 @@ const DepartmentDashboard = () => {
                           }
                         >
 
-                          {/* SKILL NAME */}
-
                           <td className="sticky left-0 z-10 bg-inherit border-r border-b border-gray-200 px-5 py-4">
 
                             <div className="font-semibold text-gray-800">
-
                               {skillRow.skillName}
-
                             </div>
 
                           </td>
-
-                          {/* GAP CELLS */}
 
                           {skillRow.employees?.map(
                             (employee) => {
@@ -904,7 +744,6 @@ const DepartmentDashboard = () => {
                                 );
 
                               return (
-
                                 <td
                                   key={employee.employeeId}
                                   className="border-b border-gray-200 p-2 text-center"
@@ -916,27 +755,21 @@ const DepartmentDashboard = () => {
                                   >
 
                                     <span className="text-lg">
-
                                       {gap}
-
                                     </span>
 
                                     <span className="text-[9px] font-medium">
-
                                       {getGapLabel(gap)}
-
                                     </span>
 
                                   </div>
 
                                 </td>
-
                               );
                             }
                           )}
 
                         </tr>
-
                       )
                     )}
 
@@ -963,16 +796,13 @@ const DepartmentDashboard = () => {
               <div className="flex items-center gap-3 mb-6">
 
                 <div className="p-2.5 bg-purple-50 rounded-lg">
-
                   <GraduationCap
                     size={22}
                     className="text-purple-600"
                   />
-
                 </div>
 
                 <div>
-
                   <h2 className="text-lg font-bold text-gray-900">
                     Training Overview
                   </h2>
@@ -980,7 +810,6 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500">
                     Department training adoption
                   </p>
-
                 </div>
 
               </div>
@@ -1060,16 +889,13 @@ const DepartmentDashboard = () => {
               <div className="flex items-center gap-3 mb-6">
 
                 <div className="p-2.5 bg-red-50 rounded-lg">
-
                   <AlertTriangle
                     size={22}
                     className="text-red-600"
                   />
-
                 </div>
 
                 <div>
-
                   <h2 className="text-lg font-bold text-gray-900">
                     Skill Gap Overview
                   </h2>
@@ -1077,7 +903,6 @@ const DepartmentDashboard = () => {
                   <p className="text-sm text-gray-500">
                     Department's highest priority gap
                   </p>
-
                 </div>
 
               </div>
@@ -1097,13 +922,11 @@ const DepartmentDashboard = () => {
                     </h3>
 
                     <p className="text-sm text-gray-500 mt-1">
-
                       Reported across{" "}
                       {affectedEmployees} employee
                       {affectedEmployees !== 1
                         ? "s"
                         : ""}
-
                     </p>
 
                   </div>
@@ -1139,12 +962,10 @@ const DepartmentDashboard = () => {
               />
 
               <p className="text-sm text-blue-800">
-
                 This dashboard reflects training enrollment,
                 completion, learning progress and
                 team skill-gap data recorded for your
                 department.
-
               </p>
 
             </div>
@@ -1152,9 +973,7 @@ const DepartmentDashboard = () => {
           </div>
 
         </main>
-
       </div>
-
     </div>
   );
 };

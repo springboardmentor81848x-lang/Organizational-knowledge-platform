@@ -1,21 +1,4 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:8080/api";
-
-// =====================================================
-// AUTH HEADERS
-// =====================================================
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  };
-};
+import api from "../services/api";
 
 // =====================================================
 // KNOWLEDGE SESSION APIs
@@ -23,21 +6,17 @@ const getAuthHeaders = () => {
 
 // Get all available sessions
 export const getAvailableSessions = async () => {
-  const response = await axios.get(
-    `${API_URL}/knowledge-sessions/available`,
-    getAuthHeaders()
+  const response = await api.get(
+    "/knowledge-sessions/available"
   );
-
   return response.data;
 };
 
 // Get all sessions
 export const getAllSessions = async () => {
-  const response = await axios.get(
-    `${API_URL}/knowledge-sessions`,
-    getAuthHeaders()
+  const response = await api.get(
+    "/knowledge-sessions"
   );
-
   return response.data;
 };
 
@@ -45,21 +24,17 @@ export const getAllSessions = async () => {
 // mentorId = database Employee.id
 // Example: 43
 export const getMentorSessions = async (mentorId) => {
-  const response = await axios.get(
-    `${API_URL}/knowledge-sessions/mentor/${mentorId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/knowledge-sessions/mentor/${mentorId}`
   );
-
   return response.data;
 };
 
 // Get one session
 export const getSessionById = async (sessionId) => {
-  const response = await axios.get(
-    `${API_URL}/knowledge-sessions/${sessionId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/knowledge-sessions/${sessionId}`
   );
-
   return response.data;
 };
 
@@ -71,67 +46,59 @@ export const createSession = async (
   mentorId,
   sessionData
 ) => {
-  const response = await axios.post(
-    `${API_URL}/knowledge-sessions/mentor/${mentorId}`,
-    sessionData,
-    getAuthHeaders()
+  const response = await api.post(
+    `/knowledge-sessions/mentor/${mentorId}`,
+    sessionData
   );
-
   return response.data;
 };
 
 // =====================================================
 // UPDATE SESSION
 // =====================================================
-// mentorId = database Employee.id
 
+// mentorId = database Employee.id
 export const updateSession = async (
   sessionId,
   mentorId,
   sessionData
 ) => {
-  const response = await axios.put(
-    `${API_URL}/knowledge-sessions/${sessionId}/mentor/${mentorId}`,
-    sessionData,
-    getAuthHeaders()
+  const response = await api.put(
+    `/knowledge-sessions/${sessionId}/mentor/${mentorId}`,
+    sessionData
   );
-
   return response.data;
 };
 
 // =====================================================
 // CANCEL SESSION
 // =====================================================
-// mentorId = database Employee.id
 
+// mentorId = database Employee.id
 export const cancelSession = async (
   sessionId,
   mentorId
 ) => {
-  const response = await axios.put(
-    `${API_URL}/knowledge-sessions/${sessionId}/mentor/${mentorId}/cancel`,
-    {},
-    getAuthHeaders()
+  const response = await api.put(
+    `/knowledge-sessions/${sessionId}/mentor/${mentorId}/cancel`,
+    {}
   );
-
   return response.data;
 };
 
 // =====================================================
 // COMPLETE SESSION
 // =====================================================
-// mentorId = database Employee.id
 
+// mentorId = database Employee.id
 export const completeSession = async (
   sessionId,
   mentorId
 ) => {
-  const response = await axios.put(
-    `${API_URL}/knowledge-sessions/${sessionId}/mentor/${mentorId}/complete`,
-    {},
-    getAuthHeaders()
+  const response = await api.put(
+    `/knowledge-sessions/${sessionId}/mentor/${mentorId}/complete`,
+    {}
   );
-
   return response.data;
 };
 
@@ -142,73 +109,58 @@ export const completeSession = async (
 // Register employee for session
 // employeeId = business employee identifier
 // Example: EMP1002
-
 export const registerForSession = async (
   sessionId,
   employeeId
 ) => {
-  const response = await axios.post(
-    `${API_URL}/session-registrations/session/${sessionId}/employee/${employeeId}`,
-    {},
-    getAuthHeaders()
+  const response = await api.post(
+    `/session-registrations/session/${sessionId}/employee/${employeeId}`,
+    {}
   );
-
   return response.data;
 };
 
 // Cancel employee registration
-
 export const cancelRegistration = async (
   sessionId,
   employeeId
 ) => {
-  const response = await axios.put(
-    `${API_URL}/session-registrations/session/${sessionId}/employee/${employeeId}/cancel`,
-    {},
-    getAuthHeaders()
+  const response = await api.put(
+    `/session-registrations/session/${sessionId}/employee/${employeeId}/cancel`,
+    {}
   );
-
   return response.data;
 };
 
 // Get employee registrations
-
 export const getEmployeeRegistrations = async (
   employeeId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/session-registrations/employee/${employeeId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/session-registrations/employee/${employeeId}`
   );
-
   return response.data;
 };
 
 // Get registrations for a session
-
 export const getSessionRegistrations = async (
   sessionId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/session-registrations/session/${sessionId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/session-registrations/session/${sessionId}`
   );
-
   return response.data;
 };
 
 // Mark attendance
-
 export const markAttendance = async (
   registrationId,
   attended
 ) => {
-  const response = await axios.put(
-    `${API_URL}/session-registrations/${registrationId}/attendance?attended=${attended}`,
-    {},
-    getAuthHeaders()
+  const response = await api.put(
+    `/session-registrations/${registrationId}/attendance?attended=${attended}`,
+    {}
   );
-
   return response.data;
 };
 
@@ -222,14 +174,13 @@ export const submitFeedback = async (
   rating,
   comments
 ) => {
-  const response = await axios.post(
-    `${API_URL}/session-feedback/session/${sessionId}/employee/${employeeId}`,
+  const response = await api.post(
+    `/session-feedback/session/${sessionId}/employee/${employeeId}`,
     null,
     {
-      ...getAuthHeaders(),
       params: {
-        rating: rating,
-        comments: comments,
+        rating,
+        comments,
       },
     }
   );
@@ -238,41 +189,32 @@ export const submitFeedback = async (
 };
 
 // Get feedback for a session
-
 export const getSessionFeedback = async (
   sessionId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/session-feedback/session/${sessionId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/session-feedback/session/${sessionId}`
   );
-
   return response.data;
 };
 
 // Get feedback submitted by employee
-
 export const getEmployeeFeedback = async (
   employeeId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/session-feedback/employee/${employeeId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/session-feedback/employee/${employeeId}`
   );
-
   return response.data;
 };
 
 // Get session effectiveness
-
 export const getSessionEffectiveness = async (
   sessionId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/session-feedback/session/${sessionId}/effectiveness`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/session-feedback/session/${sessionId}/effectiveness`
   );
-
   return response.data;
 };
 
@@ -281,27 +223,21 @@ export const getSessionEffectiveness = async (
 // =====================================================
 
 // Get mentor learning analytics
-
 export const getMentorAnalytics = async (
   mentorId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/learning-analytics/mentor/${mentorId}`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/learning-analytics/mentor/${mentorId}`
   );
-
   return response.data;
 };
 
 // Get effectiveness from Learning Analytics
-
 export const getLearningSessionEffectiveness = async (
   sessionId
 ) => {
-  const response = await axios.get(
-    `${API_URL}/learning-analytics/session/${sessionId}/effectiveness`,
-    getAuthHeaders()
+  const response = await api.get(
+    `/learning-analytics/session/${sessionId}/effectiveness`
   );
-
   return response.data;
 };

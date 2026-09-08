@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import axios from "axios";
+import api from "../services/api";
 
 function SkillCoverage() {
   // =========================================================
@@ -42,16 +42,9 @@ function SkillCoverage() {
 
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(
-        `http://localhost:8080/api/department-head/skill-coverage/${employeeId}`,
-        {
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {},
-        }
-      );
+      const response = await api.get(
+  `/department-head/skill-coverage/${employeeId}`
+);
 
       setCoverageData(response.data);
     } catch (err) {

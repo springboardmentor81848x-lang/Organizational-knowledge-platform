@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
+import api from "../services/api";
 
 import {
   Bell,
@@ -24,15 +25,12 @@ import {
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
-const API_BASE_URL = "http://localhost:8080/api";
-
 function DepartmentNotifications() {
   // =========================================================
   // LOGGED-IN DEPARTMENT HEAD
   // =========================================================
 
   const employeeId = localStorage.getItem("employeeId");
-  const token = localStorage.getItem("token");
 
   // =========================================================
   // STATE
@@ -48,6 +46,8 @@ function DepartmentNotifications() {
   // =========================================================
 
   const getNotifications = async () => {
+    const token = localStorage.getItem("token");
+
     if (!token) {
       setError("You are not logged in.");
       setLoading(false);
@@ -69,16 +69,14 @@ function DepartmentNotifications() {
         employeeId
       );
 
-      const response = await axios.get(
-        `${API_BASE_URL}/notifications/employee/${employeeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        `/notifications/employee/${employeeId}`
       );
 
-      console.log("Department Head notifications:", response.data);
+      console.log(
+        "Department Head notifications:",
+        response.data
+      );
 
       setNotifications(
         Array.isArray(response.data)
@@ -126,21 +124,16 @@ function DepartmentNotifications() {
   // =========================================================
 
   const markAsRead = async (notificationId) => {
-    if (!token || !notificationId) {
+    if (!notificationId) {
       return;
     }
 
     try {
       setMarkingId(notificationId);
 
-      await axios.put(
-        `${API_BASE_URL}/notifications/${notificationId}/read`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await api.put(
+        `/notifications/${notificationId}/read`,
+        {}
       );
 
       // Update UI immediately
@@ -750,7 +743,6 @@ function DepartmentNotifications() {
               from {
                 transform: rotate(0deg);
               }
-
               to {
                 transform: rotate(360deg);
               }
@@ -774,11 +766,9 @@ function DepartmentNotifications() {
       }}
     >
       {/* SIDEBAR */}
-
       <Sidebar role="DEPARTMENT HEAD" />
 
       {/* MAIN CONTENT */}
-
       <div
         style={{
           flex: 1,
@@ -786,7 +776,6 @@ function DepartmentNotifications() {
         }}
       >
         {/* NAVBAR */}
-
         <Navbar />
 
         <main
@@ -856,7 +845,6 @@ function DepartmentNotifications() {
             </div>
 
             {/* REFRESH */}
-
             <button
               onClick={getNotifications}
               disabled={loading}
@@ -903,7 +891,6 @@ function DepartmentNotifications() {
               }}
             >
               {/* TOTAL */}
-
               <div
                 style={{
                   background: "#ffffff",
@@ -935,7 +922,6 @@ function DepartmentNotifications() {
               </div>
 
               {/* UNREAD */}
-
               <div
                 style={{
                   background: "#ffffff",
@@ -1107,13 +1093,11 @@ function DepartmentNotifications() {
                         }}
                       >
                         {/* ICON */}
-
                         {getNotificationIcon(
                           notification.type
                         )}
 
                         {/* CONTENT */}
-
                         <div
                           style={{
                             flex: 1,
@@ -1121,7 +1105,6 @@ function DepartmentNotifications() {
                           }}
                         >
                           {/* TITLE */}
-
                           <div
                             style={{
                               display: "flex",
@@ -1161,7 +1144,6 @@ function DepartmentNotifications() {
                           </div>
 
                           {/* TYPE */}
-
                           <div
                             style={{
                               fontSize: "12px",
@@ -1174,7 +1156,6 @@ function DepartmentNotifications() {
                           </div>
 
                           {/* MESSAGE */}
-
                           <p
                             style={{
                               margin: 0,
@@ -1190,7 +1171,6 @@ function DepartmentNotifications() {
                           </p>
 
                           {/* DATE */}
-
                           <div
                             style={{
                               display: "flex",
@@ -1210,7 +1190,6 @@ function DepartmentNotifications() {
                         </div>
 
                         {/* MARK AS READ */}
-
                         {isUnread && (
                           <button
                             onClick={() =>
@@ -1269,17 +1248,13 @@ function DepartmentNotifications() {
         </main>
       </div>
 
-      {/* =================================================
-          ANIMATION
-      ================================================= */}
-
+      {/* ANIMATION */}
       <style>
         {`
           @keyframes spin {
             from {
               transform: rotate(0deg);
             }
-
             to {
               transform: rotate(360deg);
             }

@@ -12,13 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import axios from "axios";
-
-// =========================================================
-// API
-// =========================================================
-
-const API_URL = "http://localhost:8080/api";
+import api from "../services/api";
 
 // =========================================================
 // MENTOR DASHBOARD
@@ -49,15 +43,9 @@ function MentorDashboard() {
   // STATE
   // =========================================================
 
-  const [requests, setRequests] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [processingId, setProcessingId] =
     useState(null);
 
@@ -84,16 +72,16 @@ function MentorDashboard() {
       const token =
         localStorage.getItem("token");
 
-      const response =
-        await axios.get(
-          `${API_URL}/mentorships/mentor/${employeeId}`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
+      if (!token) {
+        setError(
+          "Your session has expired. Please login again."
         );
+        return;
+      }
+
+      const response = await api.get(
+        `/mentorships/mentor/${employeeId}`
+      );
 
       console.log(
         "Mentor mentorships:",
@@ -105,16 +93,30 @@ function MentorDashboard() {
           ? response.data
           : []
       );
-
     } catch (err) {
       console.error(
         "Failed to load mentorship requests:",
         err
       );
 
+      if (err.response?.status === 401) {
+        setError(
+          "Your session has expired. Please login again."
+        );
+        return;
+      }
+
+      if (err.response?.status === 403) {
+        setError(
+          "You do not have permission to access mentor requests."
+        );
+        return;
+      }
+
       setError(
-        err.response?.data ||
-        "Unable to load mentorship requests."
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Unable to load mentorship requests."
       );
     } finally {
       setLoading(false);
@@ -129,27 +131,15 @@ function MentorDashboard() {
     mentorshipId
   ) => {
     try {
-      setProcessingId(
-        mentorshipId
-      );
+      setProcessingId(mentorshipId);
 
-      const token =
-        localStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/mentorships/${mentorshipId}/accept`,
-        {},
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
+      await api.put(
+        `/mentorships/${mentorshipId}/accept`,
+        {}
       );
 
       // Reload data from database
       await loadMentorshipRequests();
-
     } catch (err) {
       console.error(
         "Accept mentorship error:",
@@ -157,8 +147,9 @@ function MentorDashboard() {
       );
 
       alert(
-        err.response?.data ||
-        "Unable to accept mentorship request."
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Unable to accept mentorship request."
       );
     } finally {
       setProcessingId(null);
@@ -173,27 +164,15 @@ function MentorDashboard() {
     mentorshipId
   ) => {
     try {
-      setProcessingId(
-        mentorshipId
-      );
+      setProcessingId(mentorshipId);
 
-      const token =
-        localStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/mentorships/${mentorshipId}/reject`,
-        {},
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
+      await api.put(
+        `/mentorships/${mentorshipId}/reject`,
+        {}
       );
 
       // Reload data from database
       await loadMentorshipRequests();
-
     } catch (err) {
       console.error(
         "Reject mentorship error:",
@@ -201,8 +180,9 @@ function MentorDashboard() {
       );
 
       alert(
-        err.response?.data ||
-        "Unable to reject mentorship request."
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Unable to reject mentorship request."
       );
     } finally {
       setProcessingId(null);
@@ -217,27 +197,15 @@ function MentorDashboard() {
     mentorshipId
   ) => {
     try {
-      setProcessingId(
-        mentorshipId
-      );
+      setProcessingId(mentorshipId);
 
-      const token =
-        localStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/mentorships/${mentorshipId}/activate`,
-        {},
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
+      await api.put(
+        `/mentorships/${mentorshipId}/activate`,
+        {}
       );
 
       // Reload database data
       await loadMentorshipRequests();
-
     } catch (err) {
       console.error(
         "Activate mentorship error:",
@@ -245,8 +213,9 @@ function MentorDashboard() {
       );
 
       alert(
-        err.response?.data ||
-        "Unable to activate mentorship."
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Unable to activate mentorship."
       );
     } finally {
       setProcessingId(null);
@@ -261,27 +230,15 @@ function MentorDashboard() {
     mentorshipId
   ) => {
     try {
-      setProcessingId(
-        mentorshipId
-      );
+      setProcessingId(mentorshipId);
 
-      const token =
-        localStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/mentorships/${mentorshipId}/complete`,
-        {},
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
+      await api.put(
+        `/mentorships/${mentorshipId}/complete`,
+        {}
       );
 
       // Reload database data
       await loadMentorshipRequests();
-
     } catch (err) {
       console.error(
         "Complete mentorship error:",
@@ -289,8 +246,9 @@ function MentorDashboard() {
       );
 
       alert(
-        err.response?.data ||
-        "Unable to complete mentorship."
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Unable to complete mentorship."
       );
     } finally {
       setProcessingId(null);
@@ -300,16 +258,13 @@ function MentorDashboard() {
   // =========================================================
   // HELPER FUNCTIONS
   // =========================================================
-  //
-  // The backend returns skill information directly as:
-  //
-  // mentorship.skillName
-  //
-  // These helpers also support nested data if an older
-  // response is returned by the backend.
-  // =========================================================
 
-  const getSkillName = (mentorship) => {
+  // The backend may return skill information directly
+  // as mentorship.skillName, or nested as mentorship.skill.skillName.
+
+  const getSkillName = (
+    mentorship
+  ) => {
     return (
       mentorship?.skillName ||
       mentorship?.skill?.skillName ||
@@ -317,7 +272,9 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeFirstName = (mentorship) => {
+  const getMenteeFirstName = (
+    mentorship
+  ) => {
     return (
       mentorship?.mentee?.firstName ||
       mentorship?.menteeFirstName ||
@@ -325,7 +282,9 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeLastName = (mentorship) => {
+  const getMenteeLastName = (
+    mentorship
+  ) => {
     return (
       mentorship?.mentee?.lastName ||
       mentorship?.menteeLastName ||
@@ -333,7 +292,9 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeDesignation = (mentorship) => {
+  const getMenteeDesignation = (
+    mentorship
+  ) => {
     return (
       mentorship?.mentee?.designation ||
       mentorship?.menteeDesignation ||
@@ -341,7 +302,9 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeEmployeeId = (mentorship) => {
+  const getMenteeEmployeeId = (
+    mentorship
+  ) => {
     return (
       mentorship?.mentee?.employeeId ||
       mentorship?.menteeEmployeeId ||
@@ -349,7 +312,9 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeEmail = (mentorship) => {
+  const getMenteeEmail = (
+    mentorship
+  ) => {
     return (
       mentorship?.mentee?.email ||
       mentorship?.menteeEmail ||
@@ -357,16 +322,23 @@ function MentorDashboard() {
     );
   };
 
-  const getMenteeInitials = (mentorship) => {
+  const getMenteeInitials = (
+    mentorship
+  ) => {
     const first =
-      getMenteeFirstName(mentorship);
+      getMenteeFirstName(
+        mentorship
+      );
 
     const last =
-      getMenteeLastName(mentorship);
+      getMenteeLastName(
+        mentorship
+      );
 
     return (
       `${first?.charAt(0) || ""}${last?.charAt(0) || ""}`
-        .toUpperCase() || "E"
+        .toUpperCase() ||
+      "E"
     );
   };
 
@@ -452,7 +424,6 @@ function MentorDashboard() {
           </main>
 
         </div>
-
       </div>
     );
   }
@@ -491,16 +462,12 @@ function MentorDashboard() {
             </h1>
 
             <p className="mt-2 text-gray-600">
-
               Welcome{" "}
-
               <span className="font-semibold text-slate-800">
                 {fullName || "Mentor"}
               </span>
-
               . View and manage mentorship requests
               from employees.
-
             </p>
 
           </div>
@@ -651,54 +618,60 @@ function MentorDashboard() {
                   (mentorship) => {
 
                     const menteeFirstName =
-                      getMenteeFirstName(mentorship);
+                      getMenteeFirstName(
+                        mentorship
+                      );
 
                     const menteeLastName =
-                      getMenteeLastName(mentorship);
+                      getMenteeLastName(
+                        mentorship
+                      );
 
                     const skillName =
-                      getSkillName(mentorship);
+                      getSkillName(
+                        mentorship
+                      );
 
                     return (
-
                       <div
-                        key={mentorship.id}
+                        key={
+                          mentorship.id
+                        }
                         className="rounded-xl border border-yellow-200 bg-yellow-50/40 p-6"
                       >
 
-                        {/* =============================
-                            EMPLOYEE INFORMATION
-                        ============================= */}
+                        {/* EMPLOYEE INFORMATION */}
 
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 
                           <div className="flex items-start gap-4">
 
                             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg font-bold text-indigo-700">
-                              {getMenteeInitials(mentorship)}
+                              {getMenteeInitials(
+                                mentorship
+                              )}
                             </div>
 
                             <div>
 
                               <h3 className="text-xl font-semibold text-slate-800">
-
                                 {menteeFirstName}{" "}
                                 {menteeLastName}
-
                               </h3>
 
                               <p className="mt-1 text-sm text-gray-500">
-                                {getMenteeDesignation(mentorship)}
+                                {getMenteeDesignation(
+                                  mentorship
+                                )}
                               </p>
 
                               <p className="mt-2 text-sm text-gray-500">
-
                                 Employee ID:{" "}
-
                                 <span className="font-medium text-gray-700">
-                                  {getMenteeEmployeeId(mentorship)}
+                                  {getMenteeEmployeeId(
+                                    mentorship
+                                  )}
                                 </span>
-
                               </p>
 
                             </div>
@@ -713,9 +686,7 @@ function MentorDashboard() {
 
                         </div>
 
-                        {/* =============================
-                            REQUEST DETAILS
-                        ============================= */}
+                        {/* REQUEST DETAILS */}
 
                         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
 
@@ -759,12 +730,9 @@ function MentorDashboard() {
 
                         </div>
 
-                        {/* =============================
-                            GOAL
-                        ============================= */}
+                        {/* GOAL */}
 
                         {mentorship.goal && (
-
                           <div className="mt-5 rounded-xl bg-white p-5">
 
                             <p className="text-sm font-medium text-gray-500">
@@ -776,30 +744,27 @@ function MentorDashboard() {
                             </p>
 
                           </div>
-
                         )}
 
-                        {/* =============================
-                            EMAIL
-                        ============================= */}
+                        {/* EMAIL */}
 
-                        {getMenteeEmail(mentorship) && (
-
+                        {getMenteeEmail(
+                          mentorship
+                        ) && (
                           <div className="mt-5 flex items-center gap-2 text-sm text-gray-600">
 
                             <Mail size={16} />
 
                             <span>
-                              {getMenteeEmail(mentorship)}
+                              {getMenteeEmail(
+                                mentorship
+                              )}
                             </span>
 
                           </div>
-
                         )}
 
-                        {/* =============================
-                            ACTION BUTTONS
-                        ============================= */}
+                        {/* ACTION BUTTONS */}
 
                         <div className="mt-6 flex flex-wrap gap-3">
 
@@ -818,9 +783,7 @@ function MentorDashboard() {
                             className="flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                           >
 
-                            <CheckCircle
-                              size={18}
-                            />
+                            <CheckCircle size={18} />
 
                             {processingId ===
                             mentorship.id
@@ -844,9 +807,7 @@ function MentorDashboard() {
                             className="flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                           >
 
-                            <XCircle
-                              size={18}
-                            />
+                            <XCircle size={18} />
 
                             {processingId ===
                             mentorship.id
@@ -858,14 +819,11 @@ function MentorDashboard() {
                         </div>
 
                       </div>
-
                     );
-
                   }
                 )}
 
               </div>
-
             )}
 
           </div>
@@ -875,7 +833,6 @@ function MentorDashboard() {
           ================================================= */}
 
           {acceptedMentorships.length > 0 && (
-
             <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
 
               <div className="mb-6">
@@ -896,15 +853,20 @@ function MentorDashboard() {
                   (mentorship) => {
 
                     const menteeFirstName =
-                      getMenteeFirstName(mentorship);
+                      getMenteeFirstName(
+                        mentorship
+                      );
 
                     const menteeLastName =
-                      getMenteeLastName(mentorship);
+                      getMenteeLastName(
+                        mentorship
+                      );
 
                     return (
-
                       <div
-                        key={mentorship.id}
+                        key={
+                          mentorship.id
+                        }
                         className="rounded-xl border border-blue-200 bg-blue-50/40 p-6"
                       >
 
@@ -913,24 +875,23 @@ function MentorDashboard() {
                           <div>
 
                             <h3 className="text-xl font-semibold text-slate-800">
-
                               {menteeFirstName}{" "}
                               {menteeLastName}
-
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                              {getMenteeDesignation(mentorship)}
+                              {getMenteeDesignation(
+                                mentorship
+                              )}
                             </p>
 
                             <p className="mt-3 text-sm text-gray-600">
-
                               Skill:{" "}
-
                               <span className="font-semibold">
-                                {getSkillName(mentorship)}
+                                {getSkillName(
+                                  mentorship
+                                )}
                               </span>
-
                             </p>
 
                           </div>
@@ -942,7 +903,6 @@ function MentorDashboard() {
                         </div>
 
                         {mentorship.goal && (
-
                           <div className="mt-5 rounded-xl bg-white p-4">
 
                             <p className="text-sm font-medium text-gray-500">
@@ -954,7 +914,6 @@ function MentorDashboard() {
                             </p>
 
                           </div>
-
                         )}
 
                         {/* ACTIVATE */}
@@ -971,25 +930,20 @@ function MentorDashboard() {
                           }
                           className="mt-5 rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-
                           {processingId ===
                           mentorship.id
                             ? "Activating..."
                             : "Activate Mentorship"}
-
                         </button>
 
                       </div>
-
                     );
-
                   }
                 )}
 
               </div>
 
             </div>
-
           )}
 
           {/* =================================================
@@ -1009,8 +963,6 @@ function MentorDashboard() {
               </p>
 
             </div>
-
-            {/* NO ACTIVE MENTORSHIPS */}
 
             {activeMentorships.length === 0 ? (
 
@@ -1039,55 +991,55 @@ function MentorDashboard() {
                   (mentorship) => {
 
                     const menteeFirstName =
-                      getMenteeFirstName(mentorship);
+                      getMenteeFirstName(
+                        mentorship
+                      );
 
                     const menteeLastName =
-                      getMenteeLastName(mentorship);
+                      getMenteeLastName(
+                        mentorship
+                      );
 
                     return (
-
                       <div
-                        key={mentorship.id}
+                        key={
+                          mentorship.id
+                        }
                         className="rounded-xl border border-green-200 bg-green-50/40 p-6 transition hover:shadow-md"
                       >
 
-                        {/* =============================
-                            EMPLOYEE
-                        ============================= */}
+                        {/* EMPLOYEE */}
 
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 
                           <div className="flex items-start gap-4">
 
                             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
-
-                              {getMenteeInitials(mentorship)}
-
+                              {getMenteeInitials(
+                                mentorship
+                              )}
                             </div>
 
                             <div>
 
                               <h3 className="text-xl font-semibold text-slate-800">
-
                                 {menteeFirstName}{" "}
                                 {menteeLastName}
-
                               </h3>
 
                               <p className="mt-1 text-sm text-gray-500">
-                                {getMenteeDesignation(mentorship)}
+                                {getMenteeDesignation(
+                                  mentorship
+                                )}
                               </p>
 
                               <p className="mt-2 text-sm text-gray-500">
-
                                 Employee ID:{" "}
-
                                 <span className="font-medium text-gray-700">
-
-                                  {getMenteeEmployeeId(mentorship)}
-
+                                  {getMenteeEmployeeId(
+                                    mentorship
+                                  )}
                                 </span>
-
                               </p>
 
                             </div>
@@ -1102,9 +1054,7 @@ function MentorDashboard() {
 
                         </div>
 
-                        {/* =============================
-                            SKILL + START DATE
-                        ============================= */}
+                        {/* SKILL + START DATE */}
 
                         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
 
@@ -1125,14 +1075,10 @@ function MentorDashboard() {
 
                             </div>
 
-                            {/* IMPORTANT:
-                                Skill comes from mentorship.skillName
-                            */}
-
                             <p className="mt-2 text-lg font-semibold text-slate-800">
-
-                              {getSkillName(mentorship)}
-
+                              {getSkillName(
+                                mentorship
+                              )}
                             </p>
 
                           </div>
@@ -1146,22 +1092,17 @@ function MentorDashboard() {
                             </p>
 
                             <p className="mt-2 text-lg font-semibold text-slate-800">
-
                               {mentorship.startDate ||
                                 "Not available"}
-
                             </p>
 
                           </div>
 
                         </div>
 
-                        {/* =============================
-                            GOAL
-                        ============================= */}
+                        {/* GOAL */}
 
                         {mentorship.goal && (
-
                           <div className="mt-5 rounded-xl bg-white p-5">
 
                             <p className="text-sm font-medium text-gray-500">
@@ -1173,30 +1114,27 @@ function MentorDashboard() {
                             </p>
 
                           </div>
-
                         )}
 
-                        {/* =============================
-                            EMAIL
-                        ============================= */}
+                        {/* EMAIL */}
 
-                        {getMenteeEmail(mentorship) && (
-
+                        {getMenteeEmail(
+                          mentorship
+                        ) && (
                           <div className="mt-5 flex items-center gap-2 text-sm text-gray-600">
 
                             <Mail size={16} />
 
                             <span>
-                              {getMenteeEmail(mentorship)}
+                              {getMenteeEmail(
+                                mentorship
+                              )}
                             </span>
 
                           </div>
-
                         )}
 
-                        {/* =============================
-                            COMPLETE
-                        ============================= */}
+                        {/* COMPLETE */}
 
                         <button
                           onClick={() =>
@@ -1210,18 +1148,14 @@ function MentorDashboard() {
                           }
                           className="mt-5 rounded-lg bg-green-600 px-5 py-2.5 font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-
                           {processingId ===
                           mentorship.id
                             ? "Completing..."
                             : "Complete Mentorship"}
-
                         </button>
 
                       </div>
-
                     );
-
                   }
                 )}
 
@@ -1236,7 +1170,6 @@ function MentorDashboard() {
           ================================================= */}
 
           {completedMentorships.length > 0 && (
-
             <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
 
               <div className="mb-6">
@@ -1257,15 +1190,20 @@ function MentorDashboard() {
                   (mentorship) => {
 
                     const menteeFirstName =
-                      getMenteeFirstName(mentorship);
+                      getMenteeFirstName(
+                        mentorship
+                      );
 
                     const menteeLastName =
-                      getMenteeLastName(mentorship);
+                      getMenteeLastName(
+                        mentorship
+                      );
 
                     return (
-
                       <div
-                        key={mentorship.id}
+                        key={
+                          mentorship.id
+                        }
                         className="rounded-xl border border-gray-200 bg-gray-50 p-5"
                       >
 
@@ -1274,22 +1212,17 @@ function MentorDashboard() {
                           <div>
 
                             <h3 className="font-semibold text-slate-800">
-
                               {menteeFirstName}{" "}
                               {menteeLastName}
-
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-
                               Skill:{" "}
-
                               <span className="font-medium">
-
-                                {getSkillName(mentorship)}
-
+                                {getSkillName(
+                                  mentorship
+                                )}
                               </span>
-
                             </p>
 
                           </div>
@@ -1301,34 +1234,25 @@ function MentorDashboard() {
                         </div>
 
                         {mentorship.endDate && (
-
                           <p className="mt-3 text-sm text-gray-500">
-
                             Completed on:{" "}
-
                             {mentorship.endDate}
-
                           </p>
-
                         )}
 
                       </div>
-
                     );
-
                   }
                 )}
 
               </div>
 
             </div>
-
           )}
 
         </main>
 
       </div>
-
     </div>
   );
 }

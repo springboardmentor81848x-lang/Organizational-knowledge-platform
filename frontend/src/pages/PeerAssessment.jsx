@@ -11,17 +11,23 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import api from "../services/api";
+
 function PeerAssessment() {
   // Business employee ID such as EMP1001
-  const employeeId = localStorage.getItem("employeeId");
+  const employeeId =
+    localStorage.getItem("employeeId");
 
   const [employees, setEmployees] = useState([]);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] =
+    useState(null);
+
   const [skills, setSkills] = useState([]);
   const [ratings, setRatings] = useState({});
 
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] =
+    useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,29 +51,22 @@ function PeerAssessment() {
         );
       }
 
-      const response = await fetch(
-        `http://localhost:8080/api/peer-assessment/employees/${employeeId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      const response = await api.get(
+        `/peer-assessment/employees/${employeeId}`
       );
 
-      if (!response.ok) {
-        const message = await response.text();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
 
-        throw new Error(
-          message || "Unable to load peer assessments."
-        );
-      }
+      console.log(
+        "Peer employees:",
+        data
+      );
 
-      const data = await response.json();
-
-      console.log("Peer employees:", data);
-
-      setEmployees(Array.isArray(data) ? data : []);
+      setEmployees(
+        Array.isArray(data) ? data : []
+      );
     } catch (err) {
       console.error(
         "Peer assessment loading error:",
@@ -75,7 +74,9 @@ function PeerAssessment() {
       );
 
       setError(
-        err.message ||
+        err.response?.data?.message ||
+          err.response?.data ||
+          err.message ||
           "Unable to load peer assessment assignments."
       );
     } finally {
@@ -87,9 +88,10 @@ function PeerAssessment() {
   // SELECT EMPLOYEE
   // =========================================================
 
-  const handleSelectEmployee = async (employee) => {
+  const handleSelectEmployee = async (
+    employee
+  ) => {
     setSelectedEmployee(employee);
-
     setSuccess("");
     setError("");
     setRatings({});
@@ -104,7 +106,8 @@ function PeerAssessment() {
        * Do NOT use employee.id here.
        */
 
-      const evaluatedEmployeeId = employee.employeeId;
+      const evaluatedEmployeeId =
+        employee.employeeId;
 
       if (!evaluatedEmployeeId) {
         throw new Error(
@@ -112,37 +115,32 @@ function PeerAssessment() {
         );
       }
 
-      const response = await fetch(
-        `http://localhost:8080/api/peer-assessment/employees/${evaluatedEmployeeId}/skills`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      const response = await api.get(
+        `/peer-assessment/employees/${evaluatedEmployeeId}/skills`
       );
 
-      if (!response.ok) {
-        const message = await response.text();
-
-        throw new Error(
-          message || "Unable to load employee skills."
-        );
-      }
-
-      const data = await response.json();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
 
       console.log(
         "Skills of selected employee:",
         data
       );
 
-      setSkills(Array.isArray(data) ? data : []);
+      setSkills(
+        Array.isArray(data) ? data : []
+      );
     } catch (err) {
-      console.error("Skill loading error:", err);
+      console.error(
+        "Skill loading error:",
+        err
+      );
 
       setError(
-        err.message ||
+        err.response?.data?.message ||
+          err.response?.data ||
+          err.message ||
           "Unable to load skills for this employee."
       );
     }
@@ -152,7 +150,10 @@ function PeerAssessment() {
   // UPDATE RATING
   // =========================================================
 
-  const handleRatingChange = (skillName, rating) => {
+  const handleRatingChange = (
+    skillName,
+    rating
+  ) => {
     setRatings((previous) => ({
       ...previous,
       [skillName]: Number(rating),
@@ -167,23 +168,28 @@ function PeerAssessment() {
     e.preventDefault();
 
     if (!selectedEmployee) {
-      setError("Please select an employee.");
+      setError(
+        "Please select an employee."
+      );
       return;
     }
 
     if (skills.length === 0) {
-      setError("No skills available for assessment.");
+      setError(
+        "No skills available for assessment."
+      );
       return;
     }
 
     // Check whether all skills have been rated
-    const unansweredSkills = skills.filter((skill) => {
-      const skillName =
-        skill.skillName ||
-        skill.skill?.skillName;
+    const unansweredSkills =
+      skills.filter((skill) => {
+        const skillName =
+          skill.skillName ||
+          skill.skill?.skillName;
 
-      return !ratings[skillName];
-    });
+        return !ratings[skillName];
+      });
 
     if (unansweredSkills.length > 0) {
       setError(
@@ -232,32 +238,12 @@ function PeerAssessment() {
         assessmentData
       );
 
-      const response = await fetch(
-        `http://localhost:8080/api/peer-assessment/submit/${employeeId}`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-
-            Authorization:
-              `Bearer ${localStorage.getItem("token")}`,
-          },
-
-          body: JSON.stringify(assessmentData),
-        }
+      const response = await api.post(
+        `/peer-assessment/submit/${employeeId}`,
+        assessmentData
       );
 
-      if (!response.ok) {
-        const message = await response.text();
-
-        throw new Error(
-          message ||
-            "Failed to submit peer assessment."
-        );
-      }
-
-      const result = await response.json();
+      const result = response.data;
 
       console.log(
         "Peer assessment result:",
@@ -293,7 +279,9 @@ function PeerAssessment() {
       );
 
       setError(
-        err.message ||
+        err.response?.data?.message ||
+          err.response?.data ||
+          err.message ||
           "Unable to submit peer assessment."
       );
     } finally {
@@ -320,18 +308,25 @@ function PeerAssessment() {
   if (loading) {
     return (
       <div className="flex min-h-screen">
+
         <Sidebar role="EMPLOYEE" />
 
         <div className="flex-1">
+
           <Navbar title="Peer Assessment" />
 
           <main className="p-8">
+
             <div className="bg-white rounded-xl shadow p-6">
+
               <p className="text-gray-600">
                 Loading peer assessments...
               </p>
+
             </div>
+
           </main>
+
         </div>
       </div>
     );
@@ -352,7 +347,9 @@ function PeerAssessment() {
 
         <main className="p-8">
 
-          {/* HEADER */}
+          {/* =================================================
+              HEADER
+          ================================================= */}
 
           <div className="mb-8">
 
@@ -384,26 +381,34 @@ function PeerAssessment() {
 
           </div>
 
-          {/* SUCCESS MESSAGE */}
+          {/* =================================================
+              SUCCESS MESSAGE
+          ================================================= */}
 
           {success && (
             <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl">
 
               <CheckCircle size={20} />
 
-              <span>{success}</span>
+              <span>
+                {success}
+              </span>
 
             </div>
           )}
 
-          {/* ERROR MESSAGE */}
+          {/* =================================================
+              ERROR MESSAGE
+          ================================================= */}
 
           {error && (
             <div className="mb-6 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
 
               <AlertCircle size={20} />
 
-              <span>{error}</span>
+              <span>
+                {error}
+              </span>
 
             </div>
           )}
@@ -413,7 +418,6 @@ function PeerAssessment() {
           ================================================= */}
 
           {!selectedEmployee && (
-
             <div className="bg-white rounded-2xl shadow p-6">
 
               <div className="flex items-center gap-3 mb-6">
@@ -461,75 +465,73 @@ function PeerAssessment() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-                  {employees.map((employee) => (
+                  {employees.map(
+                    (employee) => (
+                      <div
+                        key={
+                          employee.employeeId
+                        }
+                        className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition"
+                      >
 
-                    <div
-                      key={employee.employeeId}
-                      className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition"
-                    >
+                        <div className="flex items-center gap-4">
 
-                      <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
 
-                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <span className="text-indigo-700 font-bold text-lg">
 
-                          <span className="text-indigo-700 font-bold text-lg">
+                              {employee.firstName
+                                ?.charAt(0)
+                                ?.toUpperCase()}
 
-                            {employee.firstName
-                              ?.charAt(0)
-                              ?.toUpperCase()}
+                            </span>
 
-                          </span>
+                          </div>
+
+                          <div>
+
+                            <h3 className="font-semibold text-slate-800">
+
+                              {employee.firstName}{" "}
+
+                              {employee.lastName ||
+                                ""}
+
+                            </h3>
+
+                            <p className="text-sm text-gray-500">
+                              {employee.designation ||
+                                "Employee"}
+                            </p>
+
+                            <p className="text-xs text-gray-400 mt-1">
+                              {employee.employeeId}
+                            </p>
+
+                          </div>
 
                         </div>
 
-                        <div>
+                        <div className="mt-5">
 
-                          <h3 className="font-semibold text-slate-800">
-
-                            {employee.firstName}{" "}
-
-                            {employee.lastName || ""}
-
-                          </h3>
-
-                          <p className="text-sm text-gray-500">
-
-                            {employee.designation ||
-                              "Employee"}
-
-                          </p>
-
-                          <p className="text-xs text-gray-400 mt-1">
-
-                            {employee.employeeId}
-
-                          </p>
+                          <button
+                            onClick={() =>
+                              handleSelectEmployee(
+                                employee
+                              )
+                            }
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition"
+                          >
+                            Start Assessment
+                          </button>
 
                         </div>
 
                       </div>
-
-                      <div className="mt-5">
-
-                        <button
-                          onClick={() =>
-                            handleSelectEmployee(
-                              employee
-                            )
-                          }
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition"
-                        >
-                          Start Assessment
-                        </button>
-
-                      </div>
-
-                    </div>
-
-                  ))}
+                    )
+                  )}
 
                 </div>
-
               )}
 
             </div>
@@ -540,7 +542,6 @@ function PeerAssessment() {
           ================================================= */}
 
           {selectedEmployee && (
-
             <form
               onSubmit={handleSubmit}
               className="space-y-6"
@@ -579,16 +580,12 @@ function PeerAssessment() {
                       </h2>
 
                       <p className="text-sm text-gray-500">
-
                         {selectedEmployee.designation ||
                           "Employee"}
-
                       </p>
 
                       <p className="text-xs text-gray-400 mt-1">
-
                         {selectedEmployee.employeeId}
-
                       </p>
 
                     </div>
@@ -651,7 +648,6 @@ function PeerAssessment() {
                         skill.skill?.skillName;
 
                       return (
-
                         <div
                           key={skill.id}
                           className="border border-gray-200 rounded-xl p-5"
@@ -671,9 +667,7 @@ function PeerAssessment() {
                               </h3>
 
                               <p className="text-sm text-gray-500 mt-1">
-
                                 Select proficiency level
-
                               </p>
 
                             </div>
@@ -688,10 +682,10 @@ function PeerAssessment() {
                                   const selected =
                                     ratings[
                                       skillName
-                                    ] === level;
+                                    ] ===
+                                    level;
 
                                   return (
-
                                     <button
                                       type="button"
                                       key={level}
@@ -701,21 +695,11 @@ function PeerAssessment() {
                                           level
                                         )
                                       }
-                                      className={`
-                                        w-14 h-14
-                                        rounded-xl
-                                        border
-                                        flex
-                                        flex-col
-                                        items-center
-                                        justify-center
-                                        transition
-                                        ${
-                                          selected
-                                            ? "bg-indigo-600 text-white border-indigo-600 shadow"
-                                            : "bg-white text-gray-600 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50"
-                                        }
-                                      `}
+                                      className={`w-14 h-14 rounded-xl border flex flex-col items-center justify-center transition ${
+                                        selected
+                                          ? "bg-indigo-600 text-white border-indigo-600 shadow"
+                                          : "bg-white text-gray-600 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50"
+                                      }`}
                                     >
 
                                       <Star
@@ -743,14 +727,15 @@ function PeerAssessment() {
                           {/* SELECTED LEVEL */}
 
                           {ratings[skillName] && (
-
                             <div className="mt-4 text-sm text-indigo-600 font-medium">
 
                               Selected:{" "}
 
                               {
                                 levelNames[
-                                  ratings[skillName]
+                                  ratings[
+                                    skillName
+                                  ]
                                 ]
                               }
 
@@ -758,21 +743,20 @@ function PeerAssessment() {
 
                               (
                               {
-                                ratings[skillName]
+                                ratings[
+                                  skillName
+                                ]
                               }
                               /5)
 
                             </div>
-
                           )}
 
                         </div>
-
                       );
                     })}
 
                   </div>
-
                 )}
 
               </div>
@@ -780,7 +764,6 @@ function PeerAssessment() {
               {/* SUBMIT */}
 
               {skills.length > 0 && (
-
                 <div className="bg-white rounded-2xl shadow p-6">
 
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -803,17 +786,14 @@ function PeerAssessment() {
                       disabled={submitting}
                       className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition"
                     >
-
                       {submitting
                         ? "Submitting..."
                         : "Submit Peer Assessment"}
-
                     </button>
 
                   </div>
 
                 </div>
-
               )}
 
             </form>
@@ -822,7 +802,6 @@ function PeerAssessment() {
         </main>
 
       </div>
-
     </div>
   );
 }

@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
+
 import Sidebar from "../components/Sidebar";
+
+import api from "../services/api";
 
 function EmployeeAssessment() {
   const navigate = useNavigate();
@@ -9,9 +14,7 @@ function EmployeeAssessment() {
   const [assessment, setAssessment] = useState(null);
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
-
   const [timeLeft, setTimeLeft] = useState(30 * 60);
-
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -30,36 +33,29 @@ function EmployeeAssessment() {
       return;
     }
 
-    fetch("http://localhost:8080/api/employee/assessment/current", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(
-            `Unable to load assessment. Status: ${response.status}`
-          );
-        }
+    api
+      .get("/employee/assessment/current")
+      .then((response) => {
+        console.log("Assessment:", response.data);
 
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Assessment:", data);
+        setAssessment(response.data);
 
-        setAssessment(data);
-
-        if (data.durationMinutes) {
-          setTimeLeft(data.durationMinutes * 60);
+        if (response.data.durationMinutes) {
+          setTimeLeft(response.data.durationMinutes * 60);
         }
 
         setLoading(false);
       })
       .catch((err) => {
         console.error("Assessment loading error:", err);
-        setError(err.message);
+
+        setError(
+          err.response?.data?.message ||
+            err.response?.data ||
+            err.message ||
+            "Unable to load assessment."
+        );
+
         setLoading(false);
       });
   }, [token]);
@@ -91,7 +87,6 @@ function EmployeeAssessment() {
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
-
     const remainingSeconds = seconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(
@@ -139,32 +134,20 @@ function EmployeeAssessment() {
     );
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/employee/assessment/submit",
+      const response = await api.post(
+        "/employee/assessment/submit",
         {
-          method: "POST",
-
+          assessmentId: assessment.assessmentId,
+          answers: formattedAnswers,
+        },
+        {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-
-          body: JSON.stringify({
-            assessmentId: assessment.assessmentId,
-            answers: formattedAnswers,
-          }),
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-
-        throw new Error(
-          errorText || `Submission failed. Status: ${response.status}`
-        );
-      }
-
-      const result = await response.json();
+      const result = response.data;
 
       console.log("Assessment result:", result);
 
@@ -179,7 +162,12 @@ function EmployeeAssessment() {
     } catch (err) {
       console.error("Submission error:", err);
 
-      setError(err.message);
+      setError(
+        err.response?.data?.message ||
+          err.response?.data ||
+          err.message ||
+          "Submission failed."
+      );
 
       setSubmitting(false);
     }
@@ -227,7 +215,6 @@ function EmployeeAssessment() {
 
           <div className="p-8">
             <div className="bg-white rounded-xl shadow p-8">
-
               <div className="text-red-600 text-lg font-semibold">
                 Something went wrong
               </div>
@@ -237,7 +224,6 @@ function EmployeeAssessment() {
               </p>
 
               <div className="flex gap-3 mt-6">
-
                 <button
                   onClick={() => window.location.reload()}
                   className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700"
@@ -251,9 +237,7 @@ function EmployeeAssessment() {
                 >
                   Back to Dashboard
                 </button>
-
               </div>
-
             </div>
           </div>
         </div>
@@ -274,9 +258,7 @@ function EmployeeAssessment() {
           <Navbar title="Skill Assessment" />
 
           <div className="p-8">
-
             <div className="bg-white rounded-xl shadow p-8 text-center">
-
               <h2 className="text-xl font-bold text-gray-800">
                 No Assessment Available
               </h2>
@@ -291,9 +273,7 @@ function EmployeeAssessment() {
               >
                 Back to Dashboard
               </button>
-
             </div>
-
           </div>
         </div>
       </div>
@@ -305,9 +285,7 @@ function EmployeeAssessment() {
   // ============================================================
 
   const question = assessment.questions[currentQuestion];
-
   const totalQuestions = assessment.questions.length;
-
   const answeredCount = Object.keys(answers).length;
 
   const progress =
@@ -321,25 +299,19 @@ function EmployeeAssessment() {
 
   return (
     <div className="flex bg-gray-100 min-h-screen">
-
       <Sidebar role={role} />
 
       <div className="flex-1">
-
         <Navbar title="Skill Assessment" />
 
         <div className="p-8">
-
           {/* ================================================= */}
           {/* HEADER */}
           {/* ================================================= */}
 
           <div className="bg-white rounded-xl shadow p-6 mb-6">
-
             <div className="flex flex-col md:flex-row justify-between gap-5">
-
               <div>
-
                 <h1 className="text-2xl font-bold text-gray-800">
                   {assessment.title}
                 </h1>
@@ -347,13 +319,11 @@ function EmployeeAssessment() {
                 <p className="text-gray-500 mt-2">
                   {assessment.description}
                 </p>
-
               </div>
 
               {/* TIMER */}
 
               <div className="text-right">
-
                 <p className="text-sm text-gray-500">
                   Time Remaining
                 </p>
@@ -367,17 +337,13 @@ function EmployeeAssessment() {
                 >
                   {formatTime(timeLeft)}
                 </div>
-
               </div>
-
             </div>
 
             {/* PROGRESS */}
 
             <div className="mt-6">
-
               <div className="flex justify-between text-sm mb-2">
-
                 <span className="text-gray-600">
                   Question {currentQuestion + 1} of{" "}
                   {totalQuestions}
@@ -386,22 +352,17 @@ function EmployeeAssessment() {
                 <span className="text-gray-600">
                   {answeredCount} answered
                 </span>
-
               </div>
 
               <div className="w-full bg-gray-200 rounded-full h-2">
-
                 <div
                   className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                   style={{
                     width: `${progress}%`,
                   }}
                 />
-
               </div>
-
             </div>
-
           </div>
 
           {/* ================================================= */}
@@ -409,11 +370,9 @@ function EmployeeAssessment() {
           {/* ================================================= */}
 
           <div className="bg-white rounded-xl shadow p-8">
-
             {/* SKILL + DIFFICULTY */}
 
             <div className="flex justify-between items-center mb-6">
-
               <span className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold">
                 {question.skillName}
               </span>
@@ -426,7 +385,6 @@ function EmployeeAssessment() {
                   </span>
                 </span>
               )}
-
             </div>
 
             {/* QUESTION */}
@@ -438,14 +396,12 @@ function EmployeeAssessment() {
             {/* OPTIONS */}
 
             <div className="space-y-4">
-
               {[
                 ["A", question.optionA],
                 ["B", question.optionB],
                 ["C", question.optionC],
                 ["D", question.optionD],
               ].map(([letter, text]) => {
-
                 const selected = selectedAnswer === letter;
 
                 return (
@@ -461,9 +417,7 @@ function EmployeeAssessment() {
                         : "border-gray-200 bg-white hover:border-indigo-400 hover:bg-gray-50"
                     }`}
                   >
-
                     <div className="flex items-center gap-4">
-
                       {/* OPTION LETTER */}
 
                       <div
@@ -481,13 +435,10 @@ function EmployeeAssessment() {
                       <span className="text-gray-700">
                         {text}
                       </span>
-
                     </div>
-
                   </button>
                 );
               })}
-
             </div>
 
             {/* ================================================= */}
@@ -495,7 +446,6 @@ function EmployeeAssessment() {
             {/* ================================================= */}
 
             <div className="flex justify-between items-center mt-10">
-
               {/* PREVIOUS */}
 
               <button
@@ -514,7 +464,6 @@ function EmployeeAssessment() {
               {/* NEXT / SUBMIT */}
 
               {currentQuestion < totalQuestions - 1 ? (
-
                 <button
                   type="button"
                   onClick={() =>
@@ -526,24 +475,21 @@ function EmployeeAssessment() {
                 >
                   Next →
                 </button>
-
               ) : (
-
                 <button
                   type="button"
                   disabled={submitting}
-                  onClick={() => submitAssessment(false)}
+                  onClick={() =>
+                    submitAssessment(false)
+                  }
                   className="px-7 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting
                     ? "Submitting..."
                     : "Submit Assessment"}
                 </button>
-
               )}
-
             </div>
-
           </div>
 
           {/* ================================================= */}
@@ -551,16 +497,13 @@ function EmployeeAssessment() {
           {/* ================================================= */}
 
           <div className="bg-white rounded-xl shadow p-6 mt-6">
-
             <h3 className="font-semibold text-gray-800 mb-4">
               Questions
             </h3>
 
             <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
-
               {assessment.questions.map(
                 (item, index) => {
-
                   const answered =
                     answers[item.id] !== undefined;
 
@@ -587,11 +530,8 @@ function EmployeeAssessment() {
                   );
                 }
               )}
-
             </div>
-
           </div>
-
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ import {
   getKnowledgeGapsByEmployee,
 } from "../services/platformService";
 
-import axios from "axios";
+import api from "../services/api";
 
 function EmployeeDashboard() {
   const navigate = useNavigate();
@@ -140,17 +140,9 @@ function EmployeeDashboard() {
       // =====================================================
 
       try {
-        const token =
-          localStorage.getItem("token");
-
         const historicalResponse =
-          await axios.get(
-            `http://localhost:8080/api/employee/reassessment/latest/${employeeId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+          await api.get(
+            `/employee/reassessment/latest/${employeeId}`
           );
 
         console.log(
@@ -242,34 +234,21 @@ function EmployeeDashboard() {
       // =====================================================
 
       try {
-        const token =
-          localStorage.getItem("token");
-
-        const authHeaders = {
-          headers: {
-            Authorization: token
-              ? `Bearer ${token}`
-              : "",
-          },
-        };
-
         const [
           allocationsRes,
           mentorshipsRes,
         ] = await Promise.all([
-          axios
+          api
             .get(
-              `http://localhost:8080/api/mentor-allocations/employee/${employeeId}`,
-              authHeaders
+              `/mentor-allocations/employee/${employeeId}`
             )
             .catch(() => ({
               data: [],
             })),
 
-          axios
+          api
             .get(
-              `http://localhost:8080/api/mentorships/employee/${employeeId}`,
-              authHeaders
+              `/mentorships/employee/${employeeId}`
             )
             .catch(() => ({
               data: [],
@@ -348,15 +327,12 @@ function EmployeeDashboard() {
 
       setMentorshipMessage("");
 
-      const token =
-        localStorage.getItem("token");
-
       // =====================================================
       // CREATE MENTORSHIP REQUEST
       // =====================================================
 
-      await axios.post(
-        "http://localhost:8080/api/mentorships",
+      await api.post(
+        "/mentorships",
         null,
         {
           params: {
@@ -369,12 +345,6 @@ function EmployeeDashboard() {
               "the required skill"
             }`,
           },
-
-          headers: {
-            Authorization: token
-              ? `Bearer ${token}`
-              : "",
-          },
         }
       );
 
@@ -382,26 +352,16 @@ function EmployeeDashboard() {
       // REFRESH HR ALLOCATIONS + MENTORSHIPS
       // =====================================================
 
-      const authHeaders = {
-        headers: {
-          Authorization: token
-            ? `Bearer ${token}`
-            : "",
-        },
-      };
-
       const [
         allocationsRes,
         mentorshipsRes,
       ] = await Promise.all([
-        axios.get(
-          `http://localhost:8080/api/mentor-allocations/employee/${employeeId}`,
-          authHeaders
+        api.get(
+          `/mentor-allocations/employee/${employeeId}`
         ),
 
-        axios.get(
-          `http://localhost:8080/api/mentorships/employee/${employeeId}`,
-          authHeaders
+        api.get(
+          `/mentorships/employee/${employeeId}`
         ),
       ]);
 
@@ -509,10 +469,8 @@ function EmployeeDashboard() {
   const availableMentorRecommendations =
     mentorRecommendations.filter(
       (recommendation) => {
-
         return !myMentorships.some(
           (mentorship) => {
-
             const sameMentor =
               mentorship.mentorIdentifier ===
               recommendation.employeeId;
@@ -563,7 +521,6 @@ function EmployeeDashboard() {
   // =========================================================
 
   const calculateAverageLevel = () => {
-
     if (skills.length === 0) {
       return 0;
     }
@@ -599,7 +556,6 @@ function EmployeeDashboard() {
   // =========================================================
 
   const getSkillName = (item) => {
-
     return (
       item?.skill?.skillName ||
       item?.skillName ||
@@ -615,13 +571,11 @@ function EmployeeDashboard() {
   const getMatchingGap = (
     skillName
   ) => {
-
     if (!skillName) {
       return null;
     }
 
     return gaps.find((gap) => {
-
       const gapSkillName =
         gap?.skill?.skillName ||
         gap?.skillName ||
@@ -644,7 +598,6 @@ function EmployeeDashboard() {
     currentLevel,
     matchingGap
   ) => {
-
     if (!matchingGap) {
       return currentLevel;
     }
@@ -687,7 +640,6 @@ function EmployeeDashboard() {
     currentLevel,
     requiredLevel
   ) => {
-
     return Math.max(
       requiredLevel - currentLevel,
       0
@@ -699,7 +651,6 @@ function EmployeeDashboard() {
   // =========================================================
 
   const getActualKnowledgeGaps = () => {
-
     if (
       !skills ||
       skills.length === 0
@@ -710,7 +661,6 @@ function EmployeeDashboard() {
     const actualGaps = [];
 
     skills.forEach((skill) => {
-
       const skillName =
         getSkillName(skill);
 
@@ -739,7 +689,6 @@ function EmployeeDashboard() {
         );
 
       if (actualGap > 0) {
-
         actualGaps.push({
           ...(matchingGap || {}),
           skillName,
@@ -766,9 +715,7 @@ function EmployeeDashboard() {
   const getGapSeverity = (
     gap
   ) => {
-
     if (gap === 0) {
-
       return {
         label: "No Gap",
         badge:
@@ -781,7 +728,6 @@ function EmployeeDashboard() {
     }
 
     if (gap === 1) {
-
       return {
         label: "Low Gap",
         badge:
@@ -794,7 +740,6 @@ function EmployeeDashboard() {
     }
 
     if (gap === 2) {
-
       return {
         label: "Moderate Gap",
         badge:
@@ -822,30 +767,21 @@ function EmployeeDashboard() {
   // =========================================================
 
   if (loading) {
-
     return (
       <div className="flex min-h-screen">
-
         <Sidebar role="EMPLOYEE" />
 
         <div className="flex-1">
-
           <Navbar title="Employee Dashboard" />
 
           <div className="p-8">
-
             <div className="bg-white rounded-xl shadow p-6">
-
               <p className="text-gray-600">
                 Loading your skills and knowledge gaps...
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     );
   }
@@ -856,11 +792,9 @@ function EmployeeDashboard() {
 
   return (
     <div className="flex min-h-screen">
-
       <Sidebar role="EMPLOYEE" />
 
       <div className="flex-1">
-
         <Navbar title="Employee Dashboard" />
 
         <main className="p-8">
@@ -871,17 +805,12 @@ function EmployeeDashboard() {
 
           {fullName && (
             <div className="mb-6">
-
               <p className="text-lg text-gray-600">
-
                 Welcome{" "}
-
                 <span className="font-semibold text-slate-800">
                   {fullName}
                 </span>
-
               </p>
-
             </div>
           )}
 
@@ -904,11 +833,8 @@ function EmployeeDashboard() {
             {/* TOTAL SKILLS */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Total Skills
                   </p>
@@ -916,59 +842,44 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {skills.length}
                   </h2>
-
                 </div>
 
                 <BookOpen
                   size={45}
                   className="text-indigo-600"
                 />
-
               </div>
-
             </div>
 
             {/* AVERAGE LEVEL */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Average Skill Level
                   </p>
 
                   <h2 className="text-3xl font-bold mt-3">
-
                     {averageLevel.toFixed(1)}
-
                     <span className="text-lg text-gray-500">
                       {" "}/ 5
                     </span>
-
                   </h2>
-
                 </div>
 
                 <GraduationCap
                   size={45}
                   className="text-green-600"
                 />
-
               </div>
-
             </div>
 
             {/* SKILL SCORE */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Skill Score
                   </p>
@@ -976,26 +887,20 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {skillScore}%
                   </h2>
-
                 </div>
 
                 <TrendingUp
                   size={45}
                   className="text-orange-500"
                 />
-
               </div>
-
             </div>
 
             {/* KNOWLEDGE GAPS */}
 
             <div className="bg-white rounded-xl shadow p-6">
-
               <div className="flex justify-between">
-
                 <div>
-
                   <p className="text-gray-500">
                     Knowledge Gaps
                   </p>
@@ -1003,16 +908,13 @@ function EmployeeDashboard() {
                   <h2 className="text-3xl font-bold mt-3">
                     {knowledgeGapCount}
                   </h2>
-
                 </div>
 
                 <AlertTriangle
                   size={45}
                   className="text-red-500"
                 />
-
               </div>
-
             </div>
 
           </div>
@@ -1026,13 +928,10 @@ function EmployeeDashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
 
               <div>
-
                 <div className="flex items-center gap-2">
 
                   <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
-
                     <UserCheck size={19} />
-
                   </div>
 
                   <h2 className="text-2xl font-bold text-slate-800">
@@ -1049,20 +948,16 @@ function EmployeeDashboard() {
 
               {myMentorships.length > 0 && (
                 <div className="text-sm text-slate-500">
-
                   {myMentorships.length} mentorship
                   {myMentorships.length !== 1
                     ? "s"
                     : ""}
-
                 </div>
               )}
 
             </div>
 
-            {/* =================================================
-                SUCCESS / ERROR MESSAGE
-            ================================================= */}
+            {/* SUCCESS / ERROR MESSAGE */}
 
             {mentorshipMessage && (
               <div
@@ -1078,16 +973,13 @@ function EmployeeDashboard() {
               </div>
             )}
 
-            {/* =================================================
-                HR ALLOCATED MENTOR RECOMMENDATIONS
-            ================================================= */}
+            {/* HR ALLOCATED MENTOR RECOMMENDATIONS */}
 
             <div className="mb-8">
 
               <div className="flex items-center justify-between mb-4">
 
                 <div>
-
                   <h3 className="text-lg font-bold text-slate-800">
                     Mentor Recommendations
                   </h3>
@@ -1095,15 +987,12 @@ function EmployeeDashboard() {
                   <p className="text-xs text-slate-500 mt-1">
                     Mentors specifically recommended for you by HR.
                   </p>
-
                 </div>
 
                 {availableMentorRecommendations.length > 0 && (
                   <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">
-
                     {availableMentorRecommendations.length}{" "}
                     Available
-
                   </span>
                 )}
 
@@ -1160,15 +1049,12 @@ function EmployeeDashboard() {
                             <div className="flex items-start gap-3">
 
                               <div className="w-11 h-11 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
-
                                 <UserCheck size={20} />
-
                               </div>
 
                               <div>
 
                                 <h4 className="font-bold text-slate-900">
-
                                   {[
                                     mentor.firstName,
                                     mentor.lastName,
@@ -1177,7 +1063,6 @@ function EmployeeDashboard() {
                                     .join(" ") ||
                                     mentor.employeeId ||
                                     "Recommended Mentor"}
-
                                 </h4>
 
                                 <p className="text-xs text-slate-500 mt-1">
@@ -1190,11 +1075,9 @@ function EmployeeDashboard() {
                             </div>
 
                             <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold whitespace-nowrap">
-
                               Level{" "}
                               {mentor.mentorLevel ??
                                 "N/A"}
-
                             </span>
 
                           </div>
@@ -1208,10 +1091,8 @@ function EmployeeDashboard() {
                             </p>
 
                             <p className="font-semibold text-slate-800 mt-1">
-
                               {mentor.skillName ||
                                 "Required Skill"}
-
                             </p>
 
                           </div>
@@ -1239,11 +1120,9 @@ function EmployeeDashboard() {
                                   : "bg-indigo-600 hover:bg-indigo-700"
                               }`}
                             >
-
                               {isRequesting
                                 ? "Sending..."
                                 : "Request Mentor"}
-
                             </button>
 
                           </div>
@@ -1258,9 +1137,7 @@ function EmployeeDashboard() {
 
             </div>
 
-            {/* =================================================
-                MENTORSHIP STATUS
-            ================================================= */}
+            {/* MENTORSHIP STATUS */}
 
             <div className="border-t border-slate-100 pt-7">
 
@@ -1338,15 +1215,11 @@ function EmployeeDashboard() {
                         0 ? (
 
                           <p className="text-xs text-slate-400">
-
                             No{" "}
-
                             {getMentorshipStatusLabel(
                               status
                             ).toLowerCase()}{" "}
-
                             mentorships.
-
                           </p>
 
                         ) : (
@@ -1372,11 +1245,9 @@ function EmployeeDashboard() {
                                       </p>
 
                                       <p className="font-semibold text-slate-800 mt-1">
-
                                         {mentorship.mentorName ||
                                           mentorship.mentorIdentifier ||
                                           "Mentor"}
-
                                       </p>
 
                                     </div>
@@ -1386,11 +1257,9 @@ function EmployeeDashboard() {
                                         mentorship.status
                                       )}`}
                                     >
-
                                       {getMentorshipStatusLabel(
                                         mentorship.status
                                       )}
-
                                     </span>
 
                                   </div>
@@ -1402,10 +1271,8 @@ function EmployeeDashboard() {
                                     </p>
 
                                     <p className="text-sm font-semibold text-indigo-700 mt-1">
-
                                       {mentorship.skillName ||
                                         "Skill"}
-
                                     </p>
 
                                   </div>
@@ -1428,25 +1295,19 @@ function EmployeeDashboard() {
 
                                     {mentorship.startDate && (
                                       <span>
-
                                         Started:{" "}
-
                                         {new Date(
                                           mentorship.startDate
                                         ).toLocaleDateString()}
-
                                       </span>
                                     )}
 
                                     {mentorship.endDate && (
                                       <span>
-
                                         Completed:{" "}
-
                                         {new Date(
                                           mentorship.endDate
                                         ).toLocaleDateString()}
-
                                       </span>
                                     )}
 
@@ -1502,17 +1363,13 @@ function EmployeeDashboard() {
                           mentorship.status
                         )}`}
                       >
-
                         {mentorship.mentorName ||
                           mentorship.mentorIdentifier ||
                           "Mentor"}
-
                         {" — "}
-
                         {getMentorshipStatusLabel(
                           mentorship.status
                         )}
-
                       </span>
 
                     ))}
@@ -1623,35 +1480,30 @@ function EmployeeDashboard() {
                       );
 
                     const levelStyles = {
-
                       1: {
                         solid:
                           "bg-red-500 text-white",
                         faded:
                           "bg-red-100 text-red-500 border-2 border-dashed border-red-400",
                       },
-
                       2: {
                         solid:
                           "bg-orange-500 text-white",
                         faded:
                           "bg-orange-100 text-orange-600 border-2 border-dashed border-orange-400",
                       },
-
                       3: {
                         solid:
                           "bg-yellow-400 text-white",
                         faded:
                           "bg-yellow-100 text-yellow-600 border-2 border-dashed border-yellow-400",
                       },
-
                       4: {
                         solid:
                           "bg-blue-500 text-white",
                         faded:
                           "bg-blue-100 text-blue-600 border-2 border-dashed border-blue-400",
                       },
-
                       5: {
                         solid:
                           "bg-green-500 text-white",
@@ -1824,7 +1676,6 @@ function EmployeeDashboard() {
                                 if (
                                   isCurrent
                                 ) {
-
                                   cellClass =
                                     `${style.solid} border-2 border-transparent shadow-md`;
                                 }
@@ -1832,7 +1683,6 @@ function EmployeeDashboard() {
                                 if (
                                   isGap
                                 ) {
-
                                   cellClass =
                                     `${style.faded} shadow-inner`;
                                 }
@@ -1844,19 +1694,16 @@ function EmployeeDashboard() {
                                     }
                                     className={`h-16 rounded-lg flex flex-col items-center justify-center ${cellClass}`}
                                   >
-
                                     <span className="font-bold text-lg">
                                       {cell}
                                     </span>
 
                                     <span className="text-[10px] mt-1">
-
                                       {
                                         levelNames[
                                           cell
                                         ]
                                       }
-
                                     </span>
 
                                     {isGap && (
@@ -1864,7 +1711,6 @@ function EmployeeDashboard() {
                                         GAP
                                       </span>
                                     )}
-
                                   </div>
                                 );
                               }
@@ -1917,15 +1763,11 @@ function EmployeeDashboard() {
                             </span>
 
                             <span>
-
                               Current{" "}
                               {currentPercentage}%
-
                               {" / "}
-
                               Required{" "}
                               {requiredPercentage}%
-
                             </span>
 
                           </div>
@@ -1981,43 +1823,31 @@ function EmployeeDashboard() {
               <div className="flex flex-wrap gap-3">
 
                 <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-green-500" />
-
                   <span className="text-sm text-green-700">
                     No Gap
                   </span>
-
                 </div>
 
                 <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-yellow-500" />
-
                   <span className="text-sm text-yellow-700">
                     Low Gap
                   </span>
-
                 </div>
 
                 <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-orange-500" />
-
                   <span className="text-sm text-orange-700">
                     Moderate Gap
                   </span>
-
                 </div>
 
                 <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg">
-
                   <span className="w-3 h-3 rounded-full bg-red-500" />
-
                   <span className="text-sm text-red-700">
                     High Gap
                   </span>
-
                 </div>
 
               </div>
@@ -2213,11 +2043,9 @@ function EmployeeDashboard() {
                                 <div className="flex flex-col items-center">
 
                                   <span className="font-semibold text-slate-700">
-
                                     {skill.previousLevelName ||
                                       skill.previousLevel ||
                                       "Not Rated"}
-
                                   </span>
 
                                   {skill.previousLevel !==
@@ -2226,14 +2054,13 @@ function EmployeeDashboard() {
                                       undefined && (
 
                                     <span className="text-xs text-slate-400 mt-1">
-
                                       Level{" "}
                                       {
                                         skill.previousLevel
                                       }{" "}
                                       / 5
-
                                     </span>
+
                                   )}
 
                                 </div>
@@ -2245,11 +2072,9 @@ function EmployeeDashboard() {
                                 <div className="flex flex-col items-center">
 
                                   <span className="font-semibold text-indigo-600">
-
                                     {skill.currentLevelName ||
                                       skill.currentLevel ||
                                       "Not Rated"}
-
                                   </span>
 
                                   {skill.currentLevel !==
@@ -2258,14 +2083,13 @@ function EmployeeDashboard() {
                                       undefined && (
 
                                     <span className="text-xs text-indigo-400 mt-1">
-
                                       Level{" "}
                                       {
                                         skill.currentLevel
                                       }{" "}
                                       / 5
-
                                     </span>
+
                                   )}
 
                                 </div>
@@ -2274,8 +2098,7 @@ function EmployeeDashboard() {
 
                               <td className="py-4 px-4 text-center">
 
-                                {improvement >
-                                0 ? (
+                                {improvement > 0 ? (
 
                                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
 
@@ -2287,8 +2110,7 @@ function EmployeeDashboard() {
 
                                   </span>
 
-                                ) : improvement <
-                                  0 ? (
+                                ) : improvement < 0 ? (
 
                                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
 
@@ -2318,8 +2140,7 @@ function EmployeeDashboard() {
 
                               <td className="py-4 px-4 text-center">
 
-                                {remainingGap ===
-                                0 ? (
+                                {remainingGap === 0 ? (
 
                                   <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
                                     No Gap
@@ -2360,7 +2181,6 @@ function EmployeeDashboard() {
                     <span className="font-semibold">
                       Comparison:
                     </span>{" "}
-
                     Previous level represents your proficiency
                     before reassessment, while Current level
                     represents your latest reassessment result.
@@ -2412,12 +2232,10 @@ function EmployeeDashboard() {
                           }
                           className="border rounded-lg p-4"
                         >
-
                           <span className="font-medium">
                             Learn{" "}
                             {skillName}
                           </span>
-
                         </div>
                       );
                     }
@@ -2446,9 +2264,7 @@ function EmployeeDashboard() {
           </div>
 
         </main>
-
       </div>
-
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+
+import api from "../services/api";
+
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -32,8 +34,13 @@ import {
 // =========================================================
 // API
 // =========================================================
-
-const API_BASE_URL = "http://localhost:8080/api";
+// Do not define API_BASE_URL here.
+// All requests should use the shared api service:
+//
+// api.get("/endpoint")
+// api.post("/endpoint", data)
+// api.put("/endpoint", data)
+// api.delete("/endpoint")
 
 // =========================================================
 // LEARNING PROGRESS

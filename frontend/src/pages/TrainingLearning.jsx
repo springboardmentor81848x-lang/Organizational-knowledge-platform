@@ -22,11 +22,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-import axios from "axios";
+import api from "../services/api";
 import Sidebar from "../components/Sidebar";
 
 function TrainingLearning() {
-
   // =========================================================
   // STATE
   // =========================================================
@@ -45,10 +44,8 @@ function TrainingLearning() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-
   const [loading, setLoading] = useState(true);
   const [progressLoading, setProgressLoading] = useState(false);
-
   const [expandedCourses, setExpandedCourses] = useState({});
   const [error, setError] = useState("");
 
@@ -57,21 +54,6 @@ function TrainingLearning() {
   // =========================================================
 
   const employeeId = localStorage.getItem("employeeId");
-  const token = localStorage.getItem("token");
-
-  // =========================================================
-  // AXIOS
-  // =========================================================
-
-  const api = useMemo(() => {
-    return axios.create({
-      baseURL: "http://localhost:8080/api",
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-        "Content-Type": "application/json",
-      },
-    });
-  }, [token]);
 
   // =========================================================
   // LOAD MILESTONES
@@ -84,7 +66,6 @@ function TrainingLearning() {
       );
 
       return response.data || [];
-
     } catch (err) {
       console.error(
         `Unable to load milestones for course ${courseId}:`,
@@ -100,7 +81,6 @@ function TrainingLearning() {
   // =========================================================
 
   const calculateMilestoneProgress = (milestones) => {
-
     if (!milestones || milestones.length === 0) {
       return 0;
     }
@@ -108,9 +88,7 @@ function TrainingLearning() {
     const total = milestones.reduce(
       (sum, milestone) =>
         sum +
-        Number(
-          milestone.progressPercentage ?? 0
-        ),
+        Number(milestone.progressPercentage ?? 0),
       0
     );
 
@@ -127,7 +105,6 @@ function TrainingLearning() {
     courseId,
     enrollment = null
   ) => {
-
     const milestones =
       await loadCourseMilestones(courseId);
 
@@ -158,7 +135,7 @@ function TrainingLearning() {
     // ---------------------------------------------------------
 
     setCourseMilestones(
-      previous => ({
+      (previous) => ({
         ...previous,
         [courseId]: milestones,
       })
@@ -169,7 +146,7 @@ function TrainingLearning() {
     // ---------------------------------------------------------
 
     setLearningProgress(
-      previous => ({
+      (previous) => ({
         ...previous,
         [courseId]: calculatedProgress,
       })
@@ -180,10 +157,8 @@ function TrainingLearning() {
     // ---------------------------------------------------------
 
     if (enrollment) {
-
       setEnrollments(
-        previous => {
-
+        (previous) => {
           const existing =
             previous[courseId] || enrollment;
 
@@ -193,7 +168,6 @@ function TrainingLearning() {
               ...existing,
               progressPercentage:
                 calculatedProgress,
-
               status:
                 calculatedProgress === 100
                   ? "COMPLETED"
@@ -217,9 +191,7 @@ function TrainingLearning() {
   // =========================================================
 
   const loadTrainingData = async () => {
-
     try {
-
       setLoading(true);
       setError("");
 
@@ -253,7 +225,6 @@ function TrainingLearning() {
       let enrollmentData = [];
 
       try {
-
         const enrollmentResponse =
           await api.get(
             `/training-enrollments/employee/${employeeId}`
@@ -261,9 +232,7 @@ function TrainingLearning() {
 
         enrollmentData =
           enrollmentResponse.data || [];
-
       } catch (enrollmentError) {
-
         console.error(
           "Training enrollment API error:",
           enrollmentError
@@ -294,8 +263,7 @@ function TrainingLearning() {
       const enrollmentMap = {};
 
       enrollmentData.forEach(
-        enrollment => {
-
+        (enrollment) => {
           const courseId =
             enrollment.course?.id ??
             enrollment.courseId;
@@ -304,7 +272,6 @@ function TrainingLearning() {
             courseId !== undefined &&
             courseId !== null
           ) {
-
             enrollmentMap[courseId] =
               enrollment;
           }
@@ -327,8 +294,7 @@ function TrainingLearning() {
 
       await Promise.all(
         enrolledCourseIds.map(
-          async courseId => {
-
+          async (courseId) => {
             const enrollment =
               enrollmentMap[courseId];
 
@@ -366,7 +332,7 @@ function TrainingLearning() {
       const expandedMap = {};
 
       enrolledCourseIds.forEach(
-        courseId => {
+        (courseId) => {
           expandedMap[courseId] = true;
         }
       );
@@ -374,9 +340,7 @@ function TrainingLearning() {
       setExpandedCourses(
         expandedMap
       );
-
     } catch (err) {
-
       console.error(
         "Training data error:",
         err
@@ -384,11 +348,9 @@ function TrainingLearning() {
 
       setError(
         err.response?.data?.message ||
-        "Unable to load training data."
+          "Unable to load training data."
       );
-
     } finally {
-
       setLoading(false);
     }
   };
@@ -406,14 +368,11 @@ function TrainingLearning() {
   // =========================================================
 
   const gapMap = useMemo(() => {
-
     const map = {};
 
     knowledgeGaps.forEach(
-      gap => {
-
+      (gap) => {
         if (gap.skill?.id) {
-
           map[gap.skill.id] =
             gap;
         }
@@ -421,7 +380,6 @@ function TrainingLearning() {
     );
 
     return map;
-
   }, [knowledgeGaps]);
 
   // =========================================================
@@ -429,10 +387,8 @@ function TrainingLearning() {
   // =========================================================
 
   const recommendedCourses = useMemo(() => {
-
     return courses
-      .filter(course => {
-
+      .filter((course) => {
         if (!course.skill?.id) {
           return false;
         }
@@ -441,8 +397,7 @@ function TrainingLearning() {
           course.skill.id
         ];
       })
-      .map(course => {
-
+      .map((course) => {
         const gap =
           gapMap[
             course.skill.id
@@ -472,7 +427,6 @@ function TrainingLearning() {
         };
       })
       .sort((a, b) => {
-
         const priorityOrder = {
           CRITICAL: 1,
           HIGH: 2,
@@ -485,11 +439,7 @@ function TrainingLearning() {
           priorityOrder[b.priority]
         );
       });
-
-  }, [
-    courses,
-    gapMap,
-  ]);
+  }, [courses, gapMap]);
 
   // =========================================================
   // FILTER
@@ -497,10 +447,8 @@ function TrainingLearning() {
 
   const filteredCourses =
     useMemo(() => {
-
       return recommendedCourses.filter(
-        course => {
-
+        (course) => {
           const title =
             course.title
               ?.toLowerCase() || "";
@@ -532,7 +480,6 @@ function TrainingLearning() {
           );
         }
       );
-
     }, [
       recommendedCourses,
       searchTerm,
@@ -545,11 +492,10 @@ function TrainingLearning() {
 
   const skillCategories =
     useMemo(() => {
-
       const skills =
         recommendedCourses
           .map(
-            course =>
+            (course) =>
               course.skill?.skillName
           )
           .filter(Boolean);
@@ -557,7 +503,6 @@ function TrainingLearning() {
       return [
         ...new Set(skills),
       ];
-
     }, [
       recommendedCourses,
     ]);
@@ -566,8 +511,7 @@ function TrainingLearning() {
   // GET PROGRESS
   // =========================================================
 
-  const getProgress = courseId => {
-
+  const getProgress = (courseId) => {
     return Number(
       learningProgress[courseId] ?? 0
     );
@@ -577,7 +521,7 @@ function TrainingLearning() {
   // GET ENROLLMENT
   // =========================================================
 
-  const getEnrollment = courseId => {
+  const getEnrollment = (courseId) => {
     return enrollments[courseId];
   };
 
@@ -585,7 +529,7 @@ function TrainingLearning() {
   // GET MILESTONES
   // =========================================================
 
-  const getMilestones = courseId => {
+  const getMilestones = (courseId) => {
     return courseMilestones[courseId] || [];
   };
 
@@ -594,13 +538,12 @@ function TrainingLearning() {
   // =========================================================
 
   const getCompletedMilestones =
-    courseId => {
-
+    (courseId) => {
       const milestones =
         getMilestones(courseId);
 
       return milestones.filter(
-        milestone =>
+        (milestone) =>
           Number(
             milestone.progressPercentage ?? 0
           ) === 100
@@ -612,8 +555,7 @@ function TrainingLearning() {
   // =========================================================
 
   const getTotalMilestones =
-    courseId => {
-
+    (courseId) => {
       return getMilestones(courseId).length;
     };
 
@@ -622,13 +564,11 @@ function TrainingLearning() {
   // =========================================================
 
   const calculateCourseProgress =
-    courseId => {
-
+    (courseId) => {
       const milestones =
         getMilestones(courseId);
 
       if (!milestones.length) {
-
         return getProgress(
           courseId
         );
@@ -644,10 +584,9 @@ function TrainingLearning() {
   // =========================================================
 
   const toggleMilestones =
-    courseId => {
-
+    (courseId) => {
       setExpandedCourses(
-        previous => ({
+        (previous) => ({
           ...previous,
           [courseId]:
             !previous[courseId],
@@ -659,10 +598,8 @@ function TrainingLearning() {
   // OPEN COURSE
   // =========================================================
 
-  const openCourse = url => {
-
+  const openCourse = (url) => {
     if (!url) {
-
       alert(
         "Course URL is not available."
       );
@@ -681,10 +618,8 @@ function TrainingLearning() {
   // ENROLL COURSE
   // =========================================================
 
-  const enrollCourse = async course => {
-
+  const enrollCourse = async (course) => {
     try {
-
       setProgressLoading(true);
 
       let enrollment =
@@ -695,7 +630,6 @@ function TrainingLearning() {
       // =====================================================
 
       if (!enrollment) {
-
         const response =
           await api.post(
             `/training-enrollments/employee/${employeeId}/course/${course.id}`
@@ -705,7 +639,7 @@ function TrainingLearning() {
           response.data;
 
         setEnrollments(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               enrollment,
@@ -723,7 +657,7 @@ function TrainingLearning() {
           );
 
         setCourseMilestones(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               result.milestones,
@@ -731,7 +665,7 @@ function TrainingLearning() {
         );
 
         setLearningProgress(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               result.progress,
@@ -739,7 +673,7 @@ function TrainingLearning() {
         );
 
         setExpandedCourses(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]: true,
           })
@@ -754,7 +688,6 @@ function TrainingLearning() {
         enrollment.status ===
         "NOT_STARTED"
       ) {
-
         const response =
           await api.put(
             `/training-enrollments/${enrollment.id}/start`
@@ -764,7 +697,7 @@ function TrainingLearning() {
           response.data;
 
         setEnrollments(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               enrollment,
@@ -788,7 +721,7 @@ function TrainingLearning() {
       // =====================================================
 
       setCourseMilestones(
-        previous => ({
+        (previous) => ({
           ...previous,
           [course.id]:
             result.milestones,
@@ -796,7 +729,7 @@ function TrainingLearning() {
       );
 
       setLearningProgress(
-        previous => ({
+        (previous) => ({
           ...previous,
           [course.id]:
             result.progress,
@@ -804,8 +737,7 @@ function TrainingLearning() {
       );
 
       setEnrollments(
-        previous => {
-
+        (previous) => {
           const current =
             previous[course.id] ||
             enrollment;
@@ -816,7 +748,6 @@ function TrainingLearning() {
               ...current,
               progressPercentage:
                 result.progress,
-
               status:
                 result.progress === 100
                   ? "COMPLETED"
@@ -829,16 +760,14 @@ function TrainingLearning() {
       );
 
       setExpandedCourses(
-        previous => ({
+        (previous) => ({
           ...previous,
           [course.id]: true,
         })
       );
 
       return true;
-
     } catch (err) {
-
       console.error(
         "Enrollment error:",
         err
@@ -846,13 +775,11 @@ function TrainingLearning() {
 
       alert(
         err.response?.data?.message ||
-        "Unable to enroll in this course."
+          "Unable to enroll in this course."
       );
 
       return false;
-
     } finally {
-
       setProgressLoading(false);
     }
   };
@@ -861,8 +788,7 @@ function TrainingLearning() {
   // START / CONTINUE LEARNING
   // =========================================================
 
-  const startLearning = async course => {
-
+  const startLearning = async (course) => {
     const success =
       await enrollCourse(course);
 
@@ -884,9 +810,7 @@ function TrainingLearning() {
       course,
       milestoneProgress
     ) => {
-
       if (!milestoneProgress?.id) {
-
         alert(
           "Milestone progress record not found."
         );
@@ -903,7 +827,6 @@ function TrainingLearning() {
       }
 
       try {
-
         setProgressLoading(true);
 
         // ===================================================
@@ -923,8 +846,7 @@ function TrainingLearning() {
         // ===================================================
 
         setCourseMilestones(
-          previous => {
-
+          (previous) => {
             const existing =
               previous[course.id] || [];
 
@@ -932,7 +854,7 @@ function TrainingLearning() {
               ...previous,
               [course.id]:
                 existing.map(
-                  milestone =>
+                  (milestone) =>
                     milestone.id ===
                     milestoneProgress.id
                       ? updatedMilestone
@@ -944,8 +866,7 @@ function TrainingLearning() {
 
         // ===================================================
         // RELOAD FROM BACKEND
-        // This is important because backend service
-        // recalculates LearningProgress + Enrollment.
+        // Backend recalculates LearningProgress + Enrollment
         // ===================================================
 
         const result =
@@ -959,7 +880,7 @@ function TrainingLearning() {
         // ===================================================
 
         setCourseMilestones(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               result.milestones,
@@ -967,7 +888,7 @@ function TrainingLearning() {
         );
 
         setLearningProgress(
-          previous => ({
+          (previous) => ({
             ...previous,
             [course.id]:
               result.progress,
@@ -979,8 +900,7 @@ function TrainingLearning() {
         // ===================================================
 
         setEnrollments(
-          previous => {
-
+          (previous) => {
             const enrollment =
               previous[course.id];
 
@@ -994,7 +914,6 @@ function TrainingLearning() {
                 ...enrollment,
                 progressPercentage:
                   result.progress,
-
                 status:
                   result.progress === 100
                     ? "COMPLETED"
@@ -1012,7 +931,7 @@ function TrainingLearning() {
 
         const completedMilestones =
           result.milestones.filter(
-            milestone =>
+            (milestone) =>
               Number(
                 milestone.progressPercentage ?? 0
               ) === 100
@@ -1024,20 +943,15 @@ function TrainingLearning() {
         if (
           result.progress === 100
         ) {
-
           alert(
             "🎉 All milestones completed! Course completed successfully!"
           );
-
         } else {
-
           alert(
             `Milestone completed! ${completedMilestones} / ${totalMilestones} milestones completed. Course progress: ${result.progress}%.`
           );
         }
-
       } catch (err) {
-
         console.error(
           "Milestone completion error:",
           err
@@ -1045,11 +959,9 @@ function TrainingLearning() {
 
         alert(
           err.response?.data?.message ||
-          "Unable to complete milestone."
+            "Unable to complete milestone."
         );
-
       } finally {
-
         setProgressLoading(false);
       }
     };
@@ -1059,10 +971,8 @@ function TrainingLearning() {
   // =========================================================
 
   const getPriorityStyle =
-    priority => {
-
+    (priority) => {
       switch (priority) {
-
         case "CRITICAL":
           return "bg-red-100 text-red-700 border-red-200";
 
@@ -1086,15 +996,14 @@ function TrainingLearning() {
 
   const highPriorityCourses =
     recommendedCourses.filter(
-      course =>
+      (course) =>
         course.priority === "CRITICAL" ||
         course.priority === "HIGH"
     ).length;
 
   const inProgressCourses =
     recommendedCourses.filter(
-      course => {
-
+      (course) => {
         const progress =
           getProgress(course.id);
 
@@ -1107,7 +1016,7 @@ function TrainingLearning() {
 
   const completedCourses =
     recommendedCourses.filter(
-      course =>
+      (course) =>
         getProgress(course.id) === 100
     ).length;
 
@@ -1116,16 +1025,12 @@ function TrainingLearning() {
   // =========================================================
 
   if (loading) {
-
     return (
       <div className="min-h-screen flex bg-slate-50">
-
         <Sidebar role="EMPLOYEE" />
 
         <main className="flex-1 flex items-center justify-center">
-
           <div className="text-center">
-
             <RefreshCw
               size={35}
               className="mx-auto text-indigo-600 animate-spin"
@@ -1134,11 +1039,8 @@ function TrainingLearning() {
             <p className="mt-4 text-slate-600">
               Loading training recommendations...
             </p>
-
           </div>
-
         </main>
-
       </div>
     );
   }
@@ -1148,21 +1050,16 @@ function TrainingLearning() {
   // =========================================================
 
   return (
-
     <div className="min-h-screen bg-slate-50 flex">
-
       <Sidebar role="EMPLOYEE" />
 
       <main className="flex-1 min-w-0">
-
         {/* ===================================================
             HEADER
         =================================================== */}
 
         <header className="bg-white border-b border-slate-200">
-
           <div className="px-5 md:px-8 py-5">
-
             <button
               onClick={() =>
                 window.history.back()
@@ -1181,9 +1078,7 @@ function TrainingLearning() {
               Personalized training recommendations
               based on your knowledge gaps.
             </p>
-
           </div>
-
         </header>
 
         {/* ===================================================
@@ -1191,15 +1086,11 @@ function TrainingLearning() {
         =================================================== */}
 
         <div className="p-5 md:p-8 max-w-7xl mx-auto">
-
           {/* ERROR */}
 
           {error && (
-
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
-
               <div className="flex items-center justify-between">
-
                 <p>{error}</p>
 
                 <button
@@ -1208,9 +1099,7 @@ function TrainingLearning() {
                 >
                   Retry
                 </button>
-
               </div>
-
             </div>
           )}
 
@@ -1219,7 +1108,6 @@ function TrainingLearning() {
           ================================================= */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-
             <div className="bg-white border border-slate-200 rounded-2xl p-5">
               <p className="text-sm text-slate-500">
                 Recommended Courses
@@ -1259,7 +1147,6 @@ function TrainingLearning() {
                 {completedCourses}
               </p>
             </div>
-
           </div>
 
           {/* =================================================
@@ -1267,11 +1154,8 @@ function TrainingLearning() {
           ================================================= */}
 
           <div className="bg-white border border-slate-200 rounded-xl p-4 mb-5">
-
             <div className="flex flex-col md:flex-row gap-3">
-
               <div className="relative flex-1">
-
                 <Search
                   size={18}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1281,47 +1165,40 @@ function TrainingLearning() {
                   type="text"
                   placeholder="Search courses, skills or platforms..."
                   value={searchTerm}
-                  onChange={event =>
+                  onChange={(event) =>
                     setSearchTerm(
                       event.target.value
                     )
                   }
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-200"
                 />
-
               </div>
 
               <select
                 value={selectedCategory}
-                onChange={event =>
+                onChange={(event) =>
                   setSelectedCategory(
                     event.target.value
                   )
                 }
                 className="px-4 py-2.5 border border-slate-200 rounded-lg bg-white"
               >
-
                 <option value="All">
                   All Skills
                 </option>
 
                 {skillCategories.map(
-                  skill => (
-
+                  (skill) => (
                     <option
                       key={skill}
                       value={skill}
                     >
                       {skill}
                     </option>
-
                   )
                 )}
-
               </select>
-
             </div>
-
           </div>
 
           {/* =================================================
@@ -1329,10 +1206,8 @@ function TrainingLearning() {
           ================================================= */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             {filteredCourses.map(
-              course => {
-
+              (course) => {
                 const progress =
                   getProgress(course.id);
 
@@ -1369,16 +1244,13 @@ function TrainingLearning() {
                   ];
 
                 return (
-
                   <div
                     key={course.id}
                     className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition"
                   >
-
                     {/* COURSE HEADER */}
 
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
                         {course.skill?.skillName}
                       </span>
@@ -1392,13 +1264,10 @@ function TrainingLearning() {
                       </span>
 
                       {enrollment && (
-
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">
                           {enrollment.status}
                         </span>
-
                       )}
-
                     </div>
 
                     {/* TITLE */}
@@ -1416,38 +1285,30 @@ function TrainingLearning() {
                     {/* SKILL GAP */}
 
                     <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
-
                       <div className="flex items-center gap-2">
-
                         <AlertTriangle
                           size={16}
                           className="text-red-600"
                         />
 
                         <span className="text-sm font-semibold text-red-700">
-                          Skill Gap: {course.gap}
+                          Skill Gap:{" "}
+                          {course.gap}
                         </span>
-
                       </div>
 
                       <p className="text-xs text-red-600 mt-1">
-
-                        Current Level:
-                        {" "}
+                        Current Level:{" "}
                         {course.currentLevel}
                         {" → "}
-                        Required Level:
-                        {" "}
+                        Required Level:{" "}
                         {course.requiredLevel}
-
                       </p>
-
                     </div>
 
                     {/* META */}
 
                     <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
-
                       <div className="flex items-center gap-1.5">
                         <BookMarked size={16} />
                         {course.level}
@@ -1457,15 +1318,12 @@ function TrainingLearning() {
                         <Clock size={16} />
                         {course.duration}
                       </div>
-
                     </div>
 
                     {/* PLATFORM */}
 
                     <div className="mt-5 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
-
                       <div>
-
                         <p className="text-xs text-slate-400">
                           Learning Platform
                         </p>
@@ -1473,26 +1331,20 @@ function TrainingLearning() {
                         <p className="text-sm font-semibold text-slate-700 mt-0.5">
                           {course.platform}
                         </p>
-
                       </div>
 
                       <ExternalLink
                         size={17}
                         className="text-slate-400"
                       />
-
                     </div>
 
                     {/* COURSE PROGRESS */}
 
                     {isStarted && (
-
                       <div className="mt-5">
-
                         <div className="flex items-center justify-between mb-2">
-
                           <div className="flex items-center gap-2">
-
                             <Trophy
                               size={16}
                               className="text-indigo-600"
@@ -1501,17 +1353,14 @@ function TrainingLearning() {
                             <span className="text-sm font-semibold text-slate-700">
                               Course Progress
                             </span>
-
                           </div>
 
                           <span className="text-sm font-bold text-indigo-600">
                             {progress}%
                           </span>
-
                         </div>
 
                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-
                           <div
                             className={`h-full rounded-full transition-all ${
                               progress === 100
@@ -1522,11 +1371,9 @@ function TrainingLearning() {
                               width: `${progress}%`,
                             }}
                           />
-
                         </div>
 
                         <div className="flex justify-between mt-2 text-xs text-slate-500">
-
                           <span>
                             {completedMilestones}
                             {" / "}
@@ -1537,20 +1384,15 @@ function TrainingLearning() {
                           <span>
                             {milestoneProgress}%
                           </span>
-
                         </div>
-
                       </div>
-
                     )}
 
                     {/* MILESTONES */}
 
                     {isStarted &&
                       milestones.length > 0 && (
-
                         <div className="mt-5 border border-slate-200 rounded-xl overflow-hidden">
-
                           <button
                             onClick={() =>
                               toggleMilestones(
@@ -1559,9 +1401,7 @@ function TrainingLearning() {
                             }
                             className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition"
                           >
-
                             <div className="flex items-center gap-2">
-
                               <GraduationCap
                                 size={18}
                                 className="text-indigo-600"
@@ -1576,33 +1416,32 @@ function TrainingLearning() {
                                 /
                                 {totalMilestones}
                               </span>
-
                             </div>
 
-                            {milestonesExpanded
-                              ? <ChevronUp size={18} />
-                              : <ChevronDown size={18} />
-                            }
-
+                            {milestonesExpanded ? (
+                              <ChevronUp
+                                size={18}
+                              />
+                            ) : (
+                              <ChevronDown
+                                size={18}
+                              />
+                            )}
                           </button>
 
                           {milestonesExpanded && (
-
                             <div className="p-4 space-y-3">
-
                               {milestones.map(
                                 (
                                   milestone,
                                   index
                                 ) => {
-
                                   const completed =
                                     Number(
                                       milestone.progressPercentage ?? 0
                                     ) === 100;
 
                                   return (
-
                                     <div
                                       key={
                                         milestone.id
@@ -1613,50 +1452,36 @@ function TrainingLearning() {
                                           : "bg-white border-slate-200"
                                       }`}
                                     >
-
                                       <div className="flex items-start gap-3">
-
                                         <div className="mt-0.5">
-
                                           {completed ? (
-
                                             <CheckCircle
                                               size={21}
                                               className="text-green-600"
                                             />
-
                                           ) : (
-
                                             <Circle
                                               size={21}
                                               className="text-slate-400"
                                             />
-
                                           )}
-
                                         </div>
 
                                         <div className="flex-1 min-w-0">
-
                                           <div className="flex items-center justify-between gap-3">
-
                                             <div>
-
                                               <p className="text-xs text-slate-400">
                                                 Milestone{" "}
                                                 {index + 1}
                                               </p>
 
                                               <h4 className="font-semibold text-slate-800">
-
                                                 {milestone.milestone?.title ||
                                                   milestone.title ||
                                                   `Milestone ${
                                                     index + 1
                                                   }`}
-
                                               </h4>
-
                                             </div>
 
                                             <span
@@ -1670,25 +1495,18 @@ function TrainingLearning() {
                                                 ? "COMPLETED"
                                                 : "NOT STARTED"}
                                             </span>
-
                                           </div>
 
                                           {(milestone.milestone?.description ||
                                             milestone.description) && (
-
                                             <p className="text-xs text-slate-500 mt-2 leading-5">
-
                                               {milestone.milestone?.description ||
                                                 milestone.description}
-
                                             </p>
-
                                           )}
 
                                           <div className="mt-3">
-
                                             {!completed ? (
-
                                               <button
                                                 onClick={() =>
                                                   markMilestoneComplete(
@@ -1701,58 +1519,42 @@ function TrainingLearning() {
                                                 }
                                                 className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 disabled:bg-slate-300"
                                               >
-
                                                 <CheckCircle
                                                   size={15}
                                                 />
 
                                                 Mark Milestone Complete
-
                                               </button>
-
                                             ) : (
-
                                               <div className="flex items-center gap-2 text-xs font-semibold text-green-600">
-
                                                 <CheckCircle
                                                   size={15}
                                                 />
 
                                                 Milestone Completed
-
                                               </div>
-
                                             )}
-
                                           </div>
-
                                         </div>
-
                                       </div>
-
                                     </div>
-
                                   );
                                 }
                               )}
-
                             </div>
-
                           )}
-
                         </div>
-
                       )}
 
                     {/* ACTION */}
 
                     <div className="flex gap-2 mt-5">
-
                       {!isCompleted && (
-
                         <button
                           onClick={() =>
-                            startLearning(course)
+                            startLearning(
+                              course
+                            )
                           }
                           disabled={
                             progressLoading ||
@@ -1760,7 +1562,6 @@ function TrainingLearning() {
                           }
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:bg-slate-300"
                         >
-
                           <PlayCircle
                             size={18}
                           />
@@ -1772,40 +1573,29 @@ function TrainingLearning() {
                           <ExternalLink
                             size={15}
                           />
-
                         </button>
-
                       )}
 
                       {isCompleted && (
-
                         <div className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg font-semibold">
-
                           <CheckCircle
                             size={18}
                           />
 
                           Course Completed
-
                         </div>
-
                       )}
-
                     </div>
-
                   </div>
                 );
               }
             )}
-
           </div>
 
           {/* NO COURSES */}
 
           {filteredCourses.length === 0 && (
-
             <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
-
               <BookOpen
                 size={40}
                 className="mx-auto text-slate-300"
@@ -1819,21 +1609,15 @@ function TrainingLearning() {
                 No courses match your current search
                 or knowledge gaps.
               </p>
-
             </div>
-
           )}
 
           {/* LEARNING PATH */}
 
           <section className="bg-indigo-600 rounded-2xl p-6 md:p-8 text-white mt-8">
-
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-
               <div>
-
                 <div className="flex items-center gap-3">
-
                   <GraduationCap
                     size={25}
                   />
@@ -1841,7 +1625,6 @@ function TrainingLearning() {
                   <h2 className="text-xl font-bold">
                     Follow Your Personalized Learning Path
                   </h2>
-
                 </div>
 
                 <p className="text-indigo-100 mt-2 max-w-2xl">
@@ -1850,33 +1633,24 @@ function TrainingLearning() {
                   to follow a structured learning
                   roadmap.
                 </p>
-
               </div>
 
               <button
                 onClick={() =>
-                  window.location.href =
-                    "/learning-path"
+                  (window.location.href =
+                    "/learning-path")
                 }
                 className="flex items-center justify-center gap-2 px-5 py-3 bg-white text-indigo-700 rounded-lg font-semibold"
               >
-
                 <BookOpen
                   size={18}
                 />
-
                 View Learning Path
-
               </button>
-
             </div>
-
           </section>
-
         </div>
-
       </main>
-
     </div>
   );
 }

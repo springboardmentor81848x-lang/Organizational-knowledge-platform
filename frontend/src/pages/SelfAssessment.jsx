@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -13,7 +13,7 @@ import {
   Star,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:8080/api";
+
 
 const LEVELS = [
   {

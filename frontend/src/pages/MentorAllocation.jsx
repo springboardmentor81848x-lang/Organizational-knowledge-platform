@@ -16,16 +16,20 @@ import {
 
 import { getEmployeeSkills } from "../services/platformService";
 
-import axios from "axios";
+import api from "../services/api";
 
-const API_BASE_URL = "http://localhost:8080/api";
+// ============================================================
+// AUTH HEADERS
+// ============================================================
 
 const getHeaders = () => {
   const token = localStorage.getItem("token");
 
   return {
     headers: {
-      Authorization: token ? `Bearer ${token}` : "",
+      Authorization: token
+        ? `Bearer ${token}`
+        : "",
     },
   };
 };
@@ -37,26 +41,44 @@ function MentorAllocation() {
 
   const [employees, setEmployees] = useState([]);
   const [skillGaps, setSkillGaps] = useState([]);
-  const [recommendedMentors, setRecommendedMentors] = useState([]);
+  const [recommendedMentors, setRecommendedMentors] =
+    useState([]);
 
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [selectedSkillGap, setSelectedSkillGap] = useState("");
-  const [selectedMentor, setSelectedMentor] = useState("");
+  const [selectedEmployee, setSelectedEmployee] =
+    useState("");
 
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [loadingGaps, setLoadingGaps] = useState(false);
-  const [loadingMentors, setLoadingMentors] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [selectedSkillGap, setSelectedSkillGap] =
+    useState("");
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [selectedMentor, setSelectedMentor] =
+    useState("");
+
+  const [loadingEmployees, setLoadingEmployees] =
+    useState(false);
+
+  const [loadingGaps, setLoadingGaps] =
+    useState(false);
+
+  const [loadingMentors, setLoadingMentors] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
   // ============================================================
   // NORMALIZE ROLE
   // ============================================================
 
   const normalizeRole = (role) => {
-    if (!role) return "";
+    if (!role) {
+      return "";
+    }
 
     if (typeof role === "object") {
       role =
@@ -70,7 +92,7 @@ function MentorAllocation() {
     return String(role)
       .toUpperCase()
       .replace("ROLE_", "")
-      .replace(/_/g, " ")
+      .replace(/\_/g, " ")
       .trim();
   };
 
@@ -93,7 +115,10 @@ function MentorAllocation() {
         ? response
         : response?.data || [];
 
-      // Only EMPLOYEE role
+      // --------------------------------------------------------
+      // ONLY EMPLOYEE ROLE
+      // --------------------------------------------------------
+
       const employeeUsers = data.filter((user) => {
         const role =
           user.role ||
@@ -109,7 +134,9 @@ function MentorAllocation() {
           );
         }
 
-        return normalizeRole(role) === "EMPLOYEE";
+        return (
+          normalizeRole(role) === "EMPLOYEE"
+        );
       });
 
       setEmployees(employeeUsers);
@@ -149,13 +176,16 @@ function MentorAllocation() {
   // ============================================================
 
   const handleEmployeeChange = async (e) => {
-    const employeeIdentifier = e.target.value;
+    const employeeIdentifier =
+      e.target.value;
 
-    setSelectedEmployee(employeeIdentifier);
+    setSelectedEmployee(
+      employeeIdentifier
+    );
+
     setSelectedSkillGap("");
     setSelectedMentor("");
     setRecommendedMentors([]);
-
     setSuccessMessage("");
     setErrorMessage("");
 
@@ -164,7 +194,9 @@ function MentorAllocation() {
       return;
     }
 
-    await loadSkillGaps(employeeIdentifier);
+    await loadSkillGaps(
+      employeeIdentifier
+    );
   };
 
   // ============================================================
@@ -173,7 +205,8 @@ function MentorAllocation() {
   // ============================================================
 
   const levelToPercentage = (level) => {
-    const numericLevel = Number(level) || 0;
+    const numericLevel =
+      Number(level) || 0;
 
     if (numericLevel <= 1) {
       return 20;
@@ -200,11 +233,11 @@ function MentorAllocation() {
 
   // ============================================================
   // GAP STATUS
-  // SAME LOGIC AS EMPLOYEE KNOWLEDGE GAP ANALYSIS
   // ============================================================
 
   const getGapStatus = (gapPercentage) => {
-    const gap = Number(gapPercentage) || 0;
+    const gap =
+      Number(gapPercentage) || 0;
 
     if (gap <= 0) {
       return "No Gap";
@@ -230,48 +263,68 @@ function MentorAllocation() {
   // ============================================================
 
   const getSkillGapStatus = (gap) => {
-    // Current level from employee skill / gap
     const currentLevel =
-      Number(gap?.currentLevel) || 0;
+      Number(
+        gap?.currentLevel
+      ) || 0;
 
-    // Required level from knowledge gap
     const requiredLevel =
-      Number(gap?.requiredLevel) || 0;
+      Number(
+        gap?.requiredLevel
+      ) || 0;
 
-    // Same required score used in KnowledgeGap.jsx
     const requiredScore = 70;
 
     const currentScore =
-      levelToPercentage(currentLevel);
+      levelToPercentage(
+        currentLevel
+      );
 
-    const percentageGap = Math.max(
-      requiredScore - currentScore,
-      0
+    const percentageGap =
+      Math.max(
+        requiredScore -
+          currentScore,
+        0
+      );
+
+    return getGapStatus(
+      percentageGap
     );
-
-    return getGapStatus(percentageGap);
   };
 
   // ============================================================
   // LOAD EMPLOYEE SKILL GAPS
   // ============================================================
 
-  const loadSkillGaps = async (employeeIdentifier) => {
+  const loadSkillGaps = async (
+    employeeIdentifier
+  ) => {
     try {
       setLoadingGaps(true);
       setErrorMessage("");
 
-      // Load knowledge gaps
-      const gapResponse = await axios.get(
-        `${API_BASE_URL}/knowledge-gaps/employee/${employeeIdentifier}`,
-        getHeaders()
-      );
+      // --------------------------------------------------------
+      // LOAD KNOWLEDGE GAPS
+      // --------------------------------------------------------
 
-      const gapData = Array.isArray(gapResponse.data)
-        ? gapResponse.data
-        : gapResponse.data?.data || [];
+      const gapResponse =
+        await api.get(
+          `/knowledge-gaps/employee/${employeeIdentifier}`,
+          getHeaders()
+        );
 
-      // Load current employee skills
+      const gapData =
+        Array.isArray(
+          gapResponse.data
+        )
+          ? gapResponse.data
+          : gapResponse.data?.data ||
+            [];
+
+      // --------------------------------------------------------
+      // LOAD CURRENT EMPLOYEE SKILLS
+      // --------------------------------------------------------
+
       let employeeSkills = [];
 
       try {
@@ -280,11 +333,16 @@ function MentorAllocation() {
             employeeIdentifier
           );
 
-        employeeSkills = Array.isArray(
-          skillResponse?.data
-        )
-          ? skillResponse.data
-          : [];
+        employeeSkills =
+          Array.isArray(
+            skillResponse?.data
+          )
+            ? skillResponse.data
+            : Array.isArray(
+                skillResponse
+              )
+            ? skillResponse
+            : [];
       } catch (skillError) {
         console.warn(
           "Unable to load employee skills:",
@@ -296,74 +354,100 @@ function MentorAllocation() {
       // CREATE EMPLOYEE SKILL MAP
       // ========================================================
 
-      const employeeSkillMap = new Map();
+      const employeeSkillMap =
+        new Map();
 
-      employeeSkills.forEach((employeeSkill) => {
-        const skillName =
-          employeeSkill?.skill?.skillName ||
-          employeeSkill?.skillName;
+      employeeSkills.forEach(
+        (employeeSkill) => {
+          const skillName =
+            employeeSkill?.skill
+              ?.skillName ||
+            employeeSkill?.skillName;
 
-        if (skillName) {
-          employeeSkillMap.set(
-            skillName.trim().toLowerCase(),
-            employeeSkill
-          );
+          if (skillName) {
+            employeeSkillMap.set(
+              skillName
+                .trim()
+                .toLowerCase(),
+              employeeSkill
+            );
+          }
         }
-      });
+      );
 
       // ========================================================
       // REBUILD GAP DATA
       // USING CURRENT EMPLOYEE SKILLS
-      // SAME APPROACH AS KNOWLEDGE GAP PAGE
       // ========================================================
 
-      const compatibleGaps = gapData.map((gap) => {
-        const skillName =
-          gap?.skill?.skillName ||
-          gap?.skillName ||
-          gap?.name ||
-          "Unknown Skill";
+      const compatibleGaps =
+        gapData.map((gap) => {
+          const skillName =
+            gap?.skill
+              ?.skillName ||
+            gap?.skillName ||
+            gap?.name ||
+            "Unknown Skill";
 
-        const skillKey = skillName
-          .trim()
-          .toLowerCase();
+          const skillKey =
+            skillName
+              .trim()
+              .toLowerCase();
 
-        const employeeSkill =
-          employeeSkillMap.get(skillKey);
+          const employeeSkill =
+            employeeSkillMap.get(
+              skillKey
+            );
 
-        const currentLevel = employeeSkill
-          ? Number(employeeSkill.currentLevel) || 0
-          : Number(gap?.currentLevel) || 0;
+          const currentLevel =
+            employeeSkill
+              ? Number(
+                  employeeSkill.currentLevel
+                ) || 0
+              : Number(
+                  gap?.currentLevel
+                ) || 0;
 
-        const requiredLevel =
-          Number(gap?.requiredLevel) || 0;
+          const requiredLevel =
+            Number(
+              gap?.requiredLevel
+            ) || 0;
 
-        const currentScore =
-          levelToPercentage(currentLevel);
+          const currentScore =
+            levelToPercentage(
+              currentLevel
+            );
 
-        const requiredScore = 70;
+          const requiredScore = 70;
 
-        const percentageGap = Math.max(
-          requiredScore - currentScore,
-          0
-        );
+          const percentageGap =
+            Math.max(
+              requiredScore -
+                currentScore,
+              0
+            );
 
-        const status =
-          getGapStatus(percentageGap);
+          const status =
+            getGapStatus(
+              percentageGap
+            );
 
-        return {
-          ...gap,
-          skillName,
-          currentLevel,
-          requiredLevel,
-          currentScore,
-          requiredScore,
-          gapPercentage: percentageGap,
-          status,
-        };
-      });
+          return {
+            ...gap,
+            skillName,
+            currentLevel,
+            requiredLevel,
+            currentScore,
+            requiredScore,
+            gapPercentage:
+              percentageGap,
+            status,
+          };
+        });
 
-      setSkillGaps(compatibleGaps);
+      setSkillGaps(
+        compatibleGaps
+      );
     } catch (error) {
       console.error(
         "Error loading skill gaps:",
@@ -373,7 +457,8 @@ function MentorAllocation() {
       setSkillGaps([]);
 
       setErrorMessage(
-        error?.response?.data?.message ||
+        error?.response?.data
+          ?.message ||
           "Unable to load employee skill gaps."
       );
     } finally {
@@ -385,13 +470,18 @@ function MentorAllocation() {
   // SKILL GAP SELECT
   // ============================================================
 
-  const handleSkillGapChange = async (e) => {
-    const skillGapId = e.target.value;
+  const handleSkillGapChange = async (
+    e
+  ) => {
+    const skillGapId =
+      e.target.value;
 
-    setSelectedSkillGap(skillGapId);
+    setSelectedSkillGap(
+      skillGapId
+    );
+
     setSelectedMentor("");
     setRecommendedMentors([]);
-
     setSuccessMessage("");
     setErrorMessage("");
 
@@ -399,113 +489,148 @@ function MentorAllocation() {
       return;
     }
 
-    await loadRecommendedMentors(skillGapId);
+    await loadRecommendedMentors(
+      skillGapId
+    );
   };
 
   // ============================================================
   // LOAD MENTORS
   // ============================================================
 
-  const loadRecommendedMentors = async (skillGapId) => {
-    try {
-      setLoadingMentors(true);
-      setErrorMessage("");
+  const loadRecommendedMentors =
+    async (skillGapId) => {
+      try {
+        setLoadingMentors(true);
+        setErrorMessage("");
 
-      // Keep existing working approach
-      const response = await getEmployees();
+        // ------------------------------------------------------
+        // GET ALL USERS
+        // ------------------------------------------------------
 
-      const data = Array.isArray(response)
-        ? response
-        : response?.data || [];
+        const response =
+          await getEmployees();
 
-      // ========================================================
-      // ONLY MENTOR ROLE
-      // ========================================================
+        const data =
+          Array.isArray(response)
+            ? response
+            : response?.data || [];
 
-      const mentors = data.filter((user) => {
-        const role =
-          user.role ||
-          user.userRole ||
-          user.roleName ||
-          user.authority ||
-          user.authorities;
+        // ======================================================
+        // ONLY MENTOR ROLE
+        // ======================================================
 
-        if (Array.isArray(role)) {
-          return role.some(
-            (item) =>
-              normalizeRole(item) === "MENTOR"
+        const mentors =
+          data.filter((user) => {
+            const role =
+              user.role ||
+              user.userRole ||
+              user.roleName ||
+              user.authority ||
+              user.authorities;
+
+            if (Array.isArray(role)) {
+              return role.some(
+                (item) =>
+                  normalizeRole(
+                    item
+                  ) === "MENTOR"
+              );
+            }
+
+            return (
+              normalizeRole(
+                role
+              ) === "MENTOR"
+            );
+          });
+
+        // ======================================================
+        // SELECTED SKILL GAP
+        // ======================================================
+
+        const selectedGap =
+          skillGaps.find(
+            (gap) =>
+              String(
+                gap.id
+              ) ===
+              String(
+                skillGapId
+              )
+          );
+
+        const skillId =
+          selectedGap?.skillId ||
+          selectedGap?.skill?.id ||
+          selectedGap?.skill
+            ?.skillId;
+
+        const skillName =
+          selectedGap?.skillName ||
+          selectedGap?.skill
+            ?.skillName ||
+          selectedGap?.name;
+
+        let matchedMentors =
+          mentors;
+
+        // ======================================================
+        // MATCH MENTOR WITH SKILL
+        // ======================================================
+
+        if (
+          skillId ||
+          skillName
+        ) {
+          const skillMatched =
+            mentors.filter(
+              (mentor) =>
+                mentorHasSkill(
+                  mentor,
+                  skillId,
+                  skillName
+                )
+            );
+
+          if (
+            skillMatched.length >
+            0
+          ) {
+            matchedMentors =
+              skillMatched;
+          }
+        }
+
+        setRecommendedMentors(
+          matchedMentors
+        );
+
+        if (
+          matchedMentors.length ===
+          0
+        ) {
+          setErrorMessage(
+            "No mentors are currently available."
           );
         }
-
-        return normalizeRole(role) === "MENTOR";
-      });
-
-      // ========================================================
-      // SELECTED SKILL GAP
-      // ========================================================
-
-      const selectedGap = skillGaps.find(
-        (gap) =>
-          String(gap.id) ===
-          String(skillGapId)
-      );
-
-      const skillId =
-        selectedGap?.skillId ||
-        selectedGap?.skill?.id ||
-        selectedGap?.skill?.skillId;
-
-      const skillName =
-        selectedGap?.skillName ||
-        selectedGap?.skill?.skillName ||
-        selectedGap?.name;
-
-      let matchedMentors = mentors;
-
-      // ========================================================
-      // MATCH MENTOR WITH SKILL
-      // ========================================================
-
-      if (skillId || skillName) {
-        const skillMatched = mentors.filter(
-          (mentor) =>
-            mentorHasSkill(
-              mentor,
-              skillId,
-              skillName
-            )
+      } catch (error) {
+        console.error(
+          "Error loading recommended mentors:",
+          error
         );
 
-        if (skillMatched.length > 0) {
-          matchedMentors = skillMatched;
-        }
-      }
+        setRecommendedMentors([]);
 
-      setRecommendedMentors(
-        matchedMentors
-      );
-
-      if (matchedMentors.length === 0) {
         setErrorMessage(
-          "No mentors are currently available."
+          error?.response?.data
+            ?.message ||
+            "Unable to load recommended mentors."
         );
+      } finally {
+        setLoadingMentors(false);
       }
-    } catch (error) {
-      console.error(
-        "Error loading recommended mentors:",
-        error
-      );
-
-      setRecommendedMentors([]);
-
-      setErrorMessage(
-        error?.response?.data?.message ||
-          "Unable to load recommended mentors."
-      );
-    } finally {
-      setLoadingMentors(false);
-    }
-  };
+    };
 
   // ============================================================
   // CHECK MENTOR SKILL
@@ -526,43 +651,55 @@ function MentorAllocation() {
       return false;
     }
 
-    return skills.some((item) => {
-      const itemSkillId =
-        item?.skillId ||
-        item?.skill?.id;
+    return skills.some(
+      (item) => {
+        const itemSkillId =
+          item?.skillId ||
+          item?.skill?.id;
 
-      const itemSkillName =
-        item?.skillName ||
-        item?.skill?.skillName ||
-        item?.name;
+        const itemSkillName =
+          item?.skillName ||
+          item?.skill?.skillName ||
+          item?.name;
 
-      if (
-        skillId &&
-        String(itemSkillId) ===
-          String(skillId)
-      ) {
-        return true;
+        if (
+          skillId &&
+          String(
+            itemSkillId
+          ) ===
+            String(skillId)
+        ) {
+          return true;
+        }
+
+        if (
+          skillName &&
+          itemSkillName &&
+          String(
+            itemSkillName
+          ).toLowerCase() ===
+            String(
+              skillName
+            ).toLowerCase()
+        ) {
+          return true;
+        }
+
+        return false;
       }
-
-      if (
-        skillName &&
-        itemSkillName &&
-        String(itemSkillName).toLowerCase() ===
-          String(skillName).toLowerCase()
-      ) {
-        return true;
-      }
-
-      return false;
-    });
+    );
   };
 
   // ============================================================
   // SELECT MENTOR
   // ============================================================
 
-  const handleMentorChange = (e) => {
-    setSelectedMentor(e.target.value);
+  const handleMentorChange = (
+    e
+  ) => {
+    setSelectedMentor(
+      e.target.value
+    );
 
     setSuccessMessage("");
     setErrorMessage("");
@@ -576,16 +713,22 @@ function MentorAllocation() {
     employees.find(
       (employee) =>
         String(
-          getEmployeeIdentifier(employee)
+          getEmployeeIdentifier(
+            employee
+          )
         ) ===
-        String(selectedEmployee)
+        String(
+          selectedEmployee
+        )
     );
 
   const selectedSkillGapObject =
     skillGaps.find(
       (gap) =>
         String(gap.id) ===
-        String(selectedSkillGap)
+        String(
+          selectedSkillGap
+        )
     );
 
   const selectedMentorObject =
@@ -596,112 +739,134 @@ function MentorAllocation() {
             mentor.employeeCode ||
             mentor.id
         ) ===
-        String(selectedMentor)
+        String(
+          selectedMentor
+        )
     );
 
   // ============================================================
   // RECOMMEND MENTOR
   // ============================================================
 
-  const handleRecommendMentor = async () => {
-    if (!selectedEmployee) {
-      setErrorMessage(
-        "Please select an employee."
-      );
-      return;
-    }
-
-    if (!selectedSkillGap) {
-      setErrorMessage(
-        "Please select a skill gap."
-      );
-      return;
-    }
-
-    if (!selectedMentor) {
-      setErrorMessage(
-        "Please select a mentor."
-      );
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      const skillGap = skillGaps.find(
-        (gap) =>
-          String(gap.id) ===
-          String(selectedSkillGap)
-      );
-
-      const skillId =
-        skillGap?.skillId ||
-        skillGap?.skill?.id ||
-        skillGap?.skill?.skillId;
-
-      if (!skillId) {
+  const handleRecommendMentor =
+    async () => {
+      if (!selectedEmployee) {
         setErrorMessage(
-          "Unable to determine the selected skill."
+          "Please select an employee."
         );
         return;
       }
 
-      const mentorIdentifier =
-        selectedMentorObject?.employeeId ||
-        selectedMentorObject?.mentorEmployeeId ||
-        selectedMentorObject?.employeeCode ||
-        selectedMentorObject?.username ||
-        selectedMentorObject?.id;
+      if (!selectedSkillGap) {
+        setErrorMessage(
+          "Please select a skill gap."
+        );
+        return;
+      }
 
-      const recommendedByIdentifier =
-        localStorage.getItem("employeeId") ||
-        localStorage.getItem("username") ||
-        null;
+      if (!selectedMentor) {
+        setErrorMessage(
+          "Please select a mentor."
+        );
+        return;
+      }
 
-      // ========================================================
-      // EXISTING ALLOCATION FUNCTIONALITY
-      // ========================================================
+      try {
+        setSaving(true);
+        setErrorMessage("");
+        setSuccessMessage("");
 
-      await allocateMentor({
-        employeeIdentifier:
-          selectedEmployee,
+        const skillGap =
+          skillGaps.find(
+            (gap) =>
+              String(
+                gap.id
+              ) ===
+              String(
+                selectedSkillGap
+              )
+          );
 
-        mentorIdentifier:
-          mentorIdentifier,
+        const skillId =
+          skillGap?.skillId ||
+          skillGap?.skill?.id ||
+          skillGap?.skill
+            ?.skillId;
 
-        skillId:
-          skillId,
+        if (!skillId) {
+          setErrorMessage(
+            "Unable to determine the selected skill."
+          );
+          return;
+        }
 
-        recommendedByIdentifier:
-          recommendedByIdentifier,
-      });
+        const mentorIdentifier =
+          selectedMentorObject
+            ?.employeeId ||
+          selectedMentorObject
+            ?.mentorEmployeeId ||
+          selectedMentorObject
+            ?.employeeCode ||
+          selectedMentorObject
+            ?.username ||
+          selectedMentorObject?.id;
 
-      setSuccessMessage(
-        "Mentor recommended successfully. The recommendation is now available to the respective employee."
-      );
-    } catch (error) {
-      console.error(
-        "Error recommending mentor:",
-        error
-      );
+        const recommendedByIdentifier =
+          localStorage.getItem(
+            "employeeId"
+          ) ||
+          localStorage.getItem(
+            "username"
+          ) ||
+          null;
 
-      setErrorMessage(
-        error?.response?.data?.message ||
-          "Failed to recommend mentor."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+        // ======================================================
+        // EXISTING ALLOCATION FUNCTIONALITY
+        // ======================================================
+
+        await allocateMentor({
+          employeeIdentifier:
+            selectedEmployee,
+
+          mentorIdentifier:
+            mentorIdentifier,
+
+          skillId:
+            skillId,
+
+          recommendedByIdentifier:
+            recommendedByIdentifier,
+        });
+
+        setSuccessMessage(
+          "Mentor recommended successfully. The recommendation is now available to the respective employee."
+        );
+      } catch (error) {
+        console.error(
+          "Error recommending mentor:",
+          error
+        );
+
+        setErrorMessage(
+          error?.response?.data
+            ?.message ||
+            "Failed to recommend mentor."
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
 
   // ============================================================
   // DISPLAY HELPERS
   // ============================================================
 
-  const getEmployeeName = (employee) => {
-    if (!employee) return "";
+  const getEmployeeName = (
+    employee
+  ) => {
+    if (!employee) {
+      return "";
+    }
 
     if (
       employee.firstName ||
@@ -721,7 +886,9 @@ function MentorAllocation() {
     );
   };
 
-  const getEmployeeCode = (employee) => {
+  const getEmployeeCode = (
+    employee
+  ) => {
     return (
       employee.employeeId ||
       employee.employeeCode ||
@@ -730,8 +897,12 @@ function MentorAllocation() {
     );
   };
 
-  const getMentorName = (mentor) => {
-    if (!mentor) return "";
+  const getMentorName = (
+    mentor
+  ) => {
+    if (!mentor) {
+      return "";
+    }
 
     if (
       mentor.firstName ||
@@ -751,7 +922,9 @@ function MentorAllocation() {
     );
   };
 
-  const getMentorCode = (mentor) => {
+  const getMentorCode = (
+    mentor
+  ) => {
     return (
       mentor.employeeId ||
       mentor.mentorEmployeeId ||
@@ -862,7 +1035,9 @@ function MentorAllocation() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* EMPLOYEE */}
+                {/* ==================================================
+                    EMPLOYEE
+                ================================================== */}
 
                 <div>
 
@@ -871,7 +1046,9 @@ function MentorAllocation() {
                   </label>
 
                   <select
-                    value={selectedEmployee}
+                    value={
+                      selectedEmployee
+                    }
                     onChange={
                       handleEmployeeChange
                     }
@@ -890,7 +1067,9 @@ function MentorAllocation() {
                     {employees.map(
                       (employee) => (
                         <option
-                          key={employee.id}
+                          key={
+                            employee.id
+                          }
                           value={getEmployeeIdentifier(
                             employee
                           )}
@@ -921,7 +1100,9 @@ function MentorAllocation() {
                   </label>
 
                   <select
-                    value={selectedSkillGap}
+                    value={
+                      selectedSkillGap
+                    }
                     onChange={
                       handleSkillGapChange
                     }
@@ -970,7 +1151,9 @@ function MentorAllocation() {
                   </label>
 
                   <select
-                    value={selectedMentor}
+                    value={
+                      selectedMentor
+                    }
                     onChange={
                       handleMentorChange
                     }
@@ -990,7 +1173,9 @@ function MentorAllocation() {
                     {recommendedMentors.map(
                       (mentor) => (
                         <option
-                          key={mentor.id}
+                          key={
+                            mentor.id
+                          }
                           value={
                             mentor.employeeId ||
                             mentor.employeeCode ||
