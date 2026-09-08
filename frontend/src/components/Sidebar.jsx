@@ -92,13 +92,20 @@ function Sidebar({ role }) {
       Workforce Skills
     </NavLink>
 
-    {/* Competency Framework */}
     <NavLink
       to="/hr/competency-framework"
       className={navLinkClass}
     >
       <ClipboardList size={20} />
       Competency Framework
+    </NavLink>
+
+    <NavLink
+      to="/hr/mentor-allocation"
+      className={navLinkClass}
+    >
+      <UserCheck size={20} />
+      Mentor Allocation
     </NavLink>
 
     <NavLink
@@ -117,7 +124,10 @@ function Sidebar({ role }) {
       Skill Forecast
     </NavLink>
 
-    <NavLink to="/users" className={navLinkClass}>
+    <NavLink
+      to="/users"
+      className={navLinkClass}
+    >
       <UserCog size={20} />
       User Management
     </NavLink>

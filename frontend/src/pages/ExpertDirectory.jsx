@@ -170,7 +170,7 @@ export default function ExpertDirectory() {
   const openMentorshipModal = (expert) => {
     setSelectedExpert(expert);
     setMentorshipGoal(
-      `Hello ${expert.firstName}, I noticed your expertise in ${expert.skillName} (${expert.proficiency}) and would appreciate your peer mentorship to strengthen my knowledge.`
+      `Hello , I noticed your expertise in ${expert.skillName} (${expert.proficiency}) and would appreciate your peer mentorship to strengthen my knowledge.`
     );
     setError('');
     setSuccessMessage('');
