@@ -14,8 +14,9 @@ frontend/dist/
 .vscode/
 .idea/
 
-# Spring Boot
-application.properties
+# Local Spring Boot secrets
+backend/knowledge-gap-platform/src/main/resources/application-local.properties
 
 # Environment files
 .env
+.env.*
