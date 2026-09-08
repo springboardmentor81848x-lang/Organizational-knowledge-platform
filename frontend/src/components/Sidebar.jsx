@@ -1,5 +1,5 @@
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import {
   LayoutDashboard,
@@ -29,17 +29,25 @@ import {
 
 function Sidebar({ role }) {
   // ==================================================
+  // NAVIGATE
+  // ==================================================
+
+  const navigate = useNavigate();
+
+  // ==================================================
   // NORMALIZE ROLE
   // ==================================================
+
   const normalizedRole = String(role || "")
     .toUpperCase()
     .replace(/^ROLE_/, "")
-    .replace(/_/g, " ")
+    .replace(/\_/g, " ")
     .trim();
 
   // ==================================================
   // NAVLINK STYLE
   // ==================================================
+
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-3 px-6 py-3 transition ${
       isActive
@@ -47,13 +55,38 @@ function Sidebar({ role }) {
         : "text-slate-200 hover:bg-slate-800"
     }`;
 
-  return (
-    <div className="w-64 bg-slate-900 text-white min-h-screen flex flex-col">
+  // ==================================================
+  // LOGOUT
+  // ==================================================
 
+  const handleLogout = () => {
+    // Clear authentication data
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("employeeId");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("lastName");
+    localStorage.removeItem("designation");
+    localStorage.removeItem("targetRoleId");
+    localStorage.removeItem("targetRole");
+
+    // Clear temporary session data
+    sessionStorage.removeItem("reassessmentAssessmentId");
+    sessionStorage.removeItem("reassessmentResult");
+
+    // Navigate using React Router
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <div className="flex min-h-screen w-64 flex-col bg-slate-900 text-white">
       {/* ==================================================
           LOGO
       ================================================== */}
-      <div className="p-6 border-b border-slate-700">
+
+      <div className="border-b border-slate-700 p-6">
         <h1 className="text-2xl font-bold leading-tight">
           ORGANIZATIONAL KNOWLEDGE GAP
           <br />
@@ -64,98 +97,103 @@ function Sidebar({ role }) {
       {/* ==================================================
           NAVIGATION
       ================================================== */}
-      <nav className="flex-1 mt-6 overflow-y-auto">
 
+      <nav className="mt-6 flex-1 overflow-y-auto">
         {/* ==================================================
             HR
         ================================================== */}
+
         {normalizedRole === "HR" && (
-  <>
-    <NavLink to="/hr" className={navLinkClass}>
-      <LayoutDashboard size={20} />
-      HR Dashboard
-    </NavLink>
+          <>
+            <NavLink to="/hr" className={navLinkClass}>
+              <LayoutDashboard size={20} />
+              HR Dashboard
+            </NavLink>
 
-    <NavLink
-      to="/hr/gap-intelligence"
-      className={navLinkClass}
-    >
-      <Brain size={20} />
-      Gap Intelligence
-    </NavLink>
+            <NavLink
+              to="/hr/gap-intelligence"
+              className={navLinkClass}
+            >
+              <Brain size={20} />
+              Gap Intelligence
+            </NavLink>
 
-    <NavLink
-      to="/hr/workforce-skills"
-      className={navLinkClass}
-    >
-      <BookOpen size={20} />
-      Workforce Skills
-    </NavLink>
+            <NavLink
+              to="/hr/workforce-skills"
+              className={navLinkClass}
+            >
+              <BookOpen size={20} />
+              Workforce Skills
+            </NavLink>
 
-    <NavLink
-      to="/hr/competency-framework"
-      className={navLinkClass}
-    >
-      <ClipboardList size={20} />
-      Competency Framework
-    </NavLink>
+            <NavLink
+              to="/hr/competency-framework"
+              className={navLinkClass}
+            >
+              <ClipboardList size={20} />
+              Competency Framework
+            </NavLink>
 
-    <NavLink
-      to="/hr/mentor-allocation"
-      className={navLinkClass}
-    >
-      <UserCheck size={20} />
-      Mentor Allocation
-    </NavLink>
+            <NavLink
+              to="/hr/mentor-allocation"
+              className={navLinkClass}
+            >
+              <UserCheck size={20} />
+              Mentor Allocation
+            </NavLink>
 
-    <NavLink
-      to="/training-effectiveness"
-      className={navLinkClass}
-    >
-      <GraduationCap size={20} />
-      Training Effectiveness
-    </NavLink>
+            <NavLink
+              to="/training-effectiveness"
+              className={navLinkClass}
+            >
+              <GraduationCap size={20} />
+              Training Effectiveness
+            </NavLink>
 
-    <NavLink
-      to="/skill-forecast"
-      className={navLinkClass}
-    >
-      <TrendingUp size={20} />
-      Skill Forecast
-    </NavLink>
+            <NavLink
+              to="/skill-forecast"
+              className={navLinkClass}
+            >
+              <TrendingUp size={20} />
+              Skill Forecast
+            </NavLink>
 
-    <NavLink
-      to="/users"
-      className={navLinkClass}
-    >
-      <UserCog size={20} />
-      User Management
-    </NavLink>
+            <NavLink
+              to="/users"
+              className={navLinkClass}
+            >
+              <UserCog size={20} />
+              User Management
+            </NavLink>
 
-    <NavLink
-      to="/hr/reports"
-      className={navLinkClass}
-    >
-      <BarChart3 size={20} />
-      HR Reports
-    </NavLink>
+            <NavLink
+              to="/hr/reports"
+              className={navLinkClass}
+            >
+              <BarChart3 size={20} />
+              HR Reports
+            </NavLink>
 
-    <NavLink
-      to="/notifications"
-      className={navLinkClass}
-    >
-      <Bell size={20} />
-      Notifications
-    </NavLink>
-  </>
-)}
+            <NavLink
+              to="/notifications"
+              className={navLinkClass}
+            >
+              <Bell size={20} />
+              Notifications
+            </NavLink>
+          </>
+        )}
 
         {/* ==================================================
             MANAGER
         ================================================== */}
+
         {normalizedRole === "MANAGER" && (
           <>
-            <NavLink to="/manager" className={navLinkClass}>
+            <NavLink
+              to="/manager"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               Manager Dashboard
             </NavLink>
@@ -221,6 +259,7 @@ function Sidebar({ role }) {
         {/* ==================================================
             DEPARTMENT HEAD
         ================================================== */}
+
         {normalizedRole === "DEPARTMENT HEAD" && (
           <>
             <NavLink
@@ -247,7 +286,10 @@ function Sidebar({ role }) {
               Training Adoption
             </NavLink>
 
-            <NavLink to="/reports" className={navLinkClass}>
+            <NavLink
+              to="/reports"
+              className={navLinkClass}
+            >
               <BarChart3 size={20} />
               Reports
             </NavLink>
@@ -265,9 +307,13 @@ function Sidebar({ role }) {
         {/* ==================================================
             MENTOR
         ================================================== */}
+
         {normalizedRole === "MENTOR" && (
           <>
-            <NavLink to="/mentor" className={navLinkClass}>
+            <NavLink
+              to="/mentor"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               Mentor Dashboard
             </NavLink>
@@ -317,26 +363,35 @@ function Sidebar({ role }) {
         {/* ==================================================
             EMPLOYEE
         ================================================== */}
+
         {normalizedRole === "EMPLOYEE" && (
           <>
-            <NavLink to="/employee" className={navLinkClass}>
+            <NavLink
+              to="/employee"
+              className={navLinkClass}
+            >
               <LayoutDashboard size={20} />
               Dashboard
             </NavLink>
 
-            <NavLink to="/profile" className={navLinkClass}>
+            <NavLink
+              to="/profile"
+              className={navLinkClass}
+            >
               <User size={20} />
               My Profile
             </NavLink>
 
-            <NavLink to="/skills" className={navLinkClass}>
+            <NavLink
+              to="/skills"
+              className={navLinkClass}
+            >
               <BookOpen size={20} />
               Skill Inventory
             </NavLink>
 
-            {/* ==================================================
-                EXISTING SKILL ASSESSMENT
-            ================================================== */}
+            {/* EXISTING SKILL ASSESSMENT */}
+
             <NavLink
               to="/employee-assessment"
               className={navLinkClass}
@@ -345,9 +400,8 @@ function Sidebar({ role }) {
               Skill Assessment
             </NavLink>
 
-            {/* ==================================================
-                SELF ASSESSMENT
-            ================================================== */}
+            {/* SELF ASSESSMENT */}
+
             <NavLink
               to="/employee/self-assessment"
               className={navLinkClass}
@@ -356,9 +410,8 @@ function Sidebar({ role }) {
               Self Assessment
             </NavLink>
 
-            {/* ==================================================
-                REASSESSMENT
-            ================================================== */}
+            {/* REASSESSMENT */}
+
             <NavLink
               to="/reassessment"
               className={navLinkClass}
@@ -367,9 +420,8 @@ function Sidebar({ role }) {
               Reassessment
             </NavLink>
 
-            {/* ==================================================
-                PEER ASSESSMENT
-            ================================================== */}
+            {/* PEER ASSESSMENT */}
+
             <NavLink
               to="/peer-assessment"
               className={navLinkClass}
@@ -378,9 +430,8 @@ function Sidebar({ role }) {
               Peer Assessment
             </NavLink>
 
-            {/* ==================================================
-                PEER REVIEWS
-            ================================================== */}
+            {/* PEER REVIEWS */}
+
             <NavLink
               to="/employee/peer-reviews"
               className={navLinkClass}
@@ -466,6 +517,7 @@ function Sidebar({ role }) {
         {/* ==================================================
             SYSTEM ADMINISTRATOR
         ================================================== */}
+
         {(normalizedRole === "SYSTEM ADMINISTRATOR" ||
           normalizedRole === "ADMIN") && (
           <>
@@ -507,21 +559,12 @@ function Sidebar({ role }) {
       {/* ==================================================
           LOGOUT
       ================================================== */}
-      <div className="p-6 border-t border-slate-700">
-        <button
-          className="flex items-center gap-3 w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("employeeId");
-            localStorage.removeItem("userId");
-            localStorage.removeItem("firstName");
-            localStorage.removeItem("lastName");
-            localStorage.removeItem("designation");
 
-            window.location.href = "/login";
-          }}
+      <div className="border-t border-slate-700 p-6">
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition hover:bg-red-700"
+          onClick={handleLogout}
         >
           <LogOut size={18} />
           Logout
