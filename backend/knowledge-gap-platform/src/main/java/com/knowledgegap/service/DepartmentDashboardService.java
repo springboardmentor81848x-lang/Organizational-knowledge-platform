@@ -26,9 +26,7 @@ import com.knowledgegap.repository.TrainingEnrollmentRepository;
 public class DepartmentDashboardService {
 
     private final EmployeeRepository employeeRepository;
-
     private final TrainingEnrollmentRepository trainingEnrollmentRepository;
-
     private final KnowledgeGapRepository knowledgeGapRepository;
 
     // =========================================================
@@ -41,12 +39,8 @@ public class DepartmentDashboardService {
             KnowledgeGapRepository knowledgeGapRepository) {
 
         this.employeeRepository = employeeRepository;
-
-        this.trainingEnrollmentRepository =
-                trainingEnrollmentRepository;
-
-        this.knowledgeGapRepository =
-                knowledgeGapRepository;
+        this.trainingEnrollmentRepository = trainingEnrollmentRepository;
+        this.knowledgeGapRepository = knowledgeGapRepository;
     }
 
     // =========================================================
@@ -79,17 +73,19 @@ public class DepartmentDashboardService {
                 departmentHead.getDepartment();
 
         if (department == null) {
-
             throw new IllegalStateException(
                     "Department Head is not assigned to a department."
             );
         }
 
-        Long departmentId =
-                department.getId();
+        Long departmentId = department.getId();
 
         // -----------------------------------------------------
-        // GET DEPARTMENT EMPLOYEES
+        // GET ALL EMPLOYEES IN DEPARTMENT
+        //
+        // IMPORTANT:
+        // Department Head dashboard is department-level.
+        // Therefore, DO NOT remove the Department Head.
         // -----------------------------------------------------
 
         List<Employee> employees =
@@ -102,9 +98,7 @@ public class DepartmentDashboardService {
 
         List<TrainingEnrollment> enrollments =
                 trainingEnrollmentRepository
-                        .findByEmployeeDepartmentId(
-                                departmentId
-                        );
+                        .findByEmployeeDepartmentId(departmentId);
 
         // -----------------------------------------------------
         // GET KNOWLEDGE GAPS
@@ -112,9 +106,7 @@ public class DepartmentDashboardService {
 
         List<KnowledgeGap> knowledgeGaps =
                 knowledgeGapRepository
-                        .findByEmployeeDepartmentId(
-                                departmentId
-                        );
+                        .findByEmployeeDepartmentId(departmentId);
 
         // -----------------------------------------------------
         // CREATE DTO
@@ -138,6 +130,10 @@ public class DepartmentDashboardService {
         // =====================================================
         // TOTAL EMPLOYEES
         // =====================================================
+        //
+        // Entire department.
+        // Department Head is included.
+        // =====================================================
 
         dashboard.setTotalEmployees(
                 employees.size()
@@ -146,17 +142,40 @@ public class DepartmentDashboardService {
         // =====================================================
         // TRAINING ENROLLED
         // =====================================================
+        //
+        // Count unique employees who have at least one
+        // training enrollment.
+        // =====================================================
+
+        long trainingEnrolled =
+                enrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getEmployee() != null
+                        )
+                        .map(enrollment ->
+                                enrollment.getEmployee().getId()
+                        )
+                        .filter(id -> id != null)
+                        .distinct()
+                        .count();
 
         dashboard.setTrainingEnrolled(
-                enrollments.size()
+                trainingEnrolled
         );
 
         // =====================================================
         // TRAINING COMPLETED
         // =====================================================
+        //
+        // Count unique employees who have completed/certified
+        // at least one training.
+        // =====================================================
 
-        long completedCount =
+        long trainingCompleted =
                 enrollments.stream()
+                        .filter(enrollment ->
+                                enrollment.getEmployee() != null
+                        )
                         .filter(enrollment ->
                                 enrollment.getStatus() ==
                                         TrainingStatus.COMPLETED
@@ -164,33 +183,37 @@ public class DepartmentDashboardService {
                                 enrollment.getStatus() ==
                                         TrainingStatus.CERTIFIED
                         )
+                        .map(enrollment ->
+                                enrollment.getEmployee().getId()
+                        )
+                        .filter(id -> id != null)
+                        .distinct()
                         .count();
 
         dashboard.setTrainingCompleted(
-                completedCount
+                trainingCompleted
         );
 
         // =====================================================
         // AVERAGE LEARNING PROGRESS
         // =====================================================
+        //
+        // Average progress across all department training
+        // enrollments that have a progress value.
+        // =====================================================
 
-        double averageProgress = 0.0;
-
-        if (!enrollments.isEmpty()) {
-
-            averageProgress =
-                    enrollments.stream()
-                            .map(
-                                    TrainingEnrollment
-                                            ::getProgressPercentage
-                            )
-                            .filter(progress ->
-                                    progress != null
-                            )
-                            .mapToInt(Integer::intValue)
-                            .average()
-                            .orElse(0.0);
-        }
+        double averageProgress =
+                enrollments.stream()
+                        .map(
+                                TrainingEnrollment
+                                        ::getProgressPercentage
+                        )
+                        .filter(progress ->
+                                progress != null
+                        )
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0.0);
 
         averageProgress =
                 Math.round(
@@ -203,6 +226,11 @@ public class DepartmentDashboardService {
 
         // =====================================================
         // CRITICAL SKILL GAPS
+        // =====================================================
+        //
+        // Department-wide critical gaps.
+        // Gap >= 3 is considered critical according to
+        // the existing dashboard logic.
         // =====================================================
 
         long criticalGaps =
@@ -273,17 +301,20 @@ public class DepartmentDashboardService {
         }
 
         // =====================================================
-        // TEAM SKILL GAP HEATMAP
+        // DEPARTMENT SKILL GAP HEATMAP
+        // =====================================================
+        //
+        // Department Head sees the complete department.
         // =====================================================
 
-        List<TeamSkillGapDTO> teamSkillGapMap =
+        List<TeamSkillGapDTO> departmentSkillGapMap =
                 buildTeamSkillGapMap(
                         employees,
                         knowledgeGaps
                 );
 
         dashboard.setTeamSkillGapMap(
-                teamSkillGapMap
+                departmentSkillGapMap
         );
 
         // =====================================================
@@ -294,7 +325,7 @@ public class DepartmentDashboardService {
     }
 
     // =========================================================
-    // BUILD TEAM SKILL GAP MAP
+    // BUILD DEPARTMENT SKILL GAP MAP
     // =========================================================
 
     private List<TeamSkillGapDTO> buildTeamSkillGapMap(
@@ -314,7 +345,8 @@ public class DepartmentDashboardService {
 
             if (knowledgeGap.getSkill() == null
                     || knowledgeGap.getSkill().getSkillName() == null
-                    || knowledgeGap.getEmployee() == null) {
+                    || knowledgeGap.getEmployee() == null
+                    || knowledgeGap.getEmployee().getEmployeeId() == null) {
 
                 continue;
             }
@@ -362,6 +394,11 @@ public class DepartmentDashboardService {
 
                     List<EmployeeSkillGapDTO> employeeData =
                             employees.stream()
+                                    .filter(employee ->
+                                            employee != null
+                                                    &&
+                                            employee.getEmployeeId() != null
+                                    )
                                     .map(employee -> {
 
                                         String employeeId =

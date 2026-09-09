@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.Department;
@@ -45,465 +44,467 @@ public class ManagerDashboardService {
         this.learningProgressRepository = learningProgressRepository;
     }
 
-    // =========================================================
-    // COMPLETE MANAGER DASHBOARD
-    // =========================================================
+    // ============================================================
+    // MAIN MANAGER DASHBOARD
+    // ============================================================
 
-    @Transactional(readOnly = true)
-    public ManagerDashboardResponse getDashboard(
-            String managerEmployeeId) {
+    public ManagerDashboardResponse getDashboard(String managerEmployeeId) {
+
+        // --------------------------------------------------------
+        // 1. FIND MANAGER
+        // --------------------------------------------------------
 
         Employee manager = employeeRepository
                 .findByEmployeeId(managerEmployeeId)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Manager not found: "
-                                        + managerEmployeeId
-                        ));
+                                "Manager not found: " + managerEmployeeId));
 
-        if (manager.getDepartment() == null) {
-            throw new RuntimeException(
-                    "Manager is not assigned to a department."
-            );
-        }
+        // --------------------------------------------------------
+        // 2. GET MANAGER'S DEPARTMENT
+        // --------------------------------------------------------
 
         Department department = manager.getDepartment();
 
+        if (department == null) {
+            throw new RuntimeException(
+                    "Manager is not assigned to any department");
+        }
+
         Long departmentId = department.getId();
 
-        // =====================================================
-        // TEAM MEMBERS
-        // =====================================================
+        // --------------------------------------------------------
+        // 3. GET ALL EMPLOYEES IN THE DEPARTMENT
+        // --------------------------------------------------------
 
-        List<Employee> employees =
-                employeeRepository.findByDepartmentId(
-                        departmentId
-                );
+        List<Employee> departmentEmployees =
+                employeeRepository.findByDepartmentId(departmentId);
 
-        List<Employee> teamMembers = employees.stream()
+        // --------------------------------------------------------
+        // 4. DEFINE MANAGER'S TEAM
+        //
+        // Only employees with system role EMPLOYEE are considered
+        // team members.
+        //
+        // Therefore:
+        // MANAGER            -> excluded
+        // DEPARTMENT_HEAD    -> excluded
+        // HR                 -> excluded
+        // MENTOR             -> excluded
+        // SYSTEM_ADMIN       -> excluded
+        // EMPLOYEE           -> included
+        // --------------------------------------------------------
+
+        List<Employee> teamMembers = departmentEmployees.stream()
+                .filter(employee -> employee != null)
+                .filter(employee -> employee.getEmployeeId() != null)
                 .filter(employee ->
-                        employee != null
-                                && employee.getEmployeeId() != null
-                                && !employee.getEmployeeId()
-                                .equals(managerEmployeeId)
-                )
+                        !employee.getEmployeeId()
+                                .equalsIgnoreCase(managerEmployeeId))
+                .filter(employee -> employee.getRole() != null)
+                .filter(employee ->
+                        employee.getRole().getRoleName() != null)
+                .filter(employee ->
+                        "EMPLOYEE".equalsIgnoreCase(
+                                employee.getRole().getRoleName()))
                 .toList();
 
-        // =====================================================
-        // EMPLOYEE SKILLS
-        // =====================================================
+        // --------------------------------------------------------
+        // 5. GET EMPLOYEE SKILLS FOR DEPARTMENT
+        // --------------------------------------------------------
 
-        List<EmployeeSkill> employeeSkills =
+        List<EmployeeSkill> departmentEmployeeSkills =
                 employeeSkillRepository
-                        .findByEmployeeDepartmentId(
-                                departmentId
-                        );
+                        .findByEmployeeDepartmentId(departmentId);
 
-        // =====================================================
-        // BUILD SKILL COVERAGE
-        // =====================================================
+        // --------------------------------------------------------
+        // 6. PROCESS SKILL DATA ONLY FOR TEAM MEMBERS
+        // --------------------------------------------------------
 
-        Map<String, SkillData> skillMap =
+        Map<String, SkillAggregation> skillMap =
                 new LinkedHashMap<>();
-
-        // =====================================================
-        // BUILD HIGH RISK ALERTS
-        // =====================================================
 
         List<HighRiskAlert> highRiskAlerts =
                 new ArrayList<>();
 
-        // =====================================================
-        // PROCESS EMPLOYEE SKILLS
-        // =====================================================
-
-        for (EmployeeSkill employeeSkill : employeeSkills) {
+        for (EmployeeSkill employeeSkill : departmentEmployeeSkills) {
 
             if (employeeSkill == null) {
                 continue;
             }
 
-            Employee employee =
-                    employeeSkill.getEmployee();
+            Employee employee = employeeSkill.getEmployee();
 
-            if (employee == null ||
-                    employee.getEmployeeId() == null) {
+            if (employee == null) {
                 continue;
             }
 
-            // Do not include manager
-            if (employee.getEmployeeId()
-                    .equals(managerEmployeeId)) {
+            // Only team employees
+            if (!isTeamMember(employee, teamMembers)) {
                 continue;
             }
 
-            Skill skill =
-                    employeeSkill.getSkill();
+            Skill skill = employeeSkill.getSkill();
 
-            if (skill == null ||
-                    skill.getSkillName() == null ||
-                    skill.getSkillName().isBlank()) {
+            if (skill == null || skill.getSkillName() == null) {
                 continue;
             }
 
-            String skillName =
-                    skill.getSkillName().trim();
+            String skillName = skill.getSkillName();
 
-            // -------------------------------------------------
-            // CURRENT LEVEL
-            // -------------------------------------------------
+            Integer currentLevel = employeeSkill.getCurrentLevel();
 
-            int currentLevel =
-                    employeeSkill.getCurrentLevel() != null
-                            ? employeeSkill.getCurrentLevel()
-                            : 0;
-
-            currentLevel = Math.max(
-                    0,
-                    Math.min(currentLevel, 5)
-            );
-
-            // -------------------------------------------------
-            // REQUIRED LEVEL
-            // -------------------------------------------------
+            if (currentLevel == null) {
+                currentLevel = 0;
+            }
 
             int requiredLevel =
-                    getRequiredLevel(
-                            employee,
-                            skill
-                    );
+                    getRequiredLevel(employee, skill);
 
-            // -------------------------------------------------
-            // SKILL DATA
-            // -------------------------------------------------
+            // ----------------------------------------------------
+            // SKILL AGGREGATION
+            // ----------------------------------------------------
 
-            SkillData data =
+            SkillAggregation aggregation =
                     skillMap.computeIfAbsent(
                             skillName,
-                            key -> new SkillData(skillName)
-                    );
+                            key -> new SkillAggregation(skillName));
 
-            data.employeeCount++;
+            aggregation.employeeCount++;
+            aggregation.totalCurrentLevel += currentLevel;
+            aggregation.totalRequiredLevel += requiredLevel;
 
-            data.totalCurrentLevel +=
-                    currentLevel;
-
-            data.totalRequiredLevel +=
-                    requiredLevel;
-
-            if (requiredLevel > 0) {
-
-                if (currentLevel >= requiredLevel) {
-
-                    data.employeesMeetingRequirement++;
-
-                } else {
-
-                    data.employeesBelowRequirement++;
-                }
+            if (currentLevel >= requiredLevel) {
+                aggregation.employeesMeetingRequirement++;
+            } else {
+                aggregation.employeesBelowRequirement++;
             }
 
-            // =================================================
-            // HIGH RISK GAP
-            // =================================================
+            // ----------------------------------------------------
+            // GAP CALCULATION
+            // ----------------------------------------------------
 
-            if (requiredLevel > 0 &&
-                    currentLevel < requiredLevel) {
+            double gapPercentage = 0;
 
-                double gapPercentage =
-                        (
-                                (double)
-                                        (requiredLevel - currentLevel)
-                                        / requiredLevel
-                        ) * 100.0;
+            if (requiredLevel > 0 && currentLevel < requiredLevel) {
 
                 gapPercentage =
-                        round(gapPercentage);
+                        ((double) (requiredLevel - currentLevel)
+                                / requiredLevel) * 100;
+            }
 
-                String severity =
-                        getSeverity(gapPercentage);
+            // ----------------------------------------------------
+            // HIGH-RISK ALERT
+            // ----------------------------------------------------
 
-                if (severity.equals("HIGH") ||
-                        severity.equals("CRITICAL")) {
+            if (gapPercentage >= 30) {
 
-                    highRiskAlerts.add(
-                            new HighRiskAlert(
-                                    buildEmployeeName(employee),
-                                    employee.getEmployeeId(),
-                                    skillName,
-                                    gapPercentage,
-                                    severity
-                            )
-                    );
-                }
+                String severity = getSeverity(gapPercentage);
+
+                String employeeName =
+                        getEmployeeName(employee);
+
+                highRiskAlerts.add(
+                        new HighRiskAlert(
+                                employee.getEmployeeId(),
+                                employeeName,
+                                skillName,
+                                currentLevel,
+                                requiredLevel,
+                                Math.round(gapPercentage * 100.0) / 100.0,
+                                severity));
             }
         }
 
-        // =====================================================
-        // COVERAGE + HEATMAP
-        // =====================================================
+        // --------------------------------------------------------
+        // 7. BUILD TEAM GAP HEATMAP
+        // --------------------------------------------------------
 
-        List<TeamSkillCoverageItem> skillCoverage =
+        List<TeamGapHeatmap> teamGapHeatmap =
                 new ArrayList<>();
 
-        List<TeamGapHeatmapItem> teamGapHeatmap =
+        for (SkillAggregation aggregation :
+                skillMap.values()) {
+
+            List<EmployeeSkillGap> employees =
+                    new ArrayList<>();
+
+            for (EmployeeSkill employeeSkill :
+                    departmentEmployeeSkills) {
+
+                if (employeeSkill == null) {
+                    continue;
+                }
+
+                Employee employee =
+                        employeeSkill.getEmployee();
+
+                if (employee == null ||
+                        !isTeamMember(employee, teamMembers)) {
+                    continue;
+                }
+
+                Skill skill =
+                        employeeSkill.getSkill();
+
+                if (skill == null ||
+                        skill.getSkillName() == null ||
+                        !skill.getSkillName()
+                                .equals(aggregation.skillName)) {
+                    continue;
+                }
+
+                Integer currentLevel =
+                        employeeSkill.getCurrentLevel();
+
+                if (currentLevel == null) {
+                    currentLevel = 0;
+                }
+
+                int requiredLevel =
+                        getRequiredLevel(employee, skill);
+
+                double gap = 0;
+
+                if (requiredLevel > 0 &&
+                        currentLevel < requiredLevel) {
+
+                    gap =
+                            ((double) (requiredLevel - currentLevel)
+                                    / requiredLevel) * 100;
+                }
+
+                employees.add(
+                        new EmployeeSkillGap(
+                                employee.getEmployeeId(),
+                                getEmployeeName(employee),
+                                Math.round(gap * 100.0) / 100.0));
+            }
+
+            teamGapHeatmap.add(
+                    new TeamGapHeatmap(
+                            aggregation.skillName,
+                            employees));
+        }
+
+        // --------------------------------------------------------
+        // 8. SKILL COVERAGE
+        // --------------------------------------------------------
+
+        List<SkillCoverage> skillCoverage =
                 new ArrayList<>();
 
         int skillGapCount = 0;
 
-        int highRiskGapCount =
-                highRiskAlerts.size();
+        for (SkillAggregation aggregation :
+                skillMap.values()) {
 
-        for (SkillData data : skillMap.values()) {
-
-            double averageCurrent =
-                    data.employeeCount > 0
-                            ? (double)
-                                    data.totalCurrentLevel
-                                    / data.employeeCount
-                            : 0;
-
-            double averageRequired =
-                    data.employeeCount > 0
-                            ? (double)
-                                    data.totalRequiredLevel
-                                    / data.employeeCount
-                            : 0;
-
-            averageCurrent =
-                    round(averageCurrent);
-
-            averageRequired =
-                    round(averageRequired);
-
-            // -------------------------------------------------
-            // COVERAGE
-            // -------------------------------------------------
-
-            double coveragePercentage =
-                    averageRequired > 0
-                            ? (
-                                    averageCurrent
-                                            / averageRequired
-                              ) * 100.0
-                            : 0;
-
-            coveragePercentage =
-                    Math.min(
-                            100,
-                            round(coveragePercentage)
-                    );
-
-            String coverageStatus;
-
-            if (coveragePercentage >= 80) {
-                coverageStatus = "GOOD";
-            } else if (coveragePercentage >= 60) {
-                coverageStatus = "MODERATE";
-            } else {
-                coverageStatus = "LOW";
+            if (aggregation.employeeCount == 0) {
+                continue;
             }
 
-            skillCoverage.add(
-                    new TeamSkillCoverageItem(
-                            data.skillName,
-                            data.employeeCount,
-                            averageCurrent,
-                            averageRequired,
-                            coveragePercentage,
-                            data.employeesMeetingRequirement,
-                            data.employeesBelowRequirement,
-                            coverageStatus
-                    )
-            );
+            double averageCurrentLevel =
+                    (double) aggregation.totalCurrentLevel
+                            / aggregation.employeeCount;
 
-            // -------------------------------------------------
-            // GAP HEATMAP
-            // -------------------------------------------------
+            double averageRequiredLevel =
+                    (double) aggregation.totalRequiredLevel
+                            / aggregation.employeeCount;
 
-            double gapPercentage = 0;
+            double coverage = 0;
 
-            if (averageRequired > 0) {
+            if (averageRequiredLevel > 0) {
 
-                gapPercentage =
-                        (
-                                (averageRequired - averageCurrent)
-                                        / averageRequired
-                        ) * 100.0;
-
-                gapPercentage =
-                        Math.max(
-                                0,
-                                Math.min(
-                                        100,
-                                        gapPercentage
-                                )
-                        );
-
-                gapPercentage =
-                        round(gapPercentage);
+                coverage =
+                        (averageCurrentLevel
+                                / averageRequiredLevel) * 100;
             }
 
-            if (gapPercentage > 0) {
+            if (averageCurrentLevel < averageRequiredLevel) {
                 skillGapCount++;
             }
 
-            String severity =
-                    getSeverity(gapPercentage);
-
-            teamGapHeatmap.add(
-                    new TeamGapHeatmapItem(
-                            data.skillName,
-                            gapPercentage,
-                            severity
-                    )
-            );
+            skillCoverage.add(
+                    new SkillCoverage(
+                            aggregation.skillName,
+                            Math.round(coverage * 100.0) / 100.0,
+                            aggregation.employeeCount,
+                            aggregation.employeesMeetingRequirement,
+                            aggregation.employeesBelowRequirement));
         }
 
-        // =====================================================
-        // SORT HIGH RISK ALERTS
-        // =====================================================
-
-        highRiskAlerts.sort(
-                (a, b) ->
-                        Double.compare(
-                                b.getGapPercentage(),
-                                a.getGapPercentage()
-                        )
-        );
-
-        // =====================================================
-        // SORT HEATMAP
-        // =====================================================
-
-        teamGapHeatmap.sort(
-                (a, b) ->
-                        Double.compare(
-                                b.getGapPercentage(),
-                                a.getGapPercentage()
-                        )
-        );
-
-        // =====================================================
-        // TRAINING ADOPTION AND EMPLOYEE PROGRESS
-        // =====================================================
+        // --------------------------------------------------------
+        // 9. TRAINING DATA
+        // --------------------------------------------------------
 
         List<TrainingEnrollment> departmentEnrollments =
                 trainingEnrollmentRepository
-                        .findByEmployeeDepartmentId(
-                                departmentId
-                        );
+                        .findByEmployeeDepartmentId(departmentId);
 
-        long uniqueEnrolledEmployees =
-                departmentEnrollments.stream()
-                        .map(enrollment -> enrollment.getEmployee())
-                        .filter(employee -> employee != null)
-                        .map(Employee::getId)
-                        .filter(id -> id != null)
-                        .distinct()
-                        .count();
-
-        long inProgressCount =
+        // Only training enrollments belonging to team members
+        List<TrainingEnrollment> teamEnrollments =
                 departmentEnrollments.stream()
                         .filter(enrollment ->
-                                enrollment.getStatus() == TrainingStatus.IN_PROGRESS
-                                        || enrollment.getStatus() == TrainingStatus.NOT_STARTED)
-                        .count();
-
-        long completedCount =
-                departmentEnrollments.stream()
+                                enrollment != null &&
+                                enrollment.getEmployee() != null)
                         .filter(enrollment ->
-                                enrollment.getStatus() == TrainingStatus.COMPLETED
-                                        || enrollment.getStatus() == TrainingStatus.CERTIFIED)
-                        .count();
+                                isTeamMember(
+                                        enrollment.getEmployee(),
+                                        teamMembers))
+                        .toList();
+
+        // --------------------------------------------------------
+        // UNIQUE EMPLOYEES ENROLLED
+        // --------------------------------------------------------
+
+        java.util.Set<Long> enrolledEmployeeIds =
+                new java.util.HashSet<>();
+
+        for (TrainingEnrollment enrollment :
+                teamEnrollments) {
+
+            Employee employee =
+                    enrollment.getEmployee();
+
+            if (employee != null &&
+                    employee.getId() != null) {
+
+                enrolledEmployeeIds.add(employee.getId());
+            }
+        }
+
+        // --------------------------------------------------------
+        // UNIQUE EMPLOYEES CURRENTLY IN TRAINING
+        // --------------------------------------------------------
+
+        java.util.Set<Long> inProgressEmployeeIds =
+                new java.util.HashSet<>();
+
+        for (TrainingEnrollment enrollment :
+                teamEnrollments) {
+
+            if (enrollment.getEmployee() == null ||
+                    enrollment.getEmployee().getId() == null) {
+                continue;
+            }
+
+            TrainingStatus status =
+                    enrollment.getStatus();
+
+            if (status == TrainingStatus.IN_PROGRESS ||
+                    status == TrainingStatus.NOT_STARTED) {
+
+                inProgressEmployeeIds.add(
+                        enrollment.getEmployee().getId());
+            }
+        }
+
+        // --------------------------------------------------------
+        // UNIQUE EMPLOYEES COMPLETED TRAINING
+        // --------------------------------------------------------
+
+        java.util.Set<Long> completedEmployeeIds =
+                new java.util.HashSet<>();
+
+        for (TrainingEnrollment enrollment :
+                teamEnrollments) {
+
+            if (enrollment.getEmployee() == null ||
+                    enrollment.getEmployee().getId() == null) {
+                continue;
+            }
+
+            TrainingStatus status =
+                    enrollment.getStatus();
+
+            if (status == TrainingStatus.COMPLETED ||
+                    status == TrainingStatus.CERTIFIED) {
+
+                completedEmployeeIds.add(
+                        enrollment.getEmployee().getId());
+            }
+        }
+
+        // --------------------------------------------------------
+        // TRAINING ADOPTION
+        // --------------------------------------------------------
 
         TrainingAdoption trainingAdoption =
                 new TrainingAdoption(
-                        (int) uniqueEnrolledEmployees,
-                        (int) inProgressCount,
-                        (int) completedCount
-                );
+                        enrolledEmployeeIds.size(),
+                        inProgressEmployeeIds.size(),
+                        completedEmployeeIds.size());
+
+        // --------------------------------------------------------
+        // 10. EMPLOYEE PROGRESS
+        // --------------------------------------------------------
 
         List<EmployeeProgress> employeeProgress =
                 new ArrayList<>();
 
         for (Employee teamMember : teamMembers) {
-            if (teamMember == null) {
-                continue;
-            }
 
             List<LearningProgress> progressRecords =
                     learningProgressRepository
                             .findByEmployee(teamMember);
 
-            double averageProgress = 0.0;
+            double averageProgress = 0;
 
-            if (!progressRecords.isEmpty()) {
-                averageProgress = progressRecords.stream()
-                        .filter(progress -> progress != null)
-                        .map(LearningProgress::getProgressPercentage)
-                        .filter(progress -> progress != null)
-                        .mapToDouble(Integer::doubleValue)
-                        .average()
-                        .orElse(0.0);
+            if (progressRecords != null &&
+                    !progressRecords.isEmpty()) {
+
+                double totalProgress = 0;
+                int count = 0;
+
+                for (LearningProgress progress :
+                        progressRecords) {
+
+                    if (progress == null ||
+                            progress.getProgressPercentage() == null) {
+                        continue;
+                    }
+
+                    totalProgress +=
+                            progress.getProgressPercentage();
+
+                    count++;
+                }
+
+                if (count > 0) {
+                    averageProgress =
+                            totalProgress / count;
+                }
             }
 
             employeeProgress.add(
                     new EmployeeProgress(
-                            buildEmployeeName(teamMember),
                             teamMember.getEmployeeId(),
-                            round(averageProgress)
-                    )
-            );
+                            getEmployeeName(teamMember),
+                            Math.round(
+                                    averageProgress * 100.0)
+                                    / 100.0));
         }
 
-        employeeProgress.sort(
-                (a, b) ->
-                        Double.compare(
-                                b.getProgressPercentage(),
-                                a.getProgressPercentage()
-                        )
-        );
-
-        // =====================================================
-        // RETURN COMPLETE DASHBOARD
-        // =====================================================
+        // --------------------------------------------------------
+        // 11. RETURN DASHBOARD RESPONSE
+        // --------------------------------------------------------
 
         return new ManagerDashboardResponse(
-
-                manager.getEmployeeId(),
-
-                buildEmployeeName(manager),
-
-                department.getId(),
-
-                department.getDepartmentName(),
-
                 teamMembers.size(),
-
                 skillGapCount,
-
-                trainingAdoption.getInProgress(),
-
-                highRiskGapCount,
-
+                inProgressEmployeeIds.size(),
+                highRiskAlerts.size(),
                 teamGapHeatmap,
-
                 skillCoverage,
-
                 highRiskAlerts,
-
                 trainingAdoption,
-
-                employeeProgress
-        );
+                employeeProgress);
     }
 
-    // =========================================================
+    // ============================================================
     // TEAM SKILL COVERAGE
-    // =========================================================
+    // ============================================================
 
-    @Transactional(readOnly = true)
     public TeamSkillCoverageResponse getTeamSkillCoverage(
             String managerEmployeeId) {
 
@@ -511,86 +512,90 @@ public class ManagerDashboardService {
                 getDashboard(managerEmployeeId);
 
         return new TeamSkillCoverageResponse(
-                dashboard.getManagerEmployeeId(),
-                dashboard.getManagerName(),
-                dashboard.getDepartmentId(),
-                dashboard.getDepartmentName(),
-                dashboard.getTeamSize(),
-                dashboard.getSkillCoverage(),
-                calculateOverallCoverage(
-                        dashboard.getSkillCoverage()
-                ),
-                calculateTotalMeeting(
-                        dashboard.getSkillCoverage()
-                ),
-                calculateTotalRecords(
-                        dashboard.getSkillCoverage()
-                )
-        );
+                dashboard.getSkillCoverage());
     }
 
-    // =========================================================
-    // REQUIRED LEVEL
-    // =========================================================
+    // ============================================================
+    // CHECK WHETHER EMPLOYEE BELONGS TO MANAGER'S TEAM
+    // ============================================================
+
+    private boolean isTeamMember(
+            Employee employee,
+            List<Employee> teamMembers) {
+
+        if (employee == null ||
+                employee.getId() == null) {
+            return false;
+        }
+
+        return teamMembers.stream()
+                .anyMatch(teamMember ->
+                        teamMember != null &&
+                        teamMember.getId() != null &&
+                        teamMember.getId()
+                                .equals(employee.getId()));
+    }
+
+    // ============================================================
+    // REQUIRED SKILL LEVEL
+    // ============================================================
 
     private int getRequiredLevel(
             Employee employee,
             Skill skill) {
 
         if (employee == null ||
-                skill == null) {
-            return 0;
-        }
+                skill == null ||
+                employee.getDesignation() == null) {
 
-        if (employee.getDesignation() == null ||
-                employee.getDesignation().isBlank()) {
             return 0;
         }
 
         List<Competency> competencies =
-                competencyRepository.findByDesignation(
-                        employee.getDesignation()
-                );
+                competencyRepository
+                        .findByDesignation(
+                                employee.getDesignation());
+
+        if (competencies == null ||
+                competencies.isEmpty()) {
+
+            return 0;
+        }
 
         for (Competency competency : competencies) {
 
-            if (competency == null ||
-                    competency.getSkill() == null ||
-                    competency.getSkill().getId() == null ||
+            if (competency == null) {
+                continue;
+            }
+
+            if (competency.getSkill() == null) {
+                continue;
+            }
+
+            if (competency.getSkill().getId() == null ||
                     skill.getId() == null) {
                 continue;
             }
 
-            if (competency.getSkill()
-                    .getId()
+            if (competency.getSkill().getId()
                     .equals(skill.getId())) {
 
-                Integer requiredLevel =
-                        competency.getRequiredLevel();
-
-                if (requiredLevel == null) {
+                if (competency.getRequiredLevel() == null) {
                     return 0;
                 }
 
-                return Math.max(
-                        0,
-                        Math.min(
-                                requiredLevel,
-                                5
-                        )
-                );
+                return competency.getRequiredLevel();
             }
         }
 
         return 0;
     }
 
-    // =========================================================
-    // SEVERITY
-    // =========================================================
+    // ============================================================
+    // HIGH-RISK SEVERITY
+    // ============================================================
 
-    private String getSeverity(
-            double gapPercentage) {
+    private String getSeverity(double gapPercentage) {
 
         if (gapPercentage >= 50) {
             return "CRITICAL";
@@ -611,165 +616,76 @@ public class ManagerDashboardService {
         return "NONE";
     }
 
-    // =========================================================
+    // ============================================================
     // EMPLOYEE NAME
-    // =========================================================
+    // ============================================================
 
-    private String buildEmployeeName(
-            Employee employee) {
+    private String getEmployeeName(Employee employee) {
+
+        if (employee == null) {
+            return "";
+        }
 
         String firstName =
                 employee.getFirstName() != null
-                        ? employee.getFirstName().trim()
+                        ? employee.getFirstName()
                         : "";
 
         String lastName =
                 employee.getLastName() != null
-                        ? employee.getLastName().trim()
+                        ? employee.getLastName()
                         : "";
 
-        String name =
-                (firstName + " " + lastName).trim();
-
-        if (name.isBlank()) {
-            return employee.getEmployeeId();
-        }
-
-        return name;
+        return (firstName + " " + lastName).trim();
     }
 
-    // =========================================================
-    // ROUND
-    // =========================================================
+    // ============================================================
+    // SKILL AGGREGATION
+    // ============================================================
 
-    private double round(double value) {
-
-        return Math.round(
-                value * 100.0
-        ) / 100.0;
-    }
-
-    // =========================================================
-    // OVERALL COVERAGE
-    // =========================================================
-
-    private double calculateOverallCoverage(
-            List<TeamSkillCoverageItem> skills) {
-
-        if (skills == null || skills.isEmpty()) {
-            return 0;
-        }
-
-        double current = 0;
-        double required = 0;
-
-        for (TeamSkillCoverageItem skill : skills) {
-
-            current += skill.getAverageCurrentLevel();
-            required += skill.getAverageRequiredLevel();
-        }
-
-        if (required == 0) {
-            return 0;
-        }
-
-        return Math.min(
-                100,
-                round((current / required) * 100)
-        );
-    }
-
-    private int calculateTotalMeeting(
-            List<TeamSkillCoverageItem> skills) {
-
-        int total = 0;
-
-        for (TeamSkillCoverageItem skill : skills) {
-            total += skill.getEmployeesMeetingRequirement();
-        }
-
-        return total;
-    }
-
-    private int calculateTotalRecords(
-            List<TeamSkillCoverageItem> skills) {
-
-        int total = 0;
-
-        for (TeamSkillCoverageItem skill : skills) {
-            total += skill.getEmployeeCount();
-        }
-
-        return total;
-    }
-
-    // =========================================================
-    // INTERNAL SKILL DATA
-    // =========================================================
-
-    private static class SkillData {
+    private static class SkillAggregation {
 
         private final String skillName;
 
-        private int employeeCount;
+        private int employeeCount = 0;
+        private int totalCurrentLevel = 0;
+        private int totalRequiredLevel = 0;
+        private int employeesMeetingRequirement = 0;
+        private int employeesBelowRequirement = 0;
 
-        private int totalCurrentLevel;
-
-        private int totalRequiredLevel;
-
-        private int employeesMeetingRequirement;
-
-        private int employeesBelowRequirement;
-
-        SkillData(String skillName) {
+        SkillAggregation(String skillName) {
             this.skillName = skillName;
         }
     }
 
-    // =========================================================
-    // COMPLETE DASHBOARD RESPONSE
-    // =========================================================
+    // ============================================================
+    // DASHBOARD RESPONSE
+    // ============================================================
 
     public static class ManagerDashboardResponse {
-
-        private String managerEmployeeId;
-        private String managerName;
-
-        private Long departmentId;
-        private String departmentName;
 
         private int teamSize;
         private int skillGaps;
         private int inTraining;
         private int highRiskGaps;
 
-        private List<TeamGapHeatmapItem> teamGapHeatmap;
-        private List<TeamSkillCoverageItem> skillCoverage;
+        private List<TeamGapHeatmap> teamGapHeatmap;
+        private List<SkillCoverage> skillCoverage;
         private List<HighRiskAlert> highRiskAlerts;
-
         private TrainingAdoption trainingAdoption;
-
         private List<EmployeeProgress> employeeProgress;
 
         public ManagerDashboardResponse(
-                String managerEmployeeId,
-                String managerName,
-                Long departmentId,
-                String departmentName,
                 int teamSize,
                 int skillGaps,
                 int inTraining,
                 int highRiskGaps,
-                List<TeamGapHeatmapItem> teamGapHeatmap,
-                List<TeamSkillCoverageItem> skillCoverage,
+                List<TeamGapHeatmap> teamGapHeatmap,
+                List<SkillCoverage> skillCoverage,
                 List<HighRiskAlert> highRiskAlerts,
                 TrainingAdoption trainingAdoption,
                 List<EmployeeProgress> employeeProgress) {
 
-            this.managerEmployeeId = managerEmployeeId;
-            this.managerName = managerName;
-            this.departmentId = departmentId;
-            this.departmentName = departmentName;
             this.teamSize = teamSize;
             this.skillGaps = skillGaps;
             this.inTraining = inTraining;
@@ -779,22 +695,6 @@ public class ManagerDashboardService {
             this.highRiskAlerts = highRiskAlerts;
             this.trainingAdoption = trainingAdoption;
             this.employeeProgress = employeeProgress;
-        }
-
-        public String getManagerEmployeeId() {
-            return managerEmployeeId;
-        }
-
-        public String getManagerName() {
-            return managerName;
-        }
-
-        public Long getDepartmentId() {
-            return departmentId;
-        }
-
-        public String getDepartmentName() {
-            return departmentName;
         }
 
         public int getTeamSize() {
@@ -813,11 +713,11 @@ public class ManagerDashboardService {
             return highRiskGaps;
         }
 
-        public List<TeamGapHeatmapItem> getTeamGapHeatmap() {
+        public List<TeamGapHeatmap> getTeamGapHeatmap() {
             return teamGapHeatmap;
         }
 
-        public List<TeamSkillCoverageItem> getSkillCoverage() {
+        public List<SkillCoverage> getSkillCoverage() {
             return skillCoverage;
         }
 
@@ -834,75 +734,164 @@ public class ManagerDashboardService {
         }
     }
 
-    // =========================================================
+    // ============================================================
     // TEAM GAP HEATMAP
-    // =========================================================
+    // ============================================================
 
-    public static class TeamGapHeatmapItem {
+    public static class TeamGapHeatmap {
 
         private String skillName;
-        private double gapPercentage;
-        private String severity;
+        private List<EmployeeSkillGap> employees;
 
-        public TeamGapHeatmapItem(
+        public TeamGapHeatmap(
                 String skillName,
-                double gapPercentage,
-                String severity) {
+                List<EmployeeSkillGap> employees) {
 
             this.skillName = skillName;
-            this.gapPercentage = gapPercentage;
-            this.severity = severity;
+            this.employees = employees;
         }
 
         public String getSkillName() {
             return skillName;
         }
 
-        public double getGapPercentage() {
-            return gapPercentage;
-        }
-
-        public String getSeverity() {
-            return severity;
+        public List<EmployeeSkillGap> getEmployees() {
+            return employees;
         }
     }
 
-    // =========================================================
-    // HIGH RISK ALERT
-    // =========================================================
+    // ============================================================
+    // EMPLOYEE SKILL GAP
+    // ============================================================
 
-    public static class HighRiskAlert {
+    public static class EmployeeSkillGap {
 
-        private String employeeName;
         private String employeeId;
-        private String skillName;
-        private double gapPercentage;
-        private String severity;
+        private String employeeName;
+        private double gap;
 
-        public HighRiskAlert(
-                String employeeName,
+        public EmployeeSkillGap(
                 String employeeId,
-                String skillName,
-                double gapPercentage,
-                String severity) {
+                String employeeName,
+                double gap) {
 
-            this.employeeName = employeeName;
             this.employeeId = employeeId;
-            this.skillName = skillName;
-            this.gapPercentage = gapPercentage;
-            this.severity = severity;
-        }
-
-        public String getEmployeeName() {
-            return employeeName;
+            this.employeeName = employeeName;
+            this.gap = gap;
         }
 
         public String getEmployeeId() {
             return employeeId;
         }
 
+        public String getEmployeeName() {
+            return employeeName;
+        }
+
+        public double getGap() {
+            return gap;
+        }
+    }
+
+    // ============================================================
+    // SKILL COVERAGE
+    // ============================================================
+
+    public static class SkillCoverage {
+
+        private String skillName;
+        private double coverage;
+        private int employeeCount;
+        private int employeesMeetingRequirement;
+        private int employeesBelowRequirement;
+
+        public SkillCoverage(
+                String skillName,
+                double coverage,
+                int employeeCount,
+                int employeesMeetingRequirement,
+                int employeesBelowRequirement) {
+
+            this.skillName = skillName;
+            this.coverage = coverage;
+            this.employeeCount = employeeCount;
+            this.employeesMeetingRequirement =
+                    employeesMeetingRequirement;
+            this.employeesBelowRequirement =
+                    employeesBelowRequirement;
+        }
+
         public String getSkillName() {
             return skillName;
+        }
+
+        public double getCoverage() {
+            return coverage;
+        }
+
+        public int getEmployeeCount() {
+            return employeeCount;
+        }
+
+        public int getEmployeesMeetingRequirement() {
+            return employeesMeetingRequirement;
+        }
+
+        public int getEmployeesBelowRequirement() {
+            return employeesBelowRequirement;
+        }
+    }
+
+    // ============================================================
+    // HIGH-RISK ALERT
+    // ============================================================
+
+    public static class HighRiskAlert {
+
+        private String employeeId;
+        private String employeeName;
+        private String skillName;
+        private int currentLevel;
+        private int requiredLevel;
+        private double gapPercentage;
+        private String severity;
+
+        public HighRiskAlert(
+                String employeeId,
+                String employeeName,
+                String skillName,
+                int currentLevel,
+                int requiredLevel,
+                double gapPercentage,
+                String severity) {
+
+            this.employeeId = employeeId;
+            this.employeeName = employeeName;
+            this.skillName = skillName;
+            this.currentLevel = currentLevel;
+            this.requiredLevel = requiredLevel;
+            this.gapPercentage = gapPercentage;
+            this.severity = severity;
+        }
+
+        public String getEmployeeId() {
+            return employeeId;
+        }
+
+        public String getEmployeeName() {
+            return employeeName;
+        }
+
+        public String getSkillName() {
+            return skillName;
+        }
+
+        public int getCurrentLevel() {
+            return currentLevel;
+        }
+
+        public int getRequiredLevel() {
+            return requiredLevel;
         }
 
         public double getGapPercentage() {
@@ -914,9 +903,9 @@ public class ManagerDashboardService {
         }
     }
 
-    // =========================================================
+    // ============================================================
     // TRAINING ADOPTION
-    // =========================================================
+    // ============================================================
 
     public static class TrainingAdoption {
 
@@ -947,190 +936,55 @@ public class ManagerDashboardService {
         }
     }
 
-    // =========================================================
+    // ============================================================
     // EMPLOYEE PROGRESS
-    // =========================================================
+    // ============================================================
 
     public static class EmployeeProgress {
 
-        private String employeeName;
         private String employeeId;
-        private double progressPercentage;
+        private String employeeName;
+        private double progress;
 
         public EmployeeProgress(
-                String employeeName,
                 String employeeId,
-                double progressPercentage) {
+                String employeeName,
+                double progress) {
 
-            this.employeeName = employeeName;
             this.employeeId = employeeId;
-            this.progressPercentage = progressPercentage;
-        }
-
-        public String getEmployeeName() {
-            return employeeName;
+            this.employeeName = employeeName;
+            this.progress = progress;
         }
 
         public String getEmployeeId() {
             return employeeId;
         }
 
-        public double getProgressPercentage() {
-            return progressPercentage;
+        public String getEmployeeName() {
+            return employeeName;
+        }
+
+        public double getProgress() {
+            return progress;
         }
     }
 
-    // =========================================================
+    // ============================================================
     // TEAM SKILL COVERAGE RESPONSE
-    // =========================================================
+    // ============================================================
 
     public static class TeamSkillCoverageResponse {
 
-        private String managerEmployeeId;
-        private String managerName;
-        private Long departmentId;
-        private String departmentName;
-        private int teamSize;
-
-        private List<TeamSkillCoverageItem> skills;
-
-        private double overallCoverage;
-
-        private int totalEmployeesMeetingRequirement;
-
-        private int totalSkillRecords;
+        private List<SkillCoverage> skillCoverage;
 
         public TeamSkillCoverageResponse(
-                String managerEmployeeId,
-                String managerName,
-                Long departmentId,
-                String departmentName,
-                int teamSize,
-                List<TeamSkillCoverageItem> skills,
-                double overallCoverage,
-                int totalEmployeesMeetingRequirement,
-                int totalSkillRecords) {
+                List<SkillCoverage> skillCoverage) {
 
-            this.managerEmployeeId = managerEmployeeId;
-            this.managerName = managerName;
-            this.departmentId = departmentId;
-            this.departmentName = departmentName;
-            this.teamSize = teamSize;
-            this.skills = skills;
-            this.overallCoverage = overallCoverage;
-            this.totalEmployeesMeetingRequirement =
-                    totalEmployeesMeetingRequirement;
-            this.totalSkillRecords = totalSkillRecords;
+            this.skillCoverage = skillCoverage;
         }
 
-        public String getManagerEmployeeId() {
-            return managerEmployeeId;
-        }
-
-        public String getManagerName() {
-            return managerName;
-        }
-
-        public Long getDepartmentId() {
-            return departmentId;
-        }
-
-        public String getDepartmentName() {
-            return departmentName;
-        }
-
-        public int getTeamSize() {
-            return teamSize;
-        }
-
-        public List<TeamSkillCoverageItem> getSkills() {
-            return skills;
-        }
-
-        public double getOverallCoverage() {
-            return overallCoverage;
-        }
-
-        public int getTotalEmployeesMeetingRequirement() {
-            return totalEmployeesMeetingRequirement;
-        }
-
-        public int getTotalSkillRecords() {
-            return totalSkillRecords;
-        }
-    }
-
-    // =========================================================
-    // TEAM SKILL COVERAGE ITEM
-    // =========================================================
-
-    public static class TeamSkillCoverageItem {
-
-        private String skillName;
-        private int employeeCount;
-
-        private double averageCurrentLevel;
-        private double averageRequiredLevel;
-
-        private double coveragePercentage;
-
-        private int employeesMeetingRequirement;
-        private int employeesBelowRequirement;
-
-        private String status;
-
-        public TeamSkillCoverageItem(
-                String skillName,
-                int employeeCount,
-                double averageCurrentLevel,
-                double averageRequiredLevel,
-                double coveragePercentage,
-                int employeesMeetingRequirement,
-                int employeesBelowRequirement,
-                String status) {
-
-            this.skillName = skillName;
-            this.employeeCount = employeeCount;
-            this.averageCurrentLevel = averageCurrentLevel;
-            this.averageRequiredLevel = averageRequiredLevel;
-            this.coveragePercentage = coveragePercentage;
-            this.employeesMeetingRequirement =
-                    employeesMeetingRequirement;
-            this.employeesBelowRequirement =
-                    employeesBelowRequirement;
-            this.status = status;
-        }
-
-        public String getSkillName() {
-            return skillName;
-        }
-
-        public int getEmployeeCount() {
-            return employeeCount;
-        }
-
-        public double getAverageCurrentLevel() {
-            return averageCurrentLevel;
-        }
-
-        public double getAverageRequiredLevel() {
-            return averageRequiredLevel;
-        }
-
-        public double getCoveragePercentage() {
-            return coveragePercentage;
-        }
-
-        public int getEmployeesMeetingRequirement() {
-            return employeesMeetingRequirement;
-        }
-
-        public int getEmployeesBelowRequirement() {
-            return employeesBelowRequirement;
-        }
-
-        public String getStatus() {
-            return status;
+        public List<SkillCoverage> getSkillCoverage() {
+            return skillCoverage;
         }
     }
 }
