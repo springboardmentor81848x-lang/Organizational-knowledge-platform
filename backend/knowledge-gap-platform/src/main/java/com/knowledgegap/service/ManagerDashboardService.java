@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.knowledgegap.entity.AssessmentAttempt;
 import com.knowledgegap.entity.AssessmentGapResult;
+import com.knowledgegap.entity.AssessmentType;
 import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.Department;
 import com.knowledgegap.entity.Employee;
@@ -19,7 +20,7 @@ import com.knowledgegap.entity.LearningProgress;
 import com.knowledgegap.entity.Skill;
 import com.knowledgegap.entity.TrainingEnrollment;
 import com.knowledgegap.entity.TrainingStatus;
-import com.knowledgegap.entity.AssessmentType;
+
 import com.knowledgegap.repository.AssessmentAttemptRepository;
 import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.CompetencyRepository;
@@ -62,7 +63,6 @@ public class ManagerDashboardService {
         this.competencyRepository = competencyRepository;
         this.trainingEnrollmentRepository = trainingEnrollmentRepository;
         this.learningProgressRepository = learningProgressRepository;
-
         this.assessmentAttemptRepository = assessmentAttemptRepository;
         this.assessmentGapResultRepository = assessmentGapResultRepository;
     }
@@ -202,11 +202,8 @@ public class ManagerDashboardService {
             aggregation.totalRequiredLevel += requiredLevel;
 
             if (currentLevel >= requiredLevel) {
-
                 aggregation.employeesMeetingRequirement++;
-
             } else {
-
                 aggregation.employeesBelowRequirement++;
             }
 
@@ -263,6 +260,10 @@ public class ManagerDashboardService {
             List<EmployeeSkillGap> employees =
                     new ArrayList<>();
 
+            // ----------------------------------------------------
+            // BUILD EMPLOYEE-LEVEL GAPS
+            // ----------------------------------------------------
+
             for (EmployeeSkill employeeSkill :
                     departmentEmployeeSkills) {
 
@@ -284,7 +285,8 @@ public class ManagerDashboardService {
                 if (skill == null ||
                         skill.getSkillName() == null ||
                         !skill.getSkillName()
-                                .equals(aggregation.skillName)) {
+                                .equalsIgnoreCase(
+                                        aggregation.skillName)) {
                     continue;
                 }
 
@@ -317,9 +319,49 @@ public class ManagerDashboardService {
                                         / 100.0));
             }
 
+            // ----------------------------------------------------
+            // CALCULATE AVERAGE GAP FOR THE SKILL
+            // ----------------------------------------------------
+
+            double averageCurrentLevel = 0;
+            double averageRequiredLevel = 0;
+            double gapPercentage = 0;
+
+            if (aggregation.employeeCount > 0) {
+
+                averageCurrentLevel =
+                        (double) aggregation.totalCurrentLevel
+                                / aggregation.employeeCount;
+
+                averageRequiredLevel =
+                        (double) aggregation.totalRequiredLevel
+                                / aggregation.employeeCount;
+
+                if (averageRequiredLevel > 0 &&
+                        averageCurrentLevel < averageRequiredLevel) {
+
+                    gapPercentage =
+                            ((averageRequiredLevel -
+                                    averageCurrentLevel)
+                                    / averageRequiredLevel) * 100;
+                }
+            }
+
+            gapPercentage =
+                    Math.round(gapPercentage * 100.0) / 100.0;
+
+            String severity =
+                    getSeverity(gapPercentage);
+
+            // ----------------------------------------------------
+            // ADD SKILL TO TEAM GAP HEATMAP
+            // ----------------------------------------------------
+
             teamGapHeatmap.add(
                     new TeamGapHeatmap(
                             aggregation.skillName,
+                            gapPercentage,
+                            severity,
                             employees));
         }
 
@@ -356,7 +398,9 @@ public class ManagerDashboardService {
                                 / averageRequiredLevel) * 100;
             }
 
-            if (averageCurrentLevel < averageRequiredLevel) {
+            if (averageCurrentLevel <
+                    averageRequiredLevel) {
+
                 skillGapCount++;
             }
 
@@ -475,13 +519,9 @@ public class ManagerDashboardService {
                         completedEmployeeIds.size());
 
         // --------------------------------------------------------
-        // 10. EMPLOYEE PROGRESS
+        // 10. TEAM PROGRESS
         //
-        // IMPORTANT:
-        // This now uses the latest REASSESSMENT result.
-        //
-        // It does NOT use LearningProgress for employee skill
-        // improvement.
+        // Uses latest reassessment result.
         // --------------------------------------------------------
 
         List<EmployeeProgress> employeeProgress =
@@ -720,7 +760,7 @@ public class ManagerDashboardService {
         }
 
         // --------------------------------------------------------
-        // RETURN EMPLOYEE PROGRESS
+        // RETURN TEAM PROGRESS
         // --------------------------------------------------------
 
         return new EmployeeProgress(
@@ -782,6 +822,7 @@ public class ManagerDashboardService {
 
         if (employee == null ||
                 employee.getId() == null) {
+
             return false;
         }
 
@@ -824,22 +865,27 @@ public class ManagerDashboardService {
 
             if (competency == null ||
                     competency.getSkill() == null) {
+
                 continue;
             }
 
             Skill competencySkill =
                     competency.getSkill();
 
-            // First try matching by Skill ID.
+            // ----------------------------------------------------
+            // FIRST TRY MATCHING BY SKILL ID
+            // ----------------------------------------------------
+
             boolean sameSkill =
                     competencySkill.getId() != null &&
                     skill.getId() != null &&
                     competencySkill.getId()
                             .equals(skill.getId());
 
-            // Fallback: match by skill name.
-            // This handles cases where the same skill has
-            // different IDs but the same skill name.
+            // ----------------------------------------------------
+            // FALLBACK: MATCH BY SKILL NAME
+            // ----------------------------------------------------
+
             if (!sameSkill &&
                     competencySkill.getSkillName() != null &&
                     skill.getSkillName() != null) {
@@ -851,6 +897,10 @@ public class ManagerDashboardService {
                                         skill.getSkillName()
                                                 .trim());
             }
+
+            // ----------------------------------------------------
+            // RETURN REQUIRED LEVEL
+            // ----------------------------------------------------
 
             if (sameSkill) {
 
@@ -869,7 +919,8 @@ public class ManagerDashboardService {
     // HIGH-RISK SEVERITY
     // ============================================================
 
-    private String getSeverity(double gapPercentage) {
+    private String getSeverity(
+            double gapPercentage) {
 
         if (gapPercentage >= 50) {
             return "CRITICAL";
@@ -894,7 +945,8 @@ public class ManagerDashboardService {
     // EMPLOYEE NAME
     // ============================================================
 
-    private String getEmployeeName(Employee employee) {
+    private String getEmployeeName(
+            Employee employee) {
 
         if (employee == null) {
             return "";
@@ -924,6 +976,7 @@ public class ManagerDashboardService {
         private int employeeCount = 0;
         private int totalCurrentLevel = 0;
         private int totalRequiredLevel = 0;
+
         private int employeesMeetingRequirement = 0;
         private int employeesBelowRequirement = 0;
 
@@ -946,7 +999,9 @@ public class ManagerDashboardService {
         private List<TeamGapHeatmap> teamGapHeatmap;
         private List<SkillCoverage> skillCoverage;
         private List<HighRiskAlert> highRiskAlerts;
+
         private TrainingAdoption trainingAdoption;
+
         private List<EmployeeProgress> employeeProgress;
 
         public ManagerDashboardResponse(
@@ -964,10 +1019,13 @@ public class ManagerDashboardService {
             this.skillGaps = skillGaps;
             this.inTraining = inTraining;
             this.highRiskGaps = highRiskGaps;
+
             this.teamGapHeatmap = teamGapHeatmap;
             this.skillCoverage = skillCoverage;
             this.highRiskAlerts = highRiskAlerts;
+
             this.trainingAdoption = trainingAdoption;
+
             this.employeeProgress = employeeProgress;
         }
 
@@ -1015,18 +1073,32 @@ public class ManagerDashboardService {
     public static class TeamGapHeatmap {
 
         private String skillName;
+        private double gapPercentage;
+        private String severity;
         private List<EmployeeSkillGap> employees;
 
         public TeamGapHeatmap(
                 String skillName,
+                double gapPercentage,
+                String severity,
                 List<EmployeeSkillGap> employees) {
 
             this.skillName = skillName;
+            this.gapPercentage = gapPercentage;
+            this.severity = severity;
             this.employees = employees;
         }
 
         public String getSkillName() {
             return skillName;
+        }
+
+        public double getGapPercentage() {
+            return gapPercentage;
+        }
+
+        public String getSeverity() {
+            return severity;
         }
 
         public List<EmployeeSkillGap> getEmployees() {
@@ -1125,8 +1197,10 @@ public class ManagerDashboardService {
         private String employeeId;
         private String employeeName;
         private String skillName;
+
         private int currentLevel;
         private int requiredLevel;
+
         private double gapPercentage;
         private String severity;
 
@@ -1211,7 +1285,7 @@ public class ManagerDashboardService {
     }
 
     // ============================================================
-    // EMPLOYEE PROGRESS
+    // EMPLOYEE / TEAM PROGRESS
     // ============================================================
 
     public static class EmployeeProgress {
