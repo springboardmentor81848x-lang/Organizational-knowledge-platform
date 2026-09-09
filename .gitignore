@@ -11,7 +11,9 @@
 .env.production.local
 *.env
 application-local.properties
+local-application.properties
 *-local.properties
+*local*.properties
 !.env.example
 !backend/.env.example
 !frontend/.env.example

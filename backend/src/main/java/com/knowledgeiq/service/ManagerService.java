@@ -57,31 +57,29 @@ public class ManagerService {
             return Collections.emptyList();
         }
         
-        Set<User> members = new LinkedHashSet<>();
-        // 1. Direct reports assigned to this manager
-        members.addAll(userRepository.findByManagerId(manager.getId()));
+        List<User> directReports = userRepository.findByManagerId(manager.getId());
+        if (directReports != null && !directReports.isEmpty()) {
+            return directReports.stream()
+                    .filter(u -> u.getSystemRole() == SystemRole.EMPLOYEE)
+                    .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                    .collect(Collectors.toList());
+        }
         
-        // 2. Department members within the manager's organization
         if (manager.getDepartment() != null && manager.getOrganization() != null) {
-            members.addAll(userRepository.findByDepartmentIdAndOrganizationIdAndSystemRole(
+            return userRepository.findByDepartmentIdAndOrganizationIdAndSystemRole(
                     manager.getDepartment().getId(),
                     manager.getOrganization().getId(),
                     SystemRole.EMPLOYEE
-            ));
+            ).stream()
+                    .filter(u -> !u.getId().equals(manager.getId()))
+                    .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                    .collect(Collectors.toList());
         }
         
-        // 3. Department members matching manager's department
-        if (manager.getDepartment() != null) {
-            members.addAll(userRepository.findByDepartmentId(manager.getDepartment().getId()));
-        }
-
-        // Return employee members only: exclude managers and self
-        return members.stream()
-                .filter(u -> u.getSystemRole() == SystemRole.EMPLOYEE)
-                .filter(u -> !u.getId().equals(manager.getId()))
-                .collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
+    @Transactional(readOnly = true)
     public TeamGapSummaryDto getTeamGaps(User manager) {
         List<User> teamMembers = getTeamMembersForManager(manager);
         Department dept = manager != null ? manager.getDepartment() : null;
@@ -188,6 +186,7 @@ public class ManagerService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<TeamMemberProfileDto> getTeamProfiles(User manager) {
         List<User> teamMembers = getTeamMembersForManager(manager);
         List<TeamMemberProfileDto> profiles = new ArrayList<>();
@@ -296,6 +295,7 @@ public class ManagerService {
         return profiles;
     }
 
+    @Transactional(readOnly = true)
     public HeatmapResponseDto getHeatmapData(User manager) {
         return gapAnalysisService.getScopedHeatmap(manager);
     }

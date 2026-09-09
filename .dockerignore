@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+.vscode
+*.log
+backend/target
+frontend/node_modules
+frontend/dist
+KnowledgeIQ_Milestone_3_Work_Done_Documentation.docx
+*.pdf
+screenshots

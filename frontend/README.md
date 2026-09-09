@@ -1,17 +1,17 @@
-# KnowledgeIQ — React + Vite App
+# KnowledgeIQ — React + Vite Frontend
 
-A role-based Organizational Knowledge Gap Intelligence Platform, built with React + Vite, Tailwind CSS, Recharts, and Lucide Icons.
+A role-based Organizational Knowledge Gap Intelligence Platform, built with React + Vite, Recharts, and Lucide Icons.
 
-## Run it
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the URL Vite prints (usually `http://localhost:5173`).
+Then open the URL printed by Vite (typically `http://localhost:5173`).
 
-To build a production bundle:
+To build and preview a production bundle:
 
 ```bash
 npm run build
@@ -40,9 +40,20 @@ src/
     api.js                Centralized REST API client connected to Spring Boot backend
 ```
 
-## Notes on fonts
+## Deploying to Render (Static Site)
 
-The Sora/Inter webfonts load from Google Fonts with `display=swap`, and the whole
-app has a system-font fallback stack (`ui-sans-serif, system-ui, -apple-system, sans-serif`)
-set directly in `index.html`. If the webfont fails to load (offline, blocked network),
-text still renders immediately in the fallback — it will never appear invisible or blank.
+1. Push this frontend folder to your new GitHub repository.
+2. In [Render Dashboard](https://dashboard.render.com/), click **New +** ➔ **Static Site**.
+3. Connect your frontend GitHub repository.
+4. Set build options:
+   - **Build Command**: `npm install && npm run build`
+   - **Publish Directory**: `dist`
+5. In **Environment Variables**, add:
+   - `VITE_API_BASE_URL` = `https://<YOUR_BACKEND_RENDER_URL>/api`
+6. Click **Create Static Site**.
+
+*(Note: SPA client routing is pre-configured via `public/_redirects` to avoid 404s on browser refresh).*
+
+## Notes on Fonts
+
+The Sora/Inter webfonts load from Google Fonts with `display=swap`, and the app has a system-font fallback stack (`ui-sans-serif, system-ui, -apple-system, sans-serif`) set directly in `index.html`.

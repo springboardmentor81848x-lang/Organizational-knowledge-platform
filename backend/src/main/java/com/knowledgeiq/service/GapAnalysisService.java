@@ -149,6 +149,7 @@ public class GapAnalysisService {
         return (int) Math.round(((double) gapScore / gap.getRequiredLevel()) * 100);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<SkillGapDto> calculateUserGaps(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
@@ -158,14 +159,9 @@ public class GapAnalysisService {
             benchmarks = benchmarkRepository.findByRoleId(user.getRole().getId());
         }
 
-        // Fallback: If user's specific role has no benchmarks defined, check department roles or return empty
+        // Fallback: If user's specific role has no benchmarks defined, check department roles directly via indexed query
         if (benchmarks.isEmpty() && user.getDepartment() != null) {
-            final User finalUser = user;
-            List<RoleSkillBenchmark> allBm = benchmarkRepository.findAll();
-            benchmarks = allBm.stream()
-                    .filter(b -> b.getRole() != null && b.getRole().getDepartment() != null
-                            && b.getRole().getDepartment().getId().equals(finalUser.getDepartment().getId()))
-                    .collect(Collectors.toList());
+            benchmarks = benchmarkRepository.findByDepartmentId(user.getDepartment().getId());
         }
 
         if (benchmarks.isEmpty()) {

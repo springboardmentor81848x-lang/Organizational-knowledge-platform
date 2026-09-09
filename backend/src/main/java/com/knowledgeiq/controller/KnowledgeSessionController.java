@@ -42,15 +42,29 @@ public class KnowledgeSessionController {
         UUID mentorId = UUID.fromString((String) auth.getPrincipal());
         String title = (String) body.get("title");
         String description = (String) body.get("description");
-        String skillIdStr = (String) body.get("skillId");
-        UUID skillId = (skillIdStr != null && !skillIdStr.isBlank()) ? UUID.fromString(skillIdStr) : null;
+        String skillIdStr = body.get("skillId") != null ? body.get("skillId").toString() : null;
+        UUID skillId = null;
+        if (skillIdStr != null && !skillIdStr.isBlank()) {
+            try {
+                skillId = UUID.fromString(skillIdStr);
+            } catch (Exception ignored) {}
+        }
         
-        String scheduledAtStr = (String) body.get("scheduledAt");
-        ZonedDateTime scheduledAt = scheduledAtStr != null ? ZonedDateTime.parse(scheduledAtStr) : ZonedDateTime.now().plusDays(1);
+        String scheduledAtStr = body.get("scheduledAt") != null ? body.get("scheduledAt").toString() : null;
+        ZonedDateTime scheduledAt = ZonedDateTime.now().plusDays(1);
+        if (scheduledAtStr != null && !scheduledAtStr.isBlank()) {
+            try {
+                scheduledAt = ZonedDateTime.parse(scheduledAtStr);
+            } catch (Exception e) {
+                try {
+                    scheduledAt = java.time.LocalDateTime.parse(scheduledAtStr).atZone(java.time.ZoneId.systemDefault());
+                } catch (Exception ignored) {}
+            }
+        }
         
         Integer duration = body.get("durationMinutes") != null ? Integer.parseInt(body.get("durationMinutes").toString()) : 60;
         Integer capacity = body.get("capacity") != null ? Integer.parseInt(body.get("capacity").toString()) : 20;
-        String meetingLink = (String) body.get("meetingLink");
+        String meetingLink = body.get("meetingLink") != null ? body.get("meetingLink").toString() : null;
 
         return ResponseEntity.ok(sessionService.createSession(mentorId, title, description, skillId, scheduledAt, duration, capacity, meetingLink));
     }

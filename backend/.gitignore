@@ -1,0 +1,39 @@
+# Target & build outputs
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Environment & local secret files
+.env
+.env.*
+application-local.properties
+local-application.properties
+*-local.properties
+*local*.properties
+!src/main/resources/application.properties
+
+# Logs
+*.log
+logs/
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Database & temp data
+data/
+*.db

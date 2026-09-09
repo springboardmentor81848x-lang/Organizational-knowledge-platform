@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/training")
+@RequestMapping({"/api/training", "/api"})
 public class TrainingController {
 
     @Autowired
@@ -68,19 +68,19 @@ public class TrainingController {
         return ResponseEntity.ok(trainingService.getUserEnrollments(UUID.fromString(userIdStr)));
     }
 
-    @PutMapping("/enrollments/{enrollmentId}/status")
+    @RequestMapping(value = "/enrollments/{enrollmentId}/status", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<CourseEnrollment> updateStatus(@PathVariable UUID enrollmentId, @RequestBody Map<String, String> request) {
         String status = request.get("status");
         return ResponseEntity.ok(trainingService.updateEnrollmentStatus(enrollmentId, status));
     }
 
-    @PutMapping("/enrollments/{enrollmentId}/progress")
+    @RequestMapping(value = "/enrollments/{enrollmentId}/progress", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<CourseEnrollment> updateProgress(@PathVariable UUID enrollmentId, @RequestBody Map<String, Object> request) {
         int progressPercent = Integer.parseInt(request.get("progressPercent").toString());
         return ResponseEntity.ok(trainingService.updateEnrollmentProgress(enrollmentId, progressPercent));
     }
 
-    @PutMapping("/enrollments/{enrollmentId}/complete")
+    @RequestMapping(value = "/enrollments/{enrollmentId}/complete", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<CourseEnrollment> completeEnrollment(@PathVariable UUID enrollmentId) {
         return ResponseEntity.ok(trainingService.updateEnrollmentStatus(enrollmentId, "COMPLETED"));
     }
@@ -92,7 +92,7 @@ public class TrainingController {
         return ResponseEntity.ok(trainingService.getCourseMilestones(courseId, enrollmentId));
     }
 
-    @PutMapping("/enrollments/{enrollmentId}/milestones/{milestoneId}/toggle")
+    @RequestMapping(value = "/enrollments/{enrollmentId}/milestones/{milestoneId}/toggle", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<Map<String, Object>> toggleMilestone(
             @PathVariable UUID enrollmentId,
             @PathVariable UUID milestoneId) {

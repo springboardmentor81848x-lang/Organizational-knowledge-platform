@@ -1,4 +1,7 @@
-const API_BASE_URL = '/api'
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_BASE_URL = rawApiUrl.endsWith('/api')
+  ? rawApiUrl.replace(/\/+$/, '')
+  : (rawApiUrl === '/api' ? '/api' : `${rawApiUrl.replace(/\/+$/, '')}/api`)
 
 export function getToken() {
   return localStorage.getItem('knowledgeiq_token')
@@ -862,6 +865,23 @@ export const api = {
   triggerReminders: async () => {
     return request('/notifications/trigger-reminders', {
       method: 'POST'
+    })
+  },
+
+  // ── MILESTONE 3: COMMUNITY OF PRACTICE GUILDS & POSTS ─────────────────
+  getCommunityGuilds: async () => {
+    return request('/community/guilds')
+  },
+
+  getCommunityPosts: async (category) => {
+    const query = category && category !== 'all' ? `?category=${encodeURIComponent(category)}` : ''
+    return request(`/community/posts${query}`)
+  },
+
+  createCommunityPost: async (payload) => {
+    return request('/community/posts', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     })
   }
 }

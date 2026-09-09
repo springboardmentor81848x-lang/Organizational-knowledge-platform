@@ -185,19 +185,23 @@ public class DashboardService {
         }
         dto.setActivity(activity);
 
-        List<com.knowledgeiq.dto.AssessmentDto> userAssessments = assessmentService.getUserAssessments(userId.toString());
-        List<Map<String, Object>> assessmentMaps = new ArrayList<>();
-        for (com.knowledgeiq.dto.AssessmentDto a : userAssessments) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", a.getId() != null ? a.getId().toString() : "");
-            map.put("title", a.getTitle() != null ? a.getTitle() : "Assessment");
-            map.put("type", a.getType() != null ? a.getType() : "SELF_ASSESSMENT");
-            map.put("status", a.getStatus() != null ? a.getStatus() : "PENDING");
-            map.put("score", a.getOverallScore() != null ? a.getOverallScore() : 0.0);
-            map.put("date", a.getSubmittedAt() != null ? a.getSubmittedAt().toString().substring(0, 10) : (a.getCreatedAt() != null ? a.getCreatedAt().toString().substring(0, 10) : "Recent"));
-            assessmentMaps.add(map);
+        try {
+            List<com.knowledgeiq.dto.AssessmentDto> userAssessments = assessmentService.getUserAssessments(userId.toString());
+            List<Map<String, Object>> assessmentMaps = new ArrayList<>();
+            for (com.knowledgeiq.dto.AssessmentDto a : userAssessments) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", a.getId() != null ? a.getId().toString() : "");
+                map.put("title", a.getTitle() != null ? a.getTitle() : "Assessment");
+                map.put("type", a.getType() != null ? a.getType() : "SELF_ASSESSMENT");
+                map.put("status", a.getStatus() != null ? a.getStatus() : "PENDING");
+                map.put("score", a.getOverallScore() != null ? a.getOverallScore() : 0.0);
+                map.put("date", a.getSubmittedAt() != null ? a.getSubmittedAt().toString().substring(0, 10) : (a.getCreatedAt() != null ? a.getCreatedAt().toString().substring(0, 10) : "Recent"));
+                assessmentMaps.add(map);
+            }
+            dto.setAssessments(assessmentMaps);
+        } catch (Exception e) {
+            dto.setAssessments(new ArrayList<>());
         }
-        dto.setAssessments(assessmentMaps);
 
         return dto;
     }

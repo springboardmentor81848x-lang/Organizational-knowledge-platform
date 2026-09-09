@@ -44,6 +44,7 @@ public class AssessmentService {
     @Autowired
     private GapAnalysisService gapAnalysisService;
 
+    @Transactional(readOnly = true)
     public List<AssessmentDto> getUserAssessments(String userIdStr) {
         UUID userId = UUID.fromString(userIdStr);
         List<Assessment> assessments = assessmentRepository.findByUserIdOrEvaluatorIdOrderByCreatedAtDesc(userId, userId);
@@ -51,6 +52,7 @@ public class AssessmentService {
         return assessments.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<AssessmentDto> getPendingEvaluationsForUser(String evaluatorIdStr) {
         UUID evaluatorId = UUID.fromString(evaluatorIdStr);
         List<Assessment> pending = assessmentRepository.findByEvaluatorIdOrderByCreatedAtDesc(evaluatorId).stream()
@@ -508,6 +510,7 @@ public class AssessmentService {
         return assessmentRepository.save(assessment);
     }
 
+    @Transactional(readOnly = true)
     public AssessmentDto getAssessmentResults(UUID assessmentId) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new RuntimeException("Assessment not found with id: " + assessmentId));
@@ -520,12 +523,25 @@ public class AssessmentService {
         dto.setTitle(assessment.getTitle());
         dto.setType(assessment.getType().name());
         dto.setStatus(assessment.getStatus().name());
-        dto.setUserId(assessment.getUser().getId());
-        dto.setUserName(assessment.getUser().getFullName());
+
+        if (assessment.getUser() != null) {
+            dto.setUserId(assessment.getUser().getId());
+            try {
+                dto.setUserName(assessment.getUser().getFullName());
+            } catch (Exception e) {
+                userRepository.findById(assessment.getUser().getId())
+                        .ifPresent(u -> dto.setUserName(u.getFullName()));
+            }
+        }
 
         if (assessment.getEvaluator() != null) {
             dto.setEvaluatorId(assessment.getEvaluator().getId());
-            dto.setEvaluatorName(assessment.getEvaluator().getFullName());
+            try {
+                dto.setEvaluatorName(assessment.getEvaluator().getFullName());
+            } catch (Exception e) {
+                userRepository.findById(assessment.getEvaluator().getId())
+                        .ifPresent(u -> dto.setEvaluatorName(u.getFullName()));
+            }
         }
 
         dto.setOverallScore(assessment.getOverallScore());
@@ -534,13 +550,27 @@ public class AssessmentService {
 
         List<AssessmentResponse> responses = assessmentResponseRepository.findByAssessmentId(assessment.getId());
         if (!responses.isEmpty()) {
-            List<AssessmentDto.AssessmentResponseItemDto> responseDtos = responses.stream().map(r -> new AssessmentDto.AssessmentResponseItemDto(
-                    r.getSkill().getId(),
-                    r.getSkill().getName(),
-                    r.getSkill().getCategory() != null ? r.getSkill().getCategory().getName() : "General",
-                    r.getProficiencyLevel(),
-                    r.getNotes()
-            )).collect(Collectors.toList());
+            List<AssessmentDto.AssessmentResponseItemDto> responseDtos = responses.stream().map(r -> {
+                UUID skillId = null;
+                String skillName = "Skill";
+                String categoryName = "General";
+                if (r.getSkill() != null) {
+                    skillId = r.getSkill().getId();
+                    try {
+                        skillName = r.getSkill().getName();
+                        if (r.getSkill().getCategory() != null) {
+                            categoryName = r.getSkill().getCategory().getName();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                return new AssessmentDto.AssessmentResponseItemDto(
+                        skillId,
+                        skillName,
+                        categoryName,
+                        r.getProficiencyLevel(),
+                        r.getNotes()
+                );
+            }).collect(Collectors.toList());
             dto.setResponses(responseDtos);
         }
 
