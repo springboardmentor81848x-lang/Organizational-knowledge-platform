@@ -44,8 +44,10 @@ function TrainingLearning() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
   const [loading, setLoading] = useState(true);
   const [progressLoading, setProgressLoading] = useState(false);
+
   const [expandedCourses, setExpandedCourses] = useState({});
   const [error, setError] = useState("");
 
@@ -88,7 +90,9 @@ function TrainingLearning() {
     const total = milestones.reduce(
       (sum, milestone) =>
         sum +
-        Number(milestone.progressPercentage ?? 0),
+        Number(
+          milestone.progressPercentage ?? 0
+        ),
       0
     );
 
@@ -168,12 +172,14 @@ function TrainingLearning() {
               ...existing,
               progressPercentage:
                 calculatedProgress,
+
               status:
                 calculatedProgress === 100
                   ? "COMPLETED"
                   : calculatedProgress > 0
                     ? "IN_PROGRESS"
-                    : existing.status || "NOT_STARTED",
+                    : existing.status ||
+                      "NOT_STARTED",
             },
           };
         }
@@ -418,11 +424,15 @@ function TrainingLearning() {
 
         return {
           ...course,
+
           gap: gapValue,
+
           currentLevel:
             gap?.currentLevel ?? 0,
+
           requiredLevel:
             gap?.requiredLevel ?? 0,
+
           priority,
         };
       })
@@ -706,7 +716,6 @@ function TrainingLearning() {
       }
 
       // =====================================================
-      // IMPORTANT:
       // ALWAYS RELOAD MILESTONES AFTER START
       // =====================================================
 
@@ -744,10 +753,13 @@ function TrainingLearning() {
 
           return {
             ...previous,
+
             [course.id]: {
               ...current,
+
               progressPercentage:
                 result.progress,
+
               status:
                 result.progress === 100
                   ? "COMPLETED"
@@ -852,6 +864,7 @@ function TrainingLearning() {
 
             return {
               ...previous,
+
               [course.id]:
                 existing.map(
                   (milestone) =>
@@ -910,10 +923,13 @@ function TrainingLearning() {
 
             return {
               ...previous,
+
               [course.id]: {
                 ...enrollment,
+
                 progressPercentage:
                   result.progress,
+
                 status:
                   result.progress === 100
                     ? "COMPLETED"
@@ -1054,12 +1070,14 @@ function TrainingLearning() {
       <Sidebar role="EMPLOYEE" />
 
       <main className="flex-1 min-w-0">
+
         {/* ===================================================
             HEADER
         =================================================== */}
 
         <header className="bg-white border-b border-slate-200">
           <div className="px-5 md:px-8 py-5">
+
             <button
               onClick={() =>
                 window.history.back()
@@ -1078,6 +1096,7 @@ function TrainingLearning() {
               Personalized training recommendations
               based on your knowledge gaps.
             </p>
+
           </div>
         </header>
 
@@ -1086,6 +1105,7 @@ function TrainingLearning() {
         =================================================== */}
 
         <div className="p-5 md:p-8 max-w-7xl mx-auto">
+
           {/* ERROR */}
 
           {error && (
@@ -1108,6 +1128,7 @@ function TrainingLearning() {
           ================================================= */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
             <div className="bg-white border border-slate-200 rounded-2xl p-5">
               <p className="text-sm text-slate-500">
                 Recommended Courses
@@ -1147,6 +1168,7 @@ function TrainingLearning() {
                 {completedCourses}
               </p>
             </div>
+
           </div>
 
           {/* =================================================
@@ -1155,7 +1177,9 @@ function TrainingLearning() {
 
           <div className="bg-white border border-slate-200 rounded-xl p-4 mb-5">
             <div className="flex flex-col md:flex-row gap-3">
+
               <div className="relative flex-1">
+
                 <Search
                   size={18}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1172,6 +1196,7 @@ function TrainingLearning() {
                   }
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-200"
                 />
+
               </div>
 
               <select
@@ -1197,7 +1222,9 @@ function TrainingLearning() {
                     </option>
                   )
                 )}
+
               </select>
+
             </div>
           </div>
 
@@ -1206,8 +1233,10 @@ function TrainingLearning() {
           ================================================= */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
             {filteredCourses.map(
               (course) => {
+
                 const progress =
                   getProgress(course.id);
 
@@ -1248,9 +1277,11 @@ function TrainingLearning() {
                     key={course.id}
                     className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition"
                   >
+
                     {/* COURSE HEADER */}
 
                     <div className="flex flex-wrap items-center gap-2 mb-2">
+
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
                         {course.skill?.skillName}
                       </span>
@@ -1268,6 +1299,7 @@ function TrainingLearning() {
                           {enrollment.status}
                         </span>
                       )}
+
                     </div>
 
                     {/* TITLE */}
@@ -1285,7 +1317,9 @@ function TrainingLearning() {
                     {/* SKILL GAP */}
 
                     <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
+
                       <div className="flex items-center gap-2">
+
                         <AlertTriangle
                           size={16}
                           className="text-red-600"
@@ -1295,6 +1329,7 @@ function TrainingLearning() {
                           Skill Gap:{" "}
                           {course.gap}
                         </span>
+
                       </div>
 
                       <p className="text-xs text-red-600 mt-1">
@@ -1304,11 +1339,13 @@ function TrainingLearning() {
                         Required Level:{" "}
                         {course.requiredLevel}
                       </p>
+
                     </div>
 
                     {/* META */}
 
                     <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
+
                       <div className="flex items-center gap-1.5">
                         <BookMarked size={16} />
                         {course.level}
@@ -1318,11 +1355,13 @@ function TrainingLearning() {
                         <Clock size={16} />
                         {course.duration}
                       </div>
+
                     </div>
 
                     {/* PLATFORM */}
 
                     <div className="mt-5 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+
                       <div>
                         <p className="text-xs text-slate-400">
                           Learning Platform
@@ -1337,14 +1376,18 @@ function TrainingLearning() {
                         size={17}
                         className="text-slate-400"
                       />
+
                     </div>
 
                     {/* COURSE PROGRESS */}
 
                     {isStarted && (
                       <div className="mt-5">
+
                         <div className="flex items-center justify-between mb-2">
+
                           <div className="flex items-center gap-2">
+
                             <Trophy
                               size={16}
                               className="text-indigo-600"
@@ -1353,14 +1396,17 @@ function TrainingLearning() {
                             <span className="text-sm font-semibold text-slate-700">
                               Course Progress
                             </span>
+
                           </div>
 
                           <span className="text-sm font-bold text-indigo-600">
                             {progress}%
                           </span>
+
                         </div>
 
                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+
                           <div
                             className={`h-full rounded-full transition-all ${
                               progress === 100
@@ -1371,9 +1417,11 @@ function TrainingLearning() {
                               width: `${progress}%`,
                             }}
                           />
+
                         </div>
 
                         <div className="flex justify-between mt-2 text-xs text-slate-500">
+
                           <span>
                             {completedMilestones}
                             {" / "}
@@ -1384,7 +1432,9 @@ function TrainingLearning() {
                           <span>
                             {milestoneProgress}%
                           </span>
+
                         </div>
+
                       </div>
                     )}
 
@@ -1393,6 +1443,7 @@ function TrainingLearning() {
                     {isStarted &&
                       milestones.length > 0 && (
                         <div className="mt-5 border border-slate-200 rounded-xl overflow-hidden">
+
                           <button
                             onClick={() =>
                               toggleMilestones(
@@ -1401,7 +1452,9 @@ function TrainingLearning() {
                             }
                             className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition"
                           >
+
                             <div className="flex items-center gap-2">
+
                               <GraduationCap
                                 size={18}
                                 className="text-indigo-600"
@@ -1416,6 +1469,7 @@ function TrainingLearning() {
                                 /
                                 {totalMilestones}
                               </span>
+
                             </div>
 
                             {milestonesExpanded ? (
@@ -1427,15 +1481,18 @@ function TrainingLearning() {
                                 size={18}
                               />
                             )}
+
                           </button>
 
                           {milestonesExpanded && (
                             <div className="p-4 space-y-3">
+
                               {milestones.map(
                                 (
                                   milestone,
                                   index
                                 ) => {
+
                                   const completed =
                                     Number(
                                       milestone.progressPercentage ?? 0
@@ -1452,8 +1509,11 @@ function TrainingLearning() {
                                           : "bg-white border-slate-200"
                                       }`}
                                     >
+
                                       <div className="flex items-start gap-3">
+
                                         <div className="mt-0.5">
+
                                           {completed ? (
                                             <CheckCircle
                                               size={21}
@@ -1465,11 +1525,15 @@ function TrainingLearning() {
                                               className="text-slate-400"
                                             />
                                           )}
+
                                         </div>
 
                                         <div className="flex-1 min-w-0">
+
                                           <div className="flex items-center justify-between gap-3">
+
                                             <div>
+
                                               <p className="text-xs text-slate-400">
                                                 Milestone{" "}
                                                 {index + 1}
@@ -1482,6 +1546,7 @@ function TrainingLearning() {
                                                     index + 1
                                                   }`}
                                               </h4>
+
                                             </div>
 
                                             <span
@@ -1495,6 +1560,7 @@ function TrainingLearning() {
                                                 ? "COMPLETED"
                                                 : "NOT STARTED"}
                                             </span>
+
                                           </div>
 
                                           {(milestone.milestone?.description ||
@@ -1506,6 +1572,7 @@ function TrainingLearning() {
                                           )}
 
                                           <div className="mt-3">
+
                                             {!completed ? (
                                               <button
                                                 onClick={() =>
@@ -1527,28 +1594,37 @@ function TrainingLearning() {
                                               </button>
                                             ) : (
                                               <div className="flex items-center gap-2 text-xs font-semibold text-green-600">
+
                                                 <CheckCircle
                                                   size={15}
                                                 />
 
                                                 Milestone Completed
+
                                               </div>
                                             )}
+
                                           </div>
+
                                         </div>
+
                                       </div>
+
                                     </div>
                                   );
                                 }
                               )}
+
                             </div>
                           )}
+
                         </div>
                       )}
 
                     {/* ACTION */}
 
                     <div className="flex gap-2 mt-5">
+
                       {!isCompleted && (
                         <button
                           onClick={() =>
@@ -1562,6 +1638,7 @@ function TrainingLearning() {
                           }
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:bg-slate-300"
                         >
+
                           <PlayCircle
                             size={18}
                           />
@@ -1573,29 +1650,38 @@ function TrainingLearning() {
                           <ExternalLink
                             size={15}
                           />
+
                         </button>
                       )}
 
                       {isCompleted && (
                         <div className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg font-semibold">
+
                           <CheckCircle
                             size={18}
                           />
 
                           Course Completed
+
                         </div>
                       )}
+
                     </div>
+
                   </div>
                 );
               }
             )}
+
           </div>
 
-          {/* NO COURSES */}
+          {/* =================================================
+              NO COURSES
+          ================================================= */}
 
           {filteredCourses.length === 0 && (
             <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
+
               <BookOpen
                 size={40}
                 className="mx-auto text-slate-300"
@@ -1609,46 +1695,10 @@ function TrainingLearning() {
                 No courses match your current search
                 or knowledge gaps.
               </p>
+
             </div>
           )}
 
-          {/* LEARNING PATH */}
-
-          <section className="bg-indigo-600 rounded-2xl p-6 md:p-8 text-white mt-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-              <div>
-                <div className="flex items-center gap-3">
-                  <GraduationCap
-                    size={25}
-                  />
-
-                  <h2 className="text-xl font-bold">
-                    Follow Your Personalized Learning Path
-                  </h2>
-                </div>
-
-                <p className="text-indigo-100 mt-2 max-w-2xl">
-                  Use your knowledge-gap results
-                  and AI-generated recommendations
-                  to follow a structured learning
-                  roadmap.
-                </p>
-              </div>
-
-              <button
-                onClick={() =>
-                  (window.location.href =
-                    "/learning-path")
-                }
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-white text-indigo-700 rounded-lg font-semibold"
-              >
-                <BookOpen
-                  size={18}
-                />
-                View Learning Path
-              </button>
-            </div>
-          </section>
         </div>
       </main>
     </div>

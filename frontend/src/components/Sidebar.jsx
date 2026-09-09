@@ -185,76 +185,81 @@ function Sidebar({ role }) {
         )}
 
         {/* ==================================================
-            MANAGER
-        ================================================== */}
+    MANAGER
+================================================== */}
 
-        {normalizedRole === "MANAGER" && (
-          <>
-            <NavLink
-              to="/manager"
-              className={navLinkClass}
-            >
-              <LayoutDashboard size={20} />
-              Manager Dashboard
-            </NavLink>
+{normalizedRole === "MANAGER" && (
 
-            <NavLink
-              to="/team-skills"
-              className={navLinkClass}
-            >
-              <Users size={20} />
-              Team Skill Coverage
-            </NavLink>
+  <>
 
-            <NavLink
-              to="/team-gaps"
-              className={navLinkClass}
-            >
-              <BarChart3 size={20} />
-              Team Skill Gaps
-            </NavLink>
+    {/* MANAGER DASHBOARD */}
 
-            <NavLink
-              to="/employee-progress"
-              className={navLinkClass}
-            >
-              <Activity size={20} />
-              Employee Progress
-            </NavLink>
+    <NavLink
+      to="/manager"
+      className={navLinkClass}
+    >
+      <LayoutDashboard size={20} />
+      Manager Dashboard
+    </NavLink>
 
-            <NavLink
-              to="/training-adoption"
-              className={navLinkClass}
-            >
-              <GraduationCap size={20} />
-              Training Adoption
-            </NavLink>
 
-            <NavLink
-              to="/manager-reports"
-              className={navLinkClass}
-            >
-              <FileText size={20} />
-              Reports
-            </NavLink>
+    {/* TEAM SKILL GAPS */}
 
-            <NavLink
-              to="/manager-assessment"
-              className={navLinkClass}
-            >
-              <ClipboardCheck size={20} />
-              Manager Assessment
-            </NavLink>
+    <NavLink
+      to="/team-gaps"
+      className={navLinkClass}
+    >
+      <BarChart3 size={20} />
+      Team Skill Gaps
+    </NavLink>
 
-            <NavLink
-              to="/manager/notifications"
-              className={navLinkClass}
-            >
-              <Bell size={20} />
-              Notifications
-            </NavLink>
-          </>
-        )}
+
+    {/* TRAINING ADOPTION */}
+
+    <NavLink
+      to="/training-adoption"
+      className={navLinkClass}
+    >
+      <GraduationCap size={20} />
+      Training Adoption
+    </NavLink>
+
+
+    {/* REPORTS */}
+
+    <NavLink
+      to="/manager-reports"
+      className={navLinkClass}
+    >
+      <FileText size={20} />
+      Reports
+    </NavLink>
+
+
+    {/* MANAGER ASSESSMENT */}
+
+    <NavLink
+      to="/manager-assessment"
+      className={navLinkClass}
+    >
+      <ClipboardCheck size={20} />
+      Manager Assessment
+    </NavLink>
+
+
+    {/* NOTIFICATIONS */}
+
+    <NavLink
+      to="/manager/notifications"
+      className={navLinkClass}
+    >
+      <Bell size={20} />
+      Notifications
+    </NavLink>
+
+  </>
+
+)}
 
         {/* ==================================================
             DEPARTMENT HEAD

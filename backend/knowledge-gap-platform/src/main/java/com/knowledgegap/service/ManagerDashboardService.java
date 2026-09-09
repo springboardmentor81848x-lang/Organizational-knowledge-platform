@@ -1,12 +1,16 @@
 package com.knowledgegap.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import com.knowledgegap.entity.AssessmentAttempt;
+import com.knowledgegap.entity.AssessmentGapResult;
 import com.knowledgegap.entity.Competency;
 import com.knowledgegap.entity.Department;
 import com.knowledgegap.entity.Employee;
@@ -15,6 +19,9 @@ import com.knowledgegap.entity.LearningProgress;
 import com.knowledgegap.entity.Skill;
 import com.knowledgegap.entity.TrainingEnrollment;
 import com.knowledgegap.entity.TrainingStatus;
+import com.knowledgegap.entity.AssessmentType;
+import com.knowledgegap.repository.AssessmentAttemptRepository;
+import com.knowledgegap.repository.AssessmentGapResultRepository;
 import com.knowledgegap.repository.CompetencyRepository;
 import com.knowledgegap.repository.EmployeeRepository;
 import com.knowledgegap.repository.EmployeeSkillRepository;
@@ -30,18 +37,34 @@ public class ManagerDashboardService {
     private final TrainingEnrollmentRepository trainingEnrollmentRepository;
     private final LearningProgressRepository learningProgressRepository;
 
+    // ============================================================
+    // REASSESSMENT REPOSITORIES
+    // ============================================================
+
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
+    private final AssessmentGapResultRepository assessmentGapResultRepository;
+
+    // ============================================================
+    // CONSTRUCTOR
+    // ============================================================
+
     public ManagerDashboardService(
             EmployeeRepository employeeRepository,
             EmployeeSkillRepository employeeSkillRepository,
             CompetencyRepository competencyRepository,
             TrainingEnrollmentRepository trainingEnrollmentRepository,
-            LearningProgressRepository learningProgressRepository) {
+            LearningProgressRepository learningProgressRepository,
+            AssessmentAttemptRepository assessmentAttemptRepository,
+            AssessmentGapResultRepository assessmentGapResultRepository) {
 
         this.employeeRepository = employeeRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.competencyRepository = competencyRepository;
         this.trainingEnrollmentRepository = trainingEnrollmentRepository;
         this.learningProgressRepository = learningProgressRepository;
+
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.assessmentGapResultRepository = assessmentGapResultRepository;
     }
 
     // ============================================================
@@ -86,13 +109,12 @@ public class ManagerDashboardService {
         // Only employees with system role EMPLOYEE are considered
         // team members.
         //
-        // Therefore:
-        // MANAGER            -> excluded
-        // DEPARTMENT_HEAD    -> excluded
-        // HR                 -> excluded
-        // MENTOR             -> excluded
-        // SYSTEM_ADMIN       -> excluded
-        // EMPLOYEE           -> included
+        // MANAGER         -> excluded
+        // DEPARTMENT_HEAD -> excluded
+        // HR              -> excluded
+        // MENTOR          -> excluded
+        // SYSTEM_ADMIN    -> excluded
+        // EMPLOYEE        -> included
         // --------------------------------------------------------
 
         List<Employee> teamMembers = departmentEmployees.stream()
@@ -133,7 +155,8 @@ public class ManagerDashboardService {
                 continue;
             }
 
-            Employee employee = employeeSkill.getEmployee();
+            Employee employee =
+                    employeeSkill.getEmployee();
 
             if (employee == null) {
                 continue;
@@ -144,15 +167,19 @@ public class ManagerDashboardService {
                 continue;
             }
 
-            Skill skill = employeeSkill.getSkill();
+            Skill skill =
+                    employeeSkill.getSkill();
 
-            if (skill == null || skill.getSkillName() == null) {
+            if (skill == null ||
+                    skill.getSkillName() == null) {
                 continue;
             }
 
-            String skillName = skill.getSkillName();
+            String skillName =
+                    skill.getSkillName();
 
-            Integer currentLevel = employeeSkill.getCurrentLevel();
+            Integer currentLevel =
+                    employeeSkill.getCurrentLevel();
 
             if (currentLevel == null) {
                 currentLevel = 0;
@@ -175,8 +202,11 @@ public class ManagerDashboardService {
             aggregation.totalRequiredLevel += requiredLevel;
 
             if (currentLevel >= requiredLevel) {
+
                 aggregation.employeesMeetingRequirement++;
+
             } else {
+
                 aggregation.employeesBelowRequirement++;
             }
 
@@ -186,7 +216,8 @@ public class ManagerDashboardService {
 
             double gapPercentage = 0;
 
-            if (requiredLevel > 0 && currentLevel < requiredLevel) {
+            if (requiredLevel > 0 &&
+                    currentLevel < requiredLevel) {
 
                 gapPercentage =
                         ((double) (requiredLevel - currentLevel)
@@ -199,7 +230,8 @@ public class ManagerDashboardService {
 
             if (gapPercentage >= 30) {
 
-                String severity = getSeverity(gapPercentage);
+                String severity =
+                        getSeverity(gapPercentage);
 
                 String employeeName =
                         getEmployeeName(employee);
@@ -211,7 +243,9 @@ public class ManagerDashboardService {
                                 skillName,
                                 currentLevel,
                                 requiredLevel,
-                                Math.round(gapPercentage * 100.0) / 100.0,
+                                Math.round(
+                                        gapPercentage * 100.0)
+                                        / 100.0,
                                 severity));
             }
         }
@@ -278,7 +312,9 @@ public class ManagerDashboardService {
                         new EmployeeSkillGap(
                                 employee.getEmployeeId(),
                                 getEmployeeName(employee),
-                                Math.round(gap * 100.0) / 100.0));
+                                Math.round(
+                                        gap * 100.0)
+                                        / 100.0));
             }
 
             teamGapHeatmap.add(
@@ -327,7 +363,9 @@ public class ManagerDashboardService {
             skillCoverage.add(
                     new SkillCoverage(
                             aggregation.skillName,
-                            Math.round(coverage * 100.0) / 100.0,
+                            Math.round(
+                                    coverage * 100.0)
+                                    / 100.0,
                             aggregation.employeeCount,
                             aggregation.employeesMeetingRequirement,
                             aggregation.employeesBelowRequirement));
@@ -357,8 +395,8 @@ public class ManagerDashboardService {
         // UNIQUE EMPLOYEES ENROLLED
         // --------------------------------------------------------
 
-        java.util.Set<Long> enrolledEmployeeIds =
-                new java.util.HashSet<>();
+        Set<Long> enrolledEmployeeIds =
+                new HashSet<>();
 
         for (TrainingEnrollment enrollment :
                 teamEnrollments) {
@@ -369,7 +407,8 @@ public class ManagerDashboardService {
             if (employee != null &&
                     employee.getId() != null) {
 
-                enrolledEmployeeIds.add(employee.getId());
+                enrolledEmployeeIds.add(
+                        employee.getId());
             }
         }
 
@@ -377,8 +416,8 @@ public class ManagerDashboardService {
         // UNIQUE EMPLOYEES CURRENTLY IN TRAINING
         // --------------------------------------------------------
 
-        java.util.Set<Long> inProgressEmployeeIds =
-                new java.util.HashSet<>();
+        Set<Long> inProgressEmployeeIds =
+                new HashSet<>();
 
         for (TrainingEnrollment enrollment :
                 teamEnrollments) {
@@ -403,8 +442,8 @@ public class ManagerDashboardService {
         // UNIQUE EMPLOYEES COMPLETED TRAINING
         // --------------------------------------------------------
 
-        java.util.Set<Long> completedEmployeeIds =
-                new java.util.HashSet<>();
+        Set<Long> completedEmployeeIds =
+                new HashSet<>();
 
         for (TrainingEnrollment enrollment :
                 teamEnrollments) {
@@ -437,6 +476,12 @@ public class ManagerDashboardService {
 
         // --------------------------------------------------------
         // 10. EMPLOYEE PROGRESS
+        //
+        // IMPORTANT:
+        // This now uses the latest REASSESSMENT result.
+        //
+        // It does NOT use LearningProgress for employee skill
+        // improvement.
         // --------------------------------------------------------
 
         List<EmployeeProgress> employeeProgress =
@@ -444,45 +489,11 @@ public class ManagerDashboardService {
 
         for (Employee teamMember : teamMembers) {
 
-            List<LearningProgress> progressRecords =
-                    learningProgressRepository
-                            .findByEmployee(teamMember);
+            EmployeeProgress progress =
+                    buildEmployeeReassessmentProgress(
+                            teamMember);
 
-            double averageProgress = 0;
-
-            if (progressRecords != null &&
-                    !progressRecords.isEmpty()) {
-
-                double totalProgress = 0;
-                int count = 0;
-
-                for (LearningProgress progress :
-                        progressRecords) {
-
-                    if (progress == null ||
-                            progress.getProgressPercentage() == null) {
-                        continue;
-                    }
-
-                    totalProgress +=
-                            progress.getProgressPercentage();
-
-                    count++;
-                }
-
-                if (count > 0) {
-                    averageProgress =
-                            totalProgress / count;
-                }
-            }
-
-            employeeProgress.add(
-                    new EmployeeProgress(
-                            teamMember.getEmployeeId(),
-                            getEmployeeName(teamMember),
-                            Math.round(
-                                    averageProgress * 100.0)
-                                    / 100.0));
+            employeeProgress.add(progress);
         }
 
         // --------------------------------------------------------
@@ -499,6 +510,252 @@ public class ManagerDashboardService {
                 highRiskAlerts,
                 trainingAdoption,
                 employeeProgress);
+    }
+
+    // ============================================================
+    // BUILD EMPLOYEE REASSESSMENT PROGRESS
+    // ============================================================
+
+    private EmployeeProgress buildEmployeeReassessmentProgress(
+            Employee employee) {
+
+        String employeeId =
+                employee.getEmployeeId();
+
+        String employeeName =
+                getEmployeeName(employee);
+
+        // --------------------------------------------------------
+        // FIND LATEST REASSESSMENT
+        // --------------------------------------------------------
+
+        List<AssessmentAttempt> reassessmentAttempts =
+                assessmentAttemptRepository
+                        .findByEmployeeAndAssessmentTypeOrderByCompletedAtDesc(
+                                employee,
+                                AssessmentType.REASSESSMENT);
+
+        // --------------------------------------------------------
+        // NO REASSESSMENT
+        // --------------------------------------------------------
+
+        if (reassessmentAttempts == null ||
+                reassessmentAttempts.isEmpty()) {
+
+            return new EmployeeProgress(
+                    employeeId,
+                    employeeName,
+                    0,
+                    "-",
+                    "-",
+                    0,
+                    "Not Assessed");
+        }
+
+        // --------------------------------------------------------
+        // LATEST REASSESSMENT
+        // --------------------------------------------------------
+
+        AssessmentAttempt latestAttempt =
+                reassessmentAttempts.get(0);
+
+        // --------------------------------------------------------
+        // GET HISTORICAL SKILL RESULTS
+        // --------------------------------------------------------
+
+        List<AssessmentGapResult> results =
+                assessmentGapResultRepository
+                        .findByAttempt(latestAttempt);
+
+        if (results == null ||
+                results.isEmpty()) {
+
+            return new EmployeeProgress(
+                    employeeId,
+                    employeeName,
+                    0,
+                    "-",
+                    "-",
+                    0,
+                    "Not Assessed");
+        }
+
+        // --------------------------------------------------------
+        // AGGREGATE REASSESSMENT DATA
+        // --------------------------------------------------------
+
+        double totalScore = 0;
+        double totalPreviousLevel = 0;
+        double totalAssessedLevel = 0;
+        double totalImprovement = 0;
+
+        int scoreCount = 0;
+        int previousLevelCount = 0;
+        int assessedLevelCount = 0;
+        int improvementCount = 0;
+
+        for (AssessmentGapResult result : results) {
+
+            if (result == null) {
+                continue;
+            }
+
+            // ----------------------------------------------------
+            // ACTUAL SCORE
+            // ----------------------------------------------------
+
+            if (result.getActualScore() != null) {
+
+                totalScore +=
+                        result.getActualScore();
+
+                scoreCount++;
+            }
+
+            // ----------------------------------------------------
+            // PREVIOUS LEVEL
+            // ----------------------------------------------------
+
+            if (result.getPreviousLevel() != null) {
+
+                totalPreviousLevel +=
+                        result.getPreviousLevel();
+
+                previousLevelCount++;
+            }
+
+            // ----------------------------------------------------
+            // ASSESSED LEVEL
+            // ----------------------------------------------------
+
+            if (result.getAssessedLevel() != null) {
+
+                totalAssessedLevel +=
+                        result.getAssessedLevel();
+
+                assessedLevelCount++;
+            }
+
+            // ----------------------------------------------------
+            // IMPROVEMENT
+            // ----------------------------------------------------
+
+            if (result.getImprovement() != null) {
+
+                totalImprovement +=
+                        result.getImprovement();
+
+                improvementCount++;
+            }
+        }
+
+        // --------------------------------------------------------
+        // CALCULATE OVERALL SCORE
+        // --------------------------------------------------------
+
+        double progress = 0;
+
+        if (scoreCount > 0) {
+
+            progress =
+                    totalScore / scoreCount;
+        }
+
+        // --------------------------------------------------------
+        // CALCULATE PREVIOUS LEVEL
+        // --------------------------------------------------------
+
+        double previousLevel = 0;
+
+        if (previousLevelCount > 0) {
+
+            previousLevel =
+                    totalPreviousLevel
+                            / previousLevelCount;
+        }
+
+        // --------------------------------------------------------
+        // CALCULATE CURRENT / ASSESSED LEVEL
+        // --------------------------------------------------------
+
+        double assessedLevel = 0;
+
+        if (assessedLevelCount > 0) {
+
+            assessedLevel =
+                    totalAssessedLevel
+                            / assessedLevelCount;
+        }
+
+        // --------------------------------------------------------
+        // CALCULATE IMPROVEMENT
+        // --------------------------------------------------------
+
+        double improvement = 0;
+
+        if (improvementCount > 0) {
+
+            improvement =
+                    totalImprovement
+                            / improvementCount;
+        }
+
+        // --------------------------------------------------------
+        // DETERMINE STATUS
+        // --------------------------------------------------------
+
+        String status;
+
+        if (improvement > 0) {
+
+            status = "Improved";
+
+        } else if (improvement < 0) {
+
+            status = "Declined";
+
+        } else {
+
+            status = "No Change";
+        }
+
+        // --------------------------------------------------------
+        // RETURN EMPLOYEE PROGRESS
+        // --------------------------------------------------------
+
+        return new EmployeeProgress(
+                employeeId,
+                employeeName,
+                Math.round(progress * 100.0) / 100.0,
+                formatLevel(previousLevel),
+                formatLevel(assessedLevel),
+                (int) Math.round(improvement),
+                status);
+    }
+
+    // ============================================================
+    // FORMAT NUMERICAL SKILL LEVEL
+    // ============================================================
+
+    private String formatLevel(double level) {
+
+        if (level <= 0) {
+            return "-";
+        }
+
+        if (level < 1.5) {
+            return "Beginner";
+        }
+
+        if (level < 2.5) {
+            return "Intermediate";
+        }
+
+        if (level < 3.5) {
+            return "Advanced";
+        }
+
+        return "Expert";
     }
 
     // ============================================================
@@ -546,7 +803,8 @@ public class ManagerDashboardService {
 
         if (employee == null ||
                 skill == null ||
-                employee.getDesignation() == null) {
+                employee.getDesignation() == null ||
+                employee.getDesignation().trim().isEmpty()) {
 
             return 0;
         }
@@ -564,21 +822,37 @@ public class ManagerDashboardService {
 
         for (Competency competency : competencies) {
 
-            if (competency == null) {
+            if (competency == null ||
+                    competency.getSkill() == null) {
                 continue;
             }
 
-            if (competency.getSkill() == null) {
-                continue;
+            Skill competencySkill =
+                    competency.getSkill();
+
+            // First try matching by Skill ID.
+            boolean sameSkill =
+                    competencySkill.getId() != null &&
+                    skill.getId() != null &&
+                    competencySkill.getId()
+                            .equals(skill.getId());
+
+            // Fallback: match by skill name.
+            // This handles cases where the same skill has
+            // different IDs but the same skill name.
+            if (!sameSkill &&
+                    competencySkill.getSkillName() != null &&
+                    skill.getSkillName() != null) {
+
+                sameSkill =
+                        competencySkill.getSkillName()
+                                .trim()
+                                .equalsIgnoreCase(
+                                        skill.getSkillName()
+                                                .trim());
             }
 
-            if (competency.getSkill().getId() == null ||
-                    skill.getId() == null) {
-                continue;
-            }
-
-            if (competency.getSkill().getId()
-                    .equals(skill.getId())) {
+            if (sameSkill) {
 
                 if (competency.getRequiredLevel() == null) {
                     return 0;
@@ -944,16 +1218,38 @@ public class ManagerDashboardService {
 
         private String employeeId;
         private String employeeName;
+
+        // Latest reassessment score
         private double progress;
+
+        // Average skill level before reassessment
+        private String previousLevel;
+
+        // Average skill level after reassessment
+        private String currentLevel;
+
+        // Average improvement across skills
+        private int improvement;
+
+        // Improved / Declined / No Change / Not Assessed
+        private String status;
 
         public EmployeeProgress(
                 String employeeId,
                 String employeeName,
-                double progress) {
+                double progress,
+                String previousLevel,
+                String currentLevel,
+                int improvement,
+                String status) {
 
             this.employeeId = employeeId;
             this.employeeName = employeeName;
             this.progress = progress;
+            this.previousLevel = previousLevel;
+            this.currentLevel = currentLevel;
+            this.improvement = improvement;
+            this.status = status;
         }
 
         public String getEmployeeId() {
@@ -966,6 +1262,22 @@ public class ManagerDashboardService {
 
         public double getProgress() {
             return progress;
+        }
+
+        public String getPreviousLevel() {
+            return previousLevel;
+        }
+
+        public String getCurrentLevel() {
+            return currentLevel;
+        }
+
+        public int getImprovement() {
+            return improvement;
+        }
+
+        public String getStatus() {
+            return status;
         }
     }
 

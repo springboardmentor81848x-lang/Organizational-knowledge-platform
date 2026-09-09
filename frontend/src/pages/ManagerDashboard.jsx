@@ -1,23 +1,15 @@
 import { useEffect, useState } from "react";
-
 import { useNavigate } from "react-router-dom";
 
 import {
   BarChart3,
   AlertTriangle,
-  Activity,
-  ClipboardCheck,
   GraduationCap,
-  Bell,
   RefreshCw,
   Users,
-  User,
-  BookOpen,
-  ShieldCheck,
 } from "lucide-react";
 
 import api from "../services/api";
-
 import Sidebar from "../components/Sidebar";
 
 function ManagerDashboard() {
@@ -35,7 +27,7 @@ function ManagerDashboard() {
   const token = localStorage.getItem("token");
 
   // =========================================================
-  // NAVIGATION IS SHARED IN Sidebar COMPONENT
+  // LOGOUT
   // =========================================================
 
   const handleLogout = () => {
@@ -83,13 +75,10 @@ function ManagerDashboard() {
       // -------------------------------------------------------
       // API REQUEST
       // -------------------------------------------------------
-      //
+
       // employeeId = business ID such as EMP1001
-      //
       // userId = database primary key such as 43
-      //
       // Manager Dashboard endpoint expects employeeId.
-      // -------------------------------------------------------
 
       const response = await api.get(
         `/manager-dashboard/manager/${employeeId}`
@@ -101,6 +90,7 @@ function ManagerDashboard() {
       );
 
       setDashboard(response.data);
+
     } catch (err) {
       console.error(
         "Error loading manager dashboard:",
@@ -156,6 +146,7 @@ function ManagerDashboard() {
           "Unable to load manager dashboard."
         );
       }
+
     } finally {
       setLoading(false);
     }
@@ -234,6 +225,7 @@ function ManagerDashboard() {
           </div>
 
         </main>
+
       </div>
     );
   }
@@ -277,6 +269,7 @@ function ManagerDashboard() {
           </div>
 
         </main>
+
       </div>
     );
   }
@@ -287,9 +280,6 @@ function ManagerDashboard() {
 
   const teamGapHeatmap =
     dashboard?.teamGapHeatmap || [];
-
-  const skillCoverage =
-    dashboard?.skillCoverage || [];
 
   const highRiskAlerts =
     dashboard?.highRiskAlerts || [];
@@ -553,6 +543,7 @@ function ManagerDashboard() {
                   Number(item.gapPercentage) || 0;
 
                 return (
+
                   <div key={index}>
 
                     <div className="flex items-center justify-between mb-2">
@@ -591,192 +582,111 @@ function ManagerDashboard() {
                     </div>
 
                   </div>
+
                 );
+
               })}
 
             </div>
+
           )}
 
         </section>
 
         {/* ===================================================
-            SKILL COVERAGE + TRAINING ADOPTION
+            TRAINING ADOPTION
         =================================================== */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
 
-          {/* =================================================
-              DEPARTMENT SKILL COVERAGE
-          ================================================= */}
+          <div className="mb-6">
 
-          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              Training Adoption
+            </h2>
 
-            <div className="mb-6">
+            <p className="text-sm text-gray-500 mt-1">
+              Training enrollment and completion overview
+            </p>
 
-              <h2 className="text-xl font-bold text-gray-900">
-                Department Skill Coverage
-              </h2>
+          </div>
 
-              <p className="text-sm text-gray-500 mt-1">
-                Average current skill level against required level
+          <div className="grid grid-cols-3 gap-4">
+
+            {/* ENROLLED */}
+
+            <div className="bg-gray-50 rounded-xl p-5 text-center">
+
+              <p className="text-sm text-gray-500">
+                Enrolled
+              </p>
+
+              <p className="text-3xl font-bold text-gray-900 mt-2">
+                {enrolled}
               </p>
 
             </div>
 
-            {skillCoverage.length === 0 ? (
+            {/* IN PROGRESS */}
 
-              <div className="py-10 text-center text-gray-500">
-                No skill coverage data available.
-              </div>
+            <div className="bg-blue-50 rounded-xl p-5 text-center">
 
-            ) : (
+              <p className="text-sm text-blue-600">
+                In Progress
+              </p>
 
-              <div className="space-y-5">
-
-                {skillCoverage.map((item, index) => {
-
-                  const coveragePercentage =
-                    Number(
-                      item.coveragePercentage
-                    ) || 0;
-
-                  return (
-                    <div key={index}>
-
-                      <div className="flex justify-between mb-2">
-
-                        <span className="font-medium text-gray-800">
-                          {item.skillName}
-                        </span>
-
-                        <span className="font-semibold text-gray-700">
-                          {coveragePercentage}%
-                        </span>
-
-                      </div>
-
-                      <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
-
-                        <div
-                          className="h-full bg-gray-800 rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.max(
-                                0,
-                                coveragePercentage
-                              )
-                            )}%`,
-                          }}
-                        />
-
-                      </div>
-
-                    </div>
-                  );
-                })}
-
-              </div>
-            )}
-
-          </section>
-
-          {/* =================================================
-              TRAINING ADOPTION
-          ================================================= */}
-
-          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-
-            <div className="mb-6">
-
-              <h2 className="text-xl font-bold text-gray-900">
-                Training Adoption
-              </h2>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Training enrollment and completion overview
+              <p className="text-3xl font-bold text-blue-700 mt-2">
+                {inProgress}
               </p>
 
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            {/* COMPLETED */}
 
-              {/* ENROLLED */}
+            <div className="bg-green-50 rounded-xl p-5 text-center">
 
-              <div className="bg-gray-50 rounded-xl p-5 text-center">
+              <p className="text-sm text-green-600">
+                Completed
+              </p>
 
-                <p className="text-sm text-gray-500">
-                  Enrolled
-                </p>
-
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {enrolled}
-                </p>
-
-              </div>
-
-              {/* IN PROGRESS */}
-
-              <div className="bg-blue-50 rounded-xl p-5 text-center">
-
-                <p className="text-sm text-blue-600">
-                  In Progress
-                </p>
-
-                <p className="text-3xl font-bold text-blue-700 mt-2">
-                  {inProgress}
-                </p>
-
-              </div>
-
-              {/* COMPLETED */}
-
-              <div className="bg-green-50 rounded-xl p-5 text-center">
-
-                <p className="text-sm text-green-600">
-                  Completed
-                </p>
-
-                <p className="text-3xl font-bold text-green-700 mt-2">
-                  {completed}
-                </p>
-
-              </div>
+              <p className="text-3xl font-bold text-green-700 mt-2">
+                {completed}
+              </p>
 
             </div>
 
-            {/* COMPLETION RATE */}
+          </div>
 
-            <div className="mt-8">
+          {/* COMPLETION RATE */}
 
-              <div className="flex justify-between text-sm mb-2">
+          <div className="mt-8">
 
-                <span className="text-gray-500">
-                  Completion Rate
-                </span>
+            <div className="flex justify-between text-sm mb-2">
 
-                <span className="font-semibold text-gray-700">
-                  {completionRate}%
-                </span>
+              <span className="text-gray-500">
+                Completion Rate
+              </span>
 
-              </div>
-
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-
-                <div
-                  className="h-full bg-green-500 rounded-full transition-all"
-                  style={{
-                    width: `${completionRate}%`,
-                  }}
-                />
-
-              </div>
+              <span className="font-semibold text-gray-700">
+                {completionRate}%
+              </span>
 
             </div>
 
-          </section>
+            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
 
-        </div>
+              <div
+                className="h-full bg-green-500 rounded-full transition-all"
+                style={{
+                  width: `${completionRate}%`,
+                }}
+              />
+
+            </div>
+
+          </div>
+
+        </section>
 
         {/* ===================================================
             HIGH-RISK SKILL GAP ALERTS
@@ -877,6 +787,7 @@ function ManagerDashboard() {
                         ) || 0;
 
                       return (
+
                         <tr
                           key={index}
                           className="border-b border-gray-100 last:border-0"
@@ -911,7 +822,9 @@ function ManagerDashboard() {
                           </td>
 
                         </tr>
+
                       );
+
                     }
                   )}
 
@@ -920,12 +833,13 @@ function ManagerDashboard() {
               </table>
 
             </div>
+
           )}
 
         </section>
 
         {/* ===================================================
-            EMPLOYEE PROGRESS
+            TEAM PROGRESS
         =================================================== */}
 
         <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -933,11 +847,11 @@ function ManagerDashboard() {
           <div className="mb-6">
 
             <h2 className="text-xl font-bold text-gray-900">
-              Employee Progress
+              Team Progress
             </h2>
 
             <p className="text-sm text-gray-500 mt-1">
-              Training progress across your team
+              Training and reassessment progress across your team
             </p>
 
           </div>
@@ -945,7 +859,7 @@ function ManagerDashboard() {
           {employeeProgress.length === 0 ? (
 
             <div className="py-10 text-center text-gray-500">
-              No employee training progress available.
+              No team progress available.
             </div>
 
           ) : (
@@ -955,12 +869,14 @@ function ManagerDashboard() {
               {employeeProgress.map(
                 (employee, index) => {
 
+                  // Backend EmployeeProgress.getProgress()
+                  // returns the JSON property "progress".
+
                   const progressPercentage =
-                    Number(
-                      employee.progressPercentage
-                    ) || 0;
+                    Number(employee.progress) || 0;
 
                   return (
+
                     <div
                       key={index}
                       className="border border-gray-200 rounded-xl p-5"
@@ -1012,16 +928,20 @@ function ManagerDashboard() {
                       </div>
 
                     </div>
+
                   );
+
                 }
               )}
 
             </div>
+
           )}
 
         </section>
 
       </main>
+
     </div>
   );
 }
