@@ -1,35 +1,94 @@
-# Sai Organizational Gap Platform
+# Organizational Knowledge Gap Intelligence Platform
 
-Full-stack Organizational Knowledge Gap Intelligence Platform based on the Team 2 project. Milestone 3 is implemented as a persistent PostgreSQL-backed module in the existing React + Express application while preserving the existing Spring Boot project scaffold.
+## Local PostgreSQL setup for the existing `knowledge_gap_platform` database
 
-## Milestone 3
-- Mentorship & Knowledge Sharing: expert directory, mentor matching/search, session creation, capacity-aware RSVP and notifications.
-- Learning Progress: enrollment persistence, progress updates, module completion, completion status and personalized learning path generation.
-- Assessment & Survey: self/peer/manager assessment records, submission scoring, assessment history and automatic user-skill score update.
-- Notifications: gap, training, assessment, mentorship and milestone alerts; read-one and read-all actions.
-- Analytics & Reports: role readiness, gap severity, assessment average, learning progress, enrollment/completion KPIs and CSV/print-to-PDF exports.
+This version is adapted to the existing PostgreSQL database structure supplied for the project. It does **not** delete or recreate the existing application tables. On API startup, `frontend/server/schema.sql` applies only additive compatibility changes and creates the missing Milestone-3 tables.
 
-## Run
-### Frontend + API
+### Database configuration
+
+Create `frontend/.env` using:
+
+```env
+PORT=5000
+PGUSER=postgres
+PGHOST=localhost
+PGDATABASE=knowledge_gap_platform
+PGPASSWORD=YOUR_POSTGRES_PASSWORD
+PGPORT=5432
+```
+
+Do not commit `.env` to Git.
+
+### Existing database tables supported
+
+The backend uses the existing tables:
+
+- `users`
+- `roles`
+- `skills`
+- `employee_profile` / `employee_profiles`
+- `employee_skills`
+- `required_skills`
+- `gap_analysis`
+- `recommendations`
+- `learning_paths`
+- `training_courses`
+- `training_enrollment`
+- `assessments`
+- `notifications`
+
+Milestone-3 compatibility tables are added only if absent:
+
+- `assessment_responses`
+- `mentors`
+- `knowledge_sessions`
+- `session_attendees`
+- `session_feedback`
+- `knowledge_resources`
+- `communities`
+- `community_members`
+
+### Run backend
+
 ```bash
 cd frontend
 npm install
 npm run server
 ```
-In another terminal:
+
+Expected terminal message:
+
+```text
+Connected to PostgreSQL: knowledge_gap_platform @ localhost:5432
+Knowledge Gap API running on port 5000
+```
+
+Check:
+
+```text
+http://localhost:5000/api/status
+```
+
+The response should contain:
+
+```json
+{
+  "status": "Online",
+  "database": "PostgreSQL Active"
+}
+```
+
+### Run React frontend
+
+Open another terminal:
+
 ```bash
 cd frontend
 npm run dev
 ```
+
 Open the Vite URL shown in the terminal.
 
-### PostgreSQL
-The Node API reads these environment variables (or uses local defaults):
-`PGUSER`, `PGHOST`, `PGDATABASE`, `PGPASSWORD`, `PGPORT`.
-Schema and seed data are automatically initialized on API startup.
+### Important
 
-## Main API groups
-`/api/status`, `/api/gap-analysis`, `/api/courses`, `/api/ai/recommendations`, `/api/learning-paths`, `/api/learning`, `/api/mentors`, `/api/sessions`, `/api/assessments`, `/api/notifications`, `/api/analytics`, `/api/reports`.
-
-## Export
-Reports can be exported as Excel-compatible CSV files. Use browser Print → Save as PDF for PDF output without requiring a server-side office/PDF dependency.
+The project is configured for the user's local PostgreSQL database. No database password is stored in the project archive; put your own password in `frontend/.env`.

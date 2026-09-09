@@ -1,0 +1,23 @@
+# Java & Maven / Gradle build output
+*.class
+target/
+.gradle/
+build/
+.settings/
+.classpath
+.project
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Frontend / Node modules
+node_modules/
+dist/
+.env
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
