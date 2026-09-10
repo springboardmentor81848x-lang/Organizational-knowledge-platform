@@ -43,4 +43,12 @@ public class Department {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public String getName() {
+        return departmentName;
+    }
+
+    public void setName(String name) {
+        this.departmentName = name;
+    }
 }

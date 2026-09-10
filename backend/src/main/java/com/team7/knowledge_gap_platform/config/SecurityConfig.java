@@ -70,6 +70,14 @@ public class SecurityConfig {
 
                 .authenticationProvider(authenticationProvider())
 
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Session invalid or expired. Please log in again.\"}");
+                        })
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
                         // Public APIs
@@ -79,12 +87,17 @@ public class SecurityConfig {
                                 "/auth/**"
                         ).permitAll()
 
-                        // Employee specific access to their OWN gaps, heatmap, courses, learning paths, mentors, sessions and recommendations
+                        // Employee specific access to their OWN gaps, heatmap, courses, learning paths, mentors, sessions, skills and recommendations
                         .requestMatchers(
                                 "/skill-gaps/employee/**",
                                 "/heatmap/employee/**",
                                 "/recommendations/employee/**",
                                 "/recommendations/generate/**",
+                                "/employee-skills/**",
+                                "/skills/**",
+                                "/employees/**",
+                                "/departments/**",
+                                "/job-roles/**",
                                 "/external-courses/**",
                                 "/learning-paths/**",
                                 "/course-recommendations/**",

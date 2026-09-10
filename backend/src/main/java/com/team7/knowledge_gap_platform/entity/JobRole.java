@@ -52,4 +52,12 @@ public class JobRole {
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
     }
+
+    public String getDepartment() {
+        return departmentName;
+    }
+
+    public void setDepartment(String department) {
+        this.departmentName = department;
+    }
 }

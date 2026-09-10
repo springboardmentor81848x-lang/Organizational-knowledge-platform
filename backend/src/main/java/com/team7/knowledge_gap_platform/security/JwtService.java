@@ -18,7 +18,7 @@ public class JwtService {
             "knowledge-gap-platform-secret-key-2026-secure-jwt-key";
 
     private static final long EXPIRATION_TIME =
-            1000L * 60 * 60 * 24;
+            1000L * 60 * 60 * 24 * 30L;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(

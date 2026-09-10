@@ -297,33 +297,26 @@ DELETE FROM department;
 
 -- Step 3: Insert Authoritative Data
 -- Data for department (8 rows)
-INSERT INTO department (id, name, description, department_name) VALUES
-(1, 'Software Engineering', 'Core product microservice design and Spring Boot REST platform APIs.', NULL),
-(2, 'Data & AI', 'Data engineering, machine learning analytics, and AI model integration.', NULL),
-(3, 'Product Management', 'Product strategy, roadmap planning, and UI/UX design execution.', NULL),
-(4, 'Human Resources', 'Talent acquisition, organizational competency evaluation, and employee growth.', NULL),
-(5, 'Cloud Infrastructure & DevOps', 'CI/CD pipeline automation, Kubernetes clusters, and cloud platform monitoring.', NULL),
-(6, 'Cybersecurity & Risk', 'Security auditing, IAM access controls, and compliance monitoring.', NULL),
-(7, 'Quality Assurance', 'Test strategy, automation, and release quality', NULL),
-(8, 'Human Resources', 'Talent development, L&D programs, and workforce planning', NULL);
+INSERT INTO department (id, department_name, description) VALUES
+(1, 'Software Engineering', 'Core product microservice design and Spring Boot REST platform APIs.'),
+(2, 'Data & AI', 'Data engineering, machine learning analytics, and AI model integration.'),
+(3, 'Product Management', 'Product strategy, roadmap planning, and UI/UX design execution.'),
+(4, 'Human Resources', 'Talent acquisition, organizational competency evaluation, and employee growth.'),
+(5, 'Cloud Infrastructure & DevOps', 'CI/CD pipeline automation, Kubernetes clusters, and cloud platform monitoring.'),
+(6, 'Cybersecurity & Risk', 'Security auditing, IAM access controls, and compliance monitoring.'),
+(7, 'Quality Assurance', 'Test strategy, automation, and release quality'),
+(8, 'Human Resources', 'Talent development, L&D programs, and workforce planning');
 
 -- Data for job_role (15 rows)
-INSERT INTO job_role (id, role_name, department, description, department_name) VALUES
-(1, 'Senior Java Backend Engineer', 'Software Engineering', 'Architects scalable microservices and Spring Boot REST APIs.', NULL),
-(2, 'Frontend React Engineer', 'Software Engineering', 'Builds responsive Web dashboards and mobile-ready user interfaces.', NULL),
-(3, 'AI/ML Data Scientist', 'Data & AI', 'Builds predictive analytics, LLM fine-tuning, and NLP platform features.', NULL),
-(4, 'Data Platform Engineer', 'Data & AI', 'Constructs ETL pipelines, data warehouses, and streaming data feeds.', NULL),
-(5, 'Lead Product Manager', 'Product Management', 'Drives product vision, user journey milestones, and cross-team roadmaps.', NULL),
-(6, 'HR Talent Specialist', 'Human Resources', 'Oversees organizational competency evaluation and employee skill growth.', NULL),
-(7, 'Cloud DevOps Engineer', 'Cloud Infrastructure & DevOps', 'Manages CI/CD pipelines, Docker containers, and Cloud infrastructure.', NULL),
-(8, 'Cybersecurity Analyst', 'Cybersecurity & Risk', 'Audits cloud security posture, IAM access rules, and vulnerability patches.', NULL),
-(9, 'DevOps Engineer', NULL, 'Manages CI/CD pipelines, containers, and cloud resources', 'DevOps & Cloud'),
-(10, 'Cloud Architect', NULL, 'Designs scalable cloud infrastructure and migration plans', 'DevOps & Cloud'),
-(11, 'QA Lead', NULL, 'Defines test strategy and leads automation framework', 'Quality Assurance'),
-(12, 'HR Business Partner', NULL, 'Aligns talent strategy with business objectives', 'Human Resources'),
-(13, 'L&D Program Manager', NULL, 'Manages organization-wide learning and development programs', 'Human Resources'),
-(14, 'Engineering Manager', NULL, 'Leads engineering teams, reviews architecture decisions', 'Engineering'),
-(15, 'Department Head - Engineering', NULL, 'Oversees all engineering operations and headcount', 'Engineering');
+INSERT INTO job_role (id, role_name, department_name, description) VALUES
+(1, 'Senior Java Backend Engineer', 'Software Engineering', 'Architects scalable microservices and Spring Boot REST APIs.'),
+(2, 'Frontend React Engineer', 'Software Engineering', 'Builds responsive Web dashboards and mobile-ready user interfaces.'),
+(3, 'AI/ML Data Scientist', 'Data & AI', 'Builds predictive analytics, LLM fine-tuning, and NLP platform features.'),
+(4, 'Data Platform Engineer', 'Data & AI', 'Constructs ETL pipelines, data warehouses, and streaming data feeds.'),
+(5, 'Lead Product Manager', 'Product Management', 'Drives product vision, user journey milestones, and cross-team roadmaps.'),
+(6, 'HR Talent Specialist', 'Human Resources', 'Oversees organizational competency evaluation and employee skill growth.'),
+(7, 'Cloud DevOps Engineer', 'Cloud Infrastructure & DevOps', 'Manages CI/CD pipelines, Docker containers, and Cloud infrastructure.'),
+(8, 'Cybersecurity Analyst', 'Cybersecurity & Risk', 'Audits cloud security posture, IAM access rules, and vulnerability patches.');
 
 -- Data for skill (12 rows)
 INSERT INTO skill (id, skill_name, category, level, description) VALUES
@@ -493,7 +486,7 @@ INSERT INTO employee_skill (id, employee_id, skill_id, proficiency_level, profic
 (9, 3, 9, 'ADVANCED', NULL),
 (10, 6, 1, 'ADVANCED', 80.0),
 (11, 4, 2, 'Intermediate', 40.0),
-(12, -1, 5, 'INTERMEDIATE', NULL),
+(12, 4, 5, 'INTERMEDIATE', 60.0),
 (13, 4, 7, 'Advanced', 80.0),
 (14, 5, 3, 'INTERMEDIATE', NULL),
 (15, 5, 7, 'BEGINNER', NULL),
@@ -514,8 +507,8 @@ INSERT INTO employee_skill (id, employee_id, skill_id, proficiency_level, profic
 (30, 9, 8, 'Advanced', 80.0),
 (31, 9, 7, 'BEGINNER', NULL),
 (32, 9, 12, 'INTERMEDIATE', NULL),
-(33, -1, 1, 'Intermediate', 40.0),
-(34, -1, 2, 'Intermediate', NULL),
+(33, 4, 3, 'INTERMEDIATE', 40.0),
+(34, 4, 8, 'INTERMEDIATE', 50.0),
 (35, 26, 1, 'EXPERT', NULL),
 (36, 27, 4, 'EXPERT', NULL),
 (37, 24, 7, 'INTERMEDIATE', 60.0),
@@ -747,44 +740,44 @@ INSERT INTO skill_gaps (id, employee_id, job_role_id, skill_id, current_proficie
 (23177, 48, 1, 8, 'UNAWARE', 'INTERMEDIATE', 2, 'MEDIUM', '2026-09-04 13:31:43.800446');
 
 -- Data for external_courses (14 rows)
-INSERT INTO external_courses (id, course_name, provider, skill_name, level, duration, url, course_link, description, duration_hours, title) VALUES
-(1, 'Mastering Java 21 & Spring Boot Microservices', 'Udemy Academy', 'Java & Spring Boot', 'EXPERT', NULL, NULL, 'https://www.udemy.com/course/spring-boot-masterclass/', 'Comprehensive guide to enterprise microservices and Spring Security.', 40, 'Mastering Java 21 & Spring Boot Microservices'),
-(2, 'PostgreSQL Administration & Query Optimization', 'Coursera', 'PostgreSQL Database Management', 'ADVANCED', NULL, NULL, 'https://www.coursera.org/specializations/postgresql-for-everybody', 'Deep dive into relational database schema design and SQL performance tuning.', 25, 'PostgreSQL Administration & Query Optimization'),
-(3, 'Modern React 18 with Redux', 'Pluralsight', 'React & Modern Frontend', 'ADVANCED', NULL, NULL, 'https://www.pluralsight.com/courses/react-js-getting-started', 'Advanced frontend development with React and state management.', 35, 'Modern React 18 with Redux'),
-(4, 'LLM Fine-Tuning and Integration', 'DeepLearning.AI', 'AI/ML & LLM Integration', 'EXPERT', NULL, NULL, 'https://www.deeplearning.ai/courses/generative-ai-with-llms/', 'Build AI/ML pipelines and fine-tune large language models.', 30, 'LLM Fine-Tuning and Integration'),
-(5, 'Docker Mastery for Developers', 'Udemy Academy', 'Docker & Containerization', 'INTERMEDIATE', NULL, NULL, 'https://www.udemy.com/course/docker-mastery/', 'Comprehensive guide to containerization and multi-stage builds.', 15, 'Docker Mastery for Developers'),
-(6, 'Kubernetes Certified Administrator (CKA)', 'Linux Foundation', 'Kubernetes & Cloud Architecture', 'EXPERT', NULL, NULL, 'https://training.linuxfoundation.org/training/certified-kubernetes-application-developer-ckad/', 'Hands-on Kubernetes cluster orchestration and architecture.', 50, 'Kubernetes Certified Administrator (CKA)'),
-(7, 'RESTful API Design & OpenAPI 3.0 Standard', 'LinkedIn Learning', 'REST API Design', 'EXPERT', NULL, NULL, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', 'Standardized REST API interface design and security practices.', 12, 'RESTful API Design & OpenAPI 3.0 Standard'),
-(8, 'Technical Writing for Engineers', 'Google Tech Writing', 'Technical Documentation & Writing', 'INTERMEDIATE', NULL, NULL, 'https://developers.google.com/tech-writing', 'Clear communication and documentation for software projects.', 10, 'Technical Writing for Engineers'),
-(9, 'Agile Product Roadmap Execution', 'Product School', 'Product Lifecycle Management', 'ADVANCED', NULL, NULL, 'https://productschool.com/', 'Agile planning and product vision milestones.', 20, 'Agile Product Roadmap Execution'),
-(10, 'Cyber Risk Audit and Compliance', 'SANS Institute', 'Cyber Risk Assessment', 'EXPERT', NULL, NULL, 'https://www.sans.org/cyber-security-courses/security-strategic-planning-policy-leadership/', 'Threat modeling and organizational security compliance.', 45, 'Cyber Risk Audit and Compliance'),
-(11, 'GCP BigQuery Data Engineering', 'Google Cloud Training', 'Data Pipelines & BigQuery', 'ADVANCED', NULL, NULL, 'https://www.cloudskillsboost.google/course_templates/3', 'Automated ETL data pipelines and BigQuery analytics.', 28, 'GCP BigQuery Data Engineering'),
-(12, 'Figma UI/UX Design Mastery', 'Interaction Design Foundation', 'UI/UX Design & Prototyping', 'INTERMEDIATE', NULL, NULL, 'https://www.interaction-design.org/courses/design-systems-for-figma', 'Modern UI design systems and user journey mapping.', 18, 'Figma UI/UX Design Mastery'),
-(13, 'Python for Data Science Mastery', 'Coursera', 'AI/ML & LLM Integration', 'BEGINNER', NULL, NULL, 'https://coursera.org/learn/python-data-science', 'Data analysis and visualization with Python.', 45, 'Python for Data Science Bootcamp'),
-(14, 'Advanced SQL Query Optimization', 'Udemy', 'PostgreSQL Database Management', 'EXPERT', NULL, NULL, 'https://udemy.com/course/sql-optimization', 'Tuning complex PostgreSQL queries for high performance.', 20, 'Advanced SQL Query Optimization');
+INSERT INTO external_courses (id, provider, title, description, skill_name, level, duration_hours, course_link) VALUES
+(1, 'Udemy Academy', 'Mastering Java 21 & Spring Boot Microservices', 'Comprehensive guide to enterprise microservices and Spring Security.', 'Java & Spring Boot', 'EXPERT', 40, 'https://www.udemy.com/course/spring-boot-masterclass/'),
+(2, 'Coursera', 'PostgreSQL Administration & Query Optimization', 'Deep dive into relational database schema design and SQL performance tuning.', 'PostgreSQL Database Management', 'ADVANCED', 25, 'https://www.coursera.org/specializations/postgresql-for-everybody'),
+(3, 'Pluralsight', 'Modern React 18 with Redux', 'Advanced frontend development with React and state management.', 'React & Modern Frontend', 'ADVANCED', 35, 'https://www.pluralsight.com/courses/react-js-getting-started'),
+(4, 'DeepLearning.AI', 'LLM Fine-Tuning and Integration', 'Build AI/ML pipelines and fine-tune large language models.', 'AI/ML & LLM Integration', 'EXPERT', 30, 'https://www.deeplearning.ai/courses/generative-ai-with-llms/'),
+(5, 'Udemy Academy', 'Docker Mastery for Developers', 'Comprehensive guide to containerization and multi-stage builds.', 'Docker & Containerization', 'INTERMEDIATE', 15, 'https://www.udemy.com/course/docker-mastery/'),
+(6, 'Linux Foundation', 'Kubernetes Certified Administrator (CKA)', 'Hands-on Kubernetes cluster orchestration and architecture.', 'Kubernetes & Cloud Architecture', 'EXPERT', 50, 'https://training.linuxfoundation.org/training/certified-kubernetes-application-developer-ckad/'),
+(7, 'LinkedIn Learning', 'RESTful API Design & OpenAPI 3.0 Standard', 'Standardized REST API interface design and security practices.', 'REST API Design', 'EXPERT', 12, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4'),
+(8, 'Google Tech Writing', 'Technical Writing for Engineers', 'Clear communication and documentation for software projects.', 'Technical Documentation & Writing', 'INTERMEDIATE', 10, 'https://developers.google.com/tech-writing'),
+(9, 'Product School', 'Agile Product Roadmap Execution', 'Agile planning and product vision milestones.', 'Product Lifecycle Management', 'ADVANCED', 20, 'https://productschool.com/'),
+(10, 'SANS Institute', 'Cyber Risk Audit and Compliance', 'Threat modeling and organizational security compliance.', 'Cyber Risk Assessment', 'EXPERT', 45, 'https://www.sans.org/cyber-security-courses/security-strategic-planning-policy-leadership/'),
+(11, 'Google Cloud Training', 'GCP BigQuery Data Engineering', 'Automated ETL data pipelines and BigQuery analytics.', 'Data Pipelines & BigQuery', 'ADVANCED', 28, 'https://www.cloudskillsboost.google/course_templates/3'),
+(12, 'Interaction Design Foundation', 'Figma UI/UX Design Mastery', 'Modern UI design systems and user journey mapping.', 'UI/UX Design & Prototyping', 'INTERMEDIATE', 18, 'https://www.interaction-design.org/courses/design-systems-for-figma'),
+(13, 'Coursera', 'Python for Data Science Bootcamp', 'Data analysis and visualization with Python.', 'AI/ML & LLM Integration', 'BEGINNER', 45, 'https://coursera.org/learn/python-data-science'),
+(14, 'Udemy', 'Advanced SQL Query Optimization', 'Tuning complex PostgreSQL queries for high performance.', 'PostgreSQL Database Management', 'EXPERT', 20, 'https://udemy.com/course/sql-optimization');
 
 -- Data for learning_paths (20 rows)
-INSERT INTO learning_paths (id, employee_id, skill_id, title, description, target_level, estimated_hours, created_at, course_level, course_link, course_title, current_level, sequence_order, provider, skill_name, completion_percentage, status) VALUES
-(1, 4, 1, NULL, NULL, 'ADVANCED', 12, '2026-07-10 09:00:00', 'Beginner', 'https://www.coursera.org/learn/java-fundamentals', 'Java Fundamentals & OOP', 'BEGINNER', 1, 'Coursera', 'Java & Spring Boot', 100, 'COMPLETED'),
-(2, 4, 1, NULL, NULL, 'ADVANCED', 20, '2026-07-20 09:00:00', 'Intermediate', 'https://www.udemy.com/course/spring-boot-rest', 'Spring Boot REST API Development', 'BEGINNER', 2, 'Udemy', 'Java & Spring Boot', 60, 'IN_PROGRESS'),
-(3, 4, 1, NULL, NULL, 'ADVANCED', 25, '2026-08-01 09:00:00', 'Advanced', 'https://www.coursera.org/learn/microservices-spring', 'Microservices Architecture with Spring', 'BEGINNER', 3, 'Coursera', 'Java & Spring Boot', 0, 'NOT_STARTED'),
-(4, 5, 3, NULL, NULL, 'EXPERT', 40, '2026-08-11 01:03:49.879056', 'EXPERT', 'https://www.pluralsight.com/courses/react-js-getting-started', 'React & Modern Frontend - Expert Mastery', 'INTERMEDIATE', 1, 'KGAP Platform', 'React & Modern Frontend', 0, 'NOT_STARTED'),
-(5, 5, 7, NULL, NULL, 'ADVANCED', 25, '2026-08-11 01:03:49.891691', 'ADVANCED', 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', 'REST API Design - Advanced Mastery', 'BEGINNER', 2, 'KGAP Platform', 'REST API Design', 0, 'NOT_STARTED'),
-(6, 5, 12, NULL, NULL, 'ADVANCED', 25, '2026-08-11 01:03:49.897747', 'ADVANCED', 'https://www.interaction-design.org/courses/design-systems-for-figma', 'UI/UX Design & Prototyping - Advanced Mastery', 'BEGINNER', 3, 'KGAP Platform', 'UI/UX Design & Prototyping', 0, 'NOT_STARTED'),
-(7, 4, 1, NULL, NULL, 'EXPERT', 40, '2026-08-11 21:05:27.097211', 'EXPERT', 'https://www.udemy.com/course/spring-boot-masterclass/', 'Java & Spring Boot - Expert Mastery', 'INTERMEDIATE', 1, 'KGAP Platform', 'Java & Spring Boot', 0, 'NOT_STARTED'),
-(8, 5, 3, NULL, NULL, 'EXPERT', 12, '2026-08-01 09:00:00', 'Advanced', 'https://www.egghead.io/courses/redux-toolkit', 'State Management with Redux Toolkit', 'INTERMEDIATE', 2, 'Egghead', 'React & Modern Frontend', 0, 'NOT_STARTED'),
-(9, 4, 2, NULL, NULL, 'ADVANCED', 25, '2026-08-11 21:05:27.110415', 'ADVANCED', 'https://www.coursera.org/specializations/postgresql-for-everybody', 'PostgreSQL Database Management - Advanced Mastery', 'BEGINNER', 2, 'KGAP Platform', 'PostgreSQL Database Management', 0, 'NOT_STARTED'),
-(10, 7, 6, NULL, NULL, 'EXPERT', 25, '2026-07-20 09:00:00', 'Advanced', 'https://www.cncf.io/certification/cka', 'CKA Exam Preparation', 'INTERMEDIATE', 1, 'Linux Foundation', 'Kubernetes', 50, 'IN_PROGRESS'),
-(11, 4, 5, NULL, NULL, 'INTERMEDIATE', 15, '2026-08-11 21:05:27.132337', 'INTERMEDIATE', 'https://www.udemy.com/course/docker-mastery/', 'Docker & Containerization - Intermediate Mastery', 'BEGINNER', 3, 'KGAP Platform', 'Docker & Containerization', 0, 'NOT_STARTED'),
-(12, 8, 4, NULL, NULL, 'EXPERT', 30, '2026-07-10 09:00:00', 'Advanced', 'https://www.deeplearning.ai/courses/deep-learning', 'Deep Learning Specialization', 'INTERMEDIATE', 1, 'DeepLearning.AI', 'AI/ML & LLM Integration', 65, 'IN_PROGRESS'),
-(13, 4, 7, NULL, NULL, 'EXPERT', 40, '2026-08-11 21:05:27.145937', 'EXPERT', 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', 'REST API Design - Expert Mastery', 'INTERMEDIATE', 4, 'KGAP Platform', 'REST API Design', 0, 'NOT_STARTED'),
-(14, 21, 1, NULL, NULL, 'INTERMEDIATE', 15, '2026-08-01 09:00:00', 'Beginner', 'https://www.codecademy.com/learn/learn-java', 'Java Programming Basics', 'UNAWARE', 1, 'Codecademy', 'Java & Spring Boot', 30, 'IN_PROGRESS'),
-(15, 4, 8, NULL, NULL, 'INTERMEDIATE', 15, '2026-08-11 21:05:27.251766', 'INTERMEDIATE', 'https://developers.google.com/tech-writing', 'Technical Documentation & Writing - Intermediate Mastery', 'UNAWARE', 5, 'KGAP Platform', 'Technical Documentation & Writing', 0, 'NOT_STARTED'),
-(17, 9, 9, NULL, NULL, 'EXPERT', 40, '2026-08-11 23:28:08.912611', 'EXPERT', 'https://productschool.com/', 'Product Lifecycle Management - Expert Mastery', 'INTERMEDIATE', 1, 'KGAP Platform', 'Product Lifecycle Management', 0, 'NOT_STARTED'),
-(19, 9, 8, NULL, NULL, 'ADVANCED', 25, '2026-08-11 23:28:08.934953', 'ADVANCED', 'https://developers.google.com/tech-writing', 'Technical Documentation & Writing - Advanced Mastery', 'BEGINNER', 2, 'KGAP Platform', 'Technical Documentation & Writing', 0, 'NOT_STARTED'),
-(21, 9, 7, NULL, NULL, 'INTERMEDIATE', 15, '2026-08-11 23:28:08.949589', 'INTERMEDIATE', 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', 'REST API Design - Intermediate Mastery', 'BEGINNER', 3, 'KGAP Platform', 'REST API Design', 0, 'NOT_STARTED'),
-(22, 26, 7, NULL, NULL, 'EXPERT', 12, '2026-08-28 20:31:31.349197', 'EXPERT', 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', 'RESTful API Design & OpenAPI 3.0 Standard', 'ADVANCED', 1, 'LinkedIn Learning', 'REST API Design', 0, 'NOT_STARTED'),
-(23, 26, 8, NULL, NULL, 'INTERMEDIATE', 10, '2026-08-28 20:31:31.352949', 'INTERMEDIATE', 'https://developers.google.com/tech-writing', 'Technical Writing for Engineers', 'UNAWARE', 2, 'Google Tech Writing', 'Technical Documentation & Writing', 0, 'NOT_STARTED');
+INSERT INTO learning_paths (id, employee_id, skill_id, current_level, target_level, course_title, course_level, sequence_order, estimated_hours, course_link, created_at, skill_name, provider, status, completion_percentage) VALUES
+(1, 4, 1, 'BEGINNER', 'ADVANCED', 'Java Fundamentals & OOP', 'Beginner', 1, 12, 'https://www.coursera.org/learn/java-fundamentals', '2026-07-10 09:00:00', 'Java & Spring Boot', 'Coursera', 'COMPLETED', 100),
+(2, 4, 1, 'BEGINNER', 'ADVANCED', 'Spring Boot REST API Development', 'Intermediate', 2, 20, 'https://www.udemy.com/course/spring-boot-rest', '2026-07-20 09:00:00', 'Java & Spring Boot', 'Udemy', 'IN_PROGRESS', 60),
+(3, 4, 1, 'BEGINNER', 'ADVANCED', 'Microservices Architecture with Spring', 'Advanced', 3, 25, 'https://www.coursera.org/learn/microservices-spring', '2026-08-01 09:00:00', 'Java & Spring Boot', 'Coursera', 'NOT_STARTED', 0),
+(4, 5, 3, 'INTERMEDIATE', 'EXPERT', 'React & Modern Frontend - Expert Mastery', 'EXPERT', 1, 40, 'https://www.pluralsight.com/courses/react-js-getting-started', '2026-08-11 01:03:49.879056', 'React & Modern Frontend', 'KGAP Platform', 'NOT_STARTED', 0),
+(5, 5, 7, 'BEGINNER', 'ADVANCED', 'REST API Design - Advanced Mastery', 'ADVANCED', 2, 25, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', '2026-08-11 01:03:49.891691', 'REST API Design', 'KGAP Platform', 'NOT_STARTED', 0),
+(6, 5, 12, 'BEGINNER', 'ADVANCED', 'UI/UX Design & Prototyping - Advanced Mastery', 'ADVANCED', 3, 25, 'https://www.interaction-design.org/courses/design-systems-for-figma', '2026-08-11 01:03:49.897747', 'UI/UX Design & Prototyping', 'KGAP Platform', 'NOT_STARTED', 0),
+(7, 4, 1, 'INTERMEDIATE', 'EXPERT', 'Java & Spring Boot - Expert Mastery', 'EXPERT', 1, 40, 'https://www.udemy.com/course/spring-boot-masterclass/', '2026-08-11 21:05:27.097211', 'Java & Spring Boot', 'KGAP Platform', 'NOT_STARTED', 0),
+(8, 5, 3, 'INTERMEDIATE', 'EXPERT', 'State Management with Redux Toolkit', 'Advanced', 2, 12, 'https://www.egghead.io/courses/redux-toolkit', '2026-08-01 09:00:00', 'React & Modern Frontend', 'Egghead', 'NOT_STARTED', 0),
+(9, 4, 2, 'BEGINNER', 'ADVANCED', 'PostgreSQL Database Management - Advanced Mastery', 'ADVANCED', 2, 25, 'https://www.coursera.org/specializations/postgresql-for-everybody', '2026-08-11 21:05:27.110415', 'PostgreSQL Database Management', 'KGAP Platform', 'NOT_STARTED', 0),
+(10, 7, 6, 'INTERMEDIATE', 'EXPERT', 'CKA Exam Preparation', 'Advanced', 1, 25, 'https://www.cncf.io/certification/cka', '2026-07-20 09:00:00', 'Kubernetes', 'Linux Foundation', 'IN_PROGRESS', 50),
+(11, 4, 5, 'BEGINNER', 'INTERMEDIATE', 'Docker & Containerization - Intermediate Mastery', 'INTERMEDIATE', 3, 15, 'https://www.udemy.com/course/docker-mastery/', '2026-08-11 21:05:27.132337', 'Docker & Containerization', 'KGAP Platform', 'NOT_STARTED', 0),
+(12, 8, 4, 'INTERMEDIATE', 'EXPERT', 'Deep Learning Specialization', 'Advanced', 1, 30, 'https://www.deeplearning.ai/courses/deep-learning', '2026-07-10 09:00:00', 'AI/ML & LLM Integration', 'DeepLearning.AI', 'IN_PROGRESS', 65),
+(13, 4, 7, 'INTERMEDIATE', 'EXPERT', 'REST API Design - Expert Mastery', 'EXPERT', 4, 40, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', '2026-08-11 21:05:27.145937', 'REST API Design', 'KGAP Platform', 'NOT_STARTED', 0),
+(14, 21, 1, 'UNAWARE', 'INTERMEDIATE', 'Java Programming Basics', 'Beginner', 1, 15, 'https://www.codecademy.com/learn/learn-java', '2026-08-01 09:00:00', 'Java & Spring Boot', 'Codecademy', 'IN_PROGRESS', 30),
+(15, 4, 8, 'UNAWARE', 'INTERMEDIATE', 'Technical Documentation & Writing - Intermediate Mastery', 'INTERMEDIATE', 5, 15, 'https://developers.google.com/tech-writing', '2026-08-11 21:05:27.251766', 'Technical Documentation & Writing', 'KGAP Platform', 'NOT_STARTED', 0),
+(17, 9, 9, 'INTERMEDIATE', 'EXPERT', 'Product Lifecycle Management - Expert Mastery', 'EXPERT', 1, 40, 'https://productschool.com/', '2026-08-11 23:28:08.912611', 'Product Lifecycle Management', 'KGAP Platform', 'NOT_STARTED', 0),
+(19, 9, 8, 'BEGINNER', 'ADVANCED', 'Technical Documentation & Writing - Advanced Mastery', 'ADVANCED', 2, 25, 'https://developers.google.com/tech-writing', '2026-08-11 23:28:08.934953', 'Technical Documentation & Writing', 'KGAP Platform', 'NOT_STARTED', 0),
+(21, 9, 7, 'BEGINNER', 'INTERMEDIATE', 'REST API Design - Intermediate Mastery', 'INTERMEDIATE', 3, 15, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', '2026-08-11 23:28:08.949589', 'REST API Design', 'KGAP Platform', 'NOT_STARTED', 0),
+(22, 26, 7, 'ADVANCED', 'EXPERT', 'RESTful API Design & OpenAPI 3.0 Standard', 'EXPERT', 1, 12, 'https://www.linkedin.com/learning/api-design-in-node-js-using-express-v4', '2026-08-28 20:31:31.349197', 'REST API Design', 'LinkedIn Learning', 'NOT_STARTED', 0),
+(23, 26, 8, 'UNAWARE', 'INTERMEDIATE', 'Technical Writing for Engineers', 'INTERMEDIATE', 2, 10, 'https://developers.google.com/tech-writing', '2026-08-28 20:31:31.352949', 'Technical Documentation & Writing', 'Google Tech Writing', 'NOT_STARTED', 0);
 
 -- Data for knowledge_session (7 rows)
 INSERT INTO knowledge_session (id, created_at, created_by_employee_id, description, duration_minutes, max_participants, meeting_link, scheduled_at, status, title, topic) VALUES

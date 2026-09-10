@@ -95,7 +95,14 @@ public class ExpertRepository {
 
                                     List<String> skills = empSkillsMap.get(empId);
                                     if (skills == null || skills.isEmpty()) {
-                                        continue; // Only include employees who have registered skills/competencies
+                                        boolean isMentorOrLead = emp.getRole() != null && 
+                                                (emp.getRole().toUpperCase().contains("MENTOR") || emp.getRole().toUpperCase().contains("HEAD") || emp.getRole().toUpperCase().contains("LEAD"));
+                                        if (isMentorOrLead || (emp.getBio() != null && !emp.getBio().isEmpty())) {
+                                            skills = new ArrayList<>();
+                                            skills.add(emp.getDepartment() != null ? emp.getDepartment() : "Technical Domain");
+                                        } else {
+                                            continue;
+                                        }
                                     }
 
                                     String formattedName = emp.getFirstName() + (emp.getLastName() != null && !emp.getLastName().isEmpty() ? " " + emp.getLastName() : "");

@@ -63,8 +63,32 @@ public class SharedPrefManager {
         sharedPreferences.edit().putBoolean("isLoggedIn", isLoggedIn).apply();
     }
 
+    public boolean isTokenExpired() {
+        String token = getToken();
+        if (token == null || token.isEmpty()) return true;
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) return true;
+            String payload = parts[1];
+            byte[] decoded = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE | android.util.Base64.NO_WRAP);
+            String json = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+            org.json.JSONObject obj = new org.json.JSONObject(json);
+            if (obj.has("exp")) {
+                long expSeconds = obj.getLong("exp");
+                long nowSeconds = System.currentTimeMillis() / 1000;
+                return nowSeconds >= expSeconds;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     public boolean isLoggedIn() {
-        return sharedPreferences.getBoolean("isLoggedIn", false);
+        boolean loggedIn = sharedPreferences.getBoolean("isLoggedIn", false);
+        if (loggedIn && isTokenExpired()) {
+            clear();
+            return false;
+        }
+        return loggedIn;
     }
 
     public void clear() {

@@ -30,6 +30,11 @@ public class LearningPath {
 
     private String courseLink;
 
+    private String skillName;
+    private String provider;
+    private String status;
+    private Integer completionPercentage;
+
     private LocalDateTime createdAt;
 
     public LearningPath() {
@@ -121,5 +126,37 @@ public class LearningPath {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getSkillName() {
+        return skillName;
+    }
+
+    public void setSkillName(String skillName) {
+        this.skillName = skillName;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Integer getCompletionPercentage() {
+        return completionPercentage;
+    }
+
+    public void setCompletionPercentage(Integer completionPercentage) {
+        this.completionPercentage = completionPercentage;
     }
 }

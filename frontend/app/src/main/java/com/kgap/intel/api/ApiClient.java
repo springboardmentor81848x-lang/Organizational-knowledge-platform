@@ -26,13 +26,21 @@ public class ApiClient {
                         
                         android.util.Log.d("API_CLIENT", "Request: " + original.url());
                         
+                        okhttp3.Response response;
                         if (token != null && !token.isEmpty()) {
                             okhttp3.Request.Builder requestBuilder = original.newBuilder()
                                     .header("Authorization", "Bearer " + token)
                                     .method(original.method(), original.body());
-                            return chain.proceed(requestBuilder.build());
+                            response = chain.proceed(requestBuilder.build());
+                        } else {
+                            response = chain.proceed(original);
                         }
-                        return chain.proceed(original);
+
+                        if (response.code() == 401) {
+                            android.util.Log.w("API_CLIENT", "HTTP 401 Unauthorized received - clearing session");
+                            prefManager.clear();
+                        }
+                        return response;
                     })
                     .connectTimeout(120, TimeUnit.SECONDS)
                     .readTimeout(120, TimeUnit.SECONDS)
