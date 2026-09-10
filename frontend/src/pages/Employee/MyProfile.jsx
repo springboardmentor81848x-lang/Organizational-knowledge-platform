@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Navbar from "../../components/Navbar/Navbar";
+import { getCurrentUserId } from "../../services/apiService";
 import {
   FaUser,
   FaEnvelope,
@@ -19,8 +20,8 @@ import "./MyProfile.css";
 const MyProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    fullName: "R Amrutha",
-    email: "r.amrutha@organization.com",
+    fullName: localStorage.getItem("userName") || "User",
+    email: localStorage.getItem("userEmail") || "",
     phone: "+91 98765 43210",
     employeeId: "EMP-1042",
     department: "Software Engineering",

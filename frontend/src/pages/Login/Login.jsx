@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import loginPersonImg from "../../assets/login_person.jpg";
 import "./Login.css";
+import { authAPI } from "../../services/apiService";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,16 +29,28 @@ const Login = () => {
     role: "Software Developer"
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (email.trim() === "" || password.trim() === "") {
       alert("Please enter Email and Password");
       return;
     }
-    localStorage.setItem("userName", "R Amrutha");
-    localStorage.setItem("userEmail", email);
-    localStorage.setItem("authProvider", "Password");
-    navigate("/employee-dashboard");
+    try {
+      const response = await authAPI.login(email);
+      if (!response.success || !response.data) {
+        alert(response.error || "Invalid account");
+        return;
+      }
+      const user = response.data;
+      localStorage.setItem("userId", String(user.id));
+      localStorage.setItem("userName", user.name || "User");
+      localStorage.setItem("userEmail", user.email || email);
+      localStorage.setItem("userRole", user.role || "Employee");
+      localStorage.setItem("authProvider", "Password");
+      navigate("/employee-dashboard");
+    } catch (error) {
+      alert(error?.response?.data?.error || "Unable to sign in. Please check the email and try again.");
+    }
   };
 
   const handleOpenGoogleModal = () => {

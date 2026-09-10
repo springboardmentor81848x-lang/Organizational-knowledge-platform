@@ -4,7 +4,7 @@ import Navbar from "../../components/Navbar/Navbar";
 import { FaChartLine, FaExclamationCircle, FaExclamationTriangle, FaInfoCircle, FaSyncAlt, FaDatabase, FaTable, FaTachometerAlt, FaSlidersH, FaCheckCircle, FaCode } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import HeatmapView from "../../components/Heatmap/HeatmapView";
-import { gapAnalysisAPI } from "../../services/apiService";
+import {gapAnalysisAPI, getCurrentUserId } from "../../services/apiService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import "./GapAnalysis.css";
 
@@ -40,7 +40,7 @@ const GapAnalysis = () => {
   const fetchGapAnalysis = async (role) => {
     setIsAnalyzing(true);
     try {
-      const response = await gapAnalysisAPI.calculateGap(1, role);
+      const response = await gapAnalysisAPI.calculateGap(getCurrentUserId(), role);
       if (response && response.success && response.data) {
         setGapData(response.data);
         setSimulatedSkills(response.data.gapDetails || []);
@@ -135,7 +135,7 @@ const GapAnalysis = () => {
     <div className="app-layout">
       <Sidebar />
       <div className="main-wrapper">
-        <Navbar title="Gap Analysis Engine" role="Employee" userName="R Amrutha" />
+        <Navbar title="Gap Analysis Engine" role="Employee" />
 
         <div className="page-container">
           {/* Header Banner */}
@@ -169,7 +169,7 @@ const GapAnalysis = () => {
               </div>
               <pre style={{ margin: 0, color: "#4ade80", whiteSpace: "pre-wrap" }}>
 {`INSERT INTO gap_analysis_results (user_id, target_role, critical_gaps_count, moderate_gaps_count, minor_gaps_count, gap_details)
-VALUES (1, '${selectedRole}', ${gapData.criticalCount}, ${gapData.moderateCount}, ${gapData.minorCount}, '${JSON.stringify(safeGapDetails.slice(0, 2))}...');`}
+VALUES (${getCurrentUserId()}, '${selectedRole}', ${gapData.criticalCount}, ${gapData.moderateCount}, ${gapData.minorCount}, '${JSON.stringify(safeGapDetails.slice(0, 2))}...');`}
               </pre>
             </div>
           )}

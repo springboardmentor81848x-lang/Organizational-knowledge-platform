@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Navbar from "../../components/Navbar/Navbar";
+import { getCurrentUserId } from "../../services/apiService";
 import { FaPlus, FaEdit, FaTrash, FaBrain, FaSearch, FaCheckCircle } from "react-icons/fa";
 import "./MySkills.css";
 
@@ -65,7 +66,7 @@ const MySkills = () => {
     <div className="app-layout">
       <Sidebar />
       <div className="main-wrapper">
-        <Navbar title="Skill Management" role="Employee" userName="R Amrutha" />
+        <Navbar title="Skill Management" role="Employee" />
 
         <div className="page-container">
           <div className="page-header">

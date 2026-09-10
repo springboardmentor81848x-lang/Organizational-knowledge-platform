@@ -7,8 +7,8 @@ const Navbar = ({ title = "Dashboard", role = "Employee" }) => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const storedName = localStorage.getItem("userName") || "R Amrutha";
-  const storedEmail = localStorage.getItem("userEmail") || "amrutha@example.com";
+  const storedName = localStorage.getItem("userName") || "User";
+  const storedEmail = localStorage.getItem("userEmail") || "";
 
   return (
     <header className="app-navbar">

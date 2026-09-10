@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+
+export const getCurrentUserId = () => Number(localStorage.getItem('userId') || 0);
+export const getCurrentUserName = () => localStorage.getItem('userName') || 'User';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -67,8 +70,10 @@ const DYNAMIC_ROLE_DATA = {
   }
 };
 
+export const authAPI = { login: async (email) => (await api.post('/login', { email })).data };
+
 export const gapAnalysisAPI = {
-  calculateGap: async (userId = 1, targetRole = 'Software Developer') => {
+  calculateGap: async (userId = getCurrentUserId(), targetRole = 'Software Developer') => {
     try {
       const response = await api.post('/gap-analysis/calculate', { userId, targetRole });
       return response.data;
@@ -87,7 +92,7 @@ export const gapAnalysisAPI = {
     }
   },
 
-  getLatestGap: async (userId = 1, role = 'Software Developer') => {
+  getLatestGap: async (userId = getCurrentUserId(), role = 'Software Developer') => {
     return gapAnalysisAPI.calculateGap(userId, role);
   }
 };
@@ -136,7 +141,7 @@ export const coursesAPI = {
 };
 
 export const learningPathAPI = {
-  getLearningPath: async (userId = 1) => {
+  getLearningPath: async (userId = getCurrentUserId()) => {
     try {
       const response = await api.get(`/learning-paths/${userId}`);
       return response.data;
@@ -187,7 +192,7 @@ export const learningPathAPI = {
 };
 
 export const learningProgressAPI = {
-  get: async (userId=1) => (await api.get(`/learning/${userId}`)).data,
+  get: async (userId=getCurrentUserId()) => (await api.get(`/learning/${userId}`)).data,
   enroll: async (userId, courseId) => (await api.post('/learning/enroll',{userId,courseId})).data,
   updateProgress: async (id, progress) => (await api.patch(`/learning/${id}/progress`,{progress})).data
 };
@@ -195,24 +200,24 @@ export const mentorshipAPI = {
   mentors: async () => (await api.get('/mentors')).data,
   sessions: async () => (await api.get('/sessions')).data,
   createSession: async (payload) => (await api.post('/sessions',payload)).data,
-  rsvp: async (id,userId=1) => (await api.post(`/sessions/${id}/rsvp`,{userId})).data
+  rsvp: async (id,userId=getCurrentUserId()) => (await api.post(`/sessions/${id}/rsvp`,{userId})).data
 };
 export const assessmentAPI = {
-  list: async (userId=1) => (await api.get(`/assessments/${userId}`)).data,
+  list: async (userId=getCurrentUserId()) => (await api.get(`/assessments/${userId}`)).data,
   submit: async (id,answers) => (await api.post(`/assessments/${id}/submit`,{answers})).data
 };
 export const notificationAPI = {
-  list: async (userId=1) => (await api.get(`/notifications/${userId}`)).data,
+  list: async (userId=getCurrentUserId()) => (await api.get(`/notifications/${userId}`)).data,
   read: async (id) => (await api.patch(`/notifications/${id}/read`)).data,
-  readAll: async (userId=1) => (await api.post(`/notifications/${userId}/read-all`)).data
+  readAll: async (userId=getCurrentUserId()) => (await api.post(`/notifications/${userId}/read-all`)).data
 };
-export const analyticsAPI = { get: async (userId=1) => (await api.get(`/analytics/${userId}`)).data };
-export const reportsAPI = { get: async (type,userId=1) => (await api.get(`/reports/${type}/${userId}`)).data };
+export const analyticsAPI = { get: async (userId=getCurrentUserId()) => (await api.get(`/analytics/${userId}`)).data };
+export const reportsAPI = { get: async (type,userId=getCurrentUserId()) => (await api.get(`/reports/${type}/${userId}`)).data };
 
 export const knowledgeAPI = {
   resources: async () => (await api.get('/resources')).data,
   communities: async () => (await api.get('/communities')).data,
-  joinCommunity: async (id,userId=1) => (await api.post(`/communities/${id}/join`,{userId})).data,
-  feedback: async (sessionId,rating,comment,userId=1) => (await api.post(`/sessions/${sessionId}/feedback`,{userId,rating,comment})).data
+  joinCommunity: async (id,userId=getCurrentUserId()) => (await api.post(`/communities/${id}/join`,{userId})).data,
+  feedback: async (sessionId,rating,comment,userId=getCurrentUserId()) => (await api.post(`/sessions/${sessionId}/feedback`,{userId,rating,comment})).data
 };
-export const renewalAPI = { get: async (userId=1) => (await api.get(`/learning/renewals/${userId}`)).data };
+export const renewalAPI = { get: async (userId=getCurrentUserId()) => (await api.get(`/learning/renewals/${userId}`)).data };

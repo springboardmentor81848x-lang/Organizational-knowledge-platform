@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Navbar from "../../components/Navbar/Navbar";
 import { FaBookOpen, FaFilter, FaClock, FaExternalLinkAlt, FaCheckCircle, FaStar, FaRobot, FaLightbulb, FaGraduationCap } from "react-icons/fa";
-import { coursesAPI, aiAPI, learningProgressAPI } from "../../services/apiService";
+import {coursesAPI, aiAPI, learningProgressAPI, getCurrentUserId } from "../../services/apiService";
 import "./Training.css";
 
 const Training = () => {
@@ -42,7 +42,7 @@ const Training = () => {
   }, []);
 
   const handleEnroll = async (id) => {
-    try { await learningProgressAPI.enroll(1, id); setEnrolledIds((prev) => [...new Set([...prev, id])]); alert("Successfully enrolled in training module!"); }
+    try { await learningProgressAPI.enroll(getCurrentUserId(), id); setEnrolledIds((prev) => [...new Set([...prev, id])]); alert("Successfully enrolled in training module!"); }
     catch (e) { alert(e?.response?.data?.error || "Unable to enroll. Please try again."); }
   };
 
@@ -57,7 +57,7 @@ const Training = () => {
     <div className="app-layout">
       <Sidebar />
       <div className="main-wrapper">
-        <Navbar title="Training & External Catalogs" role="Employee" userName="R Amrutha" />
+        <Navbar title="Training & External Catalogs" role="Employee" />
 
         <div className="page-container">
           <div className="page-header">

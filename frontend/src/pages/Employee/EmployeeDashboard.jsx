@@ -1,24 +1,26 @@
 import React from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Navbar from "../../components/Navbar/Navbar";
+import { getCurrentUserId } from "../../services/apiService";
 import { FaBrain, FaBook, FaTasks, FaGraduationCap, FaCheckCircle, FaBookOpen, FaCalendarAlt, FaChartLine, FaClock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./EmployeeDashboard.css";
 
 function EmployeeDashboard() {
   const navigate = useNavigate();
+  const userName = localStorage.getItem("userName") || "User";
 
   return (
     <div className="app-layout">
       <Sidebar />
       <div className="main-wrapper">
-        <Navbar title="Dashboard" role="Employee" userName="R Amrutha" />
+        <Navbar title="Dashboard" role="Employee" />
 
         <div className="page-container">
           {/* Welcome Banner */}
           <div className="welcome-banner">
             <div>
-              <h1>Welcome, R Amrutha 👋</h1>
+              <h1>Welcome, {userName} 👋</h1>
               <p>Here's your learning overview and target competency milestones</p>
             </div>
             <button className="btn btn-primary-light" onClick={() => navigate("/gap-analysis")}>
