@@ -1,0 +1,37 @@
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.border-left-red {
+  border-left: 4px solid #ef4444 !important;
+}
+
+.border-left-orange {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.border-left-green {
+  border-left: 4px solid #10b981 !important;
+}
+
+.red-text { color: #dc2626 !important; }
+.orange-text { color: #d97706 !important; }
+.green-text { color: #059669 !important; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
