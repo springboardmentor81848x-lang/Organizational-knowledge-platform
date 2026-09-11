@@ -4,6 +4,19 @@ An intelligent full-stack platform for identifying employee knowledge gaps, asse
 
 ---
 
+## 🌐 Live Project
+
+The **Organizational Knowledge Gap Intelligence Platform** is deployed and available online:
+
+**Live Application:**
+https://organizational-knowledge-platform-1.onrender.com/
+
+The deployed application provides access to the platform's role-based dashboards, employee learning workflows, assessments, mentorship, training, notifications, and organizational analytics.
+
+> **Note:** The application may take a short time to respond if the Render service is waking up from inactivity.
+
+---
+
 ## 📌 Project Overview
 
 The **Organizational Knowledge Gap Intelligence Platform (OKIP)** is a full-stack web application designed to help organizations understand employee capabilities and identify areas where additional knowledge or training is required.
@@ -105,6 +118,11 @@ The primary objectives of the platform are to:
 
 * Gmail SMTP
 
+## Testing
+
+* Swagger UI
+* Postman
+
 ## Deployment
 
 * Render
@@ -132,6 +150,10 @@ The platform supports the following roles:
 
 ## 1. Authentication & Authorization
 
+The platform provides secure authentication and role-based authorization.
+
+Features include:
+
 * Employee signup and login
 * Role-based access
 * JWT authentication
@@ -139,6 +161,8 @@ The platform supports the following roles:
 * Forgot password workflow
 * Reset password workflow
 * Protected dashboards
+* Role-specific navigation
+* Secure API endpoints
 
 ---
 
@@ -200,7 +224,7 @@ Employee skills are tracked using proficiency levels.
 
 Competencies define the expected skill level for a particular designation.
 
-The system can compare:
+The system compares the employee's current skill level against the required competency level.
 
 ```text
 Current Employee Skill Level
@@ -209,6 +233,8 @@ Required Competency Level
               ↓
 Knowledge Gap
 ```
+
+HR can configure competency requirements for different designations and skills.
 
 ---
 
@@ -234,7 +260,7 @@ Knowledge gaps can be categorized by priority:
 | 2   | HIGH     |
 | 3+  | CRITICAL |
 
-The results are used to recommend suitable training.
+The identified gaps are used to support training recommendations and employee development.
 
 ---
 
@@ -290,7 +316,7 @@ Mentorship becomes Active
 Knowledge Sessions
 ```
 
-Supported mentorship statuses:
+Supported mentorship statuses include:
 
 ```text
 REQUESTED
@@ -368,7 +394,7 @@ Mentors can also manage attendance.
 
 The Training & Learning module provides training recommendations based on employee knowledge gaps.
 
-The system:
+The system follows this workflow:
 
 ```text
 Employee Knowledge Gaps
@@ -433,7 +459,7 @@ COMPLETED
 
 # 🤖 AI-Powered Learning Recommendations
 
-The platform integrates Google Gemini for intelligent learning recommendations.
+The platform integrates **Google Gemini** for intelligent learning recommendations.
 
 The AI module can use information such as:
 
@@ -477,6 +503,11 @@ HR users can monitor:
 * Mentor allocation
 * Training information
 * Organizational insights
+* Competency frameworks
+* Workforce skill inventory
+* Training effectiveness
+* Skill forecasts
+* HR reports
 
 ---
 
@@ -493,6 +524,8 @@ Managers can monitor their teams using:
 * High-risk skill alerts
 * Training adoption
 * Employee progress
+* Manager reports
+* Notifications
 
 ---
 
@@ -506,6 +539,7 @@ Department Heads can analyze:
 * Skill distribution
 * Training and development needs
 * Department-level analytics
+* Department notifications
 
 ---
 
@@ -563,7 +597,8 @@ Examples include:
 * Mentorship acceptance
 * Mentorship status changes
 * Training-related updates
-* Other organizational notifications
+* Peer assessment notifications
+* Organizational notifications
 
 Notifications can be:
 
@@ -575,7 +610,7 @@ Notifications can be:
 
 # 🔐 Security
 
-The backend uses Spring Security with JWT authentication.
+The backend uses **Spring Security with JWT authentication**.
 
 Protected API requests use:
 
@@ -595,6 +630,8 @@ This shared instance:
 * Automatically attaches JWT tokens
 * Centralizes API communication
 * Supports different local and production environments
+
+Role-based authorization prevents users from accessing functionality that is not intended for their role.
 
 ---
 
@@ -621,7 +658,7 @@ VITE_API_URL=http://localhost:8080/api
 For Render deployment:
 
 ```env
-VITE_API_URL=https://organizational-knowledge-platform.onrender.com/api
+VITE_API_URL=https://organizational-knowledge-platform-1.onrender.com/api
 ```
 
 Do not commit local environment files containing secrets.
@@ -646,7 +683,7 @@ DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
 
-For cloud deployment, the project can use Aiven MySQL.
+For cloud deployment, the project uses **Aiven MySQL**.
 
 The production database connection should be configured through environment variables rather than hard-coded credentials.
 
@@ -681,7 +718,7 @@ Never commit the API key to GitHub.
 
 # 🚀 Running Locally
 
-## 1. Clone the repository
+## 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
@@ -744,7 +781,7 @@ The frontend will be available on the Vite development URL shown in the terminal
 
 # 📖 API Documentation
 
-Swagger UI is available from the backend.
+The backend provides API documentation through Swagger UI.
 
 ## Local
 
@@ -755,7 +792,7 @@ http://localhost:8080/swagger-ui/index.html
 ## Production
 
 ```text
-https://organizational-knowledge-platform.onrender.com/swagger-ui/index.html
+https://organizational-knowledge-platform-1.onrender.com/swagger-ui/index.html
 ```
 
 Swagger can be used to:
@@ -765,42 +802,116 @@ Swagger can be used to:
 * Test endpoints
 * Inspect request parameters
 * Inspect API responses
+* Verify protected endpoints
+* Validate backend functionality
+
+---
+
+# 🧪 Testing
+
+The project uses **Swagger UI and Postman** for backend API testing and validation.
+
+## Swagger UI
+
+Swagger is used to interactively test REST APIs and verify:
+
+* Request parameters
+* Request bodies
+* Authentication
+* API responses
+* HTTP status codes
+* Protected endpoints
+
+JWT-protected APIs can be tested by providing the appropriate Bearer token.
+
+---
+
+## Postman
+
+**Postman** was also used for API testing and backend validation.
+
+Postman was used to test different REST API workflows, including:
+
+* Authentication APIs
+* Employee APIs
+* Skill APIs
+* Competency APIs
+* Knowledge gap APIs
+* Assessment APIs
+* Mentorship APIs
+* Mentor allocation APIs
+* Knowledge session APIs
+* Training APIs
+* Learning progress APIs
+* Notification APIs
+* Dashboard APIs
+* AI APIs
+
+For protected endpoints, the JWT token is provided using the HTTP Authorization header:
+
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Postman testing helped verify API requests, responses, authentication, authorization, and endpoint behavior independently from the frontend.
+
+---
+
+## Important Testing Areas
+
+The following major workflows were tested:
+
+* Authentication
+* Role-based access
+* Employee skill assessment
+* Knowledge gap calculation
+* Competency management
+* Mentor allocation
+* Mentorship requests
+* Mentor acceptance/rejection
+* Knowledge sessions
+* Session registration
+* Attendance
+* Training enrollment
+* Learning milestones
+* Peer assessments
+* Manager dashboards
+* Department Head dashboards
+* HR functionality
+* Notifications
+* AI recommendations
 
 ---
 
 # 🌐 Production Deployment
 
-The project is deployed using Render.
+The project is deployed using **Render**.
+
+## Live Application
+
+```text
+https://organizational-knowledge-platform-1.onrender.com/
+```
 
 ## Backend
 
-Backend deployment:
+The backend deployment uses:
 
 ```text
 Platform: Render
 Runtime: Docker
 Branch: team1-krishnapriya
+Java Version: 21
+Database: Aiven MySQL
 ```
 
-Production backend:
-
-```text
-https://organizational-knowledge-platform.onrender.com
-```
-
-The backend uses:
-
-* Java 21
-* Maven
-* Docker
-* Environment variables
-* Cloud MySQL
+The production backend provides the REST APIs used by the frontend.
 
 ---
 
 ## Frontend
 
-The React frontend is deployed as a Render Static Site.
+The React frontend is deployed through Render.
 
 Build command:
 
@@ -814,10 +925,10 @@ Publish directory:
 dist
 ```
 
-The frontend receives the production backend URL through:
+The frontend communicates with the production backend using:
 
 ```env
-VITE_API_URL=https://organizational-knowledge-platform.onrender.com/api
+VITE_API_URL=https://organizational-knowledge-platform-1.onrender.com/api
 ```
 
 ---
@@ -825,6 +936,8 @@ VITE_API_URL=https://organizational-knowledge-platform.onrender.com/api
 # 🐳 Docker
 
 The backend includes a multi-stage Docker build.
+
+Example:
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-21 AS build
@@ -948,6 +1061,11 @@ Mentorship
 Notifications
 HR Dashboard
 Mentor Allocation
+Competency Framework
+Workforce Skill Inventory
+Training Effectiveness
+Skill Forecast
+HR Reports
 Manager Dashboard
 Manager Reports
 Manager Employee Progress
@@ -1043,35 +1161,61 @@ Peer Assessment   Manager Assessment
 
 ---
 
-# 🧪 Testing
+# 🔄 Training Workflow
 
-Backend APIs can be tested using Swagger UI.
+```text
+Knowledge Gap
+      ↓
+Skill Matching
+      ↓
+Course Recommendation
+      ↓
+Employee Enrollment
+      ↓
+Training Started
+      ↓
+Milestone 25%
+      ↓
+Milestone 50%
+      ↓
+Milestone 75%
+      ↓
+Milestone 100%
+      ↓
+Course Completed
+      ↓
+Skill Improvement
+```
 
-Frontend functionality can be tested through the deployed application or local development environment.
+---
 
-Important areas to verify:
+# 🔄 Organizational Analytics Workflow
 
-* Authentication
-* Role-based access
-* Employee skill assessment
-* Knowledge gap calculation
-* Mentor allocation
-* Mentorship requests
-* Mentor acceptance/rejection
-* Knowledge sessions
-* Session registration
-* Attendance
-* Training enrollment
-* Learning milestones
-* Peer assessments
-* Manager dashboards
-* Department dashboards
-* Notifications
-* AI recommendations
+```text
+Employee Data
+      ↓
+Skill Inventory
+      ↓
+Assessment Results
+      ↓
+Knowledge Gap Analysis
+      ↓
+Training & Learning Data
+      ↓
+Team / Department Aggregation
+      ↓
+Manager Dashboard
+      ↓
+Department Head Dashboard
+      ↓
+HR Organizational Insights
+```
 
 ---
 
 # 🔒 Security Best Practices
+
+The project follows secure configuration practices.
 
 Do not commit the following into Git:
 
@@ -1109,7 +1253,7 @@ The project uses a cloud-based architecture in production:
 React Frontend
       │
       ▼
-Render Static Site
+Render
       │
       │ REST API
       ▼
@@ -1124,9 +1268,9 @@ Render Spring Boot Backend
 
 ---
 
-# 📌 Branch
+# 📌 Git Branch
 
-The current development/deployment branch is:
+The development/deployment branch is:
 
 ```text
 team1-krishnapriya
@@ -1144,22 +1288,39 @@ Typical development workflow:
 git pull
 ```
 
-Make changes, test locally, then:
+Make changes and test locally.
+
+Check the repository status:
 
 ```bash
 git status
+```
+
+Stage the changes:
+
+```bash
 git add .
+```
+
+Commit the changes:
+
+```bash
 git commit -m "Your commit message"
+```
+
+Push the changes:
+
+```bash
 git push origin team1-krishnapriya
 ```
 
-Render can then deploy the latest committed version when automatic deployment is enabled.
+When automatic deployment is enabled, Render can deploy the latest committed version.
 
 ---
 
 # 🚨 Troubleshooting
 
-## Frontend cannot connect to backend
+## Frontend Cannot Connect to Backend
 
 Check:
 
@@ -1176,7 +1337,7 @@ http://localhost:8080/api
 Production:
 
 ```text
-https://organizational-knowledge-platform.onrender.com/api
+https://organizational-knowledge-platform-1.onrender.com/api
 ```
 
 Also search the frontend source for old hard-coded references:
@@ -1185,7 +1346,7 @@ Also search the frontend source for old hard-coded references:
 localhost:8080
 ```
 
-API requests should use:
+API requests should use the shared Axios instance:
 
 ```javascript
 import api from "../services/api";
@@ -1205,11 +1366,13 @@ Authenticate using the login endpoint and provide:
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-when testing protected APIs through Swagger.
+when testing protected APIs through Swagger or Postman.
+
+Also verify that the logged-in user has the appropriate role and permissions.
 
 ---
 
-## Backend database connection failure
+## Backend Database Connection Failure
 
 Verify:
 
@@ -1220,6 +1383,18 @@ DB_PASSWORD
 ```
 
 and confirm that the cloud database is running and accessible.
+
+---
+
+## AI API Issues
+
+If the AI recommendation service is unavailable or temporarily overloaded, verify:
+
+```text
+GEMINI_API_KEY
+```
+
+and check the Gemini API configuration and service availability.
 
 ---
 
@@ -1239,7 +1414,7 @@ Special thanks to the project mentors and team members for their guidance, colla
 
 # ⭐ Project Summary
 
-The Organizational Knowledge Gap Intelligence Platform provides an end-to-end solution for organizational learning and skill development.
+The **Organizational Knowledge Gap Intelligence Platform** provides an end-to-end solution for organizational learning and skill development.
 
 It connects:
 
@@ -1262,3 +1437,28 @@ Organizational Insights
 ```
 
 The platform is designed to help organizations make employee development more structured, measurable, and data-driven.
+
+## 🌐 Live Application
+
+```text
+https://organizational-knowledge-platform-1.onrender.com/
+```
+
+The project demonstrates the integration of:
+
+* Full-stack web development
+* React and Vite
+* Java and Spring Boot
+* REST API development
+* MySQL database management
+* JWT-based authentication
+* Role-based authorization
+* AI-powered recommendations
+* Employee skill assessment
+* Knowledge gap analysis
+* Training and learning management
+* Mentorship
+* Organizational analytics
+* API testing using Swagger and Postman
+* Docker-based deployment
+* Cloud deployment using Render and Aiven
