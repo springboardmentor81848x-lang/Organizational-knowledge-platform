@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { useLogout, useSession } from '@/features/auth/useSession'
 import { navigation, visibleNavigation } from './navigation'
@@ -76,6 +77,7 @@ export function AppShell() {
         <header className={styles.topbar}>
           <span className={styles.breadcrumb}>{currentPageLabel(location.pathname)}</span>
           <div className={styles.topbarActions}>
+            <ThemeToggle />
             <NotificationBell />
             <Button variant="ghost" size="sm" onClick={logout}>
               Sign out

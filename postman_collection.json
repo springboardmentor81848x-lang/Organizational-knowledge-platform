@@ -1,0 +1,816 @@
+{
+  "info": {
+    "_postman_id": "8a39b2cf-61f2-4e4b-9721-orgskillsplatform",
+    "name": "Org Skills Intelligence Platform API",
+    "description": "Complete Postman API Collection for testing all backend endpoints of the Organizational Knowledge Gap Intelligence Platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "managerId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "assessmentId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "enrollmentId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login as Employee (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    var token = data.accessToken || data.token;",
+                  "    if (token) {",
+                  "        pm.collectionVariables.set('jwt_token', token);",
+                  "        console.log('JWT Token successfully set in collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee@orgskills.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in as Alice Johnson (Employee) and automatically sets the {{jwt_token}} variable for subsequent requests."
+          }
+        },
+        {
+          "name": "Login as Manager (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    var token = data.accessToken || data.token;",
+                  "    if (token) {",
+                  "        pm.collectionVariables.set('jwt_token', token);",
+                  "        console.log('Manager JWT Token saved');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@orgskills.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in as Bob Smith (Engineering Manager)."
+          }
+        },
+        {
+          "name": "Login as Admin (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    var token = data.accessToken || data.token;",
+                  "    if (token) {",
+                  "        pm.collectionVariables.set('jwt_token', token);",
+                  "        console.log('Admin JWT Token saved');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@orgskills.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in as Carol Admin (System Administrator)."
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns user info, role, department, and permissions for the currently authenticated JWT token."
+          }
+        },
+        {
+          "name": "Register New User",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Developer\",\n  \"email\": \"jane.dev@orgskills.com\",\n  \"password\": \"password123\",\n  \"role\": \"EMPLOYEE\",\n  \"department\": \"Engineering\",\n  \"jobTitle\": \"Software Engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Gap Analysis & Competency Intelligence",
+      "item": [
+        {
+          "name": "Calculate Real-Time Gaps for User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}"]
+            },
+            "description": "Calculates gap scores (TargetScore - CurrentScore) and risk classifications (CRITICAL, HIGH, MEDIUM, LOW) across all required skills."
+          }
+        },
+        {
+          "name": "Get Stored Gap Analysis History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}/stored",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}", "stored"]
+            }
+          }
+        },
+        {
+          "name": "Get User Gap Summary & Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Get Missing Required Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}/missing",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}", "missing"]
+            }
+          }
+        },
+        {
+          "name": "Get Proficiency Deficiencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}/proficiency-gaps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}", "proficiency-gaps"]
+            }
+          }
+        },
+        {
+          "name": "Compare With Target Career Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetJobTitle\": \"Engineering Manager\",\n  \"targetDepartment\": \"Engineering\"\n}"
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/user/{{employeeId}}/compare-target?targetJobTitle=Engineering%20Manager&targetDepartment=Engineering",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "user", "{{employeeId}}", "compare-target"],
+              "query": [
+                {
+                  "key": "targetJobTitle",
+                  "value": "Engineering Manager"
+                },
+                {
+                  "key": "targetDepartment",
+                  "value": "Engineering"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Department Gap Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/department/Engineering",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "department", "Engineering"]
+            }
+          }
+        },
+        {
+          "name": "Get Organization-Wide Gap Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/gaps/org-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "gaps", "org-summary"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. AI Recommendations",
+      "item": [
+        {
+          "name": "Generate Fresh AI Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/recommendations/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recommendations", "{{employeeId}}"]
+            },
+            "description": "Triggers Gemini / OpenAI / Mock AI recommendation engine to generate tailored courses, projects, and learning paths."
+          }
+        },
+        {
+          "name": "Get Saved Recommendations for Employee",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/recommendations/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recommendations", "{{employeeId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Assessments",
+      "item": [
+        {
+          "name": "Create Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 2,\n  \"assessmentType\": \"SELF\",\n  \"skillIds\": [1, 2, 3, 5]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments"]
+            }
+          }
+        },
+        {
+          "name": "Submit Assessment Ratings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"results\": [\n    {\n      \"skillId\": 1,\n      \"proficiency\": \"ADVANCED\"\n    },\n    {\n      \"skillId\": 2,\n      \"proficiency\": \"INTERMEDIATE\"\n    }\n  ],\n  \"comments\": \"Improved Spring Boot and Concurrency skills through hands-on project.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments/{{assessmentId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments", "{{assessmentId}}", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee Assessment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments/history/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments", "history", "{{employeeId}}"]
+            }
+          }
+        },
+        {
+          "name": "List All Assessments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Skills & Competencies",
+      "item": [
+        {
+          "name": "List All Skills Catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "skills"]
+            }
+          }
+        },
+        {
+          "name": "Get Skills for User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{employeeId}}/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{employeeId}}", "skills"]
+            }
+          }
+        },
+        {
+          "name": "Add Skill for User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": 6,\n  \"proficiencyLevel\": \"BEGINNER\",\n  \"ratingScore\": 2.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{employeeId}}/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{employeeId}}", "skills"]
+            }
+          }
+        },
+        {
+          "name": "Get Role Competencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/role-competencies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "role-competencies"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Mentorship & Experts",
+      "item": [
+        {
+          "name": "Search Subject Matter Experts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/experts?skill=Java",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "experts"],
+              "query": [
+                {
+                  "key": "skill",
+                  "value": "Java"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Request Mentorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menteeId\": 2,\n  \"mentorId\": 1,\n  \"skillId\": 1,\n  \"goal\": \"Seeking mentorship on JVM performance tuning and concurrency.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentorships",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentorships"]
+            }
+          }
+        },
+        {
+          "name": "Get My Mentorships",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentorships?employeeId={{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentorships"],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Learning & Training Progress",
+      "item": [
+        {
+          "name": "Get My Enrollments & Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments?employeeId={{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments"],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enroll in a Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments"]
+            }
+          }
+        },
+        {
+          "name": "Update Enrollment Progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progressPercentage\": 100.0,\n  \"status\": \"COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments/{{enrollmentId}}/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments", "{{enrollmentId}}", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Browse Course Catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/catalog/external",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "catalog", "external"]
+            }
+          }
+        },
+        {
+          "name": "Get Learning Paths for Employee",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/learning-paths/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning-paths", "{{employeeId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Manager & Team Operations",
+      "item": [
+        {
+          "name": "Get Manager Team Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/manager/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "manager", "team"]
+            }
+          }
+        },
+        {
+          "name": "Manager Assign Training",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 2,\n  \"trainingId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/manager/assign-training",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "manager", "assign-training"]
+            }
+          }
+        },
+        {
+          "name": "Manager Assign Mentor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 2,\n  \"mentorId\": 1,\n  \"skillId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/manager/assign-mentor",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "manager", "assign-mentor"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Analytics, Heatmaps & Reports",
+      "item": [
+        {
+          "name": "Department Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/department/Engineering",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "department", "Engineering"]
+            }
+          }
+        },
+        {
+          "name": "Organization Heatmap",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/heatmaps/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "heatmaps", "skills"]
+            }
+          }
+        },
+        {
+          "name": "Generate Gap Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/gap-analysis",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "gap-analysis"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Notifications",
+      "item": [
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications As Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Admin & System Management",
+      "item": [
+        {
+          "name": "List All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get System Audit Logs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit-logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "audit-logs"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

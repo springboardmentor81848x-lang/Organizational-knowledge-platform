@@ -1,0 +1,32 @@
+/* Sized and coloured to sit beside the notification bell as a peer. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--c-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.toggle:hover {
+  background: var(--c-surface-hover);
+  border-color: var(--c-border);
+  color: var(--c-text);
+}
+
+.toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.glyph {
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
