@@ -1,0 +1,97 @@
+# Test configuration.
+#
+# Spring Boot loads the first `application.yml` it finds on the classpath, and test-classes
+# comes before classes, so this file replaces the main one wholesale for every test rather than
+# layering on top of it. It therefore has to repeat the application settings the suite needs,
+# not just the overrides.
+#
+# The two deliberate departures from production are the database and the cache store. Tests run
+# against H2 in memory and an in-memory cache manager so that `mvn test` needs neither a
+# Postgres nor a Redis container. The caching annotations behave identically against either
+# cache manager, so hit, miss and eviction are all still exercised for real.
+#
+# The database swap is not free, and it is worth being honest about what it does not cover.
+# JPQL is mostly portable, but the two dialects disagree about type inference: H2 will happily
+# infer the type of a null parameter that PostgreSQL cannot, so a query like
+# `:query IS NULL OR LOWER(x) LIKE LOWER(:query)` passes here and fails on PostgreSQL with
+# "function lower(bytea) does not exist". That exact bug shipped in UserRepository.searchUsers
+# and made GET /api/hr/employees answer 500 on the real database while the whole suite was
+# green - see the note on that query for the fix.
+#
+# So: a green suite means the logic is right, not that every statement runs on PostgreSQL. Any
+# repository query with an optional parameter deserves a look at the real database before it is
+# trusted, and casting the parameter is what makes it portable.
+spring:
+  application:
+    name: org-skills-intelligence-platform
+  datasource:
+    url: jdbc:h2:mem:org_skills_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  cache:
+    # `simple` keeps Spring Boot's ConcurrentMapCacheManager and, by being anything other than
+    # `redis`, switches RedisCacheConfig off - so no Lettuce connection is ever attempted.
+    type: simple
+  jackson:
+    time-zone: UTC
+
+server:
+  port: 0
+
+app:
+  # CorsConfig requires this - it is deliberately not defaulted in code, so that a deployment
+  # cannot silently fall back to allowing localhost. This file replaces the main application.yml
+  # wholesale rather than layering over it, so every required property has to appear here too.
+  cors:
+    allowed-origins: http://localhost:5173
+  jwt:
+    secret: test-secret-key-that-is-long-enough-for-hs256-signing
+    expiration-ms: 86400000
+  mail:
+    from: no-reply@orgskills.test
+  otp:
+    ttl-minutes: 10
+    max-attempts: 5
+    max-per-hour: 5
+    # Tests assert on the returned code rather than scraping the log. Safe here because the test
+    # profile configures no SMTP host, which is the condition the exposure is gated on anyway.
+    expose-in-response: true
+  oauth2:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+  firebase:
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:org-knowledge-gap-firebase-adminsdk-fbsvc-fd30b420b6.json}
+  openai:
+    api-key: ""
+    model: gemini-3.6-flash
+    base-url: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+
+llm:
+  mock:
+    enabled: true
+
+recommendation:
+  scoring:
+    weight:
+      gap-severity: 0.35
+      role-relevance: 0.25
+      proficiency-fit: 0.20
+      course-quality: 0.10
+      recency: 0.10
+
+cache:
+  ttl:
+    catalog-minutes: 60
+    analytics-minutes: 10
+    default-minutes: 30
