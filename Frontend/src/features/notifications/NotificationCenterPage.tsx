@@ -27,7 +27,13 @@ const CATEGORIES: { id: string; label: string; types: NotificationType[] }[] = [
   {
     id: 'skills',
     label: 'Skills and gaps',
-    types: ['GAP_ALERT', 'ASSESSMENT_REMINDER', 'ASSESSMENT_RESULT'],
+    types: [
+      'GAP_ALERT',
+      'ASSESSMENT_REMINDER',
+      'ASSESSMENT_RESULT',
+      'ASSESSMENT_REATTEMPT_REQUEST',
+      'ASSESSMENT_REATTEMPT_DECISION',
+    ],
   },
   {
     id: 'learning',
@@ -40,6 +46,7 @@ const CATEGORIES: { id: string; label: string; types: NotificationType[] }[] = [
     types: ['MENTORSHIP_INVITE', 'MENTORSHIP_REQUEST', 'SESSION_REMINDER'],
   },
   { id: 'achievements', label: 'Achievements', types: ['ACHIEVEMENT_UNLOCKED'] },
+  { id: 'access', label: 'Account requests', types: ['ACCESS_REQUEST', 'ACCESS_DECISION'] },
   { id: 'system', label: 'System', types: ['INFO', 'SYSTEM_ALERT'] },
 ]
 
@@ -54,6 +61,10 @@ const TYPE_LABEL: Record<NotificationType, string> = {
   ACHIEVEMENT_UNLOCKED: 'Achievement',
   ASSESSMENT_RESULT: 'Assessment result',
   MENTORSHIP_REQUEST: 'Mentorship request',
+  ASSESSMENT_REATTEMPT_REQUEST: 'Retake requested',
+  ASSESSMENT_REATTEMPT_DECISION: 'Retake decision',
+  ACCESS_REQUEST: 'Account request',
+  ACCESS_DECISION: 'Account decision',
   INFO: 'Information',
   SYSTEM_ALERT: 'System',
 }
@@ -68,6 +79,14 @@ const TYPE_TONE: Record<NotificationType, string> = {
   TRAINING_PROGRESS: styles.toneGood,
   MENTORSHIP_INVITE: styles.toneInfo,
   MENTORSHIP_REQUEST: styles.toneInfo,
+  // Amber on the approver's side because it is waiting on them; informational on the
+  // employee's, because a decision has already been made and nothing is owed.
+  ASSESSMENT_REATTEMPT_REQUEST: styles.toneWarning,
+  ASSESSMENT_REATTEMPT_DECISION: styles.toneInfo,
+  // Same split as the retake pair: amber while somebody still owes a decision, informational
+  // once one has been made.
+  ACCESS_REQUEST: styles.toneWarning,
+  ACCESS_DECISION: styles.toneInfo,
   SESSION_REMINDER: styles.toneInfo,
   TRAINING_RECOMMENDATION: styles.toneInfo,
   INFO: styles.toneNeutral,
