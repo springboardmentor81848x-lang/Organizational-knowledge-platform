@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Organizational-knowledge-platform
-=======
 # Organizational Knowledge Gap Intelligence Platform
 
 > An enterprise Spring Boot + PostgreSQL platform designed to detect workforce skill gaps, deliver AI-driven personalized learning paths, and provide real-time competency analytics across an organization.
@@ -48,7 +45,8 @@ The **Organizational Knowledge Gap Intelligence Platform** bridges the gap betwe
 | **Backend Framework** | Java 17, Spring Boot 3.3.2 |
 | **Security** | Spring Security, JJWT (`0.12.6`), BCrypt |
 | **Data & Persistence** | Spring Data JPA, Hibernate ORM |
-| **Databases** | H2 In-Memory (Development), PostgreSQL (Production) |
+| **Databases** | PostgreSQL 16 (all runtime profiles), H2 In-Memory (tests only) |
+| **Caching** | Redis 7 via Spring Cache (`@Cacheable` / `@CacheEvict`), Lettuce pooled client |
 | **AI / LLM Integration** | Google Gemini API (`v1beta`), OpenAI Chat Completions API |
 | **Utilities** | Jackson JSON, Lombok, Maven 3.9+ |
 
@@ -98,7 +96,15 @@ The configuration is managed via `src/main/resources/application.yml`.
 | `OPENAI_MODEL` | AI Model Name | `gemini-3.6-flash` |
 | `OPENAI_BASE_URL` | LLM API Endpoint URL | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` |
 | `LLM_MOCK_ENABLED` | Toggle mock mode vs live LLM calls | `true` |
-| `DB_URL` | PostgreSQL Connection URL (when switching to Postgres) | `jdbc:postgresql://localhost:5432/org_skills` |
+| `DB_URL` | PostgreSQL connection URL | `jdbc:postgresql://localhost:5432/org_skills` |
+| `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL credentials | `postgres` / `postgres` |
+| `DDL_AUTO` | Hibernate schema handling. Use `validate` once migrations own the schema | `update` |
+| `REDIS_HOST` / `REDIS_PORT` | Redis connection | `localhost` / `6379` |
+| `CACHE_TYPE` | `redis`, `simple` (in-process, no Redis needed) or `none` | `redis` |
+| `CACHE_TTL_CATALOG_MINUTES` | TTL for the skill and competency catalogues | `60` |
+| `CACHE_TTL_ANALYTICS_MINUTES` | TTL for the heatmap and coverage matrices | `10` |
+
+A full list with defaults is in [`.env.example`](.env.example).
 
 ---
 
@@ -107,18 +113,72 @@ The configuration is managed via `src/main/resources/application.yml`.
 ### Prerequisites
 - **JDK 17** or higher
 - **Maven 3.9+** (or use local Maven installation)
+- **PostgreSQL 16** and **Redis 7** - the `docker compose` step below provides both
 
-### 1. Build the Project
+### 1. Start PostgreSQL and Redis
+```powershell
+docker compose up -d
+```
+This brings up both services on their default ports with the credentials the application
+already expects, so no environment variables are needed. Hibernate creates the schema on first
+start and `DataSeeder` populates the reference data.
+
+To check they are up:
+```powershell
+docker compose ps
+docker compose logs -f postgres redis
+```
+
+**If port 5432 is already in use** - a locally installed PostgreSQL service, or another
+project's container, is the usual cause - start the container on another port and point the
+application at it:
+```powershell
+$env:DB_PORT="5433"
+docker compose up -d
+$env:DB_URL="jdbc:postgresql://localhost:5433/org_skills"
+```
+
+> **`.env` is read by Docker Compose, not by the application.** Compose picks it up
+> automatically; Spring Boot does not, and there is no dotenv library on the classpath. So a
+> `DB_PORT=5433` in `.env` moves the *container* to 5433 while the application still connects to
+> `localhost:5432` - and if something else is listening there, it connects to that instead and
+> starts perfectly against the wrong database. Nothing fails; the data is just not where you
+> expect. Export the variables into the shell before running:
+>
+> ```powershell
+> # PowerShell
+> Get-Content .env | Where-Object { $_ -match '^\s*[^#].*=' } | ForEach-Object {
+>   $name, $value = $_ -split '=', 2
+>   [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim())
+> }
+> ```
+> ```bash
+> # bash
+> set -a && . ./.env && set +a
+> ```
+>
+> Check which database you actually reached before trusting a run:
+> `docker compose exec postgres psql -U postgres -d org_skills -c "\dt"`
+
+Running without Docker is also fine - point `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` at any
+PostgreSQL instance. If you have no Redis to hand, set `CACHE_TYPE=simple` and the application
+uses an in-process cache instead; every cached endpoint behaves the same, the cache is just not
+shared between instances.
+
+### 2. Build the Project
 ```powershell
 mvn clean compile
 ```
 
-### 2. Run Automated Unit Tests
+### 3. Run Automated Tests
 ```powershell
 mvn test
 ```
+The suite runs against H2 in memory and an in-process cache (see
+`src/test/resources/application.yml`), so **no PostgreSQL or Redis container is needed to run
+the tests**.
 
-### 3. Start the Backend Application
+### 4. Start the Backend Application
 ```powershell
 # Default run (Mock mode enabled, Port 8080)
 mvn spring-boot:run
@@ -127,7 +187,7 @@ mvn spring-boot:run
 mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
 ```
 
-### 4. Running with Live AI (Google Gemini / OpenAI)
+### 5. Running with Live AI (Google Gemini / OpenAI)
 To enable live AI generation, pass your API key as an environment variable:
 ```powershell
 $env:OPENAI_API_KEY="your-gemini-or-openai-api-key"
@@ -135,28 +195,48 @@ $env:LLM_MOCK_ENABLED="false"
 mvn spring-boot:run
 ```
 
-### 5. Access H2 Database Console
-When running in development mode, access the database UI at:
-- **URL**: `http://localhost:8080/h2-console`
-- **JDBC URL**: `jdbc:h2:mem:org_skills`
-- **User**: `sa`
-- **Password**: *(leave empty)*
+### 6. Inspecting the Database and Cache
+```powershell
+# PostgreSQL
+docker compose exec postgres psql -U postgres -d org_skills -c "\dt"
+
+# Redis - list the cached entries
+docker compose exec redis redis-cli KEYS "*"
+docker compose exec redis redis-cli TTL "catalogs:skills::all"
+```
+There is no H2 console any more; H2 exists only on the test classpath.
 
 ---
 
-## ⚙️ Switching from H2 to PostgreSQL
+## ⚡ Caching
 
-When moving to production PostgreSQL:
-1. In `pom.xml`, uncomment the `postgresql` dependency and comment out `h2`.
-2. In `application.yml`, uncomment the PostgreSQL datasource block:
-```yaml
-spring:
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/org_skills}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:your_password}
-    driver-class-name: org.postgresql.Driver
-```
+Redis backs the read-heavy endpoints through Spring's cache abstraction. Two families of cache
+are defined in `CacheNames`:
+
+| Cache | Holds | TTL | Invalidated by |
+|-------|-------|-----|----------------|
+| `catalogs:skills` | The skill catalogue | 60 min | Any skill create / update / delete |
+| `catalogs:competencies` | The role competency matrix | 60 min | Any competency create / update / delete |
+| `analytics:team_gap_heatmap` | The user x skill gap matrix | 10 min | Any gap recalculation, skill or competency write |
+| `analytics:department_coverage` | The department x skill matrix | 10 min | as above |
+| `analytics:organization_gap` | Organisation-wide summary metrics | 10 min | as above |
+
+Three design points are worth knowing before changing this:
+
+- **Invalidation is tied to commit, not to the write method.** A plain `@CacheEvict` fires when
+  the annotated method returns, which is *before* its transaction commits; a concurrent read in
+  that window refills the cache with the very rows the eviction was meant to drop.
+  `AnalyticsCacheInvalidator` defers the clear until after commit instead. It hangs off
+  `GapAnalysisService.calculateAndFetchUserGaps`, the single point where gap rows are rewritten,
+  so the skill, assessment and learning-path flows are all covered by one hook.
+- **A Redis outage is not an outage.** `CachingConfig` installs a `CacheErrorHandler` that logs
+  and swallows cache failures, so an unreachable Redis degrades the application to uncached
+  reads rather than turning healthy requests into 500s.
+- **Cached values are serialised as JSON with full type information.** `RedisCacheConfig` uses
+  Jackson default typing set to `EVERYTHING`, not the more common `NON_FINAL`, because the
+  services return `List.of(...)` and `Stream.toList()` whose classes are final - under
+  `NON_FINAL` those are written with no type id and fail on the way back out, which the error
+  handler would then hide as a cache that simply never hits.
 
 ---
 
@@ -171,4 +251,3 @@ Run all tests:
 ```powershell
 mvn test
 ```
->>>>>>> Arman's-Contribution

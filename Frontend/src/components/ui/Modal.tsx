@@ -16,18 +16,42 @@ interface ModalProps {
 export function Modal({ open, onClose, title, description, footer, size = 'md', children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
+  /**
+   * The close handler, held in a ref so the effect below does not depend on its identity.
+   *
+   * Callers pass an inline arrow — `onClose={() => setOpen(false)}` — which is a new function on
+   * every render of the caller, and a dialog holding its own state re-renders its parent chain
+   * as the user types. If the effect depended on `onClose` it would therefore tear down and set
+   * up again on every keystroke, and its cleanup restores focus to whatever opened the dialog.
+   * The visible symptom is a field that accepts exactly one character before focus jumps away,
+   * which is what this ref exists to prevent.
+   */
+  const onCloseRef = useRef(onClose)
+  // Assigned in an effect rather than during render: a ref written while rendering is not safe
+  // under concurrent rendering, and nothing reads this one until a keydown fires long after.
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     if (!open) return
 
     // Escape closes, and focus moves into the dialog so a keyboard user is not left behind
     // on the page underneath.
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', onKeyDown)
 
     const previouslyFocused = document.activeElement as HTMLElement | null
-    dialogRef.current?.focus()
+
+    // Focus the first field if the dialog has one, and the dialog itself otherwise. Focusing
+    // the container unconditionally would make every dialog with a form start one tab away
+    // from the thing the user opened it to type into.
+    const firstField = dialogRef.current?.querySelector<HTMLElement>(
+      'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
+    )
+    ;(firstField ?? dialogRef.current)?.focus()
 
     // The page behind must not scroll while a dialog is over it.
     const previousOverflow = document.body.style.overflow
@@ -38,7 +62,8 @@ export function Modal({ open, onClose, title, description, footer, size = 'md', 
       document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [open, onClose])
+    // Deliberately keyed on `open` alone: see onCloseRef above.
+  }, [open])
 
   if (!open) return null
 

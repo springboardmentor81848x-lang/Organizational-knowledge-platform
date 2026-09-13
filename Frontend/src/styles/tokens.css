@@ -62,6 +62,25 @@
   --c-info-bg: #eaf1f8;
   --c-info-border: #bcd5ea;
 
+  /* ── Incidental surfaces ──────────────────────────────────────────────────
+     The travelling highlight in a loading skeleton, and the scrim behind a
+     modal. Both were hard-coded at their call sites, which left them stranded
+     when the palette changed underneath them. */
+  --c-skeleton-highlight: #e3e8ed;
+  --c-overlay: rgba(22, 32, 43, 0.42);
+
+  /* ── Brand panel ──────────────────────────────────────────────────────────
+     The sign-in panel is a dark sheet in both themes. It cannot simply take the
+     accent: in dark the accent inverts to a light blue, and a large pale slab is
+     exactly the glare a dark theme exists to avoid. So it keeps its own deep navy
+     and its own white-on-dark text, which is also what makes it read as the
+     institution's mark rather than as another surface of the app. */
+  --c-brand-panel: #0a3d62;
+  --c-brand-panel-text: #ffffff;
+  --c-brand-panel-text-secondary: rgba(255, 255, 255, 0.78);
+  --c-brand-panel-text-muted: rgba(255, 255, 255, 0.55);
+  --c-brand-panel-raised: rgba(255, 255, 255, 0.16);
+
   /* ── Type ─────────────────────────────────────────────────────────────────
      System stack: it renders instantly, matches the host OS, and avoids the
      web-font flash that makes an internal tool feel like a website. */
@@ -130,4 +149,86 @@
     --transition-fast: 0ms;
     --transition-base: 0ms;
   }
+}
+
+/*
+ * ── Dark theme ──────────────────────────────────────────────────────────────
+ *
+ * Only the colour tokens are restated; type, space, shape and motion are shared,
+ * so the two themes are the same design at two exposures rather than two designs.
+ *
+ * The light palette lifts cards off a grey page with white. Dark cannot borrow
+ * that trick — white would glare — so the relationship inverts: the canvas is the
+ * darkest surface and cards sit above it, lighter, with the border doing more of
+ * the separating than the shadow does.
+ *
+ * The accent flips from a deep navy to a light blue. Navy is invisible on a dark
+ * canvas, and an accent that cannot be seen cannot mark the current location. That
+ * inverts what "inverse" text means too: in light it is white on navy, in dark it
+ * is near-black on light blue.
+ *
+ * `data-theme` is always written explicitly by the boot script in index.html, which
+ * resolves "system" before the first paint. That is why there is no
+ * prefers-color-scheme block here: it would duplicate this whole palette to say the
+ * same thing, and the two copies would drift.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-canvas: #0f151b;
+  --c-surface: #182029;
+  --c-surface-sunken: #131a21;
+  --c-surface-hover: #1e2731;
+  --c-surface-selected: #1a2c3d;
+
+  --c-border: #28323d;
+  --c-border-strong: #3a4653;
+  --c-border-focus: #5aa4e0;
+
+  --c-text: #e6ebf0;
+  --c-text-secondary: #a3b0bd;
+  --c-text-muted: #74818f;
+  /* Text that sits on --c-accent, which is now light. */
+  --c-text-inverse: #0f151b;
+
+  --c-accent: #4d9fe0;
+  --c-accent-hover: #67aee6;
+  --c-accent-active: #3a8ccb;
+  --c-accent-subtle: #162634;
+  --c-accent-border: #2f587d;
+
+  /* Same order of seriousness, re-mixed for a dark ground: the hue carries the
+     meaning, the lightness carries the legibility. */
+  --c-critical: #ef8f94;
+  --c-critical-bg: #2b1618;
+  --c-critical-border: #56292d;
+
+  --c-high: #e2a75f;
+  --c-high-bg: #2a1d11;
+  --c-high-border: #55391d;
+
+  --c-medium: #d4bd5c;
+  --c-medium-bg: #27230f;
+  --c-medium-border: #4f461d;
+
+  --c-low: #6fc398;
+  --c-low-bg: #12241a;
+  --c-low-border: #274e38;
+
+  --c-info: #6bb1e8;
+  --c-info-bg: #14222e;
+  --c-info-border: #2a4864;
+
+  --c-skeleton-highlight: #232e3a;
+  --c-overlay: rgba(0, 0, 0, 0.62);
+
+  /* Deeper than the light theme's, so the panel sits below the form side rather
+     than glowing beside it. The white text on it is unchanged. */
+  --c-brand-panel: #0a2b44;
+
+  /* Shadow is nearly free on a dark ground, so it leans on black rather than the
+     tinted charcoal the light theme uses. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
 }

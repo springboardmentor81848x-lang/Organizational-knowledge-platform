@@ -65,7 +65,7 @@
   background: linear-gradient(
     90deg,
     var(--c-surface-sunken) 25%,
-    #e3e8ed 37%,
+    var(--c-skeleton-highlight) 37%,
     var(--c-surface-sunken) 63%
   );
   background-size: 400% 100%;
