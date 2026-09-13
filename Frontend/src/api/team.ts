@@ -36,10 +36,16 @@ export const managerApi = {
   assignTraining: (employeeId: number, courseId: number) =>
     api.post<Enrollment>(`/api/manager/team/${employeeId}/assign-training/${courseId}`),
 
+  /**
+   * The mentor and target skill go in the body, not the query string. The server binds them
+   * from a JSON object and validates both as required; sending them as query parameters left
+   * the body empty and the request was rejected before it reached the service.
+   */
   assignMentorship: (employeeId: number, mentorId: number, targetSkillId: number) =>
-    api.post<Mentorship>(
-      `/api/manager/team/${employeeId}/assign-mentorship?mentorId=${mentorId}&targetSkillId=${targetSkillId}`,
-    ),
+    api.post<Mentorship>(`/api/manager/team/${employeeId}/assign-mentorship`, {
+      mentorId,
+      targetSkillId,
+    }),
 }
 
 export const departmentHeadApi = {
@@ -65,10 +71,16 @@ export const departmentHeadApi = {
   assignTraining: (employeeId: number, courseId: number) =>
     api.post<Enrollment>(`/api/department-head/${employeeId}/assign-training/${courseId}`),
 
+  /**
+   * The mentor and target skill go in the body, not the query string. The server binds them
+   * from a JSON object and validates both as required; sending them as query parameters left
+   * the body empty and the request was rejected before it reached the service.
+   */
   assignMentorship: (employeeId: number, mentorId: number, targetSkillId: number) =>
-    api.post<Mentorship>(
-      `/api/department-head/${employeeId}/assign-mentorship?mentorId=${mentorId}&targetSkillId=${targetSkillId}`,
-    ),
+    api.post<Mentorship>(`/api/department-head/${employeeId}/assign-mentorship`, {
+      mentorId,
+      targetSkillId,
+    }),
 }
 
 export type ManagementApi = typeof managerApi

@@ -1,6 +1,7 @@
 package com.orgskills.intelligence.service;
 
 import com.orgskills.intelligence.dto.recommendation.CourseRecommendationScore;
+import com.orgskills.intelligence.dto.recommendation.RankedRecommendationResponse;
 import com.orgskills.intelligence.entity.Course;
 import com.orgskills.intelligence.entity.GapAnalysis;
 import com.orgskills.intelligence.entity.RoleCompetency;
@@ -56,6 +57,39 @@ public class RecommendationScoringService {
 
     @Value("${recommendation.scoring.weight.recency:0.10}")
     private double weightRecency = 0.10;
+
+    /**
+     * The same ranking, flattened for the API.
+     *
+     * <p>Mapped here rather than in the controller because it must happen inside the
+     * transaction that loaded the courses: reading a title off a lazily loaded course once the
+     * session has closed fails, and handing the entity to Jackson instead fails differently.
+     */
+    @Transactional(readOnly = true)
+    public List<RankedRecommendationResponse> rankedRecommendationsFor(Long employeeId) {
+        return scoreCoursesForEmployee(employeeId).stream()
+                .map(this::toRankedResponse)
+                .toList();
+    }
+
+    private RankedRecommendationResponse toRankedResponse(CourseRecommendationScore scored) {
+        Course course = scored.getCourse();
+        Skill skill = scored.getSkill();
+        return RankedRecommendationResponse.builder()
+                .courseId(course != null ? course.getId() : null)
+                .courseTitle(course != null ? course.getTitle() : null)
+                .courseProvider(course != null ? course.getProvider() : null)
+                .difficulty(course != null ? course.getDifficulty() : null)
+                .durationHours(course != null ? course.getDurationHours() : null)
+                .internal(course != null ? course.getIsInternal() : null)
+                .externalUrl(course != null ? course.getExternalUrl() : null)
+                .skillId(skill != null ? skill.getId() : null)
+                .skillName(skill != null ? skill.getName() : null)
+                .skillCategory(skill != null ? skill.getCategory() : null)
+                .score(scored.getScore())
+                .scoreBreakdown(scored.getScoreBreakdown())
+                .build();
+    }
 
     /**
      * Calculates weighted scores for candidate courses for a given employee.

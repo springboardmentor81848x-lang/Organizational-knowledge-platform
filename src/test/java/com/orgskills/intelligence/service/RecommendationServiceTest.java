@@ -19,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,6 +51,9 @@ class RecommendationServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private LlmClient llmClient;
+
     private RecommendationService recommendationService;
 
     private User sampleEmployee;
@@ -67,14 +70,13 @@ class RecommendationServiceTest {
                 recommendationRepository,
                 recommendationScoringService,
                 notificationService,
-                objectMapper
+                objectMapper,
+                llmClient
         );
 
-        // Default to mock mode enabled
-        ReflectionTestUtils.setField(recommendationService, "mockEnabled", true);
-        ReflectionTestUtils.setField(recommendationService, "openAiApiKey", "");
-        ReflectionTestUtils.setField(recommendationService, "openAiModel", "gpt-4o-mini");
-        ReflectionTestUtils.setField(recommendationService, "openAiBaseUrl", "https://api.openai.com/v1/chat/completions");
+        // Default to mock mode enabled. Lenient because the tests that never reach draft
+        // resolution — a missing user, an employee with no gaps — never ask the client anything.
+        lenient().when(llmClient.isMockEnabled()).thenReturn(true);
 
         sampleEmployee = new User();
         sampleEmployee.setId(1L);
@@ -196,8 +198,8 @@ class RecommendationServiceTest {
     @Test
     @DisplayName("Fallback: when LLM is disabled (no API key, mock off), returns rule-based recommendations")
     void testFallbackWhenNoApiKeyAndMockDisabled() {
-        ReflectionTestUtils.setField(recommendationService, "mockEnabled", false);
-        ReflectionTestUtils.setField(recommendationService, "openAiApiKey", "");
+        when(llmClient.isMockEnabled()).thenReturn(false);
+        when(llmClient.isLive()).thenReturn(false);
 
         GapAnalysis gap = buildGap(1L, sampleEmployee, javaSkill, 5.0, 2.0, 3.0, RiskSeverity.CRITICAL);
 

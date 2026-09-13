@@ -305,12 +305,13 @@ function RegistrantList({
   onSaved: () => Promise<void>
 }) {
   const toast = useToast()
+  // The host is sent the full roster; anyone else gets only their own row. This dialog is only
+  // ever opened by the host, so the list is expected — but an absent one means an empty roster,
+  // not a broken screen.
+  const registrants = session.registrations ?? []
   const [marks, setMarks] = useState<Record<number, AttendanceStatus>>(() =>
     Object.fromEntries(
-      session.registrations.map((registration) => [
-        registration.employeeId,
-        registration.attendanceStatus,
-      ]),
+      registrants.map((registration) => [registration.employeeId, registration.attendanceStatus]),
     ),
   )
 
@@ -342,7 +343,7 @@ function RegistrantList({
           <Button
             variant="primary"
             loading={save.isPending}
-            disabled={session.registrations.length === 0}
+            disabled={registrants.length === 0}
             onClick={() => save.mutate()}
           >
             Save attendance
@@ -357,12 +358,12 @@ function RegistrantList({
         </div>
       )}
 
-      {session.registrations.length === 0 ? (
+      {registrants.length === 0 ? (
         <p className={styles.hostNote}>Nobody has registered yet.</p>
       ) : (
         <>
           <ul className={styles.registrants}>
-            {session.registrations.map((registration) => (
+            {registrants.map((registration) => (
               <li className={styles.registrant} key={registration.registrationId}>
                 <div className={styles.registrantMeta}>
                   <span className={styles.registrantName}>{registration.employeeName}</span>

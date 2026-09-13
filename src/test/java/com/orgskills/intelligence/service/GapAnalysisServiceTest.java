@@ -62,6 +62,9 @@ class GapAnalysisServiceTest {
     @Mock
     private RecommendationService recommendationService;
 
+    @Mock
+    private AnalyticsCacheInvalidator analyticsCacheInvalidator;
+
     @InjectMocks
     private GapAnalysisService gapAnalysisService;
 

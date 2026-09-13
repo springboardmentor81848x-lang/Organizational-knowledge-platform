@@ -6,6 +6,7 @@ import { StatusPill } from '@/components/ui/StatusPill'
 import { Table, type Column } from '@/components/ui/Table'
 import type { GapAnalysis, RiskSeverity } from '@/types/api'
 import { useSession } from '@/features/auth/useSession'
+import { PersonalGapHeatmap } from './PersonalGapHeatmap'
 import styles from './GapsPage.module.css'
 
 const SEVERITY_ORDER: Record<RiskSeverity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
@@ -33,6 +34,14 @@ export function GapsPage() {
   const summary = useQuery({
     queryKey: queryKeys.gaps.summary(employeeId!),
     queryFn: ({ signal }) => gapAnalysisApi.summaryForUser(employeeId!, signal),
+    enabled: Boolean(employeeId),
+  })
+
+  // The heatmap is a separate call so it can fail or lag without taking the gap table with it.
+  // Both are built from the same stored gap rows, so they cannot disagree.
+  const heatmap = useQuery({
+    queryKey: queryKeys.gaps.heatmap(employeeId!),
+    queryFn: ({ signal }) => gapAnalysisApi.heatmapForUser(employeeId!, signal),
     enabled: Boolean(employeeId),
   })
 
@@ -93,8 +102,9 @@ export function GapsPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>My knowledge gaps</h1>
         <p className={styles.subtitle}>
-          The distance between what your role requires and what you hold. Recalculated whenever an
-          assessment is submitted.
+          The distance between what your target role requires and what you hold. Every figure
+          below is recalculated from your latest assessment — nothing here is fixed.
+          {user?.targetJobTitle ? ` Measured against ${user.targetJobTitle}.` : ''}
         </p>
       </header>
 
@@ -116,6 +126,17 @@ export function GapsPage() {
               <Figure label="Not on record" value={summary.data.missingSkillsCount} />
             </dl>
           </div>
+        </Card>
+      )}
+
+      {heatmap.data && heatmap.data.matrix.length > 0 && (
+        <Card>
+          <h2 className={styles.sectionTitle}>Gap heatmap</h2>
+          <p className={styles.sectionSub}>
+            One tile per skill your target role is measured on, shaded by how far short you fall.
+            Built from the same assessment result as the table below.
+          </p>
+          <PersonalGapHeatmap matrix={heatmap.data} />
         </Card>
       )}
 

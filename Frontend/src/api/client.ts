@@ -165,6 +165,14 @@ export const api = {
     request<T>(path, { method: 'POST', body, skipAuth: true }),
 
   /**
+   * A read reached before anybody is signed in - the sign-up form's list of target roles.
+   * Skipping auth matters: with a stale token in storage the request would otherwise attempt a
+   * refresh, fail, and bounce the visitor to sign-in from the sign-up page.
+   */
+  getUnauthenticated: <T>(path: string, signal?: AbortSignal) =>
+    request<T>(path, { signal, skipAuth: true }),
+
+  /**
    * Reports and other binary downloads. Returns the blob and the filename the server chose,
    * so the browser saves it under the name the report was generated with.
    */

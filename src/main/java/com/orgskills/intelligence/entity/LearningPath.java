@@ -74,6 +74,17 @@ public class LearningPath {
     @OrderBy("stepOrder ASC")
     private List<LearningPathStep> steps = new ArrayList<>();
 
+    public void setSteps(List<LearningPathStep> newSteps) {
+        if (this.steps == null) {
+            this.steps = new ArrayList<>();
+        } else {
+            this.steps.clear();
+        }
+        if (newSteps != null) {
+            this.steps.addAll(newSteps);
+        }
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.generatedAt == null) {

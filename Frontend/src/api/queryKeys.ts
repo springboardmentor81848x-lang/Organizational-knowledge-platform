@@ -21,6 +21,9 @@ export const queryKeys = {
     forUser: (userId?: number) => ['notifications', userId ?? 'me'] as const,
   },
 
+  /** The roles that can be aimed at; derived from the competency profiles that exist. */
+  targetRoles: () => ['target-roles'] as const,
+
   skills: {
     all: ['skills'] as const,
     catalog: () => ['skills', 'catalog'] as const,
@@ -31,6 +34,9 @@ export const queryKeys = {
     all: ['gaps'] as const,
     forUser: (userId: number) => ['gaps', 'user', userId] as const,
     summary: (userId: number) => ['gaps', 'user', userId, 'summary'] as const,
+    // Nested under the user's gaps so the assessment cascade's existing invalidation of
+    // ['gaps','user',id] drops the heatmap too, rather than leaving it showing old colours.
+    heatmap: (userId: number) => ['gaps', 'user', userId, 'heatmap'] as const,
     org: () => ['gaps', 'org'] as const,
     department: (department: string) => ['gaps', 'department', department] as const,
   },
@@ -38,6 +44,21 @@ export const queryKeys = {
   recommendations: {
     all: ['recommendations'] as const,
     forUser: (userId: number) => ['recommendations', 'user', userId] as const,
+  },
+
+  /** Sign-ups waiting to be granted access. Scoped to the caller by the server, not by key. */
+  accessRequests: {
+    all: ['access-requests'] as const,
+    pending: () => ['access-requests', 'pending'] as const,
+  },
+
+  /**
+   * The assistant's opening prompts. Keyed under the user because they are chosen from that
+   * person's own gaps and enrolments, so the assessment cascade must be able to drop them.
+   */
+  assistant: {
+    all: ['assistant'] as const,
+    suggestions: (userId?: number) => ['assistant', 'suggestions', userId ?? 'me'] as const,
   },
 
   learningPaths: {
@@ -53,6 +74,11 @@ export const queryKeys = {
   courses: {
     all: ['courses'] as const,
     catalog: () => ['courses', 'catalog'] as const,
+    /**
+     * The externally-sourced courses, which is the list an employee is allowed to read. The
+     * administrator's full catalogue under `catalog` is refused to them outright.
+     */
+    external: () => ['courses', 'external'] as const,
   },
 
   assessments: {
@@ -60,6 +86,16 @@ export const queryKeys = {
     forEmployee: (employeeId?: number) => ['assessments', 'employee', employeeId ?? 'me'] as const,
     results: (assessmentId: number) => ['assessments', 'detail', assessmentId, 'results'] as const,
     history: (employeeId: number) => ['assessments', 'history', employeeId] as const,
+
+    // All three sit under ['assessments'] on purpose. Submitting an attempt consumes the
+    // approval that unlocked it and adds to the attempt count, and raising or deciding a
+    // request changes what the employee is allowed to do next - so the existing broad
+    // invalidation after an assessment already drops every one of them, rather than leaving a
+    // screen offering an attempt that has just been used up.
+    attemptStatus: () => ['assessments', 'attempt-status'] as const,
+    myReattemptRequests: () => ['assessments', 'reattempt-requests', 'mine'] as const,
+    reattemptRequests: (status?: string) =>
+      ['assessments', 'reattempt-requests', 'review', status ?? 'all'] as const,
   },
 
   mentorships: {

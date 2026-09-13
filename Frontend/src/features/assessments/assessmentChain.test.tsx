@@ -129,6 +129,31 @@ describe('the invalidation chain after an assessment', () => {
     expect(isStale(unrelated)).toBe(false)
     expect(isStale(otherEmployeeSkills)).toBe(false)
   })
+
+  it('drops the attempt status, so a spent attempt stops being offered', async () => {
+    // The assessment is taken once. Submitting one uses that attempt up and spends any approval
+    // that unlocked it, so a stale attempt status would leave the screen showing a paper the
+    // server has already decided to refuse — the employee would fill it in and be turned away
+    // at the end, having answered every question for nothing.
+    const key = queryKeys.assessments.attemptStatus()
+    seed(key, { attemptsTaken: 0, canTake: true, requestRequired: false })
+
+    await invalidateAfterAssessment(queryClient, EMPLOYEE_ID)
+
+    expect(isStale(key)).toBe(true)
+  })
+
+  it('drops the approver queue, so a decided request leaves it', async () => {
+    const mine = queryKeys.assessments.myReattemptRequests()
+    const queue = queryKeys.assessments.reattemptRequests('PENDING')
+    seed(mine, [{ requestId: 1, status: 'PENDING' }])
+    seed(queue, [{ requestId: 1, status: 'PENDING' }])
+
+    await invalidateAfterAssessment(queryClient, EMPLOYEE_ID)
+
+    expect(isStale(mine)).toBe(true)
+    expect(isStale(queue)).toBe(true)
+  })
 })
 
 /**

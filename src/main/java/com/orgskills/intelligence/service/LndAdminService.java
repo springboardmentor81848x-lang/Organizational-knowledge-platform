@@ -23,6 +23,7 @@ import com.orgskills.intelligence.repository.CourseRepository;
 import com.orgskills.intelligence.repository.EnrollmentRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.SkillRepository;
+import com.orgskills.intelligence.util.DifficultyNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,16 @@ public class LndAdminService {
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final HrIntelligenceService hrIntelligenceService;
+    /**
+     * Shared with the catalogue importer so both routes into the catalogue agree.
+     *
+     * <p>Difficulty is not decoration: {@code LearningPathService} groups a skill's courses into
+     * beginner, intermediate and advanced stages and drops any course whose difficulty is null.
+     * A course added here without one was therefore invisible to every learning path, and the
+     * path said "no courses in the catalog cover this skill yet" about a catalogue that did
+     * cover it. Normalising on write means a course is always placeable in a stage.
+     */
+    private final DifficultyNormalizer difficultyNormalizer;
 
     // ── Course Catalog CRUD ─────────────────────────────────────────────────────
 
@@ -68,7 +79,7 @@ public class LndAdminService {
         course.setDescription(request.getDescription());
         course.setProvider(request.getProvider());
         course.setSkillCovered(skill);
-        course.setDifficulty(request.getDifficulty());
+        course.setDifficulty(difficultyNormalizer.normalizeDifficulty(request.getDifficulty()));
         course.setDurationHours(request.getDurationHours());
         course.setIsInternal(request.getIsInternal() != null ? request.getIsInternal() : true);
         course.setExternalUrl(request.getExternalUrl());
@@ -92,7 +103,7 @@ public class LndAdminService {
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
         course.setProvider(request.getProvider());
-        course.setDifficulty(request.getDifficulty());
+        course.setDifficulty(difficultyNormalizer.normalizeDifficulty(request.getDifficulty()));
         course.setDurationHours(request.getDurationHours());
         if (request.getIsInternal() != null) course.setIsInternal(request.getIsInternal());
         course.setExternalUrl(request.getExternalUrl());

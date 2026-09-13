@@ -133,9 +133,9 @@ class KnowledgeSessionControllerTest {
     @Test
     @DisplayName("GET /api/sessions browses available sessions")
     void listSessions() throws Exception {
-        when(knowledgeSessionService.listSessions(null, null, true)).thenReturn(List.of(sessionResponse()));
+        when(knowledgeSessionService.listSessions(1L, null, null, true)).thenReturn(List.of(sessionResponse()));
 
-        mockMvc.perform(get("/api/sessions").param("availableOnly", "true"))
+        mockMvc.perform(get("/api/sessions").principal(principal(1L)).param("availableOnly", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sessionId").value(100))
                 .andExpect(jsonPath("$[0].full").value(false));

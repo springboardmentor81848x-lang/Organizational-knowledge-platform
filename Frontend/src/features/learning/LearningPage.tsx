@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { catalogApi } from '@/api/catalog'
 import { enrollmentsApi } from '@/api/enrollments'
@@ -156,11 +157,13 @@ function PathCard({
         {path.overallProgressPercent}% complete
       </p>
 
-      {path.noCoursesAvailable ? (
-        <p className={styles.note} style={{ marginTop: 'var(--s-4)' }}>
-          No courses in the catalog cover this skill yet, so the path has no steps.
-        </p>
-      ) : (
+      {/*
+        Driven by the steps themselves rather than by noCoursesAvailable. That flag records what
+        the catalogue looked like when the path was built, and a retired path is never rebuilt —
+        so a path generated before its courses existed went on claiming the catalogue was empty
+        long after it had been filled.
+      */}
+      {steps.length > 0 ? (
         <ol className={styles.steps}>
           {steps.map((step) => (
             <StepRow
@@ -171,6 +174,15 @@ function PathCard({
             />
           ))}
         </ol>
+      ) : path.status === 'OBSOLETE' ? (
+        <p className={styles.note} style={{ marginTop: 'var(--s-4)' }}>
+          {path.targetSkillName ?? 'This skill'} is no longer one of your gaps, so this path has
+          been retired. Regenerating rebuilds your plan around the gaps you have now.
+        </p>
+      ) : (
+        <p className={styles.note} style={{ marginTop: 'var(--s-4)' }}>
+          No courses in the catalog cover this skill yet, so the path has no steps.
+        </p>
       )}
     </Card>
   )
@@ -421,10 +433,25 @@ function CourseCatalog({ employeeId }: { employeeId: number }) {
     queryFn: ({ signal }) => recommendationsApi.forEmployee(employeeId, signal),
   })
 
+  /**
+   * The external catalogue, not the administrator's one.
+   *
+   * `catalogApi.courses` reads /api/ld-admin/courses, which refuses an employee outright - so
+   * using it here meant every employee saw a permission notice where the course list should be,
+   * and never reached the Udemy, YouTube, Coursera or freeCodeCamp courses recommended for
+   * their own gaps. /api/catalog/external is the same catalogue filtered to what came from
+   * outside the organisation, and employees may read it.
+   */
   const catalog = useQuery({
-    queryKey: queryKeys.courses.catalog(),
-    queryFn: ({ signal }) => catalogApi.courses(signal),
+    queryKey: queryKeys.courses.external(),
+    queryFn: ({ signal }) => catalogApi.external(signal),
     retry: false,
+  })
+
+  // Read so a course already being taken offers "Continue" rather than a second enrolment.
+  const enrollments = useQuery({
+    queryKey: queryKeys.enrollments.forUser(employeeId),
+    queryFn: ({ signal }) => enrollmentsApi.list(undefined, signal),
   })
 
   const enroll = useMutation({
@@ -436,10 +463,55 @@ function CourseCatalog({ employeeId }: { employeeId: number }) {
     onError: (error) => toast.fromError('Could not enrol', error),
   })
 
+  /**
+   * The severity of the gap each skill has, keyed by skill id.
+   *
+   * This is what orders the catalog. A flat list is the same list for everybody; ordering it by
+   * the severity of the gap the course addresses turns it into this person's list, and it moves
+   * whenever their assessment does.
+   */
+  const severityBySkill = useMemo(() => {
+    const map = new Map<number, { severity: string; rank: number; reason: string }>()
+    for (const rec of recommendations.data ?? []) {
+      const existing = map.get(rec.skillId)
+      if (!existing || rec.priorityRank < existing.rank) {
+        map.set(rec.skillId, {
+          severity: rec.sourceGapSeverity,
+          rank: rec.priorityRank,
+          reason: rec.recommendationText,
+        })
+      }
+    }
+    return map
+  }, [recommendations.data])
+
+  const enrolledByCourse = useMemo(() => {
+    const map = new Map<number, Enrollment>()
+    for (const e of enrollments.data ?? []) map.set(e.trainingId, e)
+    return map
+  }, [enrollments.data])
+
+  const courses = useMemo(() => {
+    const all = (catalog.data ?? []) as Course[]
+    return [...all].sort((a, b) => {
+      const aRec = a.skillId == null ? undefined : severityBySkill.get(a.skillId)
+      const bRec = b.skillId == null ? undefined : severityBySkill.get(b.skillId)
+      // Recommended courses first, worst gap first within them, then everything else by title.
+      if (aRec && !bRec) return -1
+      if (!aRec && bRec) return 1
+      if (aRec && bRec && aRec.rank !== bRec.rank) return aRec.rank - bRec.rank
+      return a.title.localeCompare(b.title)
+    })
+  }, [catalog.data, severityBySkill])
+
+  const recommendedCount = courses.filter(
+    (c) => c.skillId != null && severityBySkill.has(c.skillId),
+  ).length
+
   return (
     <Card
       title="Available courses"
-      description="Enrol in a course to start tracking progress against it."
+      description="Courses from Udemy, YouTube, Coursera, freeCodeCamp and vendor documentation, ordered by the gaps they close for you."
       flush={catalog.isLoading || Boolean(catalog.error)}
     >
       {catalog.isLoading ? (
@@ -455,31 +527,73 @@ function CourseCatalog({ employeeId }: { employeeId: number }) {
         )
       ) : (
         <>
-          {recommendations.data && recommendations.data.length > 0 && (
+          {recommendedCount > 0 && (
             <p className={styles.note} style={{ marginBottom: 'var(--s-3)' }}>
-              {recommendations.data.length} of these were recommended for your current gaps.
+              {recommendedCount} of these address a gap from your latest assessment and are listed
+              first.
             </p>
           )}
-          {(catalog.data ?? []).map((course: Course) => (
-            <div className={styles.courseRow} key={course.id}>
-              <div className={styles.courseMeta}>
-                <span className={styles.courseTitle}>{course.title}</span>
-                <span className={styles.courseSub}>
-                  {course.provider}
-                  {course.skillName ? ` · ${course.skillName}` : ''}
-                  {course.difficulty ? ` · ${course.difficulty}` : ''}
-                  {course.durationHours ? ` · ${course.durationHours}h` : ''}
-                </span>
+          {courses.map((course: Course) => {
+            const recommendation =
+              course.skillId == null ? undefined : severityBySkill.get(course.skillId)
+            const enrollment = enrolledByCourse.get(course.id)
+            return (
+              <div className={styles.courseRow} key={course.id}>
+                <div className={styles.courseMeta}>
+                  <span className={styles.courseTitle}>
+                    {course.title}
+                    {recommendation && (
+                      <span className={styles.courseBadge}>
+                        <StatusPill value={recommendation.severity} />
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.courseSub}>
+                    {course.provider}
+                    {course.skillName ? ` · ${course.skillName}` : ''}
+                    {course.difficulty ? ` · ${course.difficulty}` : ''}
+                    {course.durationHours ? ` · ${course.durationHours}h` : ''}
+                  </span>
+                  {recommendation && (
+                    <span className={styles.courseReason}>{recommendation.reason}</span>
+                  )}
+                </div>
+
+                <div className={styles.courseActions}>
+                  {/*
+                    The link to the course itself. rel="noreferrer" matters on a target=_blank
+                    link: without it the opened page gets a handle on this window.
+                  */}
+                  {course.externalUrl && (
+                    <a
+                      className={styles.courseLink}
+                      href={course.externalUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      Open course ↗
+                    </a>
+                  )}
+
+                  {enrollment ? (
+                    <span className={styles.courseEnrolled}>
+                      {enrollment.status === 'COMPLETED'
+                        ? 'Completed'
+                        : `Enrolled · ${Math.round(enrollment.progress)}%`}
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      loading={enroll.isPending && enroll.variables === course.id}
+                      onClick={() => enroll.mutate(course.id)}
+                    >
+                      Enrol
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Button
-                size="sm"
-                loading={enroll.isPending && enroll.variables === course.id}
-                onClick={() => enroll.mutate(course.id)}
-              >
-                Enrol
-              </Button>
-            </div>
-          ))}
+            )
+          })}
         </>
       )}
     </Card>
