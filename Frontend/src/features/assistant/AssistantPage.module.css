@@ -1,0 +1,171 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 74ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+/*
+ * The conversation is a column that grows downwards and scrolls within itself, so the composer
+ * stays put at the bottom of the card rather than being pushed off the page by a long thread.
+ */
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-height: 22rem;
+  max-height: min(58vh, 34rem);
+  overflow-y: auto;
+  padding-right: var(--s-2);
+}
+
+.turn { display: flex; }
+.turnUser { justify-content: flex-end; }
+.turnAssistant { justify-content: flex-start; }
+
+.bubble {
+  max-width: min(60ch, 88%);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bubbleUser {
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.bubbleAssistant {
+  background: var(--c-surface-sunken);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.bubbleError {
+  background: var(--c-critical-bg);
+  border-color: var(--c-critical-border);
+  color: var(--c-critical);
+}
+
+/* Marks a reply that came from the offline path, so a templated answer is never mistaken
+   for a model's. */
+.offlineTag {
+  display: inline-block;
+  margin-top: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+/* ── Suggested courses, attached beneath the reply that prompted them ───────── */
+
+.courses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--c-border);
+}
+
+.coursesLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.course {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+}
+
+.courseBody { min-width: 0; }
+.courseTitle { font-weight: var(--fw-semibold); font-size: var(--fs-base); }
+.courseMeta { margin-top: var(--s-1); font-size: var(--fs-xs); color: var(--c-text-secondary); }
+.courseScore { flex-shrink: 0; font-size: var(--fs-xs); color: var(--c-text-muted); white-space: nowrap; }
+.courseLink { color: var(--c-accent); text-decoration: none; }
+.courseLink:hover { text-decoration: underline; }
+
+/* ── Starter prompts and follow-ups ─────────────────────────────────────────── */
+
+.prompts { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+
+.prompt {
+  padding: var(--s-2) var(--s-3);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-accent);
+  background: var(--c-accent-subtle);
+  border: 1px solid var(--c-accent-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.prompt:hover:not(:disabled) { background: var(--c-surface-selected); }
+.prompt:disabled { opacity: 0.55; cursor: not-allowed; }
+.prompt:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ── Composer ───────────────────────────────────────────────────────────────── */
+
+.composer {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-end;
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.input {
+  flex: 1;
+  resize: none;
+  min-height: 2.75rem;
+  max-height: 9rem;
+  padding: var(--s-3);
+  font-family: inherit;
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.input:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--c-border-focus); }
+.input:disabled { background: var(--c-surface-sunken); color: var(--c-text-muted); }
+
+.composerHint { margin-top: var(--s-2); font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* The three dots shown while a reply is in flight. */
+.thinking { display: inline-flex; gap: 4px; align-items: center; }
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-text-muted);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2) { animation-delay: 0.15s; }
+.dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes pulse {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot { animation: none; opacity: 0.6; }
+}

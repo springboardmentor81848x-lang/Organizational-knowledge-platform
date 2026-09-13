@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Skills Intelligence — Infosys</title>
+    <script>
+      /*
+       * Applies the stored theme before the first paint, so a dark-mode user does not get a
+       * white flash while the bundle loads. Deliberately inline and blocking: a deferred
+       * module would run after the browser had already painted the default palette.
+       *
+       * The storage key and the three preference values are shared with src/lib/theme.ts,
+       * which owns this decision everywhere else. Keep them in step.
+       */
+      (function () {
+        try {
+          var stored = localStorage.getItem('osi.theme');
+          var preference =
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var resolved =
+            preference === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : preference;
+          document.documentElement.setAttribute('data-theme', resolved);
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

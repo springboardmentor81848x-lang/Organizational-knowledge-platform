@@ -2,10 +2,12 @@ package com.orgskills.intelligence.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orgskills.intelligence.dto.ld.CatalogImportResult;
 import com.orgskills.intelligence.dto.ld.ExternalCourseDTO;
 import com.orgskills.intelligence.dto.ld.ExternalCourseResponse;
 import com.orgskills.intelligence.entity.Course;
 import com.orgskills.intelligence.entity.Skill;
+import com.orgskills.intelligence.exception.ExternalProviderException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.provider.ExternalCourseProvider;
 import com.orgskills.intelligence.provider.ManualCatalogProvider;
@@ -67,8 +69,15 @@ public class ExternalCatalogService {
                 ));
     }
 
+    /**
+     * Fetches from a live provider and folds the result into the catalogue.
+     *
+     * <p>A provider that cannot be reached is reported as a failed import rather than as an
+     * import of nothing: the catalogue is unchanged either way, but only one of them is a fault
+     * the administrator needs to see.
+     */
     @Transactional
-    public List<ExternalCourseResponse> importFromProvider(String providerName, String skillKeyword) {
+    public CatalogImportResult importFromProvider(String providerName, String skillKeyword) {
         if (providerName == null || providerName.isBlank()) {
             throw new IllegalArgumentException("Provider name must be provided");
         }
@@ -78,52 +87,153 @@ public class ExternalCatalogService {
             throw new ResourceNotFoundException("External course provider not found: " + providerName);
         }
 
-        List<ExternalCourseDTO> dtos = provider.fetchCourses(skillKeyword);
-        log.info("Fetched {} courses from provider '{}' for keyword '{}'", dtos.size(), providerName, skillKeyword);
+        List<ExternalCourseDTO> dtos;
+        try {
+            dtos = provider.fetchCourses(skillKeyword);
+        } catch (ExternalProviderException ex) {
+            log.warn("Import from provider {} failed: {}", providerName, ex.getMessage());
+            return CatalogImportResult.builder()
+                    .source(provider.getProviderName())
+                    .fromProvider(true)
+                    .providerError(ex.getMessage())
+                    .rowsRead(0)
+                    .created(0)
+                    .updated(0)
+                    .skipped(0)
+                    .errors(List.of())
+                    .courses(List.of())
+                    .build();
+        }
+
+        log.info("Fetched {} courses from provider {} for keyword {}", dtos.size(), providerName, skillKeyword);
 
         Skill defaultSkill = resolveSkill(skillKeyword);
-        List<Course> savedCourses = processAndSaveDTOs(dtos, defaultSkill);
-
-        return savedCourses.stream().map(this::toResponse).toList();
+        Tally tally = new Tally(provider.getProviderName(), true);
+        for (ExternalCourseDTO dto : dtos) {
+            Skill skill = dto.getSkill() != null ? resolveSkill(dto.getSkill()) : defaultSkill;
+            absorb(tally, dto, skill, null);
+        }
+        return tally.toResult();
     }
 
+    /**
+     * Imports a curated CSV or JSON file, accounting for every row it contains.
+     *
+     * <p>A row that cannot become a course - no title, or a failure while saving it - is recorded
+     * with its line number and the reason, and the rest of the file still imports. Rows used to
+     * be dropped in silence, so a file of forty courses could import thirty-eight and still look
+     * entirely successful.
+     */
     @Transactional
-    public List<ExternalCourseResponse> importFromFile(MultipartFile file) {
+    public CatalogImportResult importFromFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
-        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
-        List<ExternalCourseDTO> dtos;
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload";
+        String lower = filename.toLowerCase();
+        Tally tally = new Tally(filename, false);
+        List<ParsedRow> rows;
 
         try {
-            if (filename.endsWith(".json")) {
-                dtos = parseJsonFile(file);
-            } else if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
-                dtos = parseCsvFile(file);
-            } else {
-                // Default try CSV parsing
-                dtos = parseCsvFile(file);
-            }
+            rows = lower.endsWith(".json") ? parseJsonFile(file) : parseCsvFile(file);
         } catch (IOException e) {
             log.error("Error reading import file: {}", e.getMessage(), e);
             throw new IllegalArgumentException("Failed to parse import file: " + e.getMessage());
         }
 
-        log.info("Parsed {} course entries from uploaded file: {}", dtos.size(), file.getOriginalFilename());
+        log.info("Parsed {} course entries from uploaded file: {}", rows.size(), filename);
 
-        if (manualCatalogProvider != null) {
-            manualCatalogProvider.addCuratedCourses(dtos);
+        List<ExternalCourseDTO> curated = new ArrayList<>();
+        for (ParsedRow row : rows) {
+            if (row.rejection() != null) {
+                tally.reject(row.line(), row.rawTitle(), row.rejection());
+                continue;
+            }
+            ExternalCourseDTO dto = row.dto();
+            Skill skill = resolveSkill(dto.getSkill() != null ? dto.getSkill() : "General");
+            absorb(tally, dto, skill, row.line());
+            curated.add(dto);
         }
 
-        List<Course> savedCourses = new ArrayList<>();
-        for (ExternalCourseDTO dto : dtos) {
-            Skill targetSkill = resolveSkill(dto.getSkill() != null ? dto.getSkill() : "General");
-            Course course = upsertSingleDto(dto, targetSkill);
-            savedCourses.add(course);
+        if (manualCatalogProvider != null && !curated.isEmpty()) {
+            manualCatalogProvider.addCuratedCourses(curated);
         }
 
-        return savedCourses.stream().map(this::toResponse).toList();
+        return tally.toResult();
+    }
+
+    /** Saves one course and records whether the catalogue gained it or merely refreshed it. */
+    private void absorb(Tally tally, ExternalCourseDTO dto, Skill skill, Integer line) {
+        try {
+            tally.accept(upsertSingleDto(dto, skill));
+        } catch (RuntimeException ex) {
+            // One bad row must not cost the administrator the other thirty-nine.
+            log.warn("A row could not be imported: {}", ex.getMessage());
+            tally.reject(line, dto.getTitle(), ex.getMessage());
+        }
+    }
+
+    /** Running counts for one import, so every row read is accounted for in the result. */
+    private final class Tally {
+        private final String source;
+        private final boolean fromProvider;
+        private final List<ExternalCourseResponse> courses = new ArrayList<>();
+        private final List<CatalogImportResult.ImportRowError> errors = new ArrayList<>();
+        private int created;
+        private int updated;
+
+        private Tally(String source, boolean fromProvider) {
+            this.source = source;
+            this.fromProvider = fromProvider;
+        }
+
+        private void accept(Upserted upserted) {
+            if (upserted.created()) {
+                created++;
+            } else {
+                updated++;
+            }
+            courses.add(toResponse(upserted.course()));
+        }
+
+        private void reject(Integer line, String title, String reason) {
+            errors.add(CatalogImportResult.ImportRowError.builder()
+                    .line(line)
+                    .title(title == null || title.isBlank() ? null : title)
+                    .reason(reason == null ? "Unknown error" : reason)
+                    .build());
+        }
+
+        private CatalogImportResult toResult() {
+            return CatalogImportResult.builder()
+                    .source(source)
+                    .fromProvider(fromProvider)
+                    .rowsRead(created + updated + errors.size())
+                    .created(created)
+                    .updated(updated)
+                    .skipped(errors.size())
+                    .errors(List.copyOf(errors))
+                    .courses(List.copyOf(courses))
+                    .build();
+        }
+    }
+
+    /** A course as saved, and whether it was new. */
+    private record Upserted(Course course, boolean created) {}
+
+    /**
+     * One row of an import file: either a course to save, or a rejection carrying the reason.
+     * Rejections keep their line number so the administrator can find the row in their own file.
+     */
+    private record ParsedRow(int line, ExternalCourseDTO dto, String rejection, String rawTitle) {
+        static ParsedRow of(int line, ExternalCourseDTO dto) {
+            return new ParsedRow(line, dto, null, dto.getTitle());
+        }
+
+        static ParsedRow rejected(int line, String rawTitle, String reason) {
+            return new ParsedRow(line, null, reason, rawTitle);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -185,16 +295,7 @@ public class ExternalCatalogService {
                 });
     }
 
-    private List<Course> processAndSaveDTOs(List<ExternalCourseDTO> dtos, Skill fallbackSkill) {
-        List<Course> saved = new ArrayList<>();
-        for (ExternalCourseDTO dto : dtos) {
-            Skill skill = dto.getSkill() != null ? resolveSkill(dto.getSkill()) : fallbackSkill;
-            saved.add(upsertSingleDto(dto, skill));
-        }
-        return saved;
-    }
-
-    private Course upsertSingleDto(ExternalCourseDTO dto, Skill skill) {
+    private Upserted upsertSingleDto(ExternalCourseDTO dto, Skill skill) {
         String title = dto.getTitle() != null ? dto.getTitle().trim() : "Untitled External Course";
         String provider = dto.getProvider() != null ? dto.getProvider().trim() : "External Provider";
         String url = dto.getUrl() != null ? dto.getUrl().trim() : null;
@@ -207,6 +308,7 @@ public class ExternalCatalogService {
             existingOpt = courseRepository.findByTitleIgnoreCaseAndProviderIgnoreCase(title, provider);
         }
 
+        boolean created = existingOpt.isEmpty();
         Course course;
         if (existingOpt.isPresent()) {
             course = existingOpt.get();
@@ -235,24 +337,34 @@ public class ExternalCatalogService {
         }
         course.setDurationHours(durationHours);
 
-        return courseRepository.save(course);
+        return new Upserted(courseRepository.save(course), created);
     }
 
     // ── Parsing File Uploads ─────────────────────────────────────────────────────
 
-    private List<ExternalCourseDTO> parseJsonFile(MultipartFile file) throws IOException {
+    private List<ParsedRow> parseJsonFile(MultipartFile file) throws IOException {
         JsonNode root = objectMapper.readTree(file.getInputStream());
-        List<ExternalCourseDTO> dtos = new ArrayList<>();
+        List<ParsedRow> rows = new ArrayList<>();
 
+        List<JsonNode> nodes = new ArrayList<>();
         if (root.isArray()) {
-            for (JsonNode node : root) {
-                dtos.add(jsonNodeToDTO(node));
-            }
+            root.forEach(nodes::add);
         } else if (root.isObject()) {
-            dtos.add(jsonNodeToDTO(root));
+            nodes.add(root);
         }
 
-        return dtos;
+        for (int i = 0; i < nodes.size(); i++) {
+            // JSON has no line numbers to quote, so entries are numbered by position.
+            int position = i + 1;
+            ExternalCourseDTO dto = jsonNodeToDTO(nodes.get(i));
+            if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+                rows.add(ParsedRow.rejected(position, null, "No title, so there is nothing to name the course"));
+            } else {
+                rows.add(ParsedRow.of(position, dto));
+            }
+        }
+
+        return rows;
     }
 
     private ExternalCourseDTO jsonNodeToDTO(JsonNode node) {
@@ -281,12 +393,12 @@ public class ExternalCatalogService {
                 .build();
     }
 
-    private List<ExternalCourseDTO> parseCsvFile(MultipartFile file) throws IOException {
-        List<ExternalCourseDTO> dtos = new ArrayList<>();
+    private List<ParsedRow> parseCsvFile(MultipartFile file) throws IOException {
+        List<ParsedRow> rows = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
-                return dtos;
+                return rows;
             }
 
             List<String> headers = parseCsvLine(headerLine);
@@ -296,8 +408,12 @@ public class ExternalCatalogService {
             }
 
             String line;
+            int lineNumber = 1;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
+                lineNumber++;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
                 List<String> tokens = parseCsvLine(line);
 
                 String title = getCsvVal(tokens, colMap, "title");
@@ -315,10 +431,15 @@ public class ExternalCatalogService {
                 }
 
                 if (title == null || title.isBlank()) {
+                    // Recorded rather than skipped in silence: a row that vanishes without a
+                    // word is how an import of forty comes back reporting thirty-eight and
+                    // still looks like it worked.
+                    rows.add(ParsedRow.rejected(lineNumber, null,
+                            "No title, so there is nothing to name the course"));
                     continue;
                 }
 
-                ExternalCourseDTO dto = ExternalCourseDTO.builder()
+                rows.add(ParsedRow.of(lineNumber, ExternalCourseDTO.builder()
                         .title(title)
                         .description(description)
                         .provider(provider != null ? provider : "External Provider")
@@ -326,12 +447,10 @@ public class ExternalCatalogService {
                         .difficulty(difficulty)
                         .durationLabel(durationLabel)
                         .url(url)
-                        .build();
-
-                dtos.add(dto);
+                        .build()));
             }
         }
-        return dtos;
+        return rows;
     }
 
     private String getCsvVal(List<String> tokens, Map<String, Integer> colMap, String colName) {

@@ -15,8 +15,8 @@ import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
-import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.KnowledgeSessionRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -76,7 +76,7 @@ public class KnowledgeSessionService {
         auditLogService.logEvent(actorId, host.getEmail(), "CREATE_SESSION", "KnowledgeSession",
                 saved.getId().toString(), "Created knowledge session: " + saved.getTitle());
 
-        return toResponse(saved, List.of(), true);
+        return toResponse(saved, List.of(), true, actorId);
     }
 
     @Transactional
@@ -119,7 +119,7 @@ public class KnowledgeSessionService {
         auditLogService.logEvent(actorId, actor.getEmail(), "UPDATE_SESSION", "KnowledgeSession",
                 saved.getId().toString(), "Updated knowledge session: " + saved.getTitle());
 
-        return toResponse(saved, registrations, true);
+        return toResponse(saved, registrations, true, actorId);
     }
 
     /**
@@ -155,7 +155,8 @@ public class KnowledgeSessionService {
      * is set, only SCHEDULED sessions in the future with a free seat are returned.
      */
     @Transactional(readOnly = true)
-    public List<SessionResponse> listSessions(SessionStatus status, Long mentorId, boolean availableOnly) {
+    public List<SessionResponse> listSessions(Long actorId, SessionStatus status, Long mentorId,
+                                              boolean availableOnly) {
         SessionStatus effectiveStatus = availableOnly ? SessionStatus.SCHEDULED : status;
         List<KnowledgeSession> sessions = findSessions(effectiveStatus, mentorId);
         if (sessions.isEmpty()) {
@@ -167,10 +168,16 @@ public class KnowledgeSessionService {
                 .stream()
                 .collect(Collectors.groupingBy(registration -> registration.getSession().getId()));
 
+        // Resolved once rather than per session: the host check below needs the actor, and every
+        // session in the page asks the same question about the same person.
+        User actor = actorId == null ? null : userRepository.findById(actorId).orElse(null);
+
         Instant now = Instant.now();
         return sessions.stream()
                 .map(session -> toResponse(session,
-                        registrationsBySession.getOrDefault(session.getId(), List.of()), false))
+                        registrationsBySession.getOrDefault(session.getId(), List.of()),
+                        actor != null && isHostOrAdmin(session, actor),
+                        actorId))
                 .filter(response -> !availableOnly
                         || (!response.isFull() && response.getSessionDate().isAfter(now)))
                 .toList();
@@ -182,7 +189,7 @@ public class KnowledgeSessionService {
         List<SessionRegistration> registrations = registrationRepository.findBySessionIdOrderByRegisteredAtAsc(sessionId);
         boolean canSeeRoster = actorId != null
                 && userRepository.findById(actorId).map(actor -> isHostOrAdmin(session, actor)).orElse(false);
-        return toResponse(session, registrations, canSeeRoster);
+        return toResponse(session, registrations, canSeeRoster, actorId);
     }
 
     // ── Registration ────────────────────────────────────────────────────────────
@@ -274,7 +281,7 @@ public class KnowledgeSessionService {
         auditLogService.logEvent(actorId, actor.getEmail(), "MARK_ATTENDANCE", "KnowledgeSession",
                 sessionId.toString(), "Recorded attendance for " + request.getEntries().size() + " employee(s)");
 
-        return toResponse(session, List.copyOf(byEmployee.values()), true);
+        return toResponse(session, List.copyOf(byEmployee.values()), true, actorId);
     }
 
     /** Records an attendee's rating and comments, which feed the session effectiveness score. */
@@ -330,7 +337,7 @@ public class KnowledgeSessionService {
                 .anyMatch(mentorship -> mentorship.getMentor().getId().equals(host.getId()));
 
         if (!hasSeniorSkill && !mentorsSomeone) {
-            throw new UnauthorizedException("Only mentors and L&D administrators can host knowledge-sharing "
+            throw new ForbiddenException("Only mentors and L&D administrators can host knowledge-sharing "
                     + "sessions. Reach " + MENTOR_PROFICIENCY_THRESHOLD + " in a skill or mentor an employee first.");
         }
     }
@@ -341,7 +348,7 @@ public class KnowledgeSessionService {
 
     private void requireHostOrAdmin(KnowledgeSession session, User actor) {
         if (!isHostOrAdmin(session, actor)) {
-            throw new UnauthorizedException("Only the hosting mentor or an L&D administrator can manage this session");
+            throw new ForbiddenException("Only the hosting mentor or an L&D administrator can manage this session");
         }
     }
 
@@ -366,8 +373,21 @@ public class KnowledgeSessionService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + userId));
     }
 
+    /**
+     * Maps a session for one particular viewer.
+     *
+     * <p>{@code includeRoster} decides whether the whole attendance list is the viewer's
+     * business — it is the host's and an administrator's, and nobody else's. What it must never
+     * decide is whether the viewer learns about <em>their own</em> registration: that is their
+     * own data, the client needs it to know whether to offer "Register" or "Cancel", and
+     * withholding it hid it from the person it belongs to.
+     *
+     * <p>The list is always a list. Sending {@code null} for "you may not see the roster" made
+     * every caller's field lie about its own type, and a client that trusted the type crashed
+     * on the first session it was given.
+     */
     private SessionResponse toResponse(KnowledgeSession session, List<SessionRegistration> registrations,
-                                       boolean includeRoster) {
+                                       boolean includeRoster, Long viewerId) {
         long registeredCount = registrations.size();
         long attendedCount = registrations.stream()
                 .filter(registration -> registration.getAttendanceStatus() == AttendanceStatus.ATTENDED)
@@ -395,9 +415,13 @@ public class KnowledgeSessionService {
                 .attendedCount(attendedCount)
                 .feedbackCount(ratings.size())
                 .averageFeedbackRating(averageRating)
-                .registrations(includeRoster
-                        ? registrations.stream().map(this::toRegistrationResponse).toList()
-                        : null)
+                .registrations((includeRoster
+                        ? registrations.stream()
+                        : registrations.stream().filter(registration -> viewerId != null
+                                && registration.getEmployee() != null
+                                && viewerId.equals(registration.getEmployee().getId())))
+                        .map(this::toRegistrationResponse)
+                        .toList())
                 .createdAt(session.getCreatedAt())
                 .updatedAt(session.getUpdatedAt())
                 .build();

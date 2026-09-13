@@ -328,10 +328,10 @@ class ReportsIntegrationTest {
         User outsider = userRepository.save(outsider());
 
         mockMvc.perform(authedGet("/api/reports/employee/" + outsider.getId(), manager.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(authedGet("/api/reports/training-effectiveness", employee.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // ── Document parsing ────────────────────────────────────────────────────────
@@ -503,6 +503,7 @@ class ReportsIntegrationTest {
 
     private Authentication principal(Long userId) {
         CustomPrincipal customPrincipal = new CustomPrincipal(userId, "reports@orgskills.com", "",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
         return new UsernamePasswordAuthenticationToken(customPrincipal, null, customPrincipal.getAuthorities());
     }

@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.orgskills.intelligence.dto.admin.AdminPasswordResetRequest;
 import com.orgskills.intelligence.dto.admin.AuditLogResponse;
+import com.orgskills.intelligence.dto.admin.EndpointPermissionResponse;
 import com.orgskills.intelligence.dto.admin.JobAssignmentRequest;
 import com.orgskills.intelligence.dto.admin.SystemHealthResponse;
 import com.orgskills.intelligence.dto.admin.UpdateRoleRequest;
@@ -24,6 +25,7 @@ import com.orgskills.intelligence.dto.role.RoleRequest;
 import com.orgskills.intelligence.dto.role.RoleResponse;
 import com.orgskills.intelligence.security.CustomPrincipal;
 import com.orgskills.intelligence.service.AdminService;
+import com.orgskills.intelligence.service.EndpointPermissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -49,6 +51,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final EndpointPermissionService endpointPermissionService;
 
     @GetMapping("/users")
     public ResponseEntity<List<UserProfileResponse>> getAllUsers(
@@ -124,6 +127,15 @@ public class AdminController {
             @Valid @RequestBody RoleRequest request) {
         Long actorId = getActorId(authentication);
         return ResponseEntity.ok(adminService.updateRole(actorId, id, request));
+    }
+
+    /**
+     * Which roles may reach which endpoints, read off the authorization rules the running
+     * application is enforcing rather than from a separate list that could disagree with them.
+     */
+    @GetMapping("/permissions")
+    public ResponseEntity<List<EndpointPermissionResponse>> getPermissions() {
+        return ResponseEntity.ok(endpointPermissionService.getEndpointPermissions());
     }
 
     @GetMapping("/audit-logs")

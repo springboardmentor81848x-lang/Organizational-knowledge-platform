@@ -1,0 +1,203 @@
+/*
+ * The locked-attempt screen and the request that lifts it.
+ *
+ * Everything here is deliberately quiet. Having used your one attempt is the normal state of an
+ * employee who has done what was asked of them, so it is reported in the same voice as the rest
+ * of the app rather than dressed as a failure.
+ */
+
+.locked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.lockedHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.lockedTitle {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.lockedText {
+  margin: var(--s-2) 0 0;
+  max-width: 62ch;
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
+
+.lockedMeta {
+  margin: var(--s-4) 0 0;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-muted);
+}
+
+/* The attempt count is the fact the whole screen turns on, so it is read as a figure. */
+.attemptBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 92px;
+  padding: var(--s-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-sunken);
+}
+
+.attemptCount {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--c-text);
+}
+
+.attemptLabel {
+  margin-top: var(--s-1);
+  font-size: var(--fs-xs);
+  text-align: center;
+  color: var(--c-text-muted);
+}
+
+/* ── The request as it stands ─────────────────────────────────────────────── */
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.summaryRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--s-3);
+  align-items: baseline;
+}
+
+@media (max-width: 560px) {
+  .summaryRow {
+    grid-template-columns: 1fr;
+    gap: var(--s-1);
+  }
+}
+
+.summaryLabel {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+}
+
+.summaryValue {
+  margin: 0;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+/* ── The form ─────────────────────────────────────────────────────────────── */
+
+.declined {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-border-strong);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--c-surface-sunken);
+}
+
+.declinedLabel {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.declinedNote {
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+}
+
+.field {
+  margin-top: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.counter {
+  display: block;
+  margin-top: var(--s-1);
+  text-align: right;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-muted);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+  flex-wrap: wrap;
+}
+
+.hint {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}

@@ -15,7 +15,7 @@ import com.orgskills.intelligence.entity.enums.AttendanceStatus;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.entity.enums.SessionStatus;
-import com.orgskills.intelligence.exception.UnauthorizedException;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.KnowledgeSessionRepository;
 import com.orgskills.intelligence.repository.MentorshipMatchRepository;
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -126,7 +127,7 @@ class KnowledgeSessionServiceTest {
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> knowledgeSessionService.createSession(2L, sessionRequest(2)))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Only mentors and L&D administrators");
 
         verify(sessionRepository, never()).save(any(KnowledgeSession.class));
@@ -170,7 +171,7 @@ class KnowledgeSessionServiceTest {
         when(sessionRepository.findById(100L)).thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> knowledgeSessionService.updateSession(3L, 100L, sessionRequest(5)))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -342,7 +343,7 @@ class KnowledgeSessionServiceTest {
                 .build();
 
         assertThatThrownBy(() -> knowledgeSessionService.markAttendance(3L, 100L, request))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     // ── Feedback and effectiveness ──────────────────────────────────────────────
@@ -409,7 +410,7 @@ class KnowledgeSessionServiceTest {
     }
 
     @Test
-    @DisplayName("getSession hides the attendee roster from employees who do not host the session")
+    @DisplayName("getSession hides other people's registrations from an employee who does not host it")
     void rosterHiddenFromNonHosts() {
         when(sessionRepository.findById(100L)).thenReturn(Optional.of(session));
         when(registrationRepository.findBySessionIdOrderByRegisteredAtAsc(100L))
@@ -418,8 +419,72 @@ class KnowledgeSessionServiceTest {
 
         SessionResponse response = knowledgeSessionService.getSession(3L, 100L);
 
-        assertThat(response.getRegistrations()).isNull();
+        // Cara is not the host and did not register, so she is told about nobody — but she is
+        // told with an empty list rather than a null one, which is a shape her client can read.
+        assertThat(response.getRegistrations()).isEmpty();
         assertThat(response.getAverageFeedbackRating()).isEqualTo(3.0);
+    }
+
+    @Test
+    @DisplayName("getSession still shows an employee their own registration when the roster is hidden")
+    void ownRegistrationVisibleToNonHost() {
+        when(sessionRepository.findById(100L)).thenReturn(Optional.of(session));
+        when(registrationRepository.findBySessionIdOrderByRegisteredAtAsc(100L))
+                .thenReturn(List.of(
+                        registration(1L, employee, AttendanceStatus.ATTENDED, 3),
+                        registration(2L, otherEmployee, AttendanceStatus.REGISTERED, null)));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(otherEmployee));
+
+        SessionResponse response = knowledgeSessionService.getSession(3L, 100L);
+
+        // Cara sees her own row and only her own: it is what tells her client to offer "Cancel"
+        // rather than "Register", and Alice's attendance is still none of her business.
+        assertThat(response.getRegistrations())
+                .extracting(SessionRegistrationResponse::getEmployeeId)
+                .containsExactly(3L);
+    }
+
+    @Test
+    @DisplayName("listSessions carries each viewer's own registration so the browse list can be rendered")
+    void listSessionsCarriesOwnRegistration() {
+        when(sessionRepository.findByStatusOrderBySessionDateAsc(SessionStatus.SCHEDULED))
+                .thenReturn(List.of(session));
+        when(registrationRepository.findBySessionIdIn(anyCollection()))
+                .thenReturn(List.of(
+                        registration(1L, employee, AttendanceStatus.REGISTERED, null),
+                        registration(2L, otherEmployee, AttendanceStatus.REGISTERED, null)));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(otherEmployee));
+
+        List<SessionResponse> result = knowledgeSessionService.listSessions(
+                3L, SessionStatus.SCHEDULED, null, false);
+
+        // Never null: the browse list is the one place every client reads this field, and a null
+        // here is what took the sessions page down.
+        assertThat(result).singleElement()
+                .extracting(SessionResponse::getRegistrations, list(SessionRegistrationResponse.class))
+                .extracting(SessionRegistrationResponse::getEmployeeId)
+                .containsExactly(3L);
+    }
+
+    @Test
+    @DisplayName("listSessions gives the hosting mentor the full roster")
+    void listSessionsGivesHostTheRoster() {
+        when(sessionRepository.findByStatusOrderBySessionDateAsc(SessionStatus.SCHEDULED))
+                .thenReturn(List.of(session));
+        when(registrationRepository.findBySessionIdIn(anyCollection()))
+                .thenReturn(List.of(
+                        registration(1L, employee, AttendanceStatus.REGISTERED, null),
+                        registration(2L, otherEmployee, AttendanceStatus.REGISTERED, null)));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(host));
+
+        List<SessionResponse> result = knowledgeSessionService.listSessions(
+                1L, SessionStatus.SCHEDULED, null, false);
+
+        // The host marks attendance from this list, so it has to carry everybody.
+        assertThat(result).singleElement()
+                .extracting(SessionResponse::getRegistrations, list(SessionRegistrationResponse.class))
+                .extracting(SessionRegistrationResponse::getEmployeeId)
+                .containsExactlyInAnyOrder(2L, 3L);
     }
 
     // ── Browsing ────────────────────────────────────────────────────────────────
@@ -441,7 +506,7 @@ class KnowledgeSessionServiceTest {
         when(registrationRepository.findBySessionIdIn(anyCollection()))
                 .thenReturn(List.of(registrationFor(full, 5L, employee)));
 
-        List<SessionResponse> result = knowledgeSessionService.listSessions(null, null, true);
+        List<SessionResponse> result = knowledgeSessionService.listSessions(null, null, null, true);
 
         assertThat(result).extracting(SessionResponse::getSessionId).containsExactly(100L);
     }

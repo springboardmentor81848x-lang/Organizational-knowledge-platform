@@ -1,0 +1,45 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 1px var(--s-2);
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Every tone pairs a colour with its own label, so the meaning never rests on hue alone. */
+.critical {
+  color: var(--c-critical);
+  background: var(--c-critical-bg);
+  border-color: var(--c-critical-border);
+}
+.high {
+  color: var(--c-high);
+  background: var(--c-high-bg);
+  border-color: var(--c-high-border);
+}
+.medium {
+  color: var(--c-medium);
+  background: var(--c-medium-bg);
+  border-color: var(--c-medium-border);
+}
+.low {
+  color: var(--c-low);
+  background: var(--c-low-bg);
+  border-color: var(--c-low-border);
+}
+.info {
+  color: var(--c-info);
+  background: var(--c-info-bg);
+  border-color: var(--c-info-border);
+}
+.neutral {
+  color: var(--c-text-secondary);
+  background: var(--c-surface-sunken);
+  border-color: var(--c-border);
+}

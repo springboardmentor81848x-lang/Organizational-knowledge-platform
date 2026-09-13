@@ -1,0 +1,106 @@
+import type { QueryClient } from '@tanstack/react-query'
+import { queryKeys } from './queryKeys'
+
+/**
+ * What each mutation makes stale.
+ *
+ * Every write in this platform cascades further than it looks. Changing a skill moves the gap
+ * analysis built on it, which regenerates recommendations and refreshes learning paths, which
+ * changes the employee's dashboard, their manager's team view and their department's totals.
+ * Invalidating only the thing that was edited leaves every one of those showing yesterday's
+ * answer until something else happens to refetch it.
+ *
+ * Collecting the fan-out here rather than at each call site means a mutation cannot quietly
+ * forget one, and the reason a key is in the list can be written down next to it.
+ */
+
+/**
+ * Anything derived from one employee's proficiency: their gaps, what is recommended to them,
+ * their learning paths and every dashboard that counts them.
+ *
+ * The last three are deliberately broad, and they are the ones that were missing. A manager's
+ * team heatmap, a department head's, and HR's organisation-wide view all contain this employee,
+ * and the client cannot know which manager or which department without asking. Dropping the
+ * whole branch is the only way to be sure somebody else's screen is not left showing a gap that
+ * has since closed — which it would do silently, rendering perfectly and simply being wrong.
+ *
+ * They are separate branches because they are answered by separate endpoints for separate
+ * audiences: ['analytics'] does not contain ['team'], and neither contains ['hr'].
+ */
+export function invalidateEmployeeSkillGraph(queryClient: QueryClient, employeeId: number): Promise<void> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.skills.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.gaps.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
+
+    // The other party's view. A manager's team dashboard and heatmap, a department head's, and
+    // the organisation-wide workforce screens are all built from this employee's gaps.
+    queryClient.invalidateQueries({ queryKey: queryKeys.team.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }),
+  ]).then(() => undefined)
+}
+
+/**
+ * Submitting an assessment sets off the widest cascade in the platform. The server, in one
+ * transaction, moves the employee proficiency, records the improvement, recalculates gaps,
+ * regenerates recommendations, refreshes learning paths and writes a notification.
+ *
+ * The client has to drop everything downstream of that or the screens keep showing the state
+ * from before the submission. This is the whole chain, including the assessment history itself
+ * and the achievements a completed assessment can earn.
+ */
+export function invalidateAfterAssessment(
+  queryClient: QueryClient,
+  employeeId: number,
+): Promise<void> {
+  return Promise.all([
+    invalidateEmployeeSkillGraph(queryClient, employeeId),
+    queryClient.invalidateQueries({ queryKey: queryKeys.assessments.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.achievements.all }),
+  ]).then(() => undefined)
+}
+
+/**
+ * Enrolling or moving a course along.
+ *
+ * Completing one does more on the server than it looks: it writes an achievement, advances the
+ * learning path step, and regenerates the employee's recommendations — a course just finished
+ * should stop being recommended. It also moves every count of training taken, which three
+ * different audiences read from three different endpoints: a manager's adoption figures, HR's
+ * training effectiveness, and the learning administrator's per-course participation.
+ *
+ * Proficiency and gaps are deliberately absent. Finishing a course does not move a skill level
+ * in this platform; only an assessment does. Invalidating the gap list here would send the
+ * screens to refetch numbers that cannot have changed.
+ */
+export function invalidateAfterEnrollmentChange(
+  queryClient: QueryClient,
+  employeeId: number,
+): Promise<void> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollments.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.learningPaths.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.forUser(employeeId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.achievements.all }),
+
+    // The other party's view: training adoption, effectiveness and course participation all
+    // count this enrolment.
+    queryClient.invalidateQueries({ queryKey: queryKeys.team.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all }),
+  ]).then(() => undefined)
+}
+
+/** A profile change alters how the person is labelled everywhere they appear. */
+export function invalidateProfile(queryClient: QueryClient, employeeId: number): Promise<void> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.session }),
+    queryClient.invalidateQueries({ queryKey: ['profile'] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.analytics.employee(employeeId) }),
+  ]).then(() => undefined)
+}

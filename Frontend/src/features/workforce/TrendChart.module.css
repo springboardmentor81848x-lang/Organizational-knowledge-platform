@@ -1,0 +1,98 @@
+.figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.caption {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* Sized to include the x-axis band, so the card never grows a nested scrollbar. */
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* Hairline, solid, one shade off the surface. Never dashed: a dashed rule reads as a
+   threshold or a projection when it is only a grid. */
+.grid {
+  stroke: var(--c-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.axisTickMark {
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The ring is the surface colour, so overlapping markers separate without a drawn border. */
+.marker {
+  stroke: var(--c-surface);
+  stroke-width: 2;
+  transition: r var(--transition-fast);
+}
+
+.markerActive {
+  stroke-width: 2.5;
+}
+
+.crosshair {
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* Values and labels wear text tokens, never the series colour. */
+.tick {
+  fill: var(--c-text-muted);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.endLabel {
+  fill: var(--c-text);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-mono);
+}
+
+.hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.hit:focus-visible {
+  outline: none;
+  fill: var(--c-accent-subtle);
+  fill-opacity: 0.6;
+}
+
+.readout {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  min-height: 1.2em;
+}
+
+.readoutIdle {
+  color: var(--c-text-muted);
+}

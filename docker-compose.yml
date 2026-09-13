@@ -1,0 +1,58 @@
+# Local infrastructure for the backend: the PostgreSQL database of record and the Redis cache.
+#
+#   docker compose up -d
+#
+# The defaults here match the ones baked into src/main/resources/application.yml, so the
+# application starts against this stack with no environment variables set at all.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: org-skills-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-org_skills}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Hibernate creates the schema on the first connection, so the application must not be
+    # allowed to start against a Postgres that is still initialising.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-org_skills}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - org-skills-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: org-skills-redis
+    # An eviction policy matters here because everything Redis holds for this application is a
+    # cache: under memory pressure the least recently used entries should be dropped and
+    # recomputed from Postgres, which is far better than Redis refusing writes.
+    command: >
+      redis-server
+      --appendonly no
+      --maxmemory ${REDIS_MAXMEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - org-skills-net
+
+volumes:
+  pgdata:
+
+networks:
+  org-skills-net:
+    driver: bridge

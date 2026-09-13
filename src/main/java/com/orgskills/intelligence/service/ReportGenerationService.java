@@ -107,9 +107,12 @@ public class ReportGenerationService {
                 row.createCell(3).setCellValue(item.getEnrolledCount());
                 row.createCell(4).setCellValue(item.getCompletedCount());
                 row.createCell(5).setCellValue(item.getCompletionRatePercent());
-                row.createCell(6).setCellValue(item.getAvgPreCourseSkillLevel());
-                row.createCell(7).setCellValue(item.getAvgPostCourseSkillLevel());
-                row.createCell(8).setCellValue(item.getAvgSkillImprovement());
+                // A course nobody has finished and been reassessed on has no before/after to
+                // report. The cell is left blank rather than filled with a zero, which would
+                // read as "no improvement" rather than "not measured".
+                setIfMeasured(row.createCell(6), item.getAvgPreCourseSkillLevel());
+                setIfMeasured(row.createCell(7), item.getAvgPostCourseSkillLevel());
+                setIfMeasured(row.createCell(8), item.getAvgSkillImprovement());
             }
 
             for (int i = 0; i < headers.length; i++) {
@@ -228,11 +231,11 @@ public class ReportGenerationService {
             for (TrainingEffectivenessResponse item : data) {
                 table.addCell(item.getCourseTitle());
                 table.addCell(item.getProvider());
-                table.addCell(item.getSkillName());
+                table.addCell(item.getSkillName() != null ? item.getSkillName() : "No skill mapped");
                 table.addCell(String.valueOf(item.getEnrolledCount()));
                 table.addCell(String.valueOf(item.getCompletedCount()));
                 table.addCell(item.getCompletionRatePercent() + "%");
-                table.addCell("+" + item.getAvgSkillImprovement());
+                table.addCell(improvementText(item.getAvgSkillImprovement()));
             }
 
             document.add(table);
@@ -282,6 +285,21 @@ public class ReportGenerationService {
             log.error("Failed to generate Workforce Planning PDF: {}", ex.getMessage(), ex);
             throw new RuntimeException("PDF generation failed", ex);
         }
+    }
+
+    /** Leaves the cell empty when the figure has not been measured, rather than writing a zero. */
+    private void setIfMeasured(Cell cell, Double value) {
+        if (value != null) {
+            cell.setCellValue(value);
+        }
+    }
+
+    /** Says so in words when a course has no measured movement yet. */
+    private String improvementText(Double improvement) {
+        if (improvement == null) {
+            return "Not yet measured";
+        }
+        return (improvement > 0 ? "+" : "") + improvement;
     }
 
     private CellStyle createHeaderStyle(Workbook workbook) {

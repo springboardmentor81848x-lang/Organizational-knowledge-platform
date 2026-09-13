@@ -365,9 +365,9 @@ class NotificationTriggersIntegrationTest {
                 member("notify.outsider@orgskills.com", "Notify Outsider", Role.EMPLOYEE, manager));
 
         mockMvc.perform(authed(get("/api/notifications?userId=" + employee.getId()), outsider.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
         mockMvc.perform(authed(put("/api/notifications/" + target.getId() + "/read"), outsider.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -435,6 +435,7 @@ class NotificationTriggersIntegrationTest {
 
     private Authentication principal(Long userId) {
         CustomPrincipal customPrincipal = new CustomPrincipal(userId, "notify@orgskills.com", "",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
         return new UsernamePasswordAuthenticationToken(customPrincipal, null, customPrincipal.getAuthorities());
     }

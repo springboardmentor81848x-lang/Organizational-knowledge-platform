@@ -1,0 +1,235 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 74ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.pathHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+}
+
+.pathMeta { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.progressTrack {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--transition-base);
+}
+
+/* Steps are a numbered ladder: the order is the teaching order, so it is shown as one. */
+.steps { display: flex; flex-direction: column; margin-top: var(--s-4); }
+
+.step {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.step:last-child { border-bottom: none; }
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border-strong);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-secondary);
+}
+
+.stepNumberDone {
+  background: var(--c-low-bg);
+  border-color: var(--c-low-border);
+  color: var(--c-low);
+}
+
+.stepBody { flex: 1; min-width: 0; }
+
+.stepHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.stepTitle { font-size: var(--fs-md); font-weight: var(--fw-medium); }
+.stepMeta { margin-top: var(--s-1); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.stepDesc { margin-top: var(--s-1); font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+.stepActions { margin-top: var(--s-2); display: flex; gap: var(--s-2); align-items: center; }
+
+/* ── Enrolments ────────────────────────────────────────────────────────── */
+
+.enrollment {
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.enrollment:first-child { padding-top: 0; }
+.enrollment:last-child { padding-bottom: 0; border-bottom: none; }
+
+.enrollHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-2);
+}
+
+.enrollTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.enrollMeta { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.overall {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+
+.overallValue {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+  text-align: right;
+}
+
+/* The per-milestone breakdown: an aggregate percentage cannot say which topic is unfinished. */
+.milestones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--c-surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.milestone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 100px;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.milestoneName {
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.milestoneTrack {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+}
+
+.milestoneFill { height: 100%; background: var(--c-accent); }
+
+.enrollActions {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.courseRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.courseRow:last-child { border-bottom: none; }
+.courseMeta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.courseTitle { font-weight: var(--fw-medium); }
+.courseSub { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+.note { font-size: var(--fs-base); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+}
+
+.scoreBar {
+  flex: 1;
+  max-width: 160px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  overflow: hidden;
+}
+
+.scoreFill { height: 100%; background: var(--c-accent); }
+.scoreValue { font-size: var(--fs-xs); color: var(--c-text-secondary); font-variant-numeric: tabular-nums; }
+.breakdown { margin-top: var(--s-1); font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-normal); }
+
+/* The severity badge beside a recommended course's title. */
+.courseTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.courseBadge { display: inline-flex; }
+
+/* The server's sentence explaining why this course was chosen for this person. */
+.courseReason {
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--c-text-muted);
+  max-width: 70ch;
+  margin-top: 2px;
+}
+
+.courseActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-shrink: 0;
+}
+
+.courseLink {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-info);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.courseLink:hover { text-decoration: underline; }
+
+/* Replaces the Enrol button once the person is already taking the course. */
+.courseEnrolled {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}

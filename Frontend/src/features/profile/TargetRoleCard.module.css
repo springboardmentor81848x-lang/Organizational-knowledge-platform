@@ -1,0 +1,92 @@
+/*
+ * The target-role card.
+ *
+ * When none is set the card is tinted, because that is not a neutral state: nothing downstream
+ * of it works properly, and it is the one thing on this screen the person actually has to do.
+ */
+
+.unset {
+  border-color: var(--c-medium-border);
+  background: var(--c-medium-bg);
+}
+
+.current {
+  margin: 0;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+}
+
+.missing {
+  margin: 0;
+  max-width: 64ch;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
+
+.field {
+  margin-top: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.select {
+  width: 100%;
+  max-width: 460px;
+  height: 36px;
+  padding: 0 var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--fs-base);
+  color: var(--c-text);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.hint {
+  margin: var(--s-2) 0 0;
+  max-width: 56ch;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--c-text-muted);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+  flex-wrap: wrap;
+}
+
+.actions .hint {
+  margin: 0;
+}

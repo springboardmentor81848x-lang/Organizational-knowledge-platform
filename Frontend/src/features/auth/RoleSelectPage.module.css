@@ -1,0 +1,105 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-8) var(--s-6);
+  background: var(--c-canvas);
+}
+
+.inner {
+  width: 100%;
+  max-width: 940px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-8);
+}
+
+.brandGlyph {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.brandName {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.heading {
+  font-size: var(--fs-3xl);
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  margin-top: var(--s-2);
+  max-width: 62ch;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: var(--s-4);
+  margin-top: var(--s-8);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  text-align: left;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.tile:hover {
+  border-color: var(--c-accent-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Each role gets its own accent stripe so the six tiles are told apart at a glance
+   rather than by reading every label. */
+.stripe {
+  width: 30px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  margin-bottom: var(--s-1);
+}
+
+.tileName {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.tileDesc {
+  font-size: var(--fs-base);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.footnote {
+  margin-top: var(--s-8);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  max-width: 70ch;
+}

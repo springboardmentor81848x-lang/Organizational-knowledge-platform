@@ -9,3 +9,8 @@ frontend/node_modules/
 .env
 .env.*
 !.env.example
+
+# The Firebase service-account key. A private credential — it must never be committed.
+# The path is configurable via FIREBASE_SERVICE_ACCOUNT_PATH; the default filename is matched
+# here, and the glob covers a key downloaded under any other name.
+*firebase-adminsdk*.json

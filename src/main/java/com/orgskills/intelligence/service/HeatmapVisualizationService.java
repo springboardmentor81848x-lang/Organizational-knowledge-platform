@@ -1,5 +1,6 @@
 package com.orgskills.intelligence.service;
 
+import com.orgskills.intelligence.config.CacheNames;
 import com.orgskills.intelligence.dto.heatmap.DepartmentHeatmapMatrixResponse;
 import com.orgskills.intelligence.dto.heatmap.DepartmentHeatmapMatrixResponse.DepartmentSkillCell;
 import com.orgskills.intelligence.dto.heatmap.HeatmapMatrixCellResponse;
@@ -18,10 +19,15 @@ import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.RoleCompetencyRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import com.orgskills.intelligence.repository.UserSkillRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -52,34 +58,74 @@ public class HeatmapVisualizationService {
     private final RoleCompetencyRepository roleCompetencyRepository;
     private final GapAnalysisRepository gapAnalysisRepository;
     private final GapAnalysisService gapAnalysisService;
+    private final PlatformTransactionManager transactionManager;
+
+    /**
+     * Runs the cold-start gap seeding below in a transaction of its own.
+     *
+     * <p>See {@link #getDepartmentHeatmapMatrix()} for why joining the caller's transaction is
+     * not an option.
+     */
+    private TransactionTemplate freshTransaction;
+
+    @PostConstruct
+    void initFreshTransactionTemplate() {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.freshTransaction = template;
+    }
 
     /**
      * Build organization or department-scoped User x Skill Heatmap Matrix
+     *
+     * <p>Cached: this walks every user, every one of their skills and every role competency to
+     * assemble one cell per pair, so it is the most expensive read in the application and its
+     * result depends on nothing about the caller. The controller's {@code @PreAuthorize} runs
+     * before this method either way, so a cache hit cannot bypass the authorisation check.
+     *
+     * <p>The key mirrors how the two filters are actually applied - blank is treated as absent,
+     * and both lookups ignore case - so that equivalent requests share one entry.
      */
+    @Cacheable(value = CacheNames.ANALYTICS_TEAM_GAP_HEATMAP,
+            key = "((#department == null or #department.isBlank()) ? 'all' : #department.trim().toLowerCase())"
+                    + " + '|' + ((#category == null or #category.isBlank()) ? 'all' : #category.trim().toLowerCase())")
     @Transactional(readOnly = true)
     public HeatmapMatrixResponse getHeatmapMatrix(String department, String category) {
         List<User> users = department != null && !department.isBlank()
                 ? userRepository.findByDepartmentIgnoreCase(department.trim())
                 : userRepository.findAll();
 
-        if (users.isEmpty()) {
-            return buildEmptyHeatmapResponse(department != null ? "DEPARTMENT" : "ORG", department);
+        return buildMatrixForUsers(
+                users,
+                department != null && !department.isBlank() ? "DEPARTMENT" : "ORG",
+                department,
+                category);
+    }
+
+    /**
+     * Builds the person-by-skill matrix for an explicit set of people.
+     *
+     * <p>Exposed so each audience can be served from the set it is entitled to: a manager passes
+     * their direct reports, a department head passes their department. Filtering one shared
+     * organisation-wide call by a label would leave the whole matrix on the wire regardless of
+     * who asked.
+     *
+     * <p>This reads stored analysis and never triggers a calculation. It previously looped over
+     * every user calling gap analysis when no rows existed, catching failures as it went — but a
+     * user with no competency profile makes that call throw, and the failed inner transaction
+     * had already marked the shared one rollback-only, so the whole request died with
+     * "Transaction silently rolled back" no matter how carefully the exception was caught.
+     * Recalculating is a write, and a read should not be doing it.
+     */
+    @Transactional(readOnly = true)
+    public HeatmapMatrixResponse buildMatrixForUsers(List<User> users, String scope, String scopeName,
+                                                     String category) {
+        if (users == null || users.isEmpty()) {
+            return buildEmptyHeatmapResponse(scope, scopeName);
         }
 
         List<Long> userIds = users.stream().map(User::getId).toList();
         List<GapAnalysis> storedGaps = gapAnalysisRepository.findByUserIdIn(userIds);
-
-        // If no stored gaps exist yet, trigger calculation for these users
-        if (storedGaps.isEmpty()) {
-            for (User user : users) {
-                try {
-                    gapAnalysisService.calculateAndFetchUserGaps(user.getId());
-                } catch (Exception e) {
-                    log.warn("Could not calculate gaps for user {}: {}", user.getId(), e.getMessage());
-                }
-            }
-            storedGaps = gapAnalysisRepository.findByUserIdIn(userIds);
-        }
 
         // Apply skill category filter if requested
         if (category != null && !category.isBlank()) {
@@ -121,7 +167,11 @@ public class HeatmapVisualizationService {
             double currentScore = gap.getCurrentScore();
             double targetScore = gap.getTargetScore();
             double gapScore = gap.getGapScore();
-            boolean isMissing = currentScore == 0.0;
+            // UNAWARE is a level somebody holds and scores zero, so a zero score is not the
+            // same as having no record of the skill. The analysis says which it is.
+            boolean isMissing = gap.getMissingSkill() != null
+                    ? gap.getMissingSkill()
+                    : currentScore == 0.0;
 
             String skillLevel = determineSkillLevel(currentScore, gapScore);
             String colorCode = getColorCodeForLevel(skillLevel);
@@ -157,8 +207,8 @@ public class HeatmapVisualizationService {
                 .toList();
 
         return HeatmapMatrixResponse.builder()
-                .scope(department != null ? "DEPARTMENT" : "ORG")
-                .scopeName(department != null ? department : "All Departments")
+                .scope(scope)
+                .scopeName(scopeName != null && !scopeName.isBlank() ? scopeName : "All Departments")
                 .totalUsers(userHeaders.size())
                 .totalSkills(skillHeaders.size())
                 .skills(skillHeaders)
@@ -172,7 +222,11 @@ public class HeatmapVisualizationService {
 
     /**
      * Build Department x Skill Heatmap Matrix
+     *
+     * <p>Cached under a single fixed key: the method takes no arguments, and naming the key
+     * explicitly keeps the Redis key readable rather than the default {@code SimpleKey []}.
      */
+    @Cacheable(value = CacheNames.ANALYTICS_DEPARTMENT_COVERAGE, key = "'matrix'")
     @Transactional(readOnly = true)
     public DepartmentHeatmapMatrixResponse getDepartmentHeatmapMatrix() {
         List<GapAnalysis> allGaps = gapAnalysisRepository.findAll();
@@ -180,8 +234,24 @@ public class HeatmapVisualizationService {
             List<User> users = userRepository.findAll();
             for (User user : users) {
                 try {
-                    gapAnalysisService.calculateAndFetchUserGaps(user.getId());
-                } catch (Exception ignored) {}
+                    // Each person is seeded in a transaction of its own, and neither half of
+                    // that is optional under PostgreSQL.
+                    //
+                    // A REQUIRED call would join this method's read-only transaction, and
+                    // read-only is not advisory on PostgreSQL as it was on H2: it issues SET
+                    // TRANSACTION READ ONLY, so the first insert fails with SQLSTATE 25006 and
+                    // leaves the transaction aborted. The catch below then swallows that error
+                    // while every later statement - including the re-read on the next line -
+                    // fails with 25P02, turning the whole endpoint into a 500.
+                    //
+                    // Running per user rather than seeding everybody in one transaction also
+                    // keeps one person's missing competency profile from discarding the gaps
+                    // already calculated for everybody else.
+                    freshTransaction.executeWithoutResult(
+                            status -> gapAnalysisService.calculateAndFetchUserGaps(user.getId()));
+                } catch (Exception ignored) {
+                    // Expected for anyone whose job title has no competency profile.
+                }
             }
             allGaps = gapAnalysisRepository.findAll();
         }
@@ -334,7 +404,13 @@ public class HeatmapVisualizationService {
 
     /**
      * Organization-wide Summary Metrics for dashboard widgets
+     *
+     * <p>Cached in its own right rather than relying on the matrix cache underneath it. The call
+     * to {@code getHeatmapMatrix} below is a plain self-invocation, so it does not pass through
+     * the caching proxy and would rebuild the entire matrix on every request no matter how warm
+     * that cache is.
      */
+    @Cacheable(value = CacheNames.ANALYTICS_ORGANIZATION_GAP, key = "'summary'")
     @Transactional(readOnly = true)
     public Map<String, Object> getHeatmapSummaryMetrics() {
         HeatmapMatrixResponse matrix = getHeatmapMatrix(null, null);

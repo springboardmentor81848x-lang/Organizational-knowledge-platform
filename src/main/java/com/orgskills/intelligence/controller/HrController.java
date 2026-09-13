@@ -1,6 +1,7 @@
 package com.orgskills.intelligence.controller;
 
 import com.orgskills.intelligence.dto.auth.UserProfileResponse;
+import com.orgskills.intelligence.dto.heatmap.HeatmapMatrixResponse;
 import com.orgskills.intelligence.dto.hr.GapTrendPoint;
 import com.orgskills.intelligence.dto.hr.SkillInventoryResponse;
 import com.orgskills.intelligence.dto.hr.TrainingEffectivenessResponse;
@@ -38,6 +39,18 @@ public class HrController {
     public ResponseEntity<GapHeatmapResponse> getOrgGapIntelligence(
             @RequestParam(required = false) String department) {
         return ResponseEntity.ok(hrIntelligenceService.getOrgGapIntelligence(department));
+    }
+
+    /**
+     * The person-by-skill matrix for the whole organisation, or for one department within it.
+     * The same shape a manager gets for their reports, so the same component renders both and
+     * the difference between the two views is only ever the set of people in them.
+     */
+    @GetMapping("/gap-matrix")
+    public ResponseEntity<HeatmapMatrixResponse> getOrgGapMatrix(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String category) {
+        return ResponseEntity.ok(hrIntelligenceService.getOrgGapMatrix(department, category));
     }
 
     @GetMapping("/skill-inventory")

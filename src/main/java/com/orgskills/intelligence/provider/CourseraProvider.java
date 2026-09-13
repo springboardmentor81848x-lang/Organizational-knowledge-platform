@@ -3,6 +3,7 @@ package com.orgskills.intelligence.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orgskills.intelligence.dto.ld.ExternalCourseDTO;
+import com.orgskills.intelligence.exception.ExternalProviderException;
 import com.orgskills.intelligence.util.DifficultyNormalizer;
 import com.orgskills.intelligence.util.DurationNormalizer;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +54,10 @@ public class CourseraProvider implements ExternalCourseProvider {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                log.warn("Coursera API request returned HTTP status code: {}", response.statusCode());
-                return dtos;
+                // Reported rather than swallowed into an empty list: "the provider is
+                // unreachable" and "the provider has nothing for you" are different answers.
+                throw new ExternalProviderException(
+                        "Coursera answered with HTTP " + response.statusCode());
             }
 
             JsonNode root = objectMapper.readTree(response.body());
@@ -103,6 +106,9 @@ public class CourseraProvider implements ExternalCourseProvider {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+            throw new ExternalProviderException(
+                    "Could not reach Coursera: " + e.getClass().getSimpleName()
+                            + (e.getMessage() != null ? " - " + e.getMessage() : ""), e);
         }
 
         return dtos;

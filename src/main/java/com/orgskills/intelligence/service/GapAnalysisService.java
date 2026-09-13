@@ -6,6 +6,7 @@ import com.orgskills.intelligence.dto.gap.OrgGapMetricsResponse;
 import com.orgskills.intelligence.dto.gap.UserGapSummaryResponse;
 import com.orgskills.intelligence.entity.GapAnalysis;
 import com.orgskills.intelligence.entity.RoleCompetency;
+import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.UserSkill;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
@@ -16,19 +17,37 @@ import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.RoleCompetencyRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import com.orgskills.intelligence.repository.UserSkillRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class GapAnalysisService {
+
+    /**
+     * What the platform expects of a skill somebody claims that no role profile mentions.
+     *
+     * <p>INTERMEDIATE reads as "can work in this unsupervised", which is the weakest thing that
+     * putting a skill on your own profile can reasonably be taken to mean. It is a fallback, not
+     * a policy: as soon as any role defines a requirement for the skill, that requirement is
+     * used instead - see gapsForSkillsOutsideTheProfile.
+     */
+    private static final ProficiencyLevel DEFAULT_BENCHMARK_FOR_UNPROFILED_SKILL =
+            ProficiencyLevel.INTERMEDIATE;
 
     private final UserRepository userRepository;
     private final UserSkillRepository userSkillRepository;
@@ -37,6 +56,26 @@ public class GapAnalysisService {
     private final NotificationService notificationService;
     private final RecommendationService recommendationService;
     private final LearningPathService learningPathService;
+    private final AnalyticsCacheInvalidator analyticsCacheInvalidator;
+    private final PlatformTransactionManager transactionManager;
+
+    /**
+     * Runs the cold-start gap calculation in a writable transaction of its own.
+     *
+     * <p>{@link #getStoredUserGaps} calculates gaps when a person has none yet, and it is called
+     * from read-only callers - the personal heatmap among them. On H2 that was harmless, because
+     * read-only was advisory there. PostgreSQL issues SET TRANSACTION READ ONLY, so the insert
+     * fails with SQLSTATE 25006 and takes the whole request with it. Used only when the current
+     * transaction really is read-only; see the call site for why it must not be used otherwise.
+     */
+    private TransactionTemplate writableTransaction;
+
+    @PostConstruct
+    void initWritableTransaction() {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.writableTransaction = template;
+    }
 
     public GapAnalysisService(
             UserRepository userRepository,
@@ -45,7 +84,9 @@ public class GapAnalysisService {
             GapAnalysisRepository gapAnalysisRepository,
             NotificationService notificationService,
             RecommendationService recommendationService,
-            @Lazy LearningPathService learningPathService
+            @Lazy LearningPathService learningPathService,
+            AnalyticsCacheInvalidator analyticsCacheInvalidator,
+            PlatformTransactionManager transactionManager
     ) {
         this.userRepository = userRepository;
         this.userSkillRepository = userSkillRepository;
@@ -54,6 +95,8 @@ public class GapAnalysisService {
         this.notificationService = notificationService;
         this.recommendationService = recommendationService;
         this.learningPathService = learningPathService;
+        this.analyticsCacheInvalidator = analyticsCacheInvalidator;
+        this.transactionManager = transactionManager;
     }
 
     @Transactional
@@ -61,19 +104,25 @@ public class GapAnalysisService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + userId));
 
-        List<RoleCompetency> requiredCompetencies = roleCompetencyRepository
-                .findByJobTitleIgnoreCaseAndDepartmentIgnoreCase(user.getJobTitle(), user.getDepartment());
-        if (requiredCompetencies.isEmpty()) {
-            throw new ValidationException("No role competency profile found for " + user.getJobTitle() + " in " + user.getDepartment());
-        }
-
         Map<Long, UserSkill> userSkillBySkillId = userSkillRepository.findByUserId(userId).stream()
                 .collect(Collectors.toMap(us -> us.getSkill().getId(), Function.identity(), (a, b) -> a));
 
+        List<RoleCompetency> requiredCompetencies = resolveMeasuringProfile(user, !userSkillBySkillId.isEmpty());
+
         gapAnalysisRepository.deleteByUserId(userId);
 
-        List<GapAnalysis> savedGaps = requiredCompetencies.stream()
-                .map(rc -> buildGap(user, rc, userSkillBySkillId.get(rc.getSkill().getId())))
+        List<GapAnalysis> gaps = new ArrayList<>(requiredCompetencies.stream()
+                .map(rc -> buildGap(user, rc.getSkill(),
+                        rc.getRequiredProficiencyLevel().getScore(),
+                        userSkillBySkillId.get(rc.getSkill().getId())))
+                .toList());
+
+        // A skill the employee put on their own profile that their role does not ask for still
+        // belongs on their heatmap - otherwise adding a skill would visibly do nothing, and the
+        // assessment they then take for it would move a number nobody can see.
+        gaps.addAll(gapsForSkillsOutsideTheProfile(user, requiredCompetencies, userSkillBySkillId));
+
+        List<GapAnalysis> savedGaps = gaps.stream()
                 .sorted(Comparator.comparing(GapAnalysis::getGapScore).reversed())
                 .map(gapAnalysisRepository::save)
                 .toList();
@@ -87,7 +136,105 @@ public class GapAnalysisService {
             // Ignore optional hook failure
         }
 
+        // Every cached analytics view is built from the gap rows this method just rewrote, so
+        // they are now wrong. This is the one place gaps are recalculated - the skill, assessment
+        // and learning path flows all arrive here - so invalidating from this single point covers
+        // all of them, and does so after the write rather than before it.
+        analyticsCacheInvalidator.invalidateAfterCommit();
+
         return savedGaps.stream().map(this::toResponse).toList();
+    }
+
+    /**
+     * The competency profile a person's gaps are measured against.
+     *
+     * <p>The target role wins when one is set, and that is the point of asking for it at
+     * sign-up. Their assessment is built from the target role's skills, so measuring the
+     * resulting gaps against their *current* job title would compare two different sets of
+     * skills: an employee could answer every question on their target role and still see gaps
+     * for skills the quiz never asked about, while the shortfalls they had just demonstrated
+     * would not appear at all.
+     *
+     * <p>The current job title remains the fallback, which keeps every account that predates
+     * target roles - and every manager, HR and administrator account, which have none - working
+     * exactly as before.
+     *
+     * @param toleratesEmpty when true, an account with no profile at all gets an empty list
+     *                       rather than a refusal. That is the case for somebody who has skills
+     *                       of their own: those are worth measuring and showing even though
+     *                       nobody has defined what their role requires, and refusing outright
+     *                       would mean adding a skill failed for exactly those accounts.
+     */
+    private List<RoleCompetency> resolveMeasuringProfile(User user, boolean toleratesEmpty) {
+        String targetTitle = user.getTargetJobTitle();
+        String targetDepartment = user.getTargetDepartment();
+
+        if (targetTitle != null && !targetTitle.isBlank()
+                && targetDepartment != null && !targetDepartment.isBlank()) {
+            List<RoleCompetency> target = roleCompetencyRepository
+                    .findByJobTitleIgnoreCaseAndDepartmentIgnoreCase(targetTitle, targetDepartment);
+            if (!target.isEmpty()) {
+                return target;
+            }
+            // A target naming a role with no profile falls through rather than failing: the
+            // person still has a current role that can be measured, and refusing here would
+            // break gap analysis for them entirely over a stale target.
+        }
+
+        List<RoleCompetency> current = roleCompetencyRepository
+                .findByJobTitleIgnoreCaseAndDepartmentIgnoreCase(user.getJobTitle(), user.getDepartment());
+        if (current.isEmpty()) {
+            if (toleratesEmpty) {
+                return List.of();
+            }
+            throw new ValidationException("No role competency profile found for "
+                    + user.getJobTitle() + " in " + user.getDepartment());
+        }
+        return current;
+    }
+
+    /**
+     * Gap rows for skills an employee holds that their measuring profile says nothing about.
+     *
+     * <h2>What such a skill is measured against</h2>
+     * Nothing in the employee's own role requires it, so there is no requirement to read off.
+     * Rather than invent a number, the benchmark is the highest level <em>any</em> role in the
+     * organisation asks of that skill: it is a real expectation, already agreed and written
+     * down, and it moves on its own as the competency profiles are edited. A skill no profile
+     * mentions at all falls back to {@link #DEFAULT_BENCHMARK_FOR_UNPROFILED_SKILL}, on the
+     * reading that claiming a skill implies being able to work in it unsupervised.
+     *
+     * <p>These rows are marked {@code missingSkill = false}: the employee has the skill on
+     * record. What they may not have yet is a level for it, and that shows as a full-height gap
+     * until the assessment covering it is marked - which is exactly the prompt to go and sit it.
+     */
+    private List<GapAnalysis> gapsForSkillsOutsideTheProfile(User user,
+                                                             List<RoleCompetency> profile,
+                                                             Map<Long, UserSkill> userSkillBySkillId) {
+        Set<Long> alreadyMeasured = profile.stream()
+                .map(rc -> rc.getSkill().getId())
+                .collect(Collectors.toSet());
+
+        List<UserSkill> extras = userSkillBySkillId.values().stream()
+                .filter(us -> !alreadyMeasured.contains(us.getSkill().getId()))
+                .toList();
+        if (extras.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> extraSkillIds = extras.stream().map(us -> us.getSkill().getId()).toList();
+        Map<Long, Integer> benchmarkBySkillId = roleCompetencyRepository.findBySkillIdIn(extraSkillIds).stream()
+                .collect(Collectors.toMap(
+                        rc -> rc.getSkill().getId(),
+                        rc -> rc.getRequiredProficiencyLevel().getScore(),
+                        Math::max));
+
+        return extras.stream()
+                .map(us -> buildGap(user, us.getSkill(),
+                        benchmarkBySkillId.getOrDefault(us.getSkill().getId(),
+                                DEFAULT_BENCHMARK_FOR_UNPROFILED_SKILL.getScore()),
+                        us))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -105,25 +252,39 @@ public class GapAnalysisService {
                 .collect(Collectors.toMap(us -> us.getSkill().getId(), Function.identity(), (a, b) -> a));
 
         return requiredCompetencies.stream()
-                .map(rc -> buildGap(user, rc, userSkillBySkillId.get(rc.getSkill().getId())))
+                .map(rc -> buildGap(user, rc.getSkill(),
+                        rc.getRequiredProficiencyLevel().getScore(),
+                        userSkillBySkillId.get(rc.getSkill().getId())))
                 .sorted(Comparator.comparing(GapAnalysis::getGapScore).reversed())
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<GapAnalysisResponse> getStoredUserGaps(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found for id: " + userId);
         }
         List<GapAnalysis> storedGaps = gapAnalysisRepository.findByUserIdOrderByGapScoreDesc(userId);
         if (storedGaps.isEmpty()) {
+            // Only escape the surrounding transaction when it is read-only, which is the case
+            // this has to solve: PostgreSQL refuses an insert there outright, and the personal
+            // heatmap reaches this method that way.
+            //
+            // Escaping unconditionally would be wrong. A new transaction gets its own
+            // connection and cannot see the caller's uncommitted rows, so a caller that had
+            // just written the user - or their skills - inside its own read-write transaction
+            // would find them missing here and fail with "user not found". Joining the caller
+            // whenever it can write preserves that visibility.
+            if (TransactionSynchronizationManager.isCurrentTransactionReadOnly()) {
+                return writableTransaction.execute(status -> calculateAndFetchUserGaps(userId));
+            }
             return calculateAndFetchUserGaps(userId);
         }
         return storedGaps.stream().map(this::toResponse).toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<GapAnalysisResponse> getMissingSkills(Long userId) {
         List<GapAnalysisResponse> allGaps = getStoredUserGaps(userId);
         return allGaps.stream()
@@ -131,7 +292,7 @@ public class GapAnalysisService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<GapAnalysisResponse> getProficiencyGaps(Long userId) {
         List<GapAnalysisResponse> allGaps = getStoredUserGaps(userId);
         return allGaps.stream()
@@ -139,7 +300,7 @@ public class GapAnalysisService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public UserGapSummaryResponse getUserGapSummary(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + userId));
@@ -284,15 +445,16 @@ public class GapAnalysisService {
                 .build();
     }
 
-    private GapAnalysis buildGap(User user, RoleCompetency roleCompetency, UserSkill userSkill) {
-        double target = roleCompetency.getRequiredProficiencyLevel().getScore();
-        double current = userSkill == null ? 0.0 : userSkill.getProficiencyLevel().getScore();
+    private GapAnalysis buildGap(User user, Skill skill, double target, UserSkill userSkill) {
+        double current = userSkill == null || userSkill.getProficiencyLevel() == null
+                ? 0.0
+                : userSkill.getProficiencyLevel().getScore();
         double gapScore = Math.max(0.0, target - current);
         RiskSeverity severity = RiskSeverity.fromGapScore(gapScore);
 
         GapAnalysis gap = new GapAnalysis();
         gap.setUser(user);
-        gap.setSkill(roleCompetency.getSkill());
+        gap.setSkill(skill);
         gap.setTargetScore(target);
         gap.setCurrentScore(current);
         gap.setGapScore(gapScore);
@@ -300,7 +462,7 @@ public class GapAnalysisService {
         gap.setMissingSkill(userSkill == null);
 
         // HIGH and CRITICAL gaps alert the employee; the service decides which severities qualify.
-        notificationService.createGapAlert(user, roleCompetency.getSkill(), gapScore, severity);
+        notificationService.createGapAlert(user, skill, gapScore, severity);
         return gap;
     }
 

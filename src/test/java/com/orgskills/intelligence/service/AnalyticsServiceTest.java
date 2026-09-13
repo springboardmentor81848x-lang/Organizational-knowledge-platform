@@ -15,7 +15,7 @@ import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
 import com.orgskills.intelligence.entity.enums.Role;
-import com.orgskills.intelligence.exception.UnauthorizedException;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.repository.AchievementRepository;
 import com.orgskills.intelligence.repository.AssessmentResultRepository;
 import com.orgskills.intelligence.repository.EnrollmentRepository;
@@ -124,7 +124,7 @@ class AnalyticsServiceTest {
         when(userRepository.findById(9L)).thenReturn(Optional.of(outsider));
 
         assertThatThrownBy(() -> analyticsService.getEmployeeAnalytics(2L, 9L))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("not in your reporting line");
     }
 
@@ -136,7 +136,7 @@ class AnalyticsServiceTest {
         when(userRepository.findById(6L)).thenReturn(Optional.of(colleague));
 
         assertThatThrownBy(() -> analyticsService.getEmployeeAnalytics(1L, 6L))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -146,7 +146,7 @@ class AnalyticsServiceTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
 
         assertThatThrownBy(() -> analyticsService.getTeamAnalytics(3L, 2L))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("your own team");
     }
 
@@ -173,7 +173,7 @@ class AnalyticsServiceTest {
         when(userRepository.findById(4L)).thenReturn(Optional.of(departmentHead));
 
         assertThatThrownBy(() -> analyticsService.getDepartmentAnalytics(4L, "Marketing"))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("your own department");
     }
 
@@ -183,7 +183,7 @@ class AnalyticsServiceTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
 
         assertThatThrownBy(() -> analyticsService.getOrganizationAnalytics(2L))
-                .isInstanceOf(UnauthorizedException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("HR, L&D or admin role");
     }
 

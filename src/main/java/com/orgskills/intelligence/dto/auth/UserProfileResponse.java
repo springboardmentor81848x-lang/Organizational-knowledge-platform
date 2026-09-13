@@ -18,4 +18,20 @@ public class UserProfileResponse {
     private String department;
     private String jobTitle;
     private String avatarUrl;
+
+    /**
+     * The role the person is working towards. Their assessments and gap analysis are measured
+     * against this profile rather than {@link #jobTitle}, and the employee dashboard shows it,
+     * so it travels with every profile read. Null for accounts that never chose one.
+     */
+    private String targetJobTitle;
+
+    private String targetDepartment;
+
+    /** Whether the address was proven with the emailed code. Always true for seeded accounts. */
+    /** Where the account stands with the people who grant access: PENDING, APPROVED or REJECTED. */
+    private String accessStatus;
+
+    /** Whether the account may be used at all. Deactivating blocks sign-in and every request. */
+    private Boolean active;
 }

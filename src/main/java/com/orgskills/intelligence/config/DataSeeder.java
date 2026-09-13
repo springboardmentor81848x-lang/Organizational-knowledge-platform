@@ -25,6 +25,9 @@ import com.orgskills.intelligence.repository.UserSkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class DataSeeder implements CommandLineRunner {
@@ -47,18 +51,28 @@ public class DataSeeder implements CommandLineRunner {
     private final CertificationRepository certificationRepository;
     private final GapSnapshotRepository gapSnapshotRepository;
     private final LearningMilestoneRepository learningMilestoneRepository;
+    private final CacheManager cacheManager;
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (skillRepository.count() > 0) {
-            log.info("Database already seeded, skipping...");
+        // The skill catalogue and the role competency profiles are reference data, not sample
+        // data: a release that adds a target role has to reach installations that were seeded
+        // before that role existed. Both are therefore topped up on every start, adding only
+        // what is missing. Everything below them describes the demo organisation and is still
+        // created once, for an empty database only.
+        boolean freshDatabase = skillRepository.count() == 0;
+
+        seedSkills();
+        seedRoleCompetencies();
+
+        if (!freshDatabase) {
+            log.info("Skill catalogue and role competency profiles are up to date; sample data left untouched.");
             return;
         }
+
         log.info("Seeding database with sample data across six organizational roles...");
-        seedSkills();
         seedUsers();
-        seedRoleCompetencies();
         seedUserSkills();
         seedCourses();
         seedEnrollmentsAndCertifications();
@@ -66,20 +80,44 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Database seeding completed successfully.");
     }
 
+    /**
+     * The skills the platform can measure. Anything a role competency profile or an assessment
+     * question refers to has to exist here first.
+     */
+    private static final List<SkillSeed> SKILL_CATALOGUE = List.of(
+            new SkillSeed("Java", "Technical", "Core Java programming including OOP, collections, streams, and concurrency"),
+            new SkillSeed("Spring Boot", "Technical", "Spring Boot framework for building production-ready applications"),
+            new SkillSeed("React", "Technical", "React.js library for building user interfaces"),
+            new SkillSeed("TypeScript", "Technical", "Typed JavaScript for large front-end and Node codebases"),
+            new SkillSeed("Python", "Technical", "Python programming for scripting, data analysis, and backend development"),
+            new SkillSeed("SQL", "Technical", "Relational database querying and design"),
+            new SkillSeed("Testing", "Quality", "Automated testing: unit, integration and end-to-end, and what to test at each level"),
+            new SkillSeed("Docker", "DevOps", "Containerization and container orchestration"),
+            new SkillSeed("Linux", "DevOps", "Linux administration, the shell, processes, permissions and networking basics"),
+            new SkillSeed("AWS", "Cloud", "Amazon Web Services cloud platform services"),
+            new SkillSeed("Security", "Security", "Application security: common vulnerabilities, authentication and secret handling"),
+            new SkillSeed("Data Analysis", "Data", "Turning data into answers: cleaning, aggregation, statistics and visualisation"),
+            new SkillSeed("Machine Learning", "Data", "Supervised and unsupervised learning, model evaluation and deployment"),
+            new SkillSeed("Product Management", "Product", "Discovery, prioritisation, roadmaps and measuring whether a product works"),
+            new SkillSeed("Communication", "Soft Skills", "Effective verbal and written communication"),
+            new SkillSeed("Leadership", "Management", "Team leadership, delegation, and strategic thinking"),
+            new SkillSeed("Agile", "Process", "Agile methodologies including Scrum and Kanban")
+    );
+
     private void seedSkills() {
-        List<Skill> skills = List.of(
-                createSkill("Java", "Technical", "Core Java programming including OOP, collections, streams, and concurrency"),
-                createSkill("Spring Boot", "Technical", "Spring Boot framework for building production-ready applications"),
-                createSkill("React", "Technical", "React.js library for building user interfaces"),
-                createSkill("Python", "Technical", "Python programming for scripting, data analysis, and backend development"),
-                createSkill("SQL", "Technical", "Relational database querying and design"),
-                createSkill("Docker", "DevOps", "Containerization and container orchestration"),
-                createSkill("AWS", "Cloud", "Amazon Web Services cloud platform services"),
-                createSkill("Communication", "Soft Skills", "Effective verbal and written communication"),
-                createSkill("Leadership", "Management", "Team leadership, delegation, and strategic thinking"),
-                createSkill("Agile", "Process", "Agile methodologies including Scrum and Kanban")
-        );
-        skillRepository.saveAll(skills);
+        List<Skill> missing = SKILL_CATALOGUE.stream()
+                .filter(seed -> skillRepository.findByNameIgnoreCase(seed.name()).isEmpty())
+                .map(seed -> createSkill(seed.name(), seed.category(), seed.description()))
+                .toList();
+
+        if (missing.isEmpty()) {
+            return;
+        }
+        skillRepository.saveAll(missing);
+        log.info("Added {} skill(s) to the catalogue.", missing.size());
+    }
+
+    private record SkillSeed(String name, String category, String description) {
     }
 
     private void seedUsers() {
@@ -145,43 +183,154 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.save(sysAdmin);
     }
 
-    private void seedRoleCompetencies() {
-        Map<String, ProficiencyLevel> seCompetencies = Map.of(
-                "Java", ProficiencyLevel.ADVANCED,
-                "Spring Boot", ProficiencyLevel.INTERMEDIATE,
-                "SQL", ProficiencyLevel.INTERMEDIATE,
-                "Docker", ProficiencyLevel.BEGINNER,
-                "Communication", ProficiencyLevel.INTERMEDIATE
-        );
-        seCompetencies.forEach((skillName, level) ->
-                skillRepository.findByNameIgnoreCase(skillName).ifPresent(skill -> {
-                    RoleCompetency rc = new RoleCompetency();
-                    rc.setJobTitle("Software Engineer");
-                    rc.setDepartment("Engineering");
-                    rc.setSkill(skill);
-                    rc.setRequiredProficiencyLevel(level);
-                    roleCompetencyRepository.save(rc);
-                }));
+    /**
+     * The target roles an employee can aim at, and what each one is measured on.
+     *
+     * <p>This table is the origin of three things at once, which is why it is worth reading as
+     * one: it is the list offered at sign-up, it decides which skills a person's assessment
+     * draws questions from, and it sets the required level each gap is measured against. A role
+     * added here is therefore only as useful as the question bank behind its skills — see
+     * {@link AssessmentQuestionSeeder}, which authors questions for every skill named below.
+     *
+     * <p>Levels are the bar for the role, not an average of who currently holds it: an employee
+     * at the required level has no gap, which is what makes the gap list actionable.
+     */
+    private static final List<RoleProfile> ROLE_PROFILES = List.of(
+            new RoleProfile("Software Engineer", "Engineering", Map.ofEntries(
+                    Map.entry("Java", ProficiencyLevel.ADVANCED),
+                    Map.entry("Spring Boot", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("SQL", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Testing", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Docker", ProficiencyLevel.BEGINNER),
+                    Map.entry("Communication", ProficiencyLevel.INTERMEDIATE))),
 
-        Map<String, ProficiencyLevel> emCompetencies = Map.of(
-                "Leadership", ProficiencyLevel.ADVANCED,
-                "Communication", ProficiencyLevel.ADVANCED,
-                "Agile", ProficiencyLevel.ADVANCED,
-                "Java", ProficiencyLevel.INTERMEDIATE
-        );
-        emCompetencies.forEach((skillName, level) ->
-                skillRepository.findByNameIgnoreCase(skillName).ifPresent(skill -> {
-                    RoleCompetency rc = new RoleCompetency();
-                    rc.setJobTitle("Engineering Manager");
-                    rc.setDepartment("Engineering");
-                    rc.setSkill(skill);
-                    rc.setRequiredProficiencyLevel(level);
-                    roleCompetencyRepository.save(rc);
-                }));
+            new RoleProfile("Senior Software Engineer", "Engineering", Map.ofEntries(
+                    Map.entry("Java", ProficiencyLevel.EXPERT),
+                    Map.entry("Spring Boot", ProficiencyLevel.ADVANCED),
+                    Map.entry("SQL", ProficiencyLevel.ADVANCED),
+                    Map.entry("Testing", ProficiencyLevel.ADVANCED),
+                    Map.entry("Security", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Docker", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Communication", ProficiencyLevel.ADVANCED))),
+
+            new RoleProfile("Frontend Engineer", "Engineering", Map.ofEntries(
+                    Map.entry("React", ProficiencyLevel.ADVANCED),
+                    Map.entry("TypeScript", ProficiencyLevel.ADVANCED),
+                    Map.entry("Testing", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Communication", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Agile", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("DevOps Engineer", "Engineering", Map.ofEntries(
+                    Map.entry("Docker", ProficiencyLevel.ADVANCED),
+                    Map.entry("Linux", ProficiencyLevel.ADVANCED),
+                    Map.entry("AWS", ProficiencyLevel.ADVANCED),
+                    Map.entry("Security", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Agile", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("Cloud Architect", "Engineering", Map.ofEntries(
+                    Map.entry("AWS", ProficiencyLevel.EXPERT),
+                    Map.entry("Docker", ProficiencyLevel.ADVANCED),
+                    Map.entry("Linux", ProficiencyLevel.ADVANCED),
+                    Map.entry("Security", ProficiencyLevel.ADVANCED),
+                    Map.entry("Communication", ProficiencyLevel.ADVANCED))),
+
+            new RoleProfile("QA Engineer", "Quality Engineering", Map.ofEntries(
+                    Map.entry("Testing", ProficiencyLevel.EXPERT),
+                    Map.entry("Java", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("SQL", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Agile", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Communication", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("Data Analyst", "Data & Analytics", Map.ofEntries(
+                    Map.entry("SQL", ProficiencyLevel.ADVANCED),
+                    Map.entry("Python", ProficiencyLevel.ADVANCED),
+                    Map.entry("Data Analysis", ProficiencyLevel.ADVANCED),
+                    Map.entry("Communication", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("Machine Learning Engineer", "Data & Analytics", Map.ofEntries(
+                    Map.entry("Python", ProficiencyLevel.EXPERT),
+                    Map.entry("Machine Learning", ProficiencyLevel.ADVANCED),
+                    Map.entry("Data Analysis", ProficiencyLevel.ADVANCED),
+                    Map.entry("SQL", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("AWS", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("Product Manager", "Product", Map.ofEntries(
+                    Map.entry("Product Management", ProficiencyLevel.ADVANCED),
+                    Map.entry("Communication", ProficiencyLevel.ADVANCED),
+                    Map.entry("Agile", ProficiencyLevel.ADVANCED),
+                    Map.entry("Data Analysis", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Leadership", ProficiencyLevel.INTERMEDIATE))),
+
+            new RoleProfile("Engineering Manager", "Engineering", Map.ofEntries(
+                    Map.entry("Leadership", ProficiencyLevel.ADVANCED),
+                    Map.entry("Communication", ProficiencyLevel.ADVANCED),
+                    Map.entry("Agile", ProficiencyLevel.ADVANCED),
+                    Map.entry("Product Management", ProficiencyLevel.INTERMEDIATE),
+                    Map.entry("Java", ProficiencyLevel.INTERMEDIATE)))
+    );
+
+    /**
+     * Adds any competency row that is missing, leaving existing ones alone.
+     *
+     * <p>Editing a level here therefore does not overwrite an installation whose profiles an
+     * administrator has since tuned through the catalogue screens — those edits are the more
+     * authoritative of the two, and silently reverting them on restart would be worse than
+     * leaving this table aspirational.
+     */
+    private void seedRoleCompetencies() {
+        int added = 0;
+
+        for (RoleProfile profile : ROLE_PROFILES) {
+            for (Map.Entry<String, ProficiencyLevel> requirement : profile.competencies().entrySet()) {
+                Skill skill = skillRepository.findByNameIgnoreCase(requirement.getKey()).orElse(null);
+                if (skill == null) {
+                    log.warn("Skill '{}' is not in the catalogue; '{}' will not be measured on it.",
+                            requirement.getKey(), profile.jobTitle());
+                    continue;
+                }
+                if (roleCompetencyRepository.existsByJobTitleIgnoreCaseAndDepartmentIgnoreCaseAndSkillId(
+                        profile.jobTitle(), profile.department(), skill.getId())) {
+                    continue;
+                }
+
+                RoleCompetency competency = new RoleCompetency();
+                competency.setJobTitle(profile.jobTitle());
+                competency.setDepartment(profile.department());
+                competency.setSkill(skill);
+                competency.setRequiredProficiencyLevel(requirement.getValue());
+                roleCompetencyRepository.save(competency);
+                added++;
+            }
+        }
+
+        if (added == 0) {
+            return;
+        }
+
+        log.info("Added {} role competency requirement(s) across {} target roles.",
+                added, ROLE_PROFILES.size());
+
+        // RoleCompetencyService caches the target-role list and evicts it on its own writes.
+        // These rows are written straight through the repository, so nothing evicted it here —
+        // and a newly added role would stay invisible on the sign-up form until the cache aged
+        // out, which for the catalogue is an hour.
+        Cache catalogue = cacheManager.getCache(CacheNames.CATALOG_COMPETENCIES);
+        if (catalogue != null) {
+            catalogue.clear();
+        }
+    }
+
+    private record RoleProfile(String jobTitle, String department,
+                               Map<String, ProficiencyLevel> competencies) {
     }
 
     private void seedUserSkills() {
         User alice = userRepository.findByEmail("employee@orgskills.com").orElseThrow();
+        // Alice is a Software Engineer aiming at Engineering Manager, which is what her
+        // assessment is set against and what her dashboard shows as her target.
+        alice.setTargetJobTitle("Engineering Manager");
+        alice.setTargetDepartment("Engineering");
+        userRepository.save(alice);
         assignSkill(alice, "Java", ProficiencyLevel.INTERMEDIATE);
         assignSkill(alice, "Spring Boot", ProficiencyLevel.BEGINNER);
         assignSkill(alice, "SQL", ProficiencyLevel.INTERMEDIATE);

@@ -16,6 +16,7 @@ import com.orgskills.intelligence.entity.enums.AssessmentType;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AssessmentRepository;
@@ -48,6 +49,11 @@ import java.util.Set;
  *
  * <p>Assessment is the only route by which proficiency rises. Course completion does not move it;
  * a level is a claim about ability, and only an assessment is evidence for that claim.
+ *
+ * <p>Nor can somebody supply that evidence about themselves. Hand-written self-assessment has
+ * been withdrawn, so the only self-authored assessments left are the ones the marked target-role
+ * quiz produces - which means the gap heatmap is built from scored answers and from other
+ * people's judgements, never from what an employee claimed about their own ability.
  */
 @Service
 @RequiredArgsConstructor
@@ -77,6 +83,11 @@ public class AssessmentService {
      */
     @Transactional
     public AssessmentResponse createAssessment(Long actorId, CreateAssessmentRequest request) {
+        requireNotHandAuthoredSelf(request.getAssessmentType());
+        return createInternal(actorId, request);
+    }
+
+    private AssessmentResponse createInternal(Long actorId, CreateAssessmentRequest request) {
         User assessor = getUser(actorId);
         Long employeeId = request.getEmployeeId() != null ? request.getEmployeeId() : actorId;
         User employee = employeeId.equals(actorId) ? assessor : getUser(employeeId);
@@ -128,6 +139,11 @@ public class AssessmentService {
      */
     @Transactional
     public AssessmentResponse submitAssessment(Long actorId, Long assessmentId, SubmitAssessmentRequest request) {
+        requireNotHandAuthoredSelf(getAssessment(assessmentId).getAssessmentType());
+        return submitInternal(actorId, assessmentId, request);
+    }
+
+    private AssessmentResponse submitInternal(Long actorId, Long assessmentId, SubmitAssessmentRequest request) {
         User actor = getUser(actorId);
         Assessment assessment = getAssessment(assessmentId);
 
@@ -137,7 +153,7 @@ public class AssessmentService {
         }
         if (!assessment.getAssessor().getId().equals(actorId)
                 && !ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new ValidationException("Access denied. This assessment belongs to another assessor.");
+            throw new ForbiddenException("Access denied. This assessment belongs to another assessor.");
         }
 
         // (a) Persist the results.
@@ -215,8 +231,30 @@ public class AssessmentService {
         create.setSkillIds(request.getResults().stream().map(AssessmentResultRequest::getSkillId).toList());
         create.setComments(request.getComments());
 
-        AssessmentResponse created = createAssessment(actorId, create);
-        return submitAssessment(actorId, created.getAssessmentId(), request);
+        AssessmentResponse created = createInternal(actorId, create);
+        return submitInternal(actorId, created.getAssessmentId(), request);
+    }
+
+    /**
+     * Refuses a SELF assessment written by hand.
+     *
+     * <p>Self-assessment as a form to fill in has been withdrawn: a proficiency level colours the
+     * gap heatmap and sizes every gap beneath it, and a level somebody awarded themselves is a
+     * claim, not evidence. The only SELF assessments the platform still writes are the ones
+     * {@code QuizService} produces from a marked target-role paper, and those come through
+     * {@link #createAndSubmit}, which reaches the implementation directly rather than through
+     * this guard.
+     *
+     * <p>The check sits on the generic endpoints rather than only on the withdrawn one, because
+     * {@code POST /api/assessments} followed by {@code POST /api/assessments/{id}/submit} would
+     * otherwise reproduce exactly what was removed.
+     */
+    private void requireNotHandAuthoredSelf(AssessmentType type) {
+        if (type == AssessmentType.SELF) {
+            throw new ValidationException("Self-assessment has been withdrawn. Proficiency now moves "
+                    + "only through the marked target-role assessment, or through a peer or manager "
+                    + "assessment, so a SELF assessment cannot be entered by hand.");
+        }
     }
 
     /**
@@ -383,7 +421,13 @@ public class AssessmentService {
         return distinct;
     }
 
-    /** A SELF assessment must be self-authored; PEER and MANAGER must not be. */
+    /**
+     * A SELF assessment must be self-authored; PEER and MANAGER must not be.
+     *
+     * <p>SELF reaches this method only from the marked quiz - {@link #requireNotHandAuthoredSelf}
+     * has already turned away anything else - so the branch below now guards the quiz's own
+     * bookkeeping rather than a form an employee could fill in.
+     */
     private void requireAssessorIsValidFor(User assessor, User employee, AssessmentType type) {
         boolean self = assessor.getId().equals(employee.getId());
         if (type == AssessmentType.SELF && !self) {
@@ -399,7 +443,7 @@ public class AssessmentService {
 
     private void requireCanActFor(User actor, Long employeeId) {
         if (!actor.getId().equals(employeeId) && !ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new ValidationException("Access denied. These assessments belong to another employee.");
+            throw new ForbiddenException("Access denied. These assessments belong to another employee.");
         }
     }
 
@@ -409,7 +453,7 @@ public class AssessmentService {
                 || ASSESSMENT_ADMIN_ROLES.contains(actor.getRole())) {
             return;
         }
-        throw new ValidationException("Access denied. This assessment belongs to another employee.");
+        throw new ForbiddenException("Access denied. This assessment belongs to another employee.");
     }
 
     // ── Mapping ─────────────────────────────────────────────────────────────────

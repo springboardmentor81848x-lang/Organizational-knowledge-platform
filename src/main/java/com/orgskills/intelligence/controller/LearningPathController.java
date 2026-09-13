@@ -4,6 +4,7 @@ import com.orgskills.intelligence.dto.ld.LearningPathResponse;
 import com.orgskills.intelligence.entity.LearningPathStep;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.repository.LearningPathStepRepository;
@@ -106,7 +107,7 @@ public class LearningPathController {
 
         // If editing is required, managers/viewers cannot edit other users' steps
         if (requiresEditPermission && !isAdminOrLnd && !isEmployee) {
-            throw new UnauthorizedException("Access denied. Only the employee or L&D Admin can complete learning path steps.");
+            throw new ForbiddenException("Access denied. Only the employee or L&D Admin can complete learning path steps.");
         }
 
         // 2. Admins, LND Admin, HR Admin, HR Specialist, Department Head, or Employee can view
@@ -125,6 +126,6 @@ public class LearningPathController {
             return;
         }
 
-        throw new UnauthorizedException("Access denied. You do not have permission for employeeId: " + targetEmployeeId);
+        throw new ForbiddenException("Access denied. You do not have permission for employeeId: " + targetEmployeeId);
     }
 }

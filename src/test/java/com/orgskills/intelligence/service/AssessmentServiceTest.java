@@ -15,6 +15,7 @@ import com.orgskills.intelligence.entity.enums.AssessmentType;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AssessmentRepository;
 import com.orgskills.intelligence.repository.AssessmentResultRepository;
@@ -43,6 +44,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -149,23 +151,35 @@ class AssessmentServiceTest {
     }
 
     @Test
-    @DisplayName("A SELF assessment must be self-authored and a MANAGER assessment must not be")
+    @DisplayName("A MANAGER assessment cannot be submitted for yourself")
     void createAssessmentEnforcesAssessorRules() {
-        when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
         when(userRepository.findById(1L)).thenReturn(Optional.of(employee));
 
-        CreateAssessmentRequest asSelfForSomeoneElse = createRequest();
-        asSelfForSomeoneElse.setAssessmentType(AssessmentType.SELF);
-        assertThatThrownBy(() -> assessmentService.createAssessment(2L, asSelfForSomeoneElse))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("must be submitted by the employee themselves");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(employee));
         CreateAssessmentRequest managerOnSelf = createRequest();
         managerOnSelf.setEmployeeId(1L);
         assertThatThrownBy(() -> assessmentService.createAssessment(1L, managerOnSelf))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("cannot be submitted for yourself");
+    }
+
+    @Test
+    @DisplayName("A SELF assessment cannot be entered by hand at all, for anyone")
+    void createAssessmentRefusesHandAuthoredSelf() {
+        // Self-rating was withdrawn because a level somebody awards themselves colours the gap
+        // heatmap exactly as a marked one does. Removing the /api/employee/assessments/self
+        // endpoint was not enough on its own: the generic scheduling endpoint would have
+        // reproduced it, so the type is refused here rather than only in the routing.
+        CreateAssessmentRequest onSelf = createRequest();
+        onSelf.setAssessmentType(AssessmentType.SELF);
+        onSelf.setEmployeeId(1L);
+
+        assertThatThrownBy(() -> assessmentService.createAssessment(1L, onSelf))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Self-assessment has been withdrawn");
+
+        // Refused before the assessor rules are even consulted, so no user is loaded and
+        // nothing is written.
+        verifyNoInteractions(assessmentRepository);
     }
 
     @Test
@@ -419,7 +433,7 @@ class AssessmentServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(employee));
 
         assertThatThrownBy(() -> assessmentService.getHistory(1L, 3L))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Access denied");
     }
 

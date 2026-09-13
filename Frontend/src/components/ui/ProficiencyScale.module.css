@@ -1,0 +1,48 @@
+.scale {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* Five segments, one per level on the canonical 0-4 scale. Filled segments read as a
+   position on a ladder rather than a percentage, which is what a level is. */
+.track {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.segment {
+  width: 16px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border);
+}
+
+.filled {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+}
+
+/* UNAWARE is a real level, not an absence, so it fills one hollow segment to say
+   "on record, no working knowledge" rather than showing an empty track. */
+.unaware {
+  background: var(--c-surface);
+  border-color: var(--c-text-muted);
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.compact .label {
+  font-size: var(--fs-xs);
+}
+
+.compact .segment {
+  width: 11px;
+  height: 5px;
+}

@@ -4,7 +4,9 @@ import com.orgskills.intelligence.dto.auth.UserProfileResponse;
 import com.orgskills.intelligence.dto.hr.GapTrendPoint;
 import com.orgskills.intelligence.dto.hr.SkillInventoryResponse;
 import com.orgskills.intelligence.dto.hr.TrainingEffectivenessResponse;
+import com.orgskills.intelligence.dto.heatmap.HeatmapMatrixResponse;
 import com.orgskills.intelligence.dto.manager.GapHeatmapResponse;
+import com.orgskills.intelligence.entity.AssessmentResult;
 import com.orgskills.intelligence.entity.Course;
 import com.orgskills.intelligence.entity.Enrollment;
 import com.orgskills.intelligence.entity.GapSnapshot;
@@ -15,6 +17,7 @@ import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
+import com.orgskills.intelligence.repository.AssessmentResultRepository;
 import com.orgskills.intelligence.repository.CourseRepository;
 import com.orgskills.intelligence.repository.EnrollmentRepository;
 import com.orgskills.intelligence.repository.GapSnapshotRepository;
@@ -26,9 +29,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,13 +45,19 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HrIntelligenceService {
 
+    /** Enrolment states in which the course has genuinely been finished. */
+    private static final Set<EnrollmentStatus> FINISHED_STATUSES =
+            EnumSet.of(EnrollmentStatus.COMPLETED, EnrollmentStatus.CERTIFIED);
+
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final UserSkillRepository userSkillRepository;
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final GapSnapshotRepository gapSnapshotRepository;
+    private final AssessmentResultRepository assessmentResultRepository;
     private final ManagerService managerService;
+    private final HeatmapVisualizationService heatmapVisualizationService;
     private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
@@ -58,6 +73,29 @@ public class HrIntelligenceService {
             scopeName = "ORGANIZATION_WIDE";
         }
         return managerService.getGapHeatmap(users, "ORGANIZATION", scopeName);
+    }
+
+    /**
+     * The person-by-skill matrix at organisation scope, in the same shape the manager and
+     * department views are served in, so one component renders all three and a HIGH gap is the
+     * same colour wherever it is seen.
+     *
+     * <p>Scope comes from the caller reaching this endpoint at all — it sits behind the HR roles.
+     * The optional department narrows a view the caller already holds organisation-wide; it never
+     * grants one, which is why a manager cannot obtain another team's matrix by naming it.
+     */
+    @Transactional(readOnly = true)
+    public HeatmapMatrixResponse getOrgGapMatrix(String department, String category) {
+        boolean narrowed = department != null && !department.isBlank();
+        List<User> users = narrowed
+                ? userRepository.findByDepartmentIgnoreCase(department.trim())
+                : userRepository.findAll();
+
+        return heatmapVisualizationService.buildMatrixForUsers(
+                users,
+                narrowed ? "DEPARTMENT" : "ORGANIZATION",
+                narrowed ? department.trim() : "Whole organisation",
+                category);
     }
 
     @Transactional(readOnly = true)
@@ -82,33 +120,138 @@ public class HrIntelligenceService {
         }).sorted(Comparator.comparing(SkillInventoryResponse::getSkillName)).toList();
     }
 
+    /**
+     * Per-course completion and the skill movement the course actually produced.
+     *
+     * <p>The before and after levels are measured rather than assumed. For each finished
+     * enrolment the earliest assessment of the course's own skill submitted after the completion
+     * date is found, and the level the learner held going into it — captured on the result row at
+     * submission time, before it could be overwritten — is the "before". Averaging those pairs
+     * across the course gives its real effect on the canonical 0-4 scale.
+     *
+     * <p>The earliest qualifying assessment is used rather than the most recent, so a course is
+     * credited with the movement closest to it in time instead of with everything the learner has
+     * picked up since.
+     *
+     * <p>A course nobody has both finished and been reassessed on reports null levels and a
+     * measured count of zero. It reports no baseline: an unmeasured course and a course that
+     * achieved nothing are different findings, and a placeholder would make them look the same.
+     */
     @Transactional(readOnly = true)
     public List<TrainingEffectivenessResponse> getTrainingEffectiveness() {
         List<Course> courses = courseRepository.findAll();
+        if (courses.isEmpty()) {
+            return List.of();
+        }
 
-        return courses.stream().map(course -> {
+        Map<Long, List<Enrollment>> enrollmentsByCourse = new HashMap<>();
+        Set<Long> finishedLearnerIds = new HashSet<>();
+        for (Course course : courses) {
             List<Enrollment> enrollments = enrollmentRepository.findByCourseId(course.getId());
-            int totalEnrolled = enrollments.size();
-            long completedCount = enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.COMPLETED).count();
-            double completionRate = totalEnrolled == 0 ? 0.0 : (completedCount * 100.0) / totalEnrolled;
+            enrollmentsByCourse.put(course.getId(), enrollments);
+            enrollments.stream()
+                    .filter(e -> FINISHED_STATUSES.contains(e.getStatus()))
+                    .forEach(e -> finishedLearnerIds.add(e.getEmployee().getId()));
+        }
 
-            double avgPreScore = 2.0; // Baseline average before training
-            double avgPostScore = completedCount == 0 ? avgPreScore : Math.min(5.0, avgPreScore + 1.25);
-            double improvement = avgPostScore - avgPreScore;
+        Map<Long, List<AssessmentResult>> resultsByLearner = resultsFor(finishedLearnerIds);
 
-            return TrainingEffectivenessResponse.builder()
-                    .courseId(course.getId())
-                    .courseTitle(course.getTitle())
-                    .provider(course.getProvider())
-                    .skillName(course.getSkillCovered() != null ? course.getSkillCovered().getName() : "General")
-                    .enrolledCount(totalEnrolled)
-                    .completedCount((int) completedCount)
-                    .completionRatePercent(Math.round(completionRate * 100.0) / 100.0)
-                    .avgPreCourseSkillLevel(Math.round(avgPreScore * 100.0) / 100.0)
-                    .avgPostCourseSkillLevel(Math.round(avgPostScore * 100.0) / 100.0)
-                    .avgSkillImprovement(Math.round(improvement * 100.0) / 100.0)
-                    .build();
-        }).toList();
+        return courses.stream()
+                .map(course -> effectivenessOf(
+                        course,
+                        enrollmentsByCourse.getOrDefault(course.getId(), List.of()),
+                        resultsByLearner))
+                .sorted(Comparator.comparing(TrainingEffectivenessResponse::getCourseTitle))
+                .toList();
+    }
+
+    /**
+     * The same measurement for a single course, so the learning administrator's course page and
+     * the workforce report cannot disagree about how well a course has worked.
+     */
+    @Transactional(readOnly = true)
+    public TrainingEffectivenessResponse getCourseEffectiveness(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found for id: " + courseId));
+
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+        Set<Long> learnerIds = enrollments.stream()
+                .filter(e -> FINISHED_STATUSES.contains(e.getStatus()))
+                .map(e -> e.getEmployee().getId())
+                .collect(Collectors.toSet());
+
+        return effectivenessOf(course, enrollments, resultsFor(learnerIds));
+    }
+
+    /** Every submitted result for a set of learners, in one query rather than one per enrolment. */
+    private Map<Long, List<AssessmentResult>> resultsFor(Set<Long> learnerIds) {
+        if (learnerIds.isEmpty()) {
+            return Map.of();
+        }
+        return assessmentResultRepository.findSubmittedResultsForEmployees(learnerIds).stream()
+                .collect(Collectors.groupingBy(r -> r.getAssessment().getEmployee().getId()));
+    }
+
+    private TrainingEffectivenessResponse effectivenessOf(
+            Course course, List<Enrollment> enrollments,
+            Map<Long, List<AssessmentResult>> resultsByLearner) {
+
+        int enrolled = enrollments.size();
+        List<Enrollment> finished = enrollments.stream()
+                .filter(e -> FINISHED_STATUSES.contains(e.getStatus()))
+                .toList();
+        double completionRate = enrolled == 0 ? 0.0 : (finished.size() * 100.0) / enrolled;
+
+        Skill covered = course.getSkillCovered();
+        List<int[]> measured = new ArrayList<>();
+        if (covered != null) {
+            for (Enrollment enrollment : finished) {
+                movementAfter(enrollment, covered, resultsByLearner).ifPresent(measured::add);
+            }
+        }
+
+        Double avgBefore = null;
+        Double avgAfter = null;
+        Double avgImprovement = null;
+        if (!measured.isEmpty()) {
+            avgBefore = round(measured.stream().mapToInt(pair -> pair[0]).average().orElseThrow());
+            avgAfter = round(measured.stream().mapToInt(pair -> pair[1]).average().orElseThrow());
+            avgImprovement = round(avgAfter - avgBefore);
+        }
+
+        return TrainingEffectivenessResponse.builder()
+                .courseId(course.getId())
+                .courseTitle(course.getTitle())
+                .provider(course.getProvider())
+                .skillName(covered != null ? covered.getName() : null)
+                .enrolledCount(enrolled)
+                .completedCount(finished.size())
+                .completionRatePercent(round(completionRate))
+                .measuredCount(measured.size())
+                .avgPreCourseSkillLevel(avgBefore)
+                .avgPostCourseSkillLevel(avgAfter)
+                .avgSkillImprovement(avgImprovement)
+                .build();
+    }
+
+    /**
+     * The before and after scores one finished enrolment produced, where they have been measured:
+     * the earliest assessment of the course's skill submitted after the course was completed.
+     */
+    private Optional<int[]> movementAfter(Enrollment enrollment, Skill covered,
+                                          Map<Long, List<AssessmentResult>> resultsByLearner) {
+        if (enrollment.getCompletionDate() == null) {
+            return Optional.empty();
+        }
+        return resultsByLearner.getOrDefault(enrollment.getEmployee().getId(), List.of()).stream()
+                .filter(r -> r.getSkill().getId().equals(covered.getId()))
+                .filter(r -> r.getProficiency() != null && r.getPreviousProficiency() != null)
+                .filter(r -> r.getAssessment().getDate() != null
+                        && r.getAssessment().getDate().isAfter(enrollment.getCompletionDate()))
+                .min(Comparator.comparing(r -> r.getAssessment().getDate()))
+                .map(r -> new int[] {
+                        r.getPreviousProficiency().getScore(),
+                        r.getProficiency().getScore()});
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +303,10 @@ public class HrIntelligenceService {
         return toUserProfile(saved);
     }
 
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
     private double getSkillScore(UserSkill us) {
         return us.getProficiencyLevel().getScore();
     }
@@ -177,6 +324,7 @@ public class HrIntelligenceService {
                 .department(user.getDepartment())
                 .jobTitle(user.getJobTitle())
                 .avatarUrl(user.getAvatarUrl())
+                .active(user.getActive())
                 .build();
     }
 }

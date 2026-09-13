@@ -67,6 +67,7 @@ class LearningPathControllerTest {
                 100L,
                 "dev@company.com",
                 "password",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE"))
         );
         auth = new UsernamePasswordAuthenticationToken(

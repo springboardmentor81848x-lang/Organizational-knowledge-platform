@@ -1,5 +1,6 @@
 package com.orgskills.intelligence.controller;
 
+import com.orgskills.intelligence.dto.ld.CatalogImportResult;
 import com.orgskills.intelligence.dto.ld.ExternalCourseResponse;
 import com.orgskills.intelligence.security.JwtAuthenticationFilter;
 import com.orgskills.intelligence.security.JwtTokenProvider;
@@ -62,15 +63,28 @@ class CatalogControllerTest {
                 .build();
 
         when(externalCatalogService.importFromProvider("Coursera", "springboot"))
-                .thenReturn(List.of(response));
+                .thenReturn(CatalogImportResult.builder()
+                        .source("Coursera")
+                        .fromProvider(true)
+                        .rowsRead(1)
+                        .created(1)
+                        .updated(0)
+                        .skipped(0)
+                        .errors(List.of())
+                        .courses(List.of(response))
+                        .build());
 
         mockMvc.perform(post("/api/catalog/import/provider/Coursera")
                         .param("skill", "springboot"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].title").value("Spring Boot Essentials"))
-                .andExpect(jsonPath("$[0].provider").value("Coursera"))
-                .andExpect(jsonPath("$[0].isInternal").value(false));
+                .andExpect(jsonPath("$.rowsRead").value(1))
+                .andExpect(jsonPath("$.created").value(1))
+                .andExpect(jsonPath("$.skipped").value(0))
+                .andExpect(jsonPath("$.fromProvider").value(true))
+                .andExpect(jsonPath("$.courses[0].id").value(1))
+                .andExpect(jsonPath("$.courses[0].title").value("Spring Boot Essentials"))
+                .andExpect(jsonPath("$.courses[0].provider").value("Coursera"))
+                .andExpect(jsonPath("$.courses[0].isInternal").value(false));
     }
 
     @Test
@@ -90,12 +104,28 @@ class CatalogControllerTest {
                 .isInternal(false)
                 .build();
 
-        when(externalCatalogService.importFromFile(any())).thenReturn(List.of(response));
+        when(externalCatalogService.importFromFile(any())).thenReturn(CatalogImportResult.builder()
+                .source("courses.csv")
+                .fromProvider(false)
+                .rowsRead(2)
+                .created(1)
+                .updated(0)
+                .skipped(1)
+                .errors(List.of(CatalogImportResult.ImportRowError.builder()
+                        .line(3)
+                        .reason("No title, so there is nothing to name the course")
+                        .build()))
+                .courses(List.of(response))
+                .build());
 
         mockMvc.perform(multipart("/api/catalog/import/file").file(file))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$[0].id").value(2))
-                .andExpect(jsonPath("$[0].provider").value("Udemy"));
+                .andExpect(jsonPath("$.rowsRead").value(2))
+                .andExpect(jsonPath("$.created").value(1))
+                .andExpect(jsonPath("$.skipped").value(1))
+                .andExpect(jsonPath("$.errors[0].line").value(3))
+                .andExpect(jsonPath("$.courses[0].id").value(2))
+                .andExpect(jsonPath("$.courses[0].provider").value("Udemy"));
     }
 
     @Test

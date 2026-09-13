@@ -2,6 +2,7 @@ package com.orgskills.intelligence.controller;
 
 import com.orgskills.intelligence.dto.role.RoleCompetencyRequest;
 import com.orgskills.intelligence.dto.role.RoleCompetencyResponse;
+import com.orgskills.intelligence.dto.role.TargetRoleOption;
 import com.orgskills.intelligence.service.RoleCompetencyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,17 @@ public class RoleCompetencyController {
             @RequestParam(required = false) String jobTitle,
             @RequestParam(required = false) String department) {
         return ResponseEntity.ok(roleCompetencyService.getCompetencies(jobTitle, department));
+    }
+
+    /**
+     * The roles a new employee can pick as their target during sign-up.
+     *
+     * <p>Reachable without a token, because the person choosing has no account yet. It exposes
+     * only role titles and a count - no personal data - which is what makes that safe.
+     */
+    @GetMapping("/target-roles")
+    public ResponseEntity<List<TargetRoleOption>> getTargetRoles() {
+        return ResponseEntity.ok(roleCompetencyService.getTargetRoleOptions());
     }
 
     @PostMapping

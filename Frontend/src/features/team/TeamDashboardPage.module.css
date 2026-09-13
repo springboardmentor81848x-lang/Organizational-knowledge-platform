@@ -1,0 +1,157 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 72ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--s-5);
+  margin: 0;
+}
+
+.statLabel { font-size: var(--fs-sm); color: var(--c-text-secondary); }
+.statValue {
+  display: flex; align-items: baseline; gap: 1px;
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.statSuffix { font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text-secondary); }
+
+.memberCell { display: flex; flex-direction: column; gap: 1px; }
+.memberName { font-weight: var(--fw-medium); }
+.memberRole { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* "Never assessed" is a finding, not a blank, so it reads as one. */
+.never { font-size: var(--fs-sm); font-style: italic; color: var(--c-text-muted); }
+
+.rowActions { display: flex; gap: var(--s-1); justify-content: flex-end; }
+
+/* ── Drill-down ────────────────────────────────────────────────────────── */
+
+.drillSection { margin-bottom: var(--s-5); }
+.drillSection:last-child { margin-bottom: 0; }
+
+.drillTitle {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--s-2);
+}
+
+.drillList { display: flex; flex-direction: column; }
+
+.drillRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.drillRow:last-child { border-bottom: none; }
+.drillName { flex: 1; min-width: 0; font-size: var(--fs-base); font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; }
+.drillMeta { font-size: var(--fs-sm); color: var(--c-text-secondary); white-space: nowrap; }
+
+/* ── Assign ────────────────────────────────────────────────────────────── */
+
+.tabs { display: flex; gap: var(--s-1); border-bottom: 1px solid var(--c-border); margin-bottom: var(--s-4); }
+
+.tab {
+  padding: var(--s-2) var(--s-4);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  margin-bottom: -1px;
+}
+
+.tab:hover { color: var(--c-text); }
+.tabActive, .tabActive:hover { color: var(--c-accent); border-bottom-color: var(--c-accent); }
+
+.assignBody { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.field { min-width: 0; }
+.label { display: block; margin-bottom: var(--s-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-secondary); }
+
+.select, .textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+}
+
+.select { height: 36px; padding: 0 var(--s-2); }
+.textarea { resize: vertical; }
+
+.select:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.note { font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-normal); }
+
+.assignActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-border);
+}
+
+.assessList { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; }
+
+.assessRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.assessRow:last-child { border-bottom: none; }
+.assessMeta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.levelPicker { display: flex; gap: 2px; flex-shrink: 0; }
+
+.levelButton {
+  min-width: 48px; height: 26px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+.levelButton:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.levelButton:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.levelButton:hover { background: var(--c-surface-hover); color: var(--c-text); }
+.levelButtonActive, .levelButtonActive:hover {
+  background: var(--c-accent); border-color: var(--c-accent); color: var(--c-text-inverse);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}

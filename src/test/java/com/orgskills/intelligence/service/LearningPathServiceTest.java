@@ -13,6 +13,7 @@ import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
 import com.orgskills.intelligence.entity.enums.Role;
 import com.orgskills.intelligence.repository.CourseRepository;
+import com.orgskills.intelligence.repository.EnrollmentRepository;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.LearningPathStepRepository;
@@ -41,6 +42,9 @@ class LearningPathServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private EnrollmentRepository enrollmentRepository;
 
     @Mock
     private GapAnalysisRepository gapAnalysisRepository;

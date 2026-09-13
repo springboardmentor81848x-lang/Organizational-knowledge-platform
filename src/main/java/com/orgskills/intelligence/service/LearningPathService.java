@@ -5,13 +5,16 @@ import com.orgskills.intelligence.dto.ld.CourseResponse;
 import com.orgskills.intelligence.dto.ld.LearningPathResponse;
 import com.orgskills.intelligence.dto.ld.LearningPathStepResponse;
 import com.orgskills.intelligence.entity.Course;
+import com.orgskills.intelligence.entity.Enrollment;
 import com.orgskills.intelligence.entity.GapAnalysis;
 import com.orgskills.intelligence.entity.LearningPath;
 import com.orgskills.intelligence.entity.LearningPathStep;
 import com.orgskills.intelligence.entity.Skill;
 import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
+import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.repository.CourseRepository;
+import com.orgskills.intelligence.repository.EnrollmentRepository;
 import com.orgskills.intelligence.repository.GapAnalysisRepository;
 import com.orgskills.intelligence.repository.LearningPathRepository;
 import com.orgskills.intelligence.repository.LearningPathStepRepository;
@@ -24,9 +27,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,7 +41,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class LearningPathService {
 
+    /** Enrolment states in which the course has genuinely been finished. */
+    private static final Set<EnrollmentStatus> FINISHED_STATUSES =
+            EnumSet.of(EnrollmentStatus.COMPLETED, EnrollmentStatus.CERTIFIED);
+
     private final UserRepository userRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final GapAnalysisRepository gapAnalysisRepository;
     private final CourseRepository courseRepository;
     private final LearningPathRepository learningPathRepository;
@@ -45,6 +56,7 @@ public class LearningPathService {
 
     public LearningPathService(
             UserRepository userRepository,
+            EnrollmentRepository enrollmentRepository,
             GapAnalysisRepository gapAnalysisRepository,
             CourseRepository courseRepository,
             LearningPathRepository learningPathRepository,
@@ -53,6 +65,7 @@ public class LearningPathService {
             RecommendationScoringService recommendationScoringService
     ) {
         this.userRepository = userRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.gapAnalysisRepository = gapAnalysisRepository;
         this.courseRepository = courseRepository;
         this.learningPathRepository = learningPathRepository;
@@ -226,22 +239,74 @@ public class LearningPathService {
             }
         }
 
+        path.getSteps().clear();
         if (steps.isEmpty()) {
             path.setNoCoursesAvailable(true);
             path.setTotalEstimatedHours(0);
             path.setOverallProgressPercent(0);
             path.setStatus("NOT_STARTED");
-            path.setSteps(new ArrayList<>());
         } else {
             path.setNoCoursesAvailable(false);
             int totalHours = steps.stream().mapToInt(LearningPathStep::getEstimatedHours).sum();
             path.setTotalEstimatedHours(totalHours);
-            path.setOverallProgressPercent(0);
-            path.setStatus("NOT_STARTED");
-            path.setSteps(steps);
+            path.getSteps().addAll(steps);
+            markStepsAlreadyFinished(employee.getId(), steps);
+            recomputeProgress(path);
         }
 
         return path;
+    }
+
+    /**
+     * Marks a freshly built step complete when the employee has already finished that course.
+     *
+     * <p>Steps used to be created NOT_STARTED unconditionally and the path pinned at 0%, so a
+     * path generated after its course had been completed reported no progress at all - on the
+     * same screens that showed the enrolment as finished. The path is a view of work done, not a
+     * record of its own, so it has to start from what the enrolments already say.
+     */
+    private void markStepsAlreadyFinished(Long employeeId, List<LearningPathStep> steps) {
+        Map<Long, Enrollment> finishedByCourse = new HashMap<>();
+        for (Enrollment enrollment : enrollmentRepository.findByEmployeeId(employeeId)) {
+            if (enrollment.getCourse() == null || !FINISHED_STATUSES.contains(enrollment.getStatus())) {
+                continue;
+            }
+            finishedByCourse.putIfAbsent(enrollment.getCourse().getId(), enrollment);
+        }
+        if (finishedByCourse.isEmpty()) {
+            return;
+        }
+
+        for (LearningPathStep step : steps) {
+            Enrollment finished = step.getCourse() == null
+                    ? null
+                    : finishedByCourse.get(step.getCourse().getId());
+            if (finished == null) {
+                continue;
+            }
+            step.setStatus("COMPLETED");
+            // The date it was actually finished, not the date the path happened to be generated.
+            step.setCompletedAt(finished.getCompletionDate() == null
+                    ? LocalDateTime.now()
+                    : LocalDateTime.ofInstant(finished.getCompletionDate(), ZoneId.systemDefault()));
+        }
+    }
+
+    /** Progress and status from the steps, rather than assumed to be zero. */
+    private void recomputeProgress(LearningPath path) {
+        List<LearningPathStep> steps = path.getSteps();
+        long completed = steps.stream()
+                .filter(step -> "COMPLETED".equalsIgnoreCase(step.getStatus()))
+                .count();
+
+        path.setOverallProgressPercent((int) Math.round((completed * 100.0) / steps.size()));
+        if (completed == steps.size()) {
+            path.setStatus("COMPLETED");
+        } else if (completed > 0) {
+            path.setStatus("IN_PROGRESS");
+        } else {
+            path.setStatus("NOT_STARTED");
+        }
     }
 
     private Set<String> getAllowedDifficultyStages(double currentScore) {

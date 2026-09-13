@@ -284,7 +284,7 @@ class AnalyticsLiveDataIntegrationTest {
                 outsiderUser("analytics.outsider@orgskills.com", "Analytics Outsider"));
 
         mockMvc.perform(authedGet("/api/analytics/employee/" + outsider.getId(), manager.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(authedGet("/api/analytics/employee/" + employee.getId(), manager.getId()))
                 .andExpect(status().isOk());
@@ -294,7 +294,7 @@ class AnalyticsLiveDataIntegrationTest {
     @DisplayName("Organization analytics are refused to an ordinary employee")
     void organizationAnalyticsRequiresAnOrgWideRole() throws Exception {
         mockMvc.perform(authedGet("/api/analytics/organization", employee.getId()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(authedGet("/api/analytics/organization", hrAdmin.getId()))
                 .andExpect(status().isOk());
@@ -396,6 +396,7 @@ class AnalyticsLiveDataIntegrationTest {
 
     private Authentication principal(Long userId) {
         CustomPrincipal customPrincipal = new CustomPrincipal(userId, "analytics@orgskills.com", "",
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
         return new UsernamePasswordAuthenticationToken(customPrincipal, null, customPrincipal.getAuthorities());
     }

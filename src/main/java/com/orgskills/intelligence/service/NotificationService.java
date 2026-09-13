@@ -7,8 +7,8 @@ import com.orgskills.intelligence.entity.User;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.RiskSeverity;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
-import com.orgskills.intelligence.exception.UnauthorizedException;
 import com.orgskills.intelligence.repository.NotificationRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -159,7 +159,7 @@ public class NotificationService {
 
     private void requireCanActFor(User actor, Long userId) {
         if (!actor.getId().equals(userId) && !NOTIFICATION_ADMIN_ROLES.contains(actor.getRole())) {
-            throw new UnauthorizedException("Access denied. These notifications belong to another user.");
+            throw new ForbiddenException("Access denied. These notifications belong to another user.");
         }
     }
 

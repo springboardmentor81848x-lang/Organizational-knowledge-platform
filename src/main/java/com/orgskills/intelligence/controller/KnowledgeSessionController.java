@@ -64,10 +64,12 @@ public class KnowledgeSessionController {
 
     @GetMapping
     public ResponseEntity<List<SessionResponse>> listSessions(
+            Authentication authentication,
             @RequestParam(required = false) SessionStatus status,
             @RequestParam(required = false) Long mentorId,
             @RequestParam(defaultValue = "false") boolean availableOnly) {
-        return ResponseEntity.ok(knowledgeSessionService.listSessions(status, mentorId, availableOnly));
+        return ResponseEntity.ok(knowledgeSessionService.listSessions(
+                getUserId(authentication), status, mentorId, availableOnly));
     }
 
     @GetMapping("/{id}")

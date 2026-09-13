@@ -1,0 +1,227 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.header {
+  max-width: 72ch;
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.015em;
+}
+
+.subtitle {
+  margin-top: var(--s-2);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* ── Card internals ─────────────────────────────────────────────────────── */
+
+.summaryRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+
+.bigNumber {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.summaryLabel {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.rowName {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.stacked:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.stackedHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.stackedBody {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.date {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.severityList {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+}
+
+.severityRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  align-items: flex-start;
+}
+
+.severityCount {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+}
+
+.footnote {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.progressTrack {
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+  overflow: hidden;
+  margin: var(--s-1) 0;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: var(--radius-pill);
+}
+
+.mentor {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--c-accent-subtle);
+  border: 1px solid var(--c-accent-border);
+  color: var(--c-accent);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.mentorText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.goal {
+  margin-top: var(--s-1);
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--c-text-secondary);
+}
+
+/*
+ * The target role banner.
+ *
+ * Sits directly under the page subtitle because it is the yardstick for every figure below:
+ * gaps, the heatmap and the assessment are all measured against this role, not the current one.
+ */
+.targetRole {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2, 0.5rem) var(--sp-3, 0.75rem);
+  margin-top: var(--sp-4, 1rem);
+  padding: var(--sp-3, 0.75rem) var(--sp-4, 1rem);
+  border: 1px solid var(--c-border, rgba(148, 163, 184, 0.32));
+  border-left: 3px solid var(--c-info, #3b82f6);
+  border-radius: var(--radius-md, 10px);
+  background: var(--c-surface-2, rgba(148, 163, 184, 0.06));
+}
+
+.targetRoleLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-muted, #64748b);
+}
+
+.targetRoleValue {
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--c-text, #0f172a);
+}
+
+.targetRoleFrom {
+  font-size: 0.8125rem;
+  color: var(--c-text-muted, #64748b);
+}
+
+.targetRoleMissing {
+  margin-top: var(--sp-4, 1rem);
+  padding: var(--sp-3, 0.75rem) var(--sp-4, 1rem);
+  border: 1px dashed var(--c-border, rgba(148, 163, 184, 0.4));
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--c-text-muted, #64748b);
+}

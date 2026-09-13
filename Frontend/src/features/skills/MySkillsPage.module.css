@@ -1,0 +1,149 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.015em;
+}
+
+.subtitle {
+  margin-top: var(--s-2);
+  max-width: 70ch;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+}
+
+.skillCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.skillName {
+  font-weight: var(--fw-medium);
+}
+
+.category {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--s-1);
+  justify-content: flex-end;
+}
+
+.field {
+  margin-bottom: var(--s-4);
+  border: none;
+  padding: 0;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+  padding: 0;
+}
+
+.select {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.hint {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+/* The level choices are the scale itself, so picking one shows what it will look like. */
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+/* ── Skills awaiting assessment ───────────────────────────────────────────── */
+
+/*
+ * The prompt is informational rather than a warning. Adding a skill and not yet having been
+ * measured on it is a normal, expected halfway state - the person has done the first half of
+ * the right thing - so it points at the next step instead of scolding.
+ */
+.prompt {
+  border-color: var(--c-info-border);
+  background: var(--c-info-bg);
+}
+
+.promptRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.promptTitle {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.promptText {
+  margin: var(--s-2) 0 0;
+  max-width: 66ch;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
+
+.promptAction {
+  flex-shrink: 0;
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-md);
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.promptAction:hover {
+  background: var(--c-accent-hover);
+}
+
+.muted {
+  color: var(--c-text-muted);
+}

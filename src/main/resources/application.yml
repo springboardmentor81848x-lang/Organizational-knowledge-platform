@@ -1,42 +1,132 @@
 spring:
   application:
     name: org-skills-intelligence-platform
-  # --- H2 In-Memory Database (for development) ---
+  # --- PostgreSQL: the database of record ---
+  # `docker compose up -d postgres redis` from the repository root brings up both services
+  # with the defaults below already in place.
   datasource:
-    url: jdbc:h2:mem:org_skills;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  # --- PostgreSQL (uncomment for production) ---
-  # datasource:
-  #   url: ${DB_URL:jdbc:postgresql://localhost:5432/org_skills}
-  #   username: ${DB_USERNAME:postgres}
-  #   password: ${DB_PASSWORD:postgres}
-  #   driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/org_skills}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: org-skills-pool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
-    database-platform: org.hibernate.dialect.H2Dialect
+      # Hibernate still owns the schema, as it did under H2. Set DDL_AUTO=validate once a
+      # migration tool takes over, so that a stale entity can never silently reshape a table
+      # that is holding real rows.
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         format_sql: true
         jdbc:
           time_zone: UTC
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+  # --- Redis: cache store for the catalogue and analytics reads ---
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      # Deliberately tight. Every cache call is wrapped by the error handler in CachingConfig,
+      # so a timeout is not a failure - it is a cache miss, and the database answers instead.
+      # That makes a long timeout strictly worse than a short one: while Redis is unreachable,
+      # each annotated read pays this twice (once for the lookup, once for the write-back), so
+      # a 2s setting turns a healthy application into a 4s-per-request one. Redis on a local
+      # network answers in single-digit milliseconds, so 250ms is still far above anything a
+      # healthy instance needs.
+      timeout: ${REDIS_TIMEOUT:250ms}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:250ms}
+      # Redis backs the cache only; there are no Redis repositories. Without this, Spring Data
+      # scans every JPA repository looking for one and logs a warning for each.
+      repositories:
+        enabled: false
+      lettuce:
+        pool:
+          enabled: true
+          max-active: ${REDIS_POOL_MAX_ACTIVE:8}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:0}
+  cache:
+    type: ${CACHE_TYPE:redis}
+  # --- Outbound email (sign-up verification codes) ---
+  # Leave MAIL_HOST unset and codes are written to the server log instead of sent, which is what
+  # makes sign-up testable on a fresh checkout. Set it and the same path delivers for real.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+        transport:
+          protocol: smtp
+    # Without this a refused or slow SMTP server would hold a sign-up request open indefinitely.
+    connectiontimeout: 5000
+    timeout: 5000
+    writetimeout: 5000
   jackson:
     time-zone: UTC
 
 server:
   port: ${PORT:8081}
 
+# Only the health endpoint is exposed, and it reports up/down without the component breakdown.
+# The details name the database and cache and their connection state, which is useful to an
+# operator and is exactly what an unauthenticated caller should not be handed - and this endpoint
+# is permitted without a token so that a container orchestrator can reach it.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  health:
+    # Running without SMTP is a supported mode, not a fault: EmailSenderService says so on
+    # startup and writes verification codes to the log instead of sending them. The mail health
+    # indicator does not know that - it tries to authenticate, fails, and drags the aggregate
+    # status to DOWN, which would make an orchestrator pull a perfectly working instance out of
+    # service over an optional integration. Configure MAIL_HOST and the sender works; either
+    # way, whether mail is set up is not what "is this application healthy" is asking.
+    mail:
+      enabled: false
+
 app:
+  # Origins the browser may call this API from. The defaults are the Vite and CRA development
+  # ports; a deployment overrides this with its own origin. See CorsConfig for why it is a list
+  # of exact origins rather than a wildcard.
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174}
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-secure-32-char-minimum-secret}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  mail:
+    from: ${MAIL_FROM:no-reply@orgskills.com}
+  oauth2:
+    google:
+      # Google sign-in stays refused until this is set: without a client id there is no
+      # audience to check a token against, and an unverified token proves nothing.
+      client-id: ${GOOGLE_CLIENT_ID:}
+  firebase:
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:org-knowledge-gap-firebase-adminsdk-fbsvc-fd30b420b6.json}
   openai:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gemini-3.6-flash}
@@ -55,4 +145,12 @@ recommendation:
       course-quality: ${SCORE_WEIGHT_COURSE_QUALITY:0.10}
       recency: ${SCORE_WEIGHT_RECENCY:0.10}
 
-
+# Time to live per cache. The catalogue changes only when somebody edits it and is evicted
+# explicitly on write, so it can sit for an hour. The analytics matrices are recomputed from
+# whatever skills happen to be recorded at the time, so they expire quickly enough that a
+# missed eviction cannot leave a dashboard stale for long.
+cache:
+  ttl:
+    catalog-minutes: ${CACHE_TTL_CATALOG_MINUTES:60}
+    analytics-minutes: ${CACHE_TTL_ANALYTICS_MINUTES:10}
+    default-minutes: ${CACHE_TTL_DEFAULT_MINUTES:30}

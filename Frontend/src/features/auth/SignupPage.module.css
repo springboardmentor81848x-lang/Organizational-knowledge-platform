@@ -1,0 +1,63 @@
+/*
+ * Sign-up specific styling. The page frame, form, inputs and buttons are reused from
+ * LoginPage.module.css so the two screens stay visually identical; only what sign-up adds
+ * lives here.
+ */
+
+/* Two fields side by side, collapsing on narrow screens rather than overflowing. */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4, 1rem);
+}
+
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * The target role is set apart because it is the one choice on this form that changes what the
+ * rest of the platform does for this person, rather than just describing them.
+ */
+.targetSection {
+  padding: var(--sp-4, 1rem);
+  border: 1px solid var(--c-border, rgba(148, 163, 184, 0.32));
+  border-radius: var(--radius-md, 10px);
+  background: var(--c-surface-2, rgba(148, 163, 184, 0.06));
+}
+
+.hint {
+  margin: var(--sp-2, 0.5rem) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--c-text-muted, #64748b);
+}
+
+.hintWarning {
+  margin: var(--sp-2, 0.5rem) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--c-danger, #dc2626);
+}
+
+/* The code field: wide, monospaced and spaced, so six digits are easy to check by eye. */
+/*
+ * Shown once the request has been submitted. A notice rather than a success banner: nothing is
+ * finished yet, and the applicant still has to wait for somebody to act.
+ */
+.pendingNotice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--c-info-border);
+  border-radius: var(--radius-md);
+  background: var(--c-info-bg);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+}
+
+.pendingNotice strong { color: var(--c-info); }

@@ -1,0 +1,173 @@
+/* The approver's queue. One card per request, so a decision and its reason stay together. */
+
+.approvals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.guidance {
+  margin: 0;
+  max-width: 68ch;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
+
+.filters {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: 2px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-sunken);
+}
+
+.filter {
+  padding: var(--s-1) var(--s-3);
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  cursor: pointer;
+}
+
+.filter:hover {
+  color: var(--c-text);
+}
+
+.filterActive,
+.filterActive:hover {
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-weight: var(--fw-medium);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(22, 32, 43, 0.08));
+}
+
+/* ── One request ──────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.meta {
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.headRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-1);
+}
+
+.attempts {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-muted);
+}
+
+/* The employee's own words are the whole basis of the decision, so they are set apart. */
+.reason {
+  margin: var(--s-4) 0 0;
+  padding: var(--s-3);
+  border-left: 3px solid var(--c-accent-border);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--c-accent-subtle);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+.timestamp {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.field {
+  margin-top: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-secondary);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--c-border-focus);
+  box-shadow: 0 0 0 3px var(--c-accent-subtle);
+}
+
+.error {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  padding: var(--s-3);
+  background: var(--c-critical-bg);
+  border: 1px solid var(--c-critical-border);
+  border-radius: var(--radius-md);
+  color: var(--c-critical);
+  font-size: var(--fs-base);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.decided {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-border);
+}
+
+.decidedLine {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.decidedNote {
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text);
+}

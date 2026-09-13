@@ -61,7 +61,7 @@ public class AdminService {
         user.setRole(request.getRole());
         User saved = userRepository.save(user);
 
-        auditLogService.logEvent(actorUserId, "ADMIN", "UPDATE_USER_ROLE", "User", saved.getId().toString(), "Updated role of " + saved.getEmail() + " to " + request.getRole());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), "UPDATE_USER_ROLE", "User", saved.getId().toString(), "Updated role of " + saved.getEmail() + " to " + request.getRole());
         return toProfile(saved);
     }
 
@@ -74,7 +74,7 @@ public class AdminService {
         User saved = userRepository.save(user);
 
         String action = request.getActive() ? "ACTIVATE_USER" : "DEACTIVATE_USER";
-        auditLogService.logEvent(actorUserId, "ADMIN", action, "User", saved.getId().toString(), action + " for " + saved.getEmail());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), action, "User", saved.getId().toString(), action + " for " + saved.getEmail());
         return toProfile(saved);
     }
 
@@ -86,7 +86,7 @@ public class AdminService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        auditLogService.logEvent(actorUserId, "ADMIN", "RESET_USER_PASSWORD", "User", user.getId().toString(), "Reset password for " + user.getEmail());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), "RESET_USER_PASSWORD", "User", user.getId().toString(), "Reset password for " + user.getEmail());
     }
 
     @Transactional
@@ -104,7 +104,7 @@ public class AdminService {
         }
 
         User saved = userRepository.save(user);
-        auditLogService.logEvent(actorUserId, "ADMIN", "UPDATE_JOB_ASSIGNMENT", "User", saved.getId().toString(), "Updated job title to " + saved.getJobTitle() + ", department to " + saved.getDepartment());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), "UPDATE_JOB_ASSIGNMENT", "User", saved.getId().toString(), "Updated job title to " + saved.getJobTitle() + ", department to " + saved.getDepartment());
         return toProfile(saved);
     }
 
@@ -135,7 +135,7 @@ public class AdminService {
         role.setActive(request.getActive() != null ? request.getActive() : true);
 
         RoleEntity saved = roleEntityRepository.save(role);
-        auditLogService.logEvent(actorUserId, "ADMIN", "CREATE_ROLE", "RoleEntity", saved.getId().toString(), "Created role: " + saved.getName());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), "CREATE_ROLE", "RoleEntity", saved.getId().toString(), "Created role: " + saved.getName());
         return toRoleResponse(saved);
     }
 
@@ -151,7 +151,7 @@ public class AdminService {
         }
 
         RoleEntity saved = roleEntityRepository.save(role);
-        auditLogService.logEvent(actorUserId, "ADMIN", "UPDATE_ROLE", "RoleEntity", saved.getId().toString(), "Updated role: " + saved.getName());
+        auditLogService.logEvent(actorUserId, actorEmail(actorUserId), "UPDATE_ROLE", "RoleEntity", saved.getId().toString(), "Updated role: " + saved.getName());
         return toRoleResponse(saved);
     }
 
@@ -166,7 +166,7 @@ public class AdminService {
                 .status("UP")
                 .activeUserCount(active)
                 .totalUserCount(total)
-                .databaseStatus("CONNECTED (PostgreSQL/H2)")
+                .databaseStatus("CONNECTED (PostgreSQL)")
                 .timestamp(Instant.now())
                 .build();
     }
@@ -178,6 +178,18 @@ public class AdminService {
 
     // ── Helper mapping ──────────────────────────────────────────────────────────
 
+    /**
+     * The email of the administrator performing the action. Entries used to record the literal
+     * string "ADMIN", so the trail showed that an account had been deactivated but never by whom
+     * - which is most of what an audit trail is for.
+     */
+    private String actorEmail(Long actorUserId) {
+        if (actorUserId == null) {
+            return "SYSTEM";
+        }
+        return userRepository.findById(actorUserId).map(User::getEmail).orElse("SYSTEM");
+    }
+
     private UserProfileResponse toProfile(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -187,6 +199,7 @@ public class AdminService {
                 .department(user.getDepartment())
                 .jobTitle(user.getJobTitle())
                 .avatarUrl(user.getAvatarUrl())
+                .active(user.getActive())
                 .build();
     }
 

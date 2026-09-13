@@ -13,6 +13,7 @@ import com.orgskills.intelligence.entity.enums.AchievementType;
 import com.orgskills.intelligence.entity.enums.EnrollmentStatus;
 import com.orgskills.intelligence.entity.enums.NotificationType;
 import com.orgskills.intelligence.entity.enums.Role;
+import com.orgskills.intelligence.exception.ForbiddenException;
 import com.orgskills.intelligence.exception.ResourceNotFoundException;
 import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AchievementRepository;
@@ -207,7 +208,7 @@ class TrainingProgressServiceTest {
         EnrollmentRequest request = new EnrollmentRequest(10L);
         request.setEmployeeId(3L);
         assertThatThrownBy(() -> trainingProgressService.enroll(1L, request))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Access denied");
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
@@ -248,7 +249,7 @@ class TrainingProgressServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(employee));
 
         assertThatThrownBy(() -> trainingProgressService.getEnrollments(1L, 3L))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("Access denied");
     }
 
