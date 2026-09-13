@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { quizApi } from '@/api/quiz'
 import { api } from '@/api/client'
 import { assessmentsApi } from '@/api/assessments'
 import { adminApi } from '@/api/admin'
@@ -15,25 +16,59 @@ import { StatusPill } from '@/components/ui/StatusPill'
 import { Table, type Column } from '@/components/ui/Table'
 import { useToast } from '@/components/ui/Toast'
 import { ApiError } from '@/lib/apiError'
-import type { Assessment, ProficiencyLevel, UserProfile } from '@/types/api'
+import type { Assessment, ProficiencyLevel, Role, UserProfile } from '@/types/api'
 import { useSession } from '@/features/auth/useSession'
+import { TargetRoleQuiz } from './TargetRoleQuiz'
+import { ReattemptApprovals } from './ReattemptApprovals'
 import styles from './AssessmentsPage.module.css'
 
-type Mode = 'SELF' | 'PEER'
+type Mode = 'QUIZ' | 'PEER' | 'APPROVALS'
 
 /**
- * Self and peer assessment.
+ * Roles that get the approvals tab. The server decides whose requests they actually see and
+ * refuses the endpoint to anybody else, so this only governs whether the tab is painted.
+ */
+const APPROVER_ROLES: Role[] = [
+  'MANAGER',
+  'DEPARTMENT_HEAD',
+  'HR_SPECIALIST',
+  'HR_ADMIN',
+  'LND_ADMIN',
+  'SYSTEM_ADMIN',
+  'ADMIN',
+]
+
+/**
+ * Assessment.
  *
- * Both post to the employee endpoints, which create and submit in one call and return the
- * awarded levels alongside the levels held beforehand. That response is the whole point: the
- * user sees what actually moved rather than a bare confirmation, and the numbers come from the
- * server rather than from what was on the form.
+ * <h2>Why there is no "assess yourself" tab any more</h2>
+ * There used to be one: a form on which an employee picked their own level for each skill. It
+ * has been withdrawn, and the endpoint behind it with it. A proficiency level is not a private
+ * note — it colours the gap heatmap, sizes every gap beneath it and decides what training gets
+ * recommended and to whom — and a level somebody awarded themselves is a claim rather than
+ * evidence for one. Leaving the form in place meant the heatmap a manager reads was part
+ * measurement and part self-report, with nothing on the screen distinguishing the two.
+ *
+ * What remains are the two things that produce evidence: the marked target-role assessment,
+ * where the server scores the answers, and a peer assessment, which is somebody else's judgement
+ * rather than the subject's own.
  */
 export function AssessmentsPage() {
-  const { user } = useSession()
-  const [mode, setMode] = useState<Mode>('SELF')
+  const { user, role } = useSession()
+  const [mode, setMode] = useState<Mode>('QUIZ')
+
+  // Read here as well as inside the quiz so the tab can say which paper is waiting. It is the
+  // same query key, so this costs nothing: React Query serves both from one request.
+  const attempt = useQuery({
+    queryKey: queryKeys.assessments.attemptStatus(),
+    queryFn: ({ signal }) => quizApi.attemptStatus(signal),
+    retry: false,
+  })
 
   if (!user) return null
+
+  const canApprove = role !== null && APPROVER_ROLES.includes(role)
+  const pendingSkills = attempt.data?.scope === 'NEW_SKILLS' ? attempt.data.pendingSkillCount : 0
 
   return (
     <div className={styles.page}>
@@ -41,18 +76,22 @@ export function AssessmentsPage() {
         <h1 className={styles.title}>Assessments</h1>
         <p className={styles.subtitle}>
           An assessment is what turns a skill level into evidence. Submitting one moves your
-          proficiency, recalculates your gaps and regenerates what is recommended to you.
+          proficiency, recalculates your gaps and regenerates what is recommended to you. The
+          questions come from the skills your target role is measured on, they are marked on the
+          server, and the assessment is taken once — a further attempt has to be approved.
         </p>
       </header>
 
       <div className={styles.tabs} role="tablist">
         <button
           role="tab"
-          aria-selected={mode === 'SELF'}
-          className={[styles.tab, mode === 'SELF' ? styles.tabActive : ''].filter(Boolean).join(' ')}
-          onClick={() => setMode('SELF')}
+          aria-selected={mode === 'QUIZ'}
+          className={[styles.tab, mode === 'QUIZ' ? styles.tabActive : ''].filter(Boolean).join(' ')}
+          onClick={() => setMode('QUIZ')}
         >
-          Assess yourself
+          {pendingSkills > 0
+            ? `Assess ${pendingSkills} new skill${pendingSkills === 1 ? '' : 's'}`
+            : 'Take the assessment'}
         </button>
         <button
           role="tab"
@@ -62,17 +101,39 @@ export function AssessmentsPage() {
         >
           Assess a colleague
         </button>
+        {canApprove && (
+          <button
+            role="tab"
+            aria-selected={mode === 'APPROVALS'}
+            className={[styles.tab, mode === 'APPROVALS' ? styles.tabActive : '']
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() => setMode('APPROVALS')}
+          >
+            Retake requests
+          </button>
+        )}
       </div>
 
-      <AssessmentForm mode={mode} employeeId={user.id} />
-      <AssessmentHistory employeeId={user.id} />
+      {mode === 'QUIZ' && <TargetRoleQuiz />}
+      {mode === 'PEER' && <PeerAssessmentForm employeeId={user.id} />}
+      {mode === 'APPROVALS' && <ReattemptApprovals />}
+
+      {mode !== 'APPROVALS' && <AssessmentHistory employeeId={user.id} />}
     </div>
   )
 }
 
-// ── The form ────────────────────────────────────────────────────────────────
+// ── The peer form ───────────────────────────────────────────────────────────
 
-function AssessmentForm({ mode, employeeId }: { mode: Mode; employeeId: number }) {
+/**
+ * Rating a colleague.
+ *
+ * The skill list is the whole catalogue rather than the colleague's own recorded skills, because
+ * you may well know somebody is strong at something that never made it onto their profile — and
+ * that is exactly the case a peer assessment is worth having for.
+ */
+function PeerAssessmentForm({ employeeId }: { employeeId: number }) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [colleagueId, setColleagueId] = useState<number | ''>('')
@@ -80,20 +141,9 @@ function AssessmentForm({ mode, employeeId }: { mode: Mode; employeeId: number }
   const [comments, setComments] = useState('')
   const [submitted, setSubmitted] = useState<Assessment | null>(null)
 
-  /**
-   * A self assessment covers the skills you already hold. A peer assessment covers the whole
-   * catalog, because you may know a colleague is strong at something not yet on their profile.
-   */
-  const ownSkills = useQuery({
-    queryKey: queryKeys.skills.forUser(employeeId),
-    queryFn: ({ signal }) => skillsApi.forUser(employeeId, signal),
-    enabled: mode === 'SELF',
-  })
-
   const catalog = useQuery({
     queryKey: queryKeys.skills.catalog(),
     queryFn: ({ signal }) => skillsApi.list(signal),
-    enabled: mode === 'PEER',
   })
 
   // Colleagues come from the directory. An employee may not read it, in which case the form
@@ -101,20 +151,13 @@ function AssessmentForm({ mode, employeeId }: { mode: Mode; employeeId: number }
   const colleagues = useQuery({
     queryKey: ['directory', 'colleagues'],
     queryFn: ({ signal }) => adminApi.users(signal),
-    enabled: mode === 'PEER',
     retry: false,
   })
 
-  const skillOptions = useMemo(() => {
-    if (mode === 'SELF') {
-      return (ownSkills.data ?? []).map((s) => ({
-        skillId: s.skillId,
-        name: s.skillName,
-        held: s.proficiencyLevel as ProficiencyLevel | undefined,
-      }))
-    }
-    return (catalog.data ?? []).map((s) => ({ skillId: s.id, name: s.name, held: undefined }))
-  }, [mode, ownSkills.data, catalog.data])
+  const skillOptions = useMemo(
+    () => (catalog.data ?? []).map((s) => ({ skillId: s.id, name: s.name })),
+    [catalog.data],
+  )
 
   const submit = useMutation({
     mutationFn: () => {
@@ -122,10 +165,10 @@ function AssessmentForm({ mode, employeeId }: { mode: Mode; employeeId: number }
         skillId: Number(skillId),
         proficiency,
       }))
-      const body = { results, comments: comments.trim() || undefined }
-      return mode === 'SELF'
-        ? api.post<Assessment>('/api/employee/assessments/self', body)
-        : api.post<Assessment>(`/api/employee/assessments/peer/${colleagueId}`, body)
+      return api.post<Assessment>(`/api/employee/assessments/peer/${colleagueId}`, {
+        results,
+        comments: comments.trim() || undefined,
+      })
     },
     onSuccess: async (assessment) => {
       setSubmitted(assessment)
@@ -140,62 +183,42 @@ function AssessmentForm({ mode, employeeId }: { mode: Mode; employeeId: number }
   })
 
   const chosen = Object.keys(levels).length
-  const canSubmit = chosen > 0 && (mode === 'SELF' || colleagueId !== '')
-  const isLoading = mode === 'SELF' ? ownSkills.isLoading : catalog.isLoading
-  const loadError = mode === 'SELF' ? ownSkills.error : catalog.error
+  const canSubmit = chosen > 0 && colleagueId !== ''
 
   return (
     <>
       {submitted && <AssessmentOutcome assessment={submitted} onDismiss={() => setSubmitted(null)} />}
 
       <Card
-        title={mode === 'SELF' ? 'Rate your own skills' : 'Rate a colleague'}
-        description={
-          mode === 'SELF'
-            ? 'Choose a level for each skill you want to assess. Leave the rest untouched.'
-            : 'Pick the colleague, then rate the skills you have seen them work with.'
-        }
-        flush={isLoading || Boolean(loadError)}
+        title="Rate a colleague"
+        description="Pick the colleague, then rate the skills you have seen them work with."
+        flush={catalog.isLoading || Boolean(catalog.error)}
       >
-        {isLoading ? (
+        {catalog.isLoading ? (
           <LoadingBlock rows={4} label="Loading skills" />
-        ) : loadError ? (
-          isPermissionDenied(loadError) ? (
+        ) : catalog.error ? (
+          isPermissionDenied(catalog.error) ? (
             <PermissionDenied />
           ) : (
-            <ErrorBlock
-              error={loadError}
-              onRetry={mode === 'SELF' ? ownSkills.refetch : catalog.refetch}
-            />
+            <ErrorBlock error={catalog.error} onRetry={catalog.refetch} />
           )
         ) : (
           <>
-            {mode === 'PEER' && (
-              <ColleaguePicker
-                query={colleagues}
-                value={colleagueId}
-                onChange={setColleagueId}
-                excludeId={employeeId}
-              />
-            )}
+            <ColleaguePicker
+              query={colleagues}
+              value={colleagueId}
+              onChange={setColleagueId}
+              excludeId={employeeId}
+            />
 
             {skillOptions.length === 0 ? (
-              <p className={styles.note}>
-                {mode === 'SELF'
-                  ? 'You have no skills on record yet. Add some on My skills first.'
-                  : 'The skill catalog is empty.'}
-              </p>
+              <p className={styles.note}>The skill catalog is empty.</p>
             ) : (
               <ul className={styles.skillList}>
                 {skillOptions.map((option) => (
                   <li className={styles.skillRow} key={option.skillId}>
                     <div className={styles.skillMeta}>
                       <span className={styles.skillName}>{option.name}</span>
-                      {option.held && (
-                        <span className={styles.currently}>
-                          Currently {proficiencyLabel(option.held)}
-                        </span>
-                      )}
                     </div>
                     <LevelPicker
                       value={levels[option.skillId]}
@@ -349,9 +372,7 @@ function AssessmentOutcome({
     <Card
       className={styles.outcome}
       title="Assessment recorded"
-      description={`${assessment.assessmentType === 'SELF' ? 'Self' : 'Peer'} assessment of ${
-        assessment.employeeName
-      }.`}
+      description={`Peer assessment of ${assessment.employeeName}.`}
       actions={
         <Button size="sm" variant="ghost" onClick={onDismiss}>
           Dismiss
@@ -378,7 +399,7 @@ function AssessmentOutcome({
         ))}
       </ul>
       <p className={styles.outcomeNote}>
-        Your gaps and recommendations have been recalculated from these levels.
+        Their gaps and recommendations have been recalculated from these levels.
       </p>
     </Card>
   )
@@ -401,7 +422,19 @@ function AssessmentHistory({ employeeId }: { employeeId: number }) {
 
   const columns: Column<Assessment>[] = [
     { key: 'date', header: 'Date', render: (row) => formatDate(row.date), width: '150px' },
-    { key: 'type', header: 'Type', render: (row) => <StatusPill value={row.assessmentType} />, width: '120px' },
+    {
+      key: 'type',
+      header: 'Type',
+      // SELF now only ever comes from the marked target-role paper, so calling it "Self" would
+      // describe how it was authored rather than what it is.
+      render: (row) => (
+        <StatusPill
+          value={row.assessmentType}
+          label={row.assessmentType === 'SELF' ? 'Target role' : undefined}
+        />
+      ),
+      width: '120px',
+    },
     { key: 'assessor', header: 'Assessed by', render: (row) => row.assessorName },
     {
       key: 'skills',

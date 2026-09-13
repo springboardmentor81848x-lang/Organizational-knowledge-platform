@@ -8,6 +8,7 @@ import com.orgskills.intelligence.dto.employee.CertificationResponse;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileRequest;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileResponse;
 import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
+import com.orgskills.intelligence.dto.employee.TargetRoleRequest;
 import com.orgskills.intelligence.dto.mentorship.MentorshipResponse;
 import com.orgskills.intelligence.dto.mentorship.RecommendedMentorResponse;
 import com.orgskills.intelligence.dto.employee.UpdateProgressRequest;
@@ -68,20 +69,35 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.updateProfile(userId, request));
     }
 
+    /**
+     * Sets the role this employee is working towards.
+     *
+     * <p>Always the caller's own - the user id comes from the token - so this is somebody
+     * declaring their own ambition, not an administrator assigning one. The available pairs
+     * come from {@code GET /api/role-competencies/target-roles}.
+     */
+    @PutMapping("/target-role")
+    public ResponseEntity<EmployeeProfileResponse> updateTargetRole(
+            Authentication authentication,
+            @Valid @RequestBody TargetRoleRequest request) {
+        Long userId = getUserId(authentication);
+        return ResponseEntity.ok(employeeService.updateTargetRole(userId, request));
+    }
+
     @GetMapping("/skills")
     public ResponseEntity<List<UserSkillResponse>> getSkills(Authentication authentication) {
         Long userId = getUserId(authentication);
         return ResponseEntity.ok(userSkillService.getUserSkills(userId));
     }
 
-    @PostMapping("/assessments/self")
-    public ResponseEntity<AssessmentResponse> submitSelfAssessment(
-            Authentication authentication,
-            @Valid @RequestBody SubmitAssessmentRequest request) {
-        Long userId = getUserId(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.submitSelfAssessment(userId, request));
-    }
-
+    /**
+     * A colleague's judgement of somebody else's skills.
+     *
+     * <p>There is deliberately no self-assessment counterpart. Employees no longer rate
+     * themselves: a proficiency level is what colours the gap heatmap, so it is set by a marked
+     * target-role assessment or by another person, never by a claim the subject makes about
+     * themselves.
+     */
     @PostMapping("/assessments/peer/{colleagueId}")
     public ResponseEntity<AssessmentResponse> submitPeerAssessment(
             Authentication authentication,

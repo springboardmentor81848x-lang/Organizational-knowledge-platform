@@ -8,6 +8,7 @@ import com.orgskills.intelligence.dto.employee.CertificationResponse;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileRequest;
 import com.orgskills.intelligence.dto.employee.EmployeeProfileResponse;
 import com.orgskills.intelligence.dto.employee.EnrollmentRequest;
+import com.orgskills.intelligence.dto.employee.TargetRoleRequest;
 import com.orgskills.intelligence.dto.employee.EnrollmentResponse;
 import com.orgskills.intelligence.dto.employee.UpdateProgressRequest;
 import com.orgskills.intelligence.dto.mentorship.MentorshipRequest;
@@ -29,6 +30,7 @@ import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.repository.AchievementRepository;
 import com.orgskills.intelligence.repository.CertificationRepository;
 import com.orgskills.intelligence.repository.EmployeeProfileRepository;
+import com.orgskills.intelligence.repository.RoleCompetencyRepository;
 import com.orgskills.intelligence.repository.SkillRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import com.orgskills.intelligence.repository.UserSkillRepository;
@@ -51,6 +53,8 @@ public class EmployeeService {
     private final EmployeeProfileRepository employeeProfileRepository;
     private final UserSkillRepository userSkillRepository;
     private final SkillRepository skillRepository;
+    private final RoleCompetencyRepository roleCompetencyRepository;
+    private final GapAnalysisService gapAnalysisService;
     private final AchievementRepository achievementRepository;
     private final CertificationRepository certificationRepository;
     private final NotificationService notificationService;
@@ -61,12 +65,28 @@ public class EmployeeService {
 
     // ── Profile CRUD ─────────────────────────────────────────────────────────────
 
+    /**
+     * The employee's profile, or an empty one for somebody who has never saved theirs.
+     *
+     * <p>The empty case is <em>not</em> written to the database. It used to be: reading a
+     * profile that did not exist inserted a blank row first. PostgreSQL refuses an INSERT
+     * inside a read-only transaction outright, so on Postgres this failed with
+     * "cannot execute INSERT in a read-only transaction" - and it failed for exactly the people
+     * least able to work around it, since the only accounts without a profile row are the ones
+     * that have never opened the page.
+     *
+     * <p>Dropping the read-only marker would have made it work and been the wrong fix: a GET
+     * that writes is a GET that cannot be cached, retried or served from a replica, and it
+     * leaves a blank row behind for every account that ever glanced at the screen. An empty
+     * profile is a view of a user who has not filled one in, so it is built and returned, and
+     * the row appears when there is something to put in it.
+     */
     @Transactional(readOnly = true)
     public EmployeeProfileResponse getProfile(Long userId) {
         User user = getUser(userId);
-        EmployeeProfile profile = employeeProfileRepository.findByUserId(userId)
-                .orElseGet(() -> createEmptyProfile(user));
-        return toProfileResponse(profile);
+        return employeeProfileRepository.findByUserId(userId)
+                .map(this::toProfileResponse)
+                .orElseGet(() -> toProfileResponse(emptyProfileFor(user)));
     }
 
     @Transactional
@@ -90,15 +110,71 @@ public class EmployeeService {
         return toProfileResponse(saved);
     }
 
-    // ── Self & Peer Assessment ──────────────────────────────────────────────────
+    // ── Target role ─────────────────────────────────────────────────
 
-    // Assessment submission and the chain it triggers live in AssessmentService, so these
-    // self-service endpoints and /api/assessments run exactly the same flow.
-
+    /**
+     * Sets or changes the role the employee is working towards.
+     *
+     * <h2>Why this exists as its own operation</h2>
+     * A target role could only be chosen during sign-up, which left two groups stuck. Anybody
+     * who skipped the question - and every account created before target roles existed, or by an
+     * administrator on somebody's behalf - had no way to answer it afterwards, and their
+     * assessment refused to build for want of one. Anybody whose ambitions changed had no way to
+     * say so. Both are ordinary situations and neither should need an administrator.
+     *
+     * <p>The pair is validated against the competency profiles rather than accepted as typed. A
+     * target naming a role nobody has defined skills for produces an account whose assessment
+     * has no questions and whose gaps have nothing to measure against, so it is refused here
+     * with the reason rather than accepted and discovered later.
+     *
+     * <p>Changing it recalculates gaps immediately, because gaps are measured against the target
+     * role: leaving the old figures up would show the employee their distance from a role they
+     * are no longer aiming at.
+     */
     @Transactional
-    public AssessmentResponse submitSelfAssessment(Long userId, SubmitAssessmentRequest request) {
-        return assessmentService.createAndSubmit(userId, userId, AssessmentType.SELF, request);
+    public EmployeeProfileResponse updateTargetRole(Long userId, TargetRoleRequest request) {
+        User user = getUser(userId);
+
+        if (!user.getRole().hasDevelopmentTrack()) {
+            throw new ValidationException("The " + user.getRole().name().replace('_', ' ').toLowerCase()
+                    + " role is not measured against a target role. This account administers the "
+                    + "platform rather than being assessed by it.");
+        }
+
+        String jobTitle = request.getJobTitle().trim();
+        String department = request.getDepartment().trim();
+
+        if (roleCompetencyRepository
+                .findByJobTitleIgnoreCaseAndDepartmentIgnoreCase(jobTitle, department).isEmpty()) {
+            throw new ValidationException("No competency profile is defined for '" + jobTitle
+                    + "' in " + department + ", so it cannot be used as a target role. Pick one of "
+                    + "the roles offered, or ask an administrator to define its skills.");
+        }
+
+        user.setTargetJobTitle(jobTitle);
+        user.setTargetDepartment(department);
+        userRepository.save(user);
+
+        auditLogService.logEvent(userId, user.getEmail(), "UPDATE_TARGET_ROLE", "User",
+                userId.toString(), "Target role set to " + jobTitle + " in " + department);
+
+        // The gaps on screen were measured against the previous target, so they are recomputed
+        // before the response goes back rather than left to drift until something else happens
+        // to refresh them.
+        gapAnalysisService.calculateAndFetchUserGaps(userId);
+
+        return getProfile(userId);
     }
+
+    // ── Peer assessment ──────────────────────────────────────────────────
+
+    // Assessment submission and the chain it triggers live in AssessmentService, so this
+    // self-service endpoint and /api/assessments run exactly the same flow.
+    //
+    // Rating your own skills by hand was withdrawn. A proficiency level is what colours the gap
+    // heatmap and sizes every gap behind it, so it now moves only on evidence: a marked
+    // target-role assessment, or a judgement made by somebody other than the person being
+    // judged. There is deliberately no replacement for the old self-assessment endpoint.
 
     @Transactional
     public AssessmentResponse submitPeerAssessment(Long submitterId, Long colleagueId, SubmitAssessmentRequest request) {
@@ -225,12 +301,18 @@ public class EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found for id: " + skillId));
     }
 
-    private EmployeeProfile createEmptyProfile(User user) {
+    /**
+     * An unsaved profile seeded from the account, for somebody who has never filled one in.
+     *
+     * <p>Deliberately transient. It is a shape for the screen to render, not a row - see
+     * {@link #getProfile} for why writing one on read was a bug rather than a convenience.
+     */
+    private EmployeeProfile emptyProfileFor(User user) {
         EmployeeProfile profile = new EmployeeProfile();
         profile.setUser(user);
         profile.setDepartment(user.getDepartment());
         profile.setJobRole(user.getJobTitle());
-        return employeeProfileRepository.save(profile);
+        return profile;
     }
 
 
