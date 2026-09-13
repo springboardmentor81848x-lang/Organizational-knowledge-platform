@@ -1,5 +1,12 @@
 import { api } from './client'
-import type { AuthResponse, LoginRequest, UserProfile } from '@/types/api'
+import type {
+  AuthResponse,
+  LoginRequest,
+  SignupRequest,
+  SignupResponse,
+  TargetRoleOption,
+  UserProfile,
+} from '@/types/api'
 
 export interface RegisterRequest {
   email: string
@@ -23,6 +30,20 @@ export interface ChangePasswordRequest {
 
 export const authApi = {
   login: (body: LoginRequest) => api.postUnauthenticated<AuthResponse>('/api/auth/login', body),
+
+  /**
+   * Self-service sign-up. Returns no tokens on purpose - the account is unusable until a
+   * department head, HR or an administrator grants it access.
+   */
+  signup: (body: SignupRequest) =>
+    api.postUnauthenticated<SignupResponse>('/api/auth/signup', body),
+
+  /**
+   * The roles a new employee can choose as their target. Unauthenticated, because the person
+   * choosing has no account yet; it exposes only role titles and a count.
+   */
+  targetRoles: (signal?: AbortSignal) =>
+    api.getUnauthenticated<TargetRoleOption[]>('/api/role-competencies/target-roles', signal),
   register: (body: RegisterRequest) =>
     api.postUnauthenticated<AuthResponse>('/api/auth/register', body),
   refresh: (refreshToken: string) =>
@@ -35,6 +56,21 @@ export const authApi = {
    */
   oauth2Google: (body: { idToken: string }) =>
     api.postUnauthenticated<AuthResponse>('/api/auth/oauth2/google', body),
+
+  /**
+   * Signs in with a Firebase credential (Google, GitHub, Microsoft, etc.). The server
+   * verifies the token with the Firebase Admin SDK before trusting any of it.
+   */
+  firebaseLogin: (body: { idToken: string }) =>
+    api.postUnauthenticated<AuthResponse>('/api/auth/firebase', body),
+
+  /**
+   * Revokes a refresh token so signing out actually ends the session server-side rather than
+   * only forgetting it in this browser. Unauthenticated on purpose: the access token may
+   * already have expired, and possession of the refresh token is the only thing being proved.
+   */
+  logout: (refreshToken: string) =>
+    api.postUnauthenticated<void>('/api/auth/logout', { refreshToken }),
 
   /**
    * Reports a lockout to the administrators who can reset it. Always succeeds, whether or not

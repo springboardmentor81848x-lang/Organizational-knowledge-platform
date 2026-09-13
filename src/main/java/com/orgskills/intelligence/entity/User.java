@@ -1,5 +1,6 @@
 package com.orgskills.intelligence.entity;
 
+import com.orgskills.intelligence.entity.enums.AccessStatus;
 import com.orgskills.intelligence.entity.enums.Role;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +49,58 @@ public class User {
     private String jobTitle;
 
     private String avatarUrl;
+
+    /**
+     * The role the person is working towards, as opposed to {@link #jobTitle}, which is the one
+     * they hold today.
+     *
+     * <p>Chosen at sign-up and used as the yardstick for their assessments and gaps: the
+     * competency profile matched here is what their proficiency is measured against, so an
+     * employee aiming at "Senior Backend Engineer" is assessed on that role's skills rather than
+     * their current one. Nullable, because accounts created before this existed - and every
+     * non-employee role - have no target.
+     */
+    @Column(name = "target_job_title")
+    private String targetJobTitle;
+
+    /**
+     * The department the target role sits in. A competency profile is keyed by job title *and*
+     * department, so the title alone does not identify one.
+     */
+    @Column(name = "target_department")
+    private String targetDepartment;
+
+    /**
+     * Whether the address has been proven by entering the emailed one-time password.
+     *
+     * <p>Sign-up leaves this false and sign-in refuses the account until it flips, which is what
+     * stops somebody registering under an address they do not control. Seeded and
+     * administrator-created accounts are set true on creation, since no one needs to prove an
+     * address that was set for them.
+     *
+     * <p>Deliberately nullable, and null means approved. Two reasons. Hibernate's {@code update}
+     * mode cannot add a NOT NULL column to a table that already holds rows, so declaring it
+     * non-null would leave the column missing entirely on every existing database. And the rows
+     * that predate approval belong to accounts created before it existed — they were never asked
+     * to wait for anyone, so treating null as "pending" would have locked out every user the
+     * platform already had. Only an explicit PENDING or REJECTED, which only self-service
+     * sign-up sets, gates sign-in; see {@link #getAccessStatus()}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "access_status")
+    private AccessStatus accessStatus = AccessStatus.APPROVED;
+
+    /** Who granted or refused access. Null for accounts that never needed a decision. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "access_decided_by")
+    private User accessDecidedBy;
+
+    @Column(name = "access_decided_at")
+    private Instant accessDecidedAt;
+
+    /** The approver's reason, shown to the applicant. Most useful on a refusal. */
+    @Column(name = "access_decision_note", length = 1000)
+    private String accessDecisionNote;
 
     @Column(nullable = false)
     private Boolean active = true;
@@ -164,6 +218,66 @@ public class User {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getTargetJobTitle() {
+        return targetJobTitle;
+    }
+
+    public void setTargetJobTitle(String targetJobTitle) {
+        this.targetJobTitle = targetJobTitle;
+    }
+
+    public String getTargetDepartment() {
+        return targetDepartment;
+    }
+
+    public void setTargetDepartment(String targetDepartment) {
+        this.targetDepartment = targetDepartment;
+    }
+
+    /**
+     * Where this account stands with the people who grant access.
+     *
+     * <p>Null counts as approved: it marks an account created before approval existed, or one an
+     * administrator created directly. Every check should go through here rather than testing the
+     * field, so that one convention is applied in one place.
+     */
+    public AccessStatus getAccessStatus() {
+        return accessStatus == null ? AccessStatus.APPROVED : accessStatus;
+    }
+
+    public void setAccessStatus(AccessStatus accessStatus) {
+        this.accessStatus = accessStatus;
+    }
+
+    /** Whether this account may sign in as far as the access decision is concerned. */
+    public boolean isAccessApproved() {
+        return getAccessStatus() == AccessStatus.APPROVED;
+    }
+
+    public User getAccessDecidedBy() {
+        return accessDecidedBy;
+    }
+
+    public void setAccessDecidedBy(User accessDecidedBy) {
+        this.accessDecidedBy = accessDecidedBy;
+    }
+
+    public Instant getAccessDecidedAt() {
+        return accessDecidedAt;
+    }
+
+    public void setAccessDecidedAt(Instant accessDecidedAt) {
+        this.accessDecidedAt = accessDecidedAt;
+    }
+
+    public String getAccessDecisionNote() {
+        return accessDecisionNote;
+    }
+
+    public void setAccessDecisionNote(String accessDecisionNote) {
+        this.accessDecisionNote = accessDecisionNote;
     }
 
     public Boolean getActive() {

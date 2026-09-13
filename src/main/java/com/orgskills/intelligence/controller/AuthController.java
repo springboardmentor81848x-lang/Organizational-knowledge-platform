@@ -31,6 +31,17 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
+    /**
+     * Self-service sign-up. Returns no tokens: the account is unusable until the emailed code is
+     * confirmed at {@code /verify-otp}, which is where sign-in actually happens.
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<com.orgskills.intelligence.dto.auth.SignupResponse> signup(
+            @Valid @RequestBody com.orgskills.intelligence.dto.auth.SignupRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(authService.signup(request));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
@@ -44,6 +55,22 @@ public class AuthController {
     @PostMapping("/oauth2/google")
     public ResponseEntity<AuthResponse> oauth2Google(@Valid @RequestBody com.orgskills.intelligence.dto.auth.OAuth2GoogleRequest request) {
         return ResponseEntity.ok(authService.oauth2GoogleLogin(request));
+    }
+
+    @PostMapping("/firebase")
+    public ResponseEntity<AuthResponse> firebaseLogin(@Valid @RequestBody com.orgskills.intelligence.dto.auth.FirebaseLoginRequest request) {
+        return ResponseEntity.ok(authService.firebaseLogin(request));
+    }
+
+    /**
+     * Ends the session. Unauthenticated on purpose: by the time somebody signs out their access
+     * token may already have expired, and refusing them would leave the refresh token live.
+     * Possession of the refresh token is the only thing this needs proved.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody com.orgskills.intelligence.dto.auth.RefreshTokenRequest request) {
+        authService.logout(request);
+        return ResponseEntity.noContent().build();
     }
 
     /**

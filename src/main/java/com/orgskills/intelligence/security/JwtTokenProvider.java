@@ -6,6 +6,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.Date;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
 
     @Value("${app.jwt.secret}")
@@ -24,12 +26,32 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
+    /**
+     * The placeholder in application.yml, which exists so a fresh checkout runs with nothing set.
+     *
+     * <p>It is long enough to pass the length check below, which is what made it dangerous: a
+     * deployment that forgets JWT_SECRET starts perfectly and signs every token with a value
+     * printed in the repository. Anyone holding it can mint a token for any account, including
+     * SYSTEM_ADMIN, and no amount of correct authorisation code downstream would notice - the
+     * signature checks out. So its use is announced as loudly as a log line can manage.
+     */
+    private static final String PLACEHOLDER_SECRET = "change-me-to-a-secure-32-char-minimum-secret";
+
     private SecretKey key;
 
     @PostConstruct
     public void init() {
         if (jwtSecret == null || jwtSecret.length() < 32) {
             throw new IllegalStateException("JWT secret must be at least 32 characters long");
+        }
+        if (PLACEHOLDER_SECRET.equals(jwtSecret)) {
+            log.error("****************************************************************");
+            log.error("JWT_SECRET is not set, so the built-in placeholder is being used.");
+            log.error("That value is published in this repository. Anyone who has read it");
+            log.error("can forge a token for any account, including SYSTEM_ADMIN.");
+            log.error("Fine for local development; set JWT_SECRET before anyone else can");
+            log.error("reach this instance. Any 32+ character random string will do.");
+            log.error("****************************************************************");
         }
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }

@@ -71,8 +71,45 @@ export const ROLE_DEFINITIONS: Record<Role, RoleDefinition> = {
   },
 }
 
+/**
+ * Roles that are measured by the platform, and so have a target role, an assessment, skills,
+ * gaps, recommendations and a learning path.
+ *
+ * <p>A team lead and a department head are on this list because managing people does not stop
+ * somebody being a practitioner with a role to grow into. The roles that are missing exist to
+ * operate the platform rather than to work in the business — a system administrator maintains
+ * the service, an L&D administrator runs the catalogue, an HR administrator manages accounts.
+ * None of them has a competency profile to be measured against, so every personal-development
+ * screen is a dead end for them, and an assessment taken by one would put an administrator into
+ * the workforce heatmap as a data point about a workforce they are not part of.
+ *
+ * <p>This mirrors `Role.hasDevelopmentTrack()` on the server, which is what actually enforces
+ * it. Keep the two in step.
+ */
+export const ROLES_WITH_DEVELOPMENT_TRACK: Role[] = [
+  'EMPLOYEE',
+  'MANAGER',
+  'DEPARTMENT_HEAD',
+  'HR_SPECIALIST',
+]
+
 /** Which roles may open each route. A route absent from here is open to anyone signed in. */
 export const ROUTE_ACCESS: Record<string, Role[]> = {
+  // The personal-development screens. Listed individually rather than under one prefix
+  // because they do not share one, and a role that cannot use them should get the explanation
+  // rather than a page of empty panels and failed requests.
+  '/me': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/skills': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/assessments': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/gaps': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/recommendations': ROLES_WITH_DEVELOPMENT_TRACK,
+  // The assistant answers from gaps, proficiencies and enrolments, so it belongs to the roles
+  // that have them. An operational account would get an assistant with nothing to read.
+  '/assistant': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/learning': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/mentorship': ROLES_WITH_DEVELOPMENT_TRACK,
+  '/achievements': ROLES_WITH_DEVELOPMENT_TRACK,
+
   '/team': ['MANAGER', 'DEPARTMENT_HEAD', 'SYSTEM_ADMIN', 'ADMIN'],
   '/department': ['DEPARTMENT_HEAD', 'HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
   '/workforce': ['HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
@@ -87,10 +124,21 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
     'ADMIN',
   ],
   '/admin': ['SYSTEM_ADMIN', 'ADMIN'],
+  // Wider than /admin on purpose: a department head grants access to their own department
+  // without being an administrator of the platform.
+  '/access-requests': ['DEPARTMENT_HEAD', 'HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
 }
 
 export function homeFor(role: Role | null | undefined): string {
-  return role ? ROLE_DEFINITIONS[role].home : '/me'
+  // '/profile' rather than '/me' for the unknown case: every role can open it, whereas '/me' is
+  // now refused to the operational roles, and sending somebody to a refusal is a poor way to
+  // recover from not knowing who they are.
+  return role ? ROLE_DEFINITIONS[role].home : '/profile'
+}
+
+/** Whether this role is measured by the platform at all. */
+export function hasDevelopmentTrack(role: Role | null | undefined): boolean {
+  return role !== null && role !== undefined && ROLES_WITH_DEVELOPMENT_TRACK.includes(role)
 }
 
 export function roleLabel(role: Role | null | undefined): string {

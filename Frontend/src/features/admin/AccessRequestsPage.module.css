@@ -1,0 +1,60 @@
+.page { display: flex; flex-direction: column; gap: var(--s-5); }
+.header { max-width: 74ch; }
+.title { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+.subtitle { margin-top: var(--s-2); color: var(--c-text-secondary); font-size: var(--fs-md); }
+
+.list { display: flex; flex-direction: column; }
+
+.request {
+  display: flex;
+  gap: var(--s-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.request:last-child { border-bottom: none; }
+
+.who { min-width: 16rem; flex: 1; }
+.name { font-weight: var(--fw-semibold); font-size: var(--fs-md); }
+.email { margin-top: var(--s-1); font-size: var(--fs-sm); color: var(--c-text-secondary); }
+
+.detail {
+  margin-top: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.detailLabel { color: var(--c-text-muted); }
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 18rem;
+}
+
+.noteRow { display: flex; gap: var(--s-2); }
+
+.note {
+  flex: 1;
+  padding: var(--s-2) var(--s-3);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.note:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--c-border-focus); }
+
+.buttons { display: flex; gap: var(--s-2); justify-content: flex-end; }
+
+.hint { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* Shown instead of the buttons when the row is visible but not this caller's to decide. */
+.notYours { font-size: var(--fs-sm); color: var(--c-text-muted); align-self: center; }
