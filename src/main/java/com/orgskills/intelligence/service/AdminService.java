@@ -166,7 +166,7 @@ public class AdminService {
                 .status("UP")
                 .activeUserCount(active)
                 .totalUserCount(total)
-                .databaseStatus("CONNECTED (PostgreSQL/H2)")
+                .databaseStatus("CONNECTED (PostgreSQL)")
                 .timestamp(Instant.now())
                 .build();
     }

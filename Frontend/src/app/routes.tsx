@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { SignupPage } from '@/features/auth/SignupPage'
 import { RoleSelectPage } from '@/features/auth/RoleSelectPage'
 import { EmployeeDashboard } from '@/features/dashboards/employee/EmployeeDashboard'
 import { ProfilePage } from '@/features/profile/ProfilePage'
@@ -8,6 +9,7 @@ import { AssessmentsPage } from '@/features/assessments/AssessmentsPage'
 import { GapsPage } from '@/features/gaps/GapsPage'
 import { LearningPage } from '@/features/learning/LearningPage'
 import { RecommendationsPage } from '@/features/learning/RecommendationsPage'
+import { AssistantPage } from '@/features/assistant/AssistantPage'
 import { MentorshipPage } from '@/features/mentorship/MentorshipPage'
 import { SessionsPage } from '@/features/sessions/SessionsPage'
 import { ExpertDirectoryPage } from '@/features/experts/ExpertDirectoryPage'
@@ -31,6 +33,7 @@ import { UsersPage } from '@/features/admin/UsersPage'
 import { RolesPage } from '@/features/admin/RolesPage'
 import { AuditLogPage } from '@/features/admin/AuditLogPage'
 import { SystemHealthPage } from '@/features/admin/SystemHealthPage'
+import { AccessRequestsPage } from '@/features/admin/AccessRequestsPage'
 import { AppShell } from './AppShell'
 import { RedirectIfAuthenticated, RequireAuth } from './RequireAuth'
 import { RequireRole } from './RequireRole'
@@ -68,27 +71,44 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    // Reached by people who have no account yet, so it sits outside the shell alongside sign-in
+    // and redirects away if a session already exists.
+    path: '/signup',
+    element: (
+      <RedirectIfAuthenticated>
+        <SignupPage />
+      </RedirectIfAuthenticated>
+    ),
+  },
+  {
     element: (
       <RequireAuth>
         <AppShell />
       </RequireAuth>
     ),
     children: [
-      // Signed in, "/" belongs to whichever dashboard the role owns.
-      { path: '/', element: <RoleHomeRedirect /> },
-
+      // The personal-development screens, each behind the same role check. They were open to
+      // anyone signed in, which meant an administrator could reach a gap list with nothing to
+      // measure and an assessment that refuses to build - a page of failed panels rather than
+      // an explanation. RequireRole reads the same table the navigation does, so a role that is
+      // not offered the link cannot reach the page by typing its URL either.
       { path: 'me', element: <RequireRole><EmployeeDashboard /></RequireRole> },
+      { path: 'skills', element: <RequireRole><MySkillsPage /></RequireRole> },
+      { path: 'assessments', element: <RequireRole><AssessmentsPage /></RequireRole> },
+      { path: 'gaps', element: <RequireRole><GapsPage /></RequireRole> },
+      { path: 'recommendations', element: <RequireRole><RecommendationsPage /></RequireRole> },
+      { path: 'assistant', element: <RequireRole><AssistantPage /></RequireRole> },
+      { path: 'learning', element: <RequireRole><LearningPage /></RequireRole> },
+      { path: 'mentorship', element: <RequireRole><MentorshipPage /></RequireRole> },
+      { path: 'achievements', element: <RequireRole><AchievementsPage /></RequireRole> },
+
+      // Open to every role. A profile and its notifications belong to the account rather than
+      // to a development track, and sessions and the expert directory are about the
+      // organisation rather than about the person reading them.
       { path: 'profile', element: <ProfilePage /> },
-      { path: 'skills', element: <MySkillsPage /> },
-      { path: 'gaps', element: <GapsPage /> },
-      { path: 'recommendations', element: <RecommendationsPage /> },
-      { path: 'learning', element: <LearningPage /> },
-      { path: 'assessments', element: <AssessmentsPage /> },
-      { path: 'mentorship', element: <MentorshipPage /> },
+      { path: 'notifications', element: <NotificationCenterPage /> },
       { path: 'sessions', element: <SessionsPage /> },
       { path: 'experts', element: <ExpertDirectoryPage /> },
-      { path: 'notifications', element: <NotificationCenterPage /> },
-      { path: 'achievements', element: <AchievementsPage /> },
       { path: 'team', element: <RequireRole><TeamDashboardPage scope="manager" /></RequireRole> },
       { path: 'department', element: <RequireRole><TeamDashboardPage scope="department" /></RequireRole> },
 
@@ -128,6 +148,8 @@ export const router = createBrowserRouter([
           { path: 'certifications', element: <CertificationRenewalsPage /> },
         ],
       },
+
+      { path: 'access-requests', element: <RequireRole><AccessRequestsPage /></RequireRole> },
 
       {
         path: 'admin',

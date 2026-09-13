@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { LoadingBlock } from '@/components/ui/AsyncState'
 import { tokenStore } from '@/lib/tokenStore'
 import { useSession } from '@/features/auth/useSession'
+import { homeFor } from './roleRoutes'
 import styles from './AppShell.module.css'
 
 /**
@@ -32,9 +33,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-/** Keeps a signed-in user off the login screen. */
+/** Keeps a signed-in user off the landing and login screens. */
 export function RedirectIfAuthenticated({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isRestoring } = useSession()
+  const { isAuthenticated, isRestoring, role } = useSession()
 
   if (isRestoring) {
     return (
@@ -45,7 +46,11 @@ export function RedirectIfAuthenticated({ children }: { children: ReactNode }) {
   }
 
   if (isAuthenticated || tokenStore.hasSession()) {
-    return <Navigate to="/" replace />
+    // The role's own dashboard, never "/". This component guards "/" itself, so sending a
+    // signed-in user there would re-render the very route that issued the redirect and loop
+    // forever on a blank screen. The role comes from the token, so it is known before the
+    // profile has loaded.
+    return <Navigate to={homeFor(role)} replace />
   }
 
   return <>{children}</>

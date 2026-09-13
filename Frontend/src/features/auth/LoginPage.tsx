@@ -1,20 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-import { authApi } from '@/api/auth'
 import { Button } from '@/components/ui/Button'
 import { ApiError } from '@/lib/apiError'
+import { isFirebaseConfigured, FIREBASE_PROVIDERS, type FirebaseProviderName } from '@/lib/firebase'
 import { ROLE_DEFINITIONS } from '@/app/roleRoutes'
 import type { Role } from '@/types/api'
-import { useLogin } from './useSession'
+import { useLogin, useFirebaseLogin } from './useSession'
 import { ForgotPasswordDialog } from './ForgotPasswordDialog'
 import styles from './LoginPage.module.css'
 
-/** Set only when a real Google client is configured; the backend refuses sign-in otherwise. */
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
-
 export function LoginPage() {
   const login = useLogin()
+  const firebaseLogin = useFirebaseLogin()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
@@ -25,28 +22,35 @@ export function LoginPage() {
   // session becomes.
   const intendedRole = (location.state as { intendedRole?: Role } | null)?.intendedRole
 
+  function navigateAfterLogin(actualRole: Role) {
+    const mismatched = Boolean(intendedRole && intendedRole !== actualRole)
+    navigate(ROLE_DEFINITIONS[actualRole].home, {
+      replace: true,
+      state: mismatched ? { roleMismatch: { expected: intendedRole, actual: actualRole } } : undefined,
+    })
+  }
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
     login.mutate(
       { email: email.trim(), password },
-      {
-        onSuccess: (auth) => {
-          // The destination comes from the role the backend returned. If it disagrees with the
-          // tile that was clicked, the next screen explains rather than silently correcting.
-          const actualRole = auth.user.role
-          const mismatched = Boolean(intendedRole && intendedRole !== actualRole)
-          navigate(ROLE_DEFINITIONS[actualRole].home, {
-            replace: true,
-            state: mismatched ? { roleMismatch: { expected: intendedRole, actual: actualRole } } : undefined,
-          })
-        },
-      },
+      { onSuccess: (auth) => navigateAfterLogin(auth.user.role) },
     )
   }
 
-  const error = login.error ? ApiError.from(login.error) : null
+  function handleFirebaseLogin(provider: FirebaseProviderName) {
+    firebaseLogin.mutate(provider, {
+      onSuccess: (auth) => navigateAfterLogin(auth.user.role),
+    })
+  }
+
+  const loginError = login.error ? ApiError.from(login.error) : null
+  const firebaseError = firebaseLogin.error ? ApiError.from(firebaseLogin.error) : null
+  const error = loginError ?? firebaseError
   const errorText =
-    error?.status === 401 ? 'That email and password combination was not recognised.' : error?.userMessage()
+    error?.status === 401 ? 'That sign-in was not recognised.' : error?.userMessage()
+
+  const anyPending = login.isPending || firebaseLogin.isPending
 
   return (
     <div className={styles.page}>
@@ -128,7 +132,7 @@ export function LoginPage() {
             size="lg"
             block
             loading={login.isPending}
-            disabled={!email || !password}
+            disabled={!email || !password || anyPending}
           >
             {login.isPending ? 'Signing in' : 'Sign in'}
           </Button>
@@ -137,7 +141,15 @@ export function LoginPage() {
             <span>or</span>
           </div>
 
-          <GoogleSignInButton />
+          <FirebaseSignInButtons
+            onLogin={handleFirebaseLogin}
+            isPending={firebaseLogin.isPending}
+            disabled={anyPending}
+          />
+
+          <p className={styles.switchRole}>
+            No account yet? <Link to="/signup">Create one</Link>
+          </p>
 
           <p className={styles.switchRole}>
             <Link to="/">Not sure which role you are?</Link>
@@ -155,27 +167,30 @@ export function LoginPage() {
 }
 
 /**
- * Google sign-in.
+ * Firebase sign-in buttons for all configured providers.
  *
- * The backend refuses these unless a Google client is configured, because without one there is
- * no audience to verify a token against. Rather than show a button that cannot work, this says
- * so plainly — a control that fails on click is worse than one that explains itself.
+ * When Firebase is not configured (no env vars), a single notice explains why the buttons
+ * are absent — a control that fails on click is worse than one that explains itself.
  */
-function GoogleSignInButton() {
-  const configured = Boolean(GOOGLE_CLIENT_ID)
-
-  const signIn = useMutation({
-    mutationFn: (idToken: string) => authApi.oauth2Google({ idToken }),
-  })
+function FirebaseSignInButtons({
+  onLogin,
+  isPending,
+  disabled,
+}: {
+  onLogin: (provider: FirebaseProviderName) => void
+  isPending: boolean
+  disabled: boolean
+}) {
+  const configured = isFirebaseConfigured()
 
   if (!configured) {
     return (
       <div className={styles.googleUnavailable}>
         <span className={styles.googleGlyph} aria-hidden="true">
-          G
+          🔒
         </span>
         <span>
-          <strong>Continue with Google</strong> is not enabled on this environment. Sign in with
+          <strong>Social sign-in</strong> is not enabled on this environment. Sign in with
           your email and password.
         </span>
       </div>
@@ -183,41 +198,26 @@ function GoogleSignInButton() {
   }
 
   return (
-    <Button
-      type="button"
-      size="lg"
-      block
-      loading={signIn.isPending}
-      icon={
-        <span className={styles.googleGlyph} aria-hidden="true">
-          G
-        </span>
-      }
-      onClick={() => {
-        // Google Identity Services issues the credential; the backend verifies it with Google
-        // before trusting any of it.
-        const google = (window as unknown as { google?: GoogleIdentityServices }).google
-        if (!google) return
-        google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (response) => signIn.mutate(response.credential),
-        })
-        google.accounts.id.prompt()
-      }}
-    >
-      Continue with Google
-    </Button>
+    <div className={styles.firebaseProviders}>
+      {FIREBASE_PROVIDERS.map((provider) => (
+        <Button
+          key={provider.name}
+          type="button"
+          size="lg"
+          block
+          loading={isPending}
+          disabled={disabled}
+          icon={
+            <span className={styles.googleGlyph} aria-hidden="true">
+              {provider.glyph}
+            </span>
+          }
+          onClick={() => onLogin(provider.name)}
+        >
+          Continue with {provider.label}
+        </Button>
+      ))}
+    </div>
   )
 }
 
-interface GoogleIdentityServices {
-  accounts: {
-    id: {
-      initialize: (config: {
-        client_id: string
-        callback: (response: { credential: string }) => void
-      }) => void
-      prompt: () => void
-    }
-  }
-}

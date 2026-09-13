@@ -17,8 +17,8 @@
   flex-direction: column;
   justify-content: space-between;
   padding: var(--s-12);
-  background: var(--c-accent);
-  color: var(--c-text-inverse);
+  background: var(--c-brand-panel);
+  color: var(--c-brand-panel-text);
 }
 
 @media (min-width: 900px) {
@@ -42,7 +42,7 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--c-brand-panel-raised);
   font-weight: var(--fw-bold);
 }
 
@@ -61,12 +61,12 @@
   margin-top: var(--s-4);
   font-size: var(--fs-md);
   line-height: var(--lh-normal);
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--c-brand-panel-text-secondary);
 }
 
 .brandFooter {
   font-size: var(--fs-sm);
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--c-brand-panel-text-muted);
 }
 
 .formSide {
@@ -215,4 +215,10 @@
   font-size: var(--fs-base);
   line-height: var(--lh-normal);
   color: var(--c-text-secondary);
+}
+
+.firebaseProviders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
 }
