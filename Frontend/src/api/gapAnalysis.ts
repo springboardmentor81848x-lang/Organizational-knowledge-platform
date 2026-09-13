@@ -1,5 +1,6 @@
 import { api } from './client'
 import type { GapAnalysis, OrgGapMetrics, UserGapSummary } from '@/types/api'
+import type { HeatmapMatrix } from '@/types/heatmap'
 
 export const gapAnalysisApi = {
   /**
@@ -30,6 +31,15 @@ export const gapAnalysisApi = {
         targetJobTitle,
       )}&targetDepartment=${encodeURIComponent(targetDepartment)}`,
     ),
+
+  /**
+   * The employee's own skill-by-gap heatmap.
+   *
+   * Built server-side from the same stored gap rows the list below it reads, so the two can
+   * never disagree: both move only when an assessment is submitted.
+   */
+  heatmapForUser: (userId: number, signal?: AbortSignal) =>
+    api.get<HeatmapMatrix>(`/api/heatmap/user/${userId}`, signal),
 
   orgSummary: (signal?: AbortSignal) => api.get<OrgGapMetrics>('/api/gaps/org-summary', signal),
 }

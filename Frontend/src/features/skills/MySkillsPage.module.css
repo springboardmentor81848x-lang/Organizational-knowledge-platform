@@ -81,42 +81,6 @@
 }
 
 /* The level choices are the scale itself, so picking one shows what it will look like. */
-.levelChoices {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-}
-
-.levelChoice {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.levelChoice:hover {
-  background: var(--c-surface-hover);
-}
-
-.levelChoiceActive,
-.levelChoiceActive:hover {
-  background: var(--c-surface-selected);
-  border-color: var(--c-accent-border);
-}
-
-.levelChoice:focus-within {
-  box-shadow: var(--focus-ring);
-}
-
-.levelName {
-  font-size: var(--fs-base);
-  font-weight: var(--fw-medium);
-}
-
 .error {
   display: flex;
   gap: var(--s-2);
@@ -127,4 +91,59 @@
   border-radius: var(--radius-md);
   color: var(--c-critical);
   font-size: var(--fs-base);
+}
+
+/* ── Skills awaiting assessment ───────────────────────────────────────────── */
+
+/*
+ * The prompt is informational rather than a warning. Adding a skill and not yet having been
+ * measured on it is a normal, expected halfway state - the person has done the first half of
+ * the right thing - so it points at the next step instead of scolding.
+ */
+.prompt {
+  border-color: var(--c-info-border);
+  background: var(--c-info-bg);
+}
+
+.promptRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.promptTitle {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.promptText {
+  margin: var(--s-2) 0 0;
+  max-width: 66ch;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--c-text-secondary);
+}
+
+.promptAction {
+  flex-shrink: 0;
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-md);
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.promptAction:hover {
+  background: var(--c-accent-hover);
+}
+
+.muted {
+  color: var(--c-text-muted);
 }

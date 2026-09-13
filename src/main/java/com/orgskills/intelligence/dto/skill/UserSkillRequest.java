@@ -1,14 +1,21 @@
 package com.orgskills.intelligence.dto.skill;
 
 import com.orgskills.intelligence.entity.enums.ProficiencyLevel;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Adding a skill to somebody's profile.
+ *
+ * <p>Only the skill is meaningful. The two level fields remain so that clients written against
+ * the old contract still parse, but they are read by nothing: a proficiency level colours the
+ * gap heatmap and sizes every gap under it, so it is awarded by a marked assessment and never
+ * taken from the request that claims it. A skill added here starts unassessed, and the employee
+ * is offered an assessment covering it.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,11 +24,11 @@ public class UserSkillRequest {
     @NotNull(message = "Skill ID is required")
     private Long skillId;
 
-    @NotNull(message = "Proficiency level is required")
+    /** @deprecated Ignored. The level comes from an assessment; see the class note. */
+    @Deprecated
     private ProficiencyLevel proficiencyLevel;
 
-    @NotNull(message = "Rating score is required")
-    @Min(value = 0, message = "Rating score must be at least 0")
-    @Max(value = 5, message = "Rating score must be at most 5")
+    /** @deprecated Ignored. The level comes from an assessment; see the class note. */
+    @Deprecated
     private Double ratingScore;
 }

@@ -1,6 +1,6 @@
 package com.orgskills.intelligence.controller;
 
-import com.orgskills.intelligence.dto.recommendation.CourseRecommendationScore;
+import com.orgskills.intelligence.dto.recommendation.RankedRecommendationResponse;
 import com.orgskills.intelligence.dto.recommendation.RecommendationResponse;
 import com.orgskills.intelligence.entity.Course;
 import com.orgskills.intelligence.entity.Skill;
@@ -54,20 +54,25 @@ class RecommendationControllerTest {
         Skill skill = new Skill(10L, "Java", "Backend", "Java Programming", null, null, null, null);
         Course course = new Course(101L, "Java 101", "Intro course", "Internal L&D", skill, "BEGINNER", 10.0, true, null, null);
 
-        CourseRecommendationScore score = CourseRecommendationScore.builder()
-                .course(course)
-                .skill(skill)
+        RankedRecommendationResponse score = RankedRecommendationResponse.builder()
+                .courseId(course.getId())
+                .courseTitle(course.getTitle())
+                .courseProvider(course.getProvider())
+                .skillId(skill.getId())
+                .skillName(skill.getName())
                 .score(88.5)
                 .scoreBreakdown("Gap Severity: 70.0 (wt 35%), Role Relevance: 100.0 (wt 25%), Proficiency Fit: 100.0 (wt 20%), Course Quality: 100.0 (wt 10%), Recency: 85.0 (wt 10%) | Total: 88.5/100")
                 .build();
 
-        when(recommendationScoringService.scoreCoursesForEmployee(1L)).thenReturn(List.of(score));
+        when(recommendationScoringService.rankedRecommendationsFor(1L)).thenReturn(List.of(score));
 
+        // Flat fields, not nested entities: the response must not carry a Course or a Skill,
+        // because those arrive here as Hibernate proxies that cannot be serialised.
         mockMvc.perform(get("/api/recommendations/1/ranked"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].score").value(88.5))
-                .andExpect(jsonPath("$[0].course.title").value("Java 101"))
-                .andExpect(jsonPath("$[0].skill.name").value("Java"))
+                .andExpect(jsonPath("$[0].courseTitle").value("Java 101"))
+                .andExpect(jsonPath("$[0].skillName").value("Java"))
                 .andExpect(jsonPath("$[0].scoreBreakdown").value(score.getScoreBreakdown()));
     }
 

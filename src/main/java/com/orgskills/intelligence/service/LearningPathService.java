@@ -239,17 +239,17 @@ public class LearningPathService {
             }
         }
 
+        path.getSteps().clear();
         if (steps.isEmpty()) {
             path.setNoCoursesAvailable(true);
             path.setTotalEstimatedHours(0);
             path.setOverallProgressPercent(0);
             path.setStatus("NOT_STARTED");
-            path.setSteps(new ArrayList<>());
         } else {
             path.setNoCoursesAvailable(false);
             int totalHours = steps.stream().mapToInt(LearningPathStep::getEstimatedHours).sum();
             path.setTotalEstimatedHours(totalHours);
-            path.setSteps(steps);
+            path.getSteps().addAll(steps);
             markStepsAlreadyFinished(employee.getId(), steps);
             recomputeProgress(path);
         }

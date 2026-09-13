@@ -1,6 +1,6 @@
 package com.orgskills.intelligence.controller;
 
-import com.orgskills.intelligence.dto.recommendation.CourseRecommendationScore;
+import com.orgskills.intelligence.dto.recommendation.RankedRecommendationResponse;
 import com.orgskills.intelligence.dto.recommendation.RecommendationResponse;
 import com.orgskills.intelligence.service.RecommendationScoringService;
 import com.orgskills.intelligence.service.RecommendationService;
@@ -46,7 +46,7 @@ public class RecommendationController {
      * for the given employee, complete with score breakdowns for transparency.
      */
     @GetMapping("/{employeeId}/ranked")
-    public ResponseEntity<List<CourseRecommendationScore>> getRankedRecommendations(@PathVariable Long employeeId) {
-        return ResponseEntity.ok(recommendationScoringService.scoreCoursesForEmployee(employeeId));
+    public ResponseEntity<List<RankedRecommendationResponse>> getRankedRecommendations(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(recommendationScoringService.rankedRecommendationsFor(employeeId));
     }
 }

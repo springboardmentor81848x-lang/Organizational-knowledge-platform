@@ -153,8 +153,15 @@ export function SessionsPage() {
   )
 }
 
+/**
+ * The viewer's own registration for a session, if they have one.
+ *
+ * The roster is optional on the wire: a viewer who is not the host is told about their own
+ * registration and nobody else's. Treating a missing list as "no registration" is the honest
+ * reading of that, and keeps a server that sends nothing at all from taking the page down.
+ */
 function registrationOf(session: KnowledgeSession, employeeId: number): SessionRegistration | undefined {
-  return session.registrations.find((registration) => registration.employeeId === employeeId)
+  return session.registrations?.find((registration) => registration.employeeId === employeeId)
 }
 
 // ── One session ─────────────────────────────────────────────────────────────

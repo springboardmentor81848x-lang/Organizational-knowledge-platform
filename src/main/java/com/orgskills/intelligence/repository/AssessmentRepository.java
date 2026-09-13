@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
 
@@ -38,4 +39,31 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
                                            @Param("assessorId") Long assessorId,
                                            @Param("assessmentType") AssessmentType assessmentType,
                                            @Param("skillIds") List<Long> skillIds);
+
+    /**
+     * How many target-role assessments this employee has actually completed.
+     *
+     * <p>A target-role attempt is the only thing that writes a self-authored SELF assessment —
+     * rating yourself by hand was withdrawn — so counting those counts attempts, and the
+     * once-only rule is enforced against the assessments themselves rather than against a
+     * separate tally that could drift away from them.
+     */
+    @Query("""
+            SELECT COUNT(a) FROM Assessment a
+            WHERE a.employee.id = :employeeId
+              AND a.assessor.id = :employeeId
+              AND a.assessmentType = com.orgskills.intelligence.entity.enums.AssessmentType.SELF
+              AND a.status = com.orgskills.intelligence.entity.enums.AssessmentStatus.COMPLETED
+            """)
+    long countCompletedSelfAssessments(@Param("employeeId") Long employeeId);
+
+    /** When the employee last completed a target-role assessment, or empty if they never have. */
+    @Query("""
+            SELECT MAX(a.date) FROM Assessment a
+            WHERE a.employee.id = :employeeId
+              AND a.assessor.id = :employeeId
+              AND a.assessmentType = com.orgskills.intelligence.entity.enums.AssessmentType.SELF
+              AND a.status = com.orgskills.intelligence.entity.enums.AssessmentStatus.COMPLETED
+            """)
+    Optional<Instant> findLastCompletedSelfAssessmentAt(@Param("employeeId") Long employeeId);
 }

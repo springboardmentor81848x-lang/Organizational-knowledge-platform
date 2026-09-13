@@ -37,9 +37,39 @@ export function EmployeeDashboard() {
       <header className={styles.header}>
         <h1 className={styles.title}>Good to see you, {firstName}</h1>
         <p className={styles.subtitle}>
-          Where your skills stand against {user.jobTitle ?? 'your role'}
-          {user.department ? ` in ${user.department}` : ''}, and what is closing the distance.
+          {user.targetJobTitle
+            ? 'Where your skills stand against the role you are working towards, and what is closing the distance.'
+            : `Where your skills stand against ${user.jobTitle ?? 'your role'}${
+                user.department ? ` in ${user.department}` : ''
+              }, and what is closing the distance.`}
         </p>
+
+        {/*
+          The target role is stated up front because it is the yardstick for everything below
+          it: the assessment questions, the gap scores and the heatmap are all measured against
+          this role rather than the one held today. Leaving it implicit would make the numbers
+          on this page hard to interpret.
+        */}
+        {user.targetJobTitle ? (
+          <div className={styles.targetRole}>
+            <span className={styles.targetRoleLabel}>Working towards</span>
+            <span className={styles.targetRoleValue}>
+              {user.targetJobTitle}
+              {user.targetDepartment ? ` · ${user.targetDepartment}` : ''}
+            </span>
+            {user.jobTitle && (
+              <span className={styles.targetRoleFrom}>
+                Currently {user.jobTitle}
+                {user.department ? ` · ${user.department}` : ''}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className={styles.targetRoleMissing}>
+            No target role is set, so your gaps are measured against your current role. Choose one
+            from your profile to be assessed against where you are heading.
+          </div>
+        )}
       </header>
 
       <div className={styles.grid}>

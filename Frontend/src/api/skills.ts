@@ -7,10 +7,16 @@ export interface SkillRequest {
   description?: string
 }
 
+/**
+ * Putting a skill on a profile.
+ *
+ * Only the skill is sent. A level used to travel with it and no longer does: the server ignores
+ * one either way, because a proficiency level colours the gap heatmap and is awarded by a marked
+ * assessment rather than claimed by the person being measured. A skill added here arrives
+ * unassessed, and the employee is then offered an assessment covering it.
+ */
 export interface UserSkillRequest {
   skillId: number
-  proficiencyLevel: ProficiencyLevel
-  ratingScore: number
 }
 
 export interface RoleCompetencyRequest {
@@ -31,10 +37,9 @@ export const skillsApi = {
   /** One employee's held skills. */
   forUser: (userId: number, signal?: AbortSignal) =>
     api.get<UserSkill[]>(`/api/users/${userId}/skills`, signal),
-  addToUser: (userId: number, body: UserSkillRequest) =>
-    api.post<UserSkill>(`/api/users/${userId}/skills`, body),
-  updateForUser: (userId: number, userSkillId: number, body: UserSkillRequest) =>
-    api.put<UserSkill>(`/api/users/${userId}/skills/${userSkillId}`, body),
+  /** Records a skill, unassessed. There is deliberately no level to pass. */
+  addToUser: (userId: number, skillId: number) =>
+    api.post<UserSkill>(`/api/users/${userId}/skills`, { skillId } satisfies UserSkillRequest),
   removeFromUser: (userId: number, userSkillId: number) =>
     api.delete<void>(`/api/users/${userId}/skills/${userSkillId}`),
 

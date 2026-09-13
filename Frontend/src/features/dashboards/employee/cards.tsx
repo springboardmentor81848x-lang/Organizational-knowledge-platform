@@ -257,14 +257,15 @@ export function UpcomingSessionsCard({ employeeId }: { employeeId: number }) {
   const query = useQuery({
     queryKey: queryKeys.sessions.list({ scope: 'mine' }),
     queryFn: ({ signal }) => sessionsApi.list({ status: 'SCHEDULED' }, signal),
-    // The session list carries its registrations, so who is attending is decided from the same
-    // response rather than a second call per session.
+    // The session list carries the viewer's own registration, so whether they are attending is
+    // decided from the same response rather than a second call per session. Other people's
+    // registrations are not in it, and are not needed here.
     select: (sessions) => {
       const now = Date.now()
       return sessions
         .filter((session) => new Date(session.sessionDate).getTime() > now)
         .filter((session) =>
-          session.registrations.some((registration) => registration.employeeId === employeeId),
+          session.registrations?.some((registration) => registration.employeeId === employeeId),
         )
         .sort((a, b) => new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime())
     },

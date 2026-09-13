@@ -15,16 +15,10 @@ import com.orgskills.intelligence.repository.TrainingRecommendationRepository;
 import com.orgskills.intelligence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,22 +37,7 @@ public class RecommendationService {
     private final RecommendationScoringService recommendationScoringService;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
-
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(15))
-            .build();
-
-    @Value("${app.openai.api-key:}")
-    private String openAiApiKey;
-
-    @Value("${app.openai.model:gpt-4o-mini}")
-    private String openAiModel;
-
-    @Value("${app.openai.base-url:https://api.openai.com/v1/chat/completions}")
-    private String openAiBaseUrl;
-
-    @Value("${llm.mock.enabled:true}")
-    private boolean mockEnabled;
+    private final LlmClient llmClient;
 
     private static final String SYSTEM_PROMPT = """
             You are a corporate learning advisor. Given an employee's role, their \
@@ -206,104 +185,23 @@ public class RecommendationService {
     // ── Draft resolution: mock → LLM → fallback ────────────────────────────────
 
     private List<RecommendationDraft> resolveDrafts(User employee, List<GapAnalysis> gaps, List<CourseRecommendationScore> rankedScores) {
-        if (mockEnabled) {
+        if (llmClient.isMockEnabled()) {
             log.info("LLM mock mode is enabled — returning mock recommendations");
             return mockRecommendations(employee, gaps);
         }
 
-        if (openAiApiKey == null || openAiApiKey.isBlank()) {
-            log.warn("OpenAI API key is not configured — using rule-based fallback");
+        if (!llmClient.isLive()) {
+            log.warn("LLM API key is not configured — using rule-based fallback");
             return fallbackRecommendations(employee, gaps);
         }
 
         try {
-            if (openAiBaseUrl.contains("googleapis.com") || (openAiApiKey != null && openAiApiKey.startsWith("AQ"))) {
-                return callGemini(employee, gaps, rankedScores);
-            }
-            return callOpenAi(employee, gaps, rankedScores);
+            return parseDrafts(llmClient.completeJson(SYSTEM_PROMPT,
+                    buildUserMessage(employee, gaps, rankedScores)));
         } catch (Exception ex) {
             log.error("LLM call failed — falling back to rule-based recommendations", ex);
             return fallbackRecommendations(employee, gaps);
         }
-    }
-
-    // ── LLM calls ───────────────────────────────────────────────────────────────
-
-    private List<RecommendationDraft> callGemini(User employee, List<GapAnalysis> gaps, List<CourseRecommendationScore> rankedScores)
-            throws IOException, InterruptedException {
-        String userMessage = buildUserMessage(employee, gaps, rankedScores);
-        String promptText = SYSTEM_PROMPT + "\n\n" + userMessage;
-
-        var requestJson = objectMapper.createObjectNode();
-        var contentsNode = objectMapper.createArrayNode();
-        var contentObj = objectMapper.createObjectNode();
-        contentObj.put("role", "user");
-        var partsNode = objectMapper.createArrayNode();
-        partsNode.add(objectMapper.createObjectNode().put("text", promptText));
-        contentObj.set("parts", partsNode);
-        contentsNode.add(contentObj);
-        requestJson.set("contents", contentsNode);
-
-        var genConfig = objectMapper.createObjectNode();
-        genConfig.put("temperature", 0.3);
-        genConfig.put("responseMimeType", "application/json");
-        requestJson.set("generationConfig", genConfig);
-
-        String modelName = (openAiModel != null && !openAiModel.isBlank() && openAiModel.contains("gemini"))
-                ? openAiModel : "gemini-3.6-flash";
-
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + openAiApiKey.trim();
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestJson)))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("Gemini API request failed with status " + response.statusCode()
-                    + ": " + response.body());
-        }
-
-        JsonNode root = objectMapper.readTree(response.body());
-        String content = root.path("candidates").path(0).path("content").path("parts").path(0).path("text").asText();
-        return parseDrafts(content);
-    }
-
-    private List<RecommendationDraft> callOpenAi(User employee, List<GapAnalysis> gaps, List<CourseRecommendationScore> rankedScores)
-            throws IOException, InterruptedException {
-        String userMessage = buildUserMessage(employee, gaps, rankedScores);
-
-        var requestJson = objectMapper.createObjectNode();
-        requestJson.put("model", openAiModel);
-        requestJson.set("messages", objectMapper.createArrayNode()
-                .add(objectMapper.createObjectNode()
-                        .put("role", "system")
-                        .put("content", SYSTEM_PROMPT))
-                .add(objectMapper.createObjectNode()
-                        .put("role", "user")
-                        .put("content", userMessage)));
-        requestJson.put("temperature", 0.3);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(openAiBaseUrl))
-                .header("Authorization", "Bearer " + openAiApiKey)
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestJson)))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("OpenAI request failed with status " + response.statusCode()
-                    + ": " + response.body());
-        }
-
-        JsonNode root = objectMapper.readTree(response.body());
-        String content = root.path("choices").path(0).path("message").path("content").asText();
-        return parseDrafts(content);
     }
 
     private String buildUserMessage(User employee, List<GapAnalysis> gaps, List<CourseRecommendationScore> rankedScores) {

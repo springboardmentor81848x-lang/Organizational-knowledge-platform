@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public interface AssessmentResultRepository extends JpaRepository<AssessmentResult, Long> {
 
@@ -54,4 +55,21 @@ public interface AssessmentResultRepository extends JpaRepository<AssessmentResu
               AND r.assessment.status = com.orgskills.intelligence.entity.enums.AssessmentStatus.COMPLETED
             """)
     Double findAverageImprovement();
+
+    /**
+     * The skills this employee has a marked result for.
+     *
+     * <p>"Has this skill been assessed?" is answered from the results themselves rather than
+     * from a flag on the skill row. A flag would be a second source of truth for something the
+     * results already record, and the two would part company the moment somebody removed a
+     * skill and added it back - which would otherwise reset the flag and hand out a fresh
+     * assessment for a skill that has already been measured.
+     */
+    @Query("""
+            SELECT DISTINCT r.skill.id FROM AssessmentResult r
+            WHERE r.assessment.employee.id = :employeeId
+              AND r.assessment.status = com.orgskills.intelligence.entity.enums.AssessmentStatus.COMPLETED
+              AND r.proficiency IS NOT NULL
+            """)
+    Set<Long> findAssessedSkillIds(@Param("employeeId") Long employeeId);
 }
