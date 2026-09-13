@@ -14,7 +14,9 @@ import com.orgskills.intelligence.exception.ValidationException;
 import com.orgskills.intelligence.security.CustomPrincipal;
 import com.orgskills.intelligence.security.JwtAuthenticationFilter;
 import com.orgskills.intelligence.security.JwtTokenProvider;
+import com.orgskills.intelligence.service.AssessmentAttemptService;
 import com.orgskills.intelligence.service.AssessmentService;
+import com.orgskills.intelligence.service.QuizService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,18 @@ class AssessmentControllerTest {
 
     @MockBean
     private AssessmentService assessmentService;
+
+    /**
+     * Not exercised by the tests below, but the controller now takes it, and a @WebMvcTest slice
+     * builds the real controller - so without this the context fails to start and every test in
+     * the class errors before it runs.
+     */
+    @MockBean
+    private QuizService quizService;
+
+    /** Same reason as the quiz service above: the slice cannot build the controller without it. */
+    @MockBean
+    private AssessmentAttemptService assessmentAttemptService;
 
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;

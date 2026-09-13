@@ -8,8 +8,9 @@ import { ErrorBlock, LoadingBlock } from '@/components/ui/AsyncState'
 import { isPermissionDenied, PermissionDenied } from '@/components/ui/PermissionDenied'
 import { useToast } from '@/components/ui/Toast'
 import { ApiError } from '@/lib/apiError'
-import { roleLabel } from '@/app/roleRoutes'
+import { ROLES_WITH_DEVELOPMENT_TRACK, roleLabel } from '@/app/roleRoutes'
 import { useSession } from '@/features/auth/useSession'
+import { TargetRoleCard } from './TargetRoleCard'
 import styles from './ProfilePage.module.css'
 
 /**
@@ -97,6 +98,16 @@ export function ProfilePage() {
           How you appear across the platform. Your name, email and role are administered centrally.
         </p>
       </header>
+
+      {/*
+        Outside the two-column layout and above it, because for somebody who has none this is
+        the only thing on the page that matters - their assessment, gaps and recommendations all
+        wait on it. Only shown to accounts that are actually measured: an administrator has no
+        target role and should not be offered one.
+      */}
+      {user?.role && ROLES_WITH_DEVELOPMENT_TRACK.includes(user.role) && (
+        <TargetRoleCard user={user} />
+      )}
 
       <div className={styles.layout}>
         <Card title="Account" description="Set by your administrator.">
