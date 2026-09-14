@@ -2,11 +2,14 @@ package com.infosys.knowledgeplatform.controller;
 
 import com.infosys.knowledgeplatform.model.User;
 import com.infosys.knowledgeplatform.repository.UserRepository;
+import com.infosys.knowledgeplatform.repository.EmployeeImprovementRepository;
+import com.infosys.knowledgeplatform.model.EmployeeImprovement;
 import com.infosys.knowledgeplatform.security.JwtService;
 import com.infosys.knowledgeplatform.service.RoleCatalogService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.annotation.PostConstruct;
 
 import java.util.Map;
 import java.util.Optional;
@@ -15,16 +18,44 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final String DEMO_PASSWORD = "KnowledgeIQ@2026";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RoleCatalogService roleCatalogService;
+    private final EmployeeImprovementRepository employeeImprovementRepository;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RoleCatalogService roleCatalogService) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RoleCatalogService roleCatalogService, EmployeeImprovementRepository employeeImprovementRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.roleCatalogService = roleCatalogService;
+        this.employeeImprovementRepository = employeeImprovementRepository;
+    }
+
+    @PostConstruct
+    public void provisionRoleAccounts() {
+        provisionRoleAccount("hr@knowledgeiq.local", "HR Operations", "HR Specialist", "People Operations");
+        provisionRoleAccount("teamlead@knowledgeiq.local", "Team Lead", "Team Lead / Manager", "Engineering");
+        provisionRoleAccount("departmenthead@knowledgeiq.local", "Department Head", "Department Head", "Engineering");
+        provisionRoleAccount("ld@knowledgeiq.local", "L&D Administrator", "Learning & Development Admin/mentor", "Learning & Development");
+        provisionRoleAccount("admin@knowledgeiq.local", "System Administrator", "System Administrator", "Platform Operations");
+    }
+
+    private void provisionRoleAccount(String email, String name, String role, String department) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(DEMO_PASSWORD));
+        user.setName(name);
+        user.setRole(role);
+        user.setTargetRole(role);
+        user.setDepartment(department);
+        userRepository.save(user);
     }
 
     @PostMapping("/login")
@@ -75,6 +106,13 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required"));
         }
 
+        if (!"EMPLOYEE".equals(RoleCatalogService.normalizeRole(role))) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "Only Employee accounts can be registered publicly",
+                    "message", "Use the assigned organizational role account to sign in"
+            ));
+        }
+
         if (userRepository.findByEmail(email).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered"));
         }
@@ -88,6 +126,17 @@ public class AuthController {
         user.setDepartment("Engineering");
 
         User saved = userRepository.save(user);
+        EmployeeImprovement initialProgress = new EmployeeImprovement();
+        initialProgress.setEmployeeEmail(saved.getEmail());
+        initialProgress.setEmployeeName(saved.getName());
+        initialProgress.setRole(saved.getRole());
+        initialProgress.setTargetRole(saved.getTargetRole());
+        initialProgress.setOverallScore(0);
+        initialProgress.setGapSummary("Initial assessment pending");
+        initialProgress.setEnrolledCourses("[]");
+        initialProgress.setImprovementSummary("Registered employee; assessment and learning progress pending");
+        employeeImprovementRepository.save(initialProgress);
+
         var profile = roleCatalogService.getProfile(saved.getRole());
         String token = jwtService.generateToken(saved, profile.permissions());
 

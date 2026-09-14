@@ -134,8 +134,8 @@ const HREmployeeTracker = () => {
           role: employee.role || 'Employee',
           status: 'Active',
           joinDate: 'Registered',
-          trainingProgress: 0,
-          skills: [],
+          trainingProgress: employee.trainingProgress || 0,
+          skills: employee.skillProgress ? [{ name: 'Overall capability', current: employee.skillProgress, required: 100, gap: employee.skillGap || 0 }] : [],
           suggestions: ['Complete the initial skills assessment to generate recommendations'],
           mentor: 'Not assigned',
         })));

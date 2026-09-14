@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiFetch, defaultPermissionsForRole, saveSession, roleFamily } from '../services/platformApi';
+import { apiFetch, defaultPermissionsForRole, saveSession } from '../services/platformApi';
+
+const ROLE_ACCOUNTS = [
+  ['HR', 'hr@knowledgeiq.local'],
+  ['Team Lead', 'teamlead@knowledgeiq.local'],
+  ['Department Head', 'departmenthead@knowledgeiq.local'],
+  ['L&D Admin', 'ld@knowledgeiq.local'],
+  ['System Admin', 'admin@knowledgeiq.local'],
+];
 
 const Login = () => {
   const navigate = useNavigate();
@@ -37,24 +45,16 @@ const Login = () => {
         return;
       }
 
-      throw new Error('backend login failed');
-    } catch {
-      setTimeout(() => {
-        saveSession({
-          token: 'demo-token',
-          user: {
-            email: form.email,
-            name: 'Demo User',
-            role: 'Employee',
-            accountType: 'Employee',
-            targetRole: 'frontend',
-            permissions: defaultPermissionsForRole('Employee'),
-          },
-        });
-        setLoading(false);
-        navigate('/app');
-      }, 1000);
-      return;
+      let details = null;
+      try {
+        details = await res.json();
+      } catch {
+        details = null;
+      }
+      throw new Error(details?.error || 'Login failed. Check your email and password.');
+    } catch (loginError) {
+      setError(loginError.message || 'Unable to sign in. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -173,6 +173,14 @@ const Login = () => {
           <p className="auth-switch">
             Don't have an account? <Link to="/register" className="form-link">Create one free</Link>
           </p>
+
+          <div style={{ marginTop: '1.5rem', padding: '0.9rem', borderRadius: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--text-primary)' }}>Organizational accounts</strong>
+            <div style={{ marginTop: '0.45rem', display: 'grid', gap: '0.2rem' }}>
+              {ROLE_ACCOUNTS.map(([label, email]) => <span key={email}>{label}: {email}</span>)}
+              <span>Password: KnowledgeIQ@2026</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

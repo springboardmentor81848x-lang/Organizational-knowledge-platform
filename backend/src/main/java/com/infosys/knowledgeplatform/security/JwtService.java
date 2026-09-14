@@ -40,11 +40,11 @@ public class JwtService {
     }
 
     public Claims parseToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+        return Jwts.parser()
+            .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
     public boolean isValid(String token) {

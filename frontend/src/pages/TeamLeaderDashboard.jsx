@@ -79,8 +79,8 @@ const TeamLeaderDashboard = () => {
           status: 'Active',
           joined: 'Registered',
           department: member.department || 'Unassigned',
-          skills: [],
-          trainings: [],
+          skills: member.skillProgress ? [{ name: 'Overall capability', current: member.skillProgress, required: 100 }] : [],
+          trainings: member.trainingProgress ? [{ title: 'Assigned learning', progress: member.trainingProgress, status: member.trainingProgress >= 100 ? 'Completed' : 'In Progress' }] : [],
           contributions: [],
           index,
         })));

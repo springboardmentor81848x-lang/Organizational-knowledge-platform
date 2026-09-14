@@ -5,11 +5,6 @@ import { apiFetch, defaultPermissionsForRole, saveSession, roleFamily } from '..
 
 const ORGANIZATIONAL_ROLES = [
   { role: 'Employee', icon: '👤', desc: 'Create/update profile, self-assess, close gaps, and grow through learning paths.' },
-  { role: 'Team Lead / Manager', icon: '🧭', desc: 'View team coverage, identify gaps, and support team learning.' },
-  { role: 'HR Specialist', icon: '🧑‍💼', desc: 'Track workforce intelligence, reporting, and organizational skill health.' },
-  { role: 'Department Head', icon: '🏢', desc: 'Lead department readiness, training adoption, and capability planning.' },
-  { role: 'Learning & Development Admin/mentor', icon: '🎓', desc: 'Own learning catalogs, personalized learning paths, and completion tracking.' },
-  { role: 'System Administrator', icon: '🛡️', desc: 'Manage authentication, roles, users, monitoring, and security.' },
 ];
 
 const Register = () => {
@@ -39,7 +34,7 @@ const Register = () => {
   };
 
   const submitForm = async () => {
-    if (form.accountType === 'Employee' && !form.targetRole) {
+    if (!form.targetRole) {
       setError('Please select the role you are targeting.');
       return;
     }

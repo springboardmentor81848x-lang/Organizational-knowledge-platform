@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/dashboard/**", "/api/learning-paths/**", "/api/articles/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/users/**", "/api/skills/**", "/api/training-programs/**", "/api/user-skills/**", "/api/employee-improvements/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/**", "/api/skills/**", "/api/training-programs/**", "/api/user-skills/**", "/api/employee-improvements/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/users/**").hasAnyRole("SYSTEM_ADMINISTRATOR", "HR_SPECIALIST")
                 .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyRole("SYSTEM_ADMINISTRATOR", "HR_SPECIALIST")
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAnyRole("SYSTEM_ADMINISTRATOR", "HR_SPECIALIST")
@@ -74,7 +74,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-API-KEY", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));

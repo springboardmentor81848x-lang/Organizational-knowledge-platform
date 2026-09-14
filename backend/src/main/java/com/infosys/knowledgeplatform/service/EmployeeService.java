@@ -142,8 +142,8 @@ public class EmployeeService {
 
     public List<Map<String, Object>> getKnowledgeGaps(String email) {
         List<EmployeeSkill> gaps = employeeSkillRepository.findByEmployeeEmail(email).stream()
-            .filter(s -> s.getProficiency() < s.getTargetProficiency())
-            .sorted(Comparator.comparingInt(s -> s.getTargetProficiency() - s.getProficiency()).reversed())
+            .filter((EmployeeSkill s) -> s.getProficiency() != null && s.getTargetProficiency() != null && s.getProficiency() < s.getTargetProficiency())
+            .sorted(Comparator.comparingInt((EmployeeSkill s) -> s.getTargetProficiency() - s.getProficiency()).reversed())
             .collect(Collectors.toList());
 
         return gaps.stream()

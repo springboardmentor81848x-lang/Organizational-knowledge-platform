@@ -1,5 +1,7 @@
 -- schema.sql
 DROP TABLE IF EXISTS user_skills;
+DROP TABLE IF EXISTS employee_skills;
+DROP TABLE IF EXISTS enrollments;
 DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS training_programs;
 DROP TABLE IF EXISTS employee_improvements;
@@ -50,4 +52,26 @@ CREATE TABLE employee_improvements (
     enrolled_courses TEXT,
     improvement_summary TEXT,
     last_updated TIMESTAMP
+);
+
+CREATE TABLE employee_skills (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_email VARCHAR(255) NOT NULL,
+    skill_id BIGINT,
+    skill_name VARCHAR(255),
+    proficiency INT,
+    target_proficiency INT,
+    updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE enrollments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_email VARCHAR(255) NOT NULL,
+    program_id BIGINT,
+    program_title VARCHAR(255),
+    provider VARCHAR(255),
+    status VARCHAR(50),
+    progress_percent INT,
+    enrolled_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL
 );

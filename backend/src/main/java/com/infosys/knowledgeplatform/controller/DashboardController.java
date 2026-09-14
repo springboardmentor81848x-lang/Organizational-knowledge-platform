@@ -92,7 +92,7 @@ public class DashboardController {
     }
 
     @GetMapping("/department-head/knowledge-gaps")
-    public ResponseEntity<?> getKnowledgeGaps(@RequestParam String email) {
+    public ResponseEntity<?> getDepartmentKnowledgeGaps(@RequestParam String email) {
         return ResponseEntity.ok(departmentHeadService.getKnowledgeGaps(email));
     }
 

@@ -101,19 +101,19 @@ public class DepartmentHeadService {
             
             List<EmployeeSkill> skills = employeeSkillRepository.findByEmployeeEmail(emp.getEmail());
             double avgGap = skills.isEmpty() ? 0 : 
-                skills.stream().mapToDouble(s -> 100 - (s.getProficiencyLevel() != null ? s.getProficiencyLevel() : 0)).average().orElse(0);
+                skills.stream().mapToDouble(s -> 100 - (s.getProficiency() != null ? s.getProficiency() * 25 : 0)).average().orElse(0);
 
-            return Map.of(
-                "id", emp.getId(),
-                "name", emp.getName(),
-                "email", emp.getEmail(),
-                "team", team != null ? team.getName() : "Unassigned",
-                "role", emp.getRole(),
-                "status", "Active",
-                "gap", String.format("%.0f", avgGap),
-                "topSkill", skills.isEmpty() ? "N/A" : skills.get(0).getSkillName(),
-                "training", "In Progress"
-            );
+            Map<String, Object> employee = new HashMap<>();
+            employee.put("id", emp.getId());
+            employee.put("name", emp.getName());
+            employee.put("email", emp.getEmail());
+            employee.put("team", team != null ? team.getName() : "Unassigned");
+            employee.put("role", emp.getRole());
+            employee.put("status", "Active");
+            employee.put("gap", String.format("%.0f", avgGap));
+            employee.put("topSkill", skills.isEmpty() ? "N/A" : skills.get(0).getSkillName());
+            employee.put("training", "In Progress");
+            return employee;
         }).collect(Collectors.toList());
     }
 
@@ -129,14 +129,17 @@ public class DepartmentHeadService {
                 List<EmployeeSkill> skills = new ArrayList<>();
                 // In a real implementation, fetch skills for all team members
                 return skills.stream()
-                    .map(s -> Map.of(
-                        "skillName", s.getSkillName(),
-                        "required", 85,
-                        "current", s.getProficiencyLevel() != null ? s.getProficiencyLevel() : 0,
-                        "gap", Math.max(0, 85 - (s.getProficiencyLevel() != null ? s.getProficiencyLevel() : 0)),
-                        "severity", (85 - (s.getProficiencyLevel() != null ? s.getProficiencyLevel() : 0)) > 30 ? "Critical" : "High",
-                        "team", team.getName()
-                    ));
+                    .map((EmployeeSkill s) -> {
+                        Map<String, Object> gap = new HashMap<>();
+                        int current = s.getProficiency() != null ? s.getProficiency() * 25 : 0;
+                        gap.put("skillName", s.getSkillName());
+                        gap.put("required", 85);
+                        gap.put("current", current);
+                        gap.put("gap", Math.max(0, 85 - current));
+                        gap.put("severity", 85 - current > 30 ? "Critical" : "High");
+                        gap.put("team", team.getName());
+                        return gap;
+                    });
             })
             .collect(Collectors.toList());
     }
