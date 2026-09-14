@@ -60,7 +60,7 @@ const Register = () => {
             permissions: data.permissions || defaultPermissionsForRole(data.user?.role),
           },
         });
-        navigate(roleFamily(data.user?.role) === 'employee' ? '/app/exam' : '/app');
+        navigate(roleFamily(data.user?.role) === 'employee' ? '/employee/assessments' : '/app');
         return;
       }
       throw new Error('backend register failed');
@@ -76,7 +76,7 @@ const Register = () => {
         };
         saveSession({ token: 'demo-token', user: userData });
         setLoading(false);
-        navigate(roleFamily(form.accountType) === 'employee' ? '/app/exam' : '/app');
+        navigate(roleFamily(form.accountType) === 'employee' ? '/employee/assessments' : '/app');
       }, 1200);
     }
   };

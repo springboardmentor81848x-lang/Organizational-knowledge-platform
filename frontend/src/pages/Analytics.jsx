@@ -1,171 +1,84 @@
 import React from 'react';
-
-const departments = [
-  { name: 'Engineering', gap: 22, color: '#ef4444', skills: ['Cloud', 'Security', 'DevOps'] },
-  { name: 'Marketing',   gap: 35, color: '#f59e0b', skills: ['SEO', 'Analytics', 'AI Tools'] },
-  { name: 'Data Science',gap: 45, color: '#ef4444', skills: ['ML', 'Python', 'Tableau'] },
-  { name: 'HR & Ops',    gap: 12, color: '#10b981', skills: ['Policy', 'Data Literacy', 'Tools'] },
-  { name: 'Product',     gap: 28, color: '#f59e0b', skills: ['UX', 'Agile', 'SQL'] },
-];
-
-const heatmapData = [
-  { skill:'React',       eng:90, mkt:30, ds:20, hr:15, prod:60 },
-  { skill:'Python',      eng:70, mkt:25, ds:80, hr:10, prod:35 },
-  { skill:'AWS',         eng:55, mkt:15, ds:40, hr:8,  prod:20 },
-  { skill:'SQL',         eng:80, mkt:50, ds:85, hr:60, prod:75 },
-  { skill:'ML / AI',    eng:45, mkt:20, ds:70, hr:5,  prod:30 },
-  { skill:'Agile',       eng:75, mkt:65, ds:55, hr:70, prod:90 },
-  { skill:'DataViz',     eng:40, mkt:55, ds:80, hr:30, prod:50 },
-];
-const depts = ['Eng', 'Mkt', 'DS', 'HR', 'Prod'];
-const deptKeys = ['eng', 'mkt', 'ds', 'hr', 'prod'];
-
-const cellColor = (v) => {
-  if (v >= 75) return { bg:'rgba(16,185,129,0.25)', color:'#10b981' };
-  if (v >= 50) return { bg:'rgba(245,158,11,0.2)',  color:'#f59e0b' };
-  return           { bg:'rgba(239,68,68,0.2)',       color:'#ef4444' };
-};
+import { getStoredUser, roleFamily } from '../services/platformApi';
 
 const Analytics = () => {
+  const user = getStoredUser();
+  const family = roleFamily(user.role || user.accountType || 'Employee');
+
+  const metrics = [
+    { title: 'Workforce Skill Coverage', value: '78.4%', change: '+4.2%', color: '#6366f1' },
+    { title: 'Average Gap Reduction Rate', value: '34.1%', change: '+8.0%', color: '#10b981' },
+    { title: 'Training Completion Index', value: '89.2%', change: '+2.5%', color: '#ec4899' },
+    { title: 'Active Mentorship Hours', value: '428 hrs', change: '+52 hrs', color: '#f59e0b' },
+  ];
+
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <div className="page-title">Gap Analytics</div>
-          <div className="page-sub">Visualize skill deficiencies across departments and roles</div>
+    <div style={{ display: 'grid', gap: '2rem' }}>
+      <div className="page-hero">
+        <div className="page-hero-text">
+          <h1>Organizational Analytics & <span className="gradient-text">Competency Insights</span></h1>
+          <p>Real-time skill coverage metrics, learning velocity analytics & workforce intelligence reports.</p>
         </div>
-        <button className="btn-primary" style={{ padding:'0.6rem 1.25rem', borderRadius:8 }}>
-          Export Report
-        </button>
       </div>
 
-      {/* Stats Row */}
-      <div className="stats-row" style={{ marginBottom:'1.75rem' }}>
-        {[
-          { label:'Avg. Gap Score', value:'28%', color:'#ef4444', icon:'📊' },
-          { label:'Departments Assessed', value:'5',   color:'#6366f1', icon:'🏢' },
-          { label:'High-Risk Skills',     value:'12',  color:'#f59e0b', icon:'⚠️' },
-          { label:'Skills Improving',     value:'34',  color:'#10b981', icon:'📈' },
-        ].map((s, i) => (
-          <div className="stat-card" key={i}>
+      {/* Metrics Row */}
+      <div className="stats-row">
+        {metrics.map((m, idx) => (
+          <div className="stat-card" key={idx} style={{ borderColor: `${m.color}33` }}>
             <div className="stat-top">
-              <div className="stat-icon" style={{ background:`${s.color}22`, color:s.color }}>
-                <span style={{ fontSize:'1.35rem' }}>{s.icon}</span>
-              </div>
+              <span className="stat-title">{m.title}</span>
+              <span style={{ color: '#34d399', fontSize: '0.85rem', fontWeight: 'bold' }}>{m.change}</span>
             </div>
-            <div className="stat-value" style={{ color:s.color }}>{s.value}</div>
-            <div className="stat-title">{s.label}</div>
+            <div className="stat-value" style={{ color: m.color }}>{m.value}</div>
           </div>
         ))}
       </div>
 
-      <div className="analytics-grid">
-        {/* Skill Heatmap */}
-        <div className="card" style={{ gridColumn:'1/-1' }}>
-          <div className="card-header">
-            <div className="card-title">
-              <span>🔥</span> Skill Coverage Heatmap
-            </div>
-            <span style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>
-              Green = Strong  |  Yellow = Moderate  |  Red = Critical Gap
-            </span>
-          </div>
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'separate', borderSpacing:4 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign:'left', fontSize:'0.78rem', color:'var(--text-muted)', paddingBottom:'0.5rem', paddingRight:'1rem' }}>Skill</th>
-                  {depts.map(d => (
-                    <th key={d} style={{ textAlign:'center', fontSize:'0.78rem', color:'var(--text-secondary)', paddingBottom:'0.5rem', width:80 }}>{d}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {heatmapData.map((row, ri) => (
-                  <tr key={ri}>
-                    <td style={{ fontSize:'0.85rem', paddingRight:'1rem', paddingBottom:'0.4rem', color:'var(--text-secondary)', whiteSpace:'nowrap' }}>{row.skill}</td>
-                    {deptKeys.map(dk => {
-                      const v = row[dk];
-                      const { bg, color } = cellColor(v);
-                      return (
-                        <td key={dk} style={{ paddingBottom:'0.4rem' }}>
-                          <div style={{
-                            background: bg,
-                            color,
-                            borderRadius:6,
-                            display:'flex',
-                            alignItems:'center',
-                            justifyContent:'center',
-                            height:38,
-                            fontWeight:700,
-                            fontSize:'0.78rem',
-                          }}>
-                            {v}%
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Department Gap Bars */}
+      {/* Visual Analytics Sections */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem' }}>
         <div className="card">
-          <div className="card-header">
-            <div className="card-title"><span>🏢</span> Department Gap Overview</div>
-          </div>
-          {departments.map((d, i) => (
-            <div className="department-row" key={i} style={{ marginBottom:'1.25rem' }}>
-              <span className="dept-name" style={{ width:110 }}>{d.name}</span>
-              <div className="dept-bar">
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-                  <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>{d.skills.join(', ')}</span>
-                  <span style={{ fontSize:'0.75rem', fontWeight:700, color:d.color }}>Gap: {d.gap}%</span>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📈 Department Skill Coverage Trend</h3>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {[
+              { name: 'Engineering', score: 84, color: '#6366f1' },
+              { name: 'Data Science & AI', score: 76, color: '#a855f7' },
+              { name: 'Product & UX', score: 91, color: '#ec4899' },
+              { name: 'HR & Talent Ops', score: 88, color: '#10b981' },
+              { name: 'Security & DevOps', score: 68, color: '#f59e0b' },
+            ].map((d, i) => (
+              <div key={i}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.9rem' }}>
+                  <span>{d.name}</span>
+                  <span style={{ fontWeight: 'bold', color: d.color }}>{d.score}%</span>
                 </div>
-                <div className="progress-bar" style={{ height:8 }}>
-                  <div className="progress-fill" style={{ width:`${d.gap}%`, background:`linear-gradient(90deg, ${d.color}, ${d.color}88)` }} />
+                <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${d.score}%`, height: '100%', background: d.color, borderRadius: '4px' }} />
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Top Gaps Table */}
         <div className="card">
-          <div className="card-header">
-            <div className="card-title"><span>📋</span> Top 5 Critical Gaps</div>
-            <button className="card-action">Full Report →</button>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>🎯 High-Priority Competency Deficits</h3>
+          <div style={{ display: 'grid', gap: '0.85rem' }}>
+            {[
+              { skill: 'Cloud Architecture & Security (AWS/Azure)', gap: '38%', level: 'Critical' },
+              { skill: 'Generative AI & Enterprise LLM Deployment', gap: '32%', level: 'High' },
+              { skill: 'PostgreSQL Advanced Indexing & Performance', gap: '24%', level: 'Medium' },
+              { skill: 'Microservices Design Patterns (Spring Boot)', gap: '18%', level: 'Medium' },
+            ].map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '0.92rem' }}>{item.skill}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Deficit Gap: {item.gap}</div>
+                </div>
+                <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', borderRadius: '12px', background: item.level === 'Critical' ? 'rgba(239,68,68,0.2)' : item.level === 'High' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)', color: item.level === 'Critical' ? '#f87171' : item.level === 'High' ? '#fbbf24' : '#818cf8', fontWeight: 'bold' }}>
+                  {item.level}
+                </span>
+              </div>
+            ))}
           </div>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.875rem' }}>
-            <thead>
-              <tr style={{ borderBottom:'1px solid var(--glass-border)' }}>
-                {['Skill', 'Dept', 'Gap', 'Priority'].map(h => (
-                  <th key={h} style={{ textAlign:'left', padding:'0.5rem 0', color:'var(--text-muted)', fontSize:'0.75rem', fontWeight:600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { skill:'Generative AI',  dept:'All',      gap:70, pri:'Critical' },
-                { skill:'UX Research',    dept:'Product',  gap:60, pri:'Critical' },
-                { skill:'Tableau/BI',     dept:'Marketing',gap:55, pri:'High'     },
-                { skill:'ML Modeling',    dept:'Data Sci', gap:45, pri:'High'     },
-                { skill:'AWS/Azure',      dept:'Eng',      gap:42, pri:'High'     },
-              ].map((r, i) => (
-                <tr key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding:'0.75rem 0', fontWeight:600 }}>{r.skill}</td>
-                  <td style={{ padding:'0.75rem 0', color:'var(--text-secondary)' }}>{r.dept}</td>
-                  <td style={{ padding:'0.75rem 0', fontWeight:700, color: r.gap > 60 ? 'var(--danger)' : 'var(--warning)' }}>{r.gap}%</td>
-                  <td style={{ padding:'0.75rem 0' }}>
-                    <span className={`tag ${r.pri === 'Critical' ? 'urgent' : 'hot'}`}>{r.pri}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

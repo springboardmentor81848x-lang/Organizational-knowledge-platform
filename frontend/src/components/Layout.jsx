@@ -1,238 +1,196 @@
-import React from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearSession, defaultPermissionsForRole, getStoredUser, roleFamily, apiFetch } from '../services/platformApi';
-
-const icons = {
-  dashboard: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  skills: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  analytics: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="12" y1="20" x2="12" y2="4"  stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="6"  y1="20" x2="6"  y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  trainings: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  mentorship: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="2"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  profile: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  aiPlan: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 3v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M16.24 7.76l-2.83 2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M21 12h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M16.24 16.24l-2.83-2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M12 21v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M7.76 16.24l2.83-2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M3 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M7.76 7.76l2.83 2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  exam: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" strokeWidth="2"/>
-      <rect x="9" y="3" width="6" height="4" rx="2" stroke="currentColor" strokeWidth="2"/>
-      <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="9" y1="16" x2="12" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  gap: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <polygon points="12,2 22,20 2,20" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-      <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-  bell: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  settings: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  logout: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2"/>
-      <polyline points="16,17 21,12 16,7" stroke="currentColor" strokeWidth="2"/>
-      <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-};
+import React, { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { getStoredUser, clearSession, roleFamily } from '../services/platformApi';
 
 const Layout = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const user = getStoredUser();
-  const role = user.role || user.accountType || 'Employee';
-  const family = roleFamily(role);
-  const permissions = new Set(user.permissions || defaultPermissionsForRole(role));
-  const initials = (user.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase();
-  const isAdmin = family !== 'employee';
-  const hasExamResults = !!user.examResults;
-
-  const navItems = [
-    { name: 'Dashboard',       path: '/app',               icon: icons.dashboard,  badge: null, show: true },
-    { name: 'Profile',         path: '/app/profile',       icon: icons.profile,    badge: null, show: true },
-    { name: 'AI Plan',         path: '/app/ai-plan',       icon: icons.aiPlan,     badge: null, show: true },
-    { name: 'Skill Inventory', path: '/app/skills',        icon: icons.skills,     badge: null, show: true },
-    { name: 'Gap Analytics',   path: '/app/analytics',     icon: icons.analytics,  badge: null, show: permissions.has('view_team_skill_coverage') || permissions.has('organization_gap_intelligence') || permissions.has('system_monitoring') },
-    { name: 'Trainings',       path: '/app/trainings',     icon: icons.trainings,  badge: '3',  show: true },
-    { name: 'Mentorship',      path: '/app/mentorship',    icon: icons.mentorship, badge: null, show: true },
-    { name: 'My Assessment',   path: '/app/exam',          icon: icons.exam,       badge: null, show: family === 'employee' },
-    { name: 'My Gap Analysis', path: '/app/gap-analysis',  icon: icons.gap,        badge: hasExamResults ? null : '!', show: family === 'employee' },
-    { name: 'Admin Tracker',   path: '/app/admin',         icon: icons.settings,   badge: null, show: permissions.has('user_management') || permissions.has('role_management') || permissions.has('training_catalog_management') },
-  ].filter(n => n.show);
-
-  const currentPage = navItems.find(n =>
-    n.path === location.pathname || (n.path !== '/app' && location.pathname.startsWith(n.path))
-  )?.name || 'Dashboard';
+  const family = roleFamily(user.role || user.accountType || 'Employee');
+  const roleName = user.role || user.accountType || 'Employee';
 
   const handleLogout = () => {
-    try {
-      const email = getStoredUser().email;
-      if (email) {
-        apiFetch('/auth/logout', { method: 'POST', body: JSON.stringify({ email }) });
-      }
-    } catch (e) {
-      // ignore
-    }
     clearSession();
-    navigate('/');
+    navigate('/login');
   };
 
+  const getRolePrefix = () => {
+    if (family === 'manager') return '/manager';
+    if (family === 'hr') return '/hr';
+    if (family === 'depthead') return '/department-head';
+    if (family === 'learning') return '/ld';
+    if (family === 'system') return '/admin';
+    return '/employee';
+  };
+
+  const prefix = getRolePrefix();
+
+  const roleNavigation = {
+    employee: [
+      { label: 'My Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'My Skills', icon: '🎯', path: `${prefix}/skills` },
+      { label: 'My Skill Gaps', icon: '⚠️', path: `${prefix}/skill-gaps` },
+      { label: 'Learning & Training', icon: '📚', path: `${prefix}/trainings` },
+      { label: 'Assessments', icon: '📝', path: `${prefix}/assessments` },
+      { label: 'AI Growth Plan', icon: '⚡', path: `${prefix}/ai-plan` },
+      { label: 'Knowledge Base', icon: '📖', path: `${prefix}/articles` },
+      { label: 'Q&A Community', icon: '💬', path: `${prefix}/qna` },
+      { label: 'Find a Mentor', icon: '🤝', path: `${prefix}/mentors` },
+    ],
+    hr: [
+      { label: 'HR Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'Workforce Directory', icon: '🧑‍💼', path: `${prefix}/hr-employees` },
+      { label: 'Organization Skills', icon: '🎯', path: `${prefix}/skills` },
+      { label: 'Workforce Skill Gaps', icon: '⚠️', path: `${prefix}/skill-gaps` },
+      { label: 'Training Effectiveness', icon: '📚', path: `${prefix}/trainings` },
+      { label: 'Knowledge Governance', icon: '📖', path: `${prefix}/articles` },
+      { label: 'HR Reports', icon: '📈', path: `${prefix}/analytics` },
+    ],
+    manager: [
+      { label: 'Team Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'Team Members', icon: '👥', path: `${prefix}/hr-employees` },
+      { label: 'Team Skill Coverage', icon: '🎯', path: `${prefix}/skills` },
+      { label: 'Team Skill Gaps', icon: '⚠️', path: `${prefix}/skill-gaps` },
+      { label: 'Team Learning', icon: '📚', path: `${prefix}/trainings` },
+      { label: 'Team Mentorship', icon: '🤝', path: `${prefix}/mentors` },
+      { label: 'Team Reports', icon: '📈', path: `${prefix}/analytics` },
+      { label: 'Knowledge & Q&A', icon: '💬', path: `${prefix}/qna` },
+    ],
+    depthead: [
+      { label: 'Department Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'Department Workforce', icon: '👥', path: `${prefix}/hr-employees` },
+      { label: 'Critical Skills', icon: '🎯', path: `${prefix}/skills` },
+      { label: 'Department Gaps', icon: '⚠️', path: `${prefix}/skill-gaps` },
+      { label: 'Learning Priorities', icon: '📚', path: `${prefix}/trainings` },
+      { label: 'Knowledge Approvals', icon: '📖', path: `${prefix}/articles` },
+      { label: 'Department Reports', icon: '📈', path: `${prefix}/analytics` },
+      { label: 'Mentorship Network', icon: '🤝', path: `${prefix}/mentors` },
+    ],
+    learning: [
+      { label: 'L&D Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'Training Catalog', icon: '📚', path: `${prefix}/trainings` },
+      { label: 'Learning Gaps', icon: '⚠️', path: `${prefix}/skill-gaps` },
+      { label: 'Learning Analytics', icon: '📈', path: `${prefix}/analytics` },
+      { label: 'Mentorship Programs', icon: '🤝', path: `${prefix}/mentors` },
+      { label: 'Knowledge Resources', icon: '📖', path: `${prefix}/articles` },
+    ],
+    system: [
+      { label: 'Admin Dashboard', icon: '📊', path: `${prefix}/dashboard` },
+      { label: 'User Management', icon: '👥', path: `${prefix}/users` },
+      { label: 'Role Catalog', icon: '🔑', path: `${prefix}/roles` },
+      { label: 'Department Setup', icon: '🏢', path: `${prefix}/departments` },
+      { label: 'System Reports', icon: '📈', path: `${prefix}/analytics` },
+      { label: 'Platform Settings', icon: '⚙️', path: `${prefix}/settings` },
+    ],
+  };
+
+  const navItems = [
+    ...(roleNavigation[family] || roleNavigation.employee),
+    { label: 'My Profile', icon: '👤', path: `${prefix}/profile` },
+  ];
+
+
   return (
-    <div className="app-layout">
-      {/* SIDEBAR */}
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark, #0f172a)', color: '#f8fafc' }}>
+      {/* Sidebar */}
+      <aside style={{ width: '260px', background: 'rgba(15, 23, 42, 0.95)', borderRight: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', padding: '1.5rem 1rem', position: 'sticky', top: 0, height: '100vh' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', paddingLeft: '0.5rem' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', color: '#fff', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)' }}>
+            IQ
           </div>
           <div>
-            <h2>KnowledgeIQ</h2>
-            <span>Intelligence Platform</span>
-          </div>
-        </div>
-
-        {/* Role badge */}
-        <div style={{ margin: '0.75rem 1.25rem', padding: '0.5rem 0.85rem', borderRadius: 8, background: isAdmin ? 'rgba(236,72,153,0.1)' : 'rgba(99,102,241,0.1)', border: `1px solid ${isAdmin ? 'rgba(236,72,153,0.25)' : 'rgba(99,102,241,0.25)'}`, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1rem' }}>{isAdmin ? '🛡️' : '👤'}</span>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: isAdmin ? '#ec4899' : '#a5b4fc' }}>{role}</div>
-            {!isAdmin && user.targetRole && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Targeting: {user.targetRole.replace('_', ' ')}</div>}
-          </div>
-        </div>
-
-        <div className="sidebar-section-label">Main Menu</div>
-        <nav className="sidebar-nav">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path ||
-              (item.path !== '/app' && location.pathname.startsWith(item.path));
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span>{item.name}</span>
-                {item.badge && <span className="nav-badge" style={item.badge === '!' ? { background: '#ef4444' } : {}}>{item.badge}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-section-label">Account</div>
-        <nav className="sidebar-nav">
-          <button className="nav-item">
-            <span className="nav-icon">{icons.settings}</span>
-            <span>Settings</span>
-          </button>
-          <button className="nav-item" onClick={handleLogout} style={{ color: 'var(--danger)' }}>
-            <span className="nav-icon">{icons.logout}</span>
-            <span>Sign Out</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="user-card">
-            <div className="user-avatar">{initials}</div>
-            <div>
-              <div className="user-info-name">{user.name || 'User'}</div>
-              <div className="user-info-role">{role}</div>
+            <div style={{ fontWeight: '800', fontSize: '1.1rem', background: 'linear-gradient(135deg, #a5b4fc, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              KnowledgeIQ
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Platform
             </div>
           </div>
         </div>
+
+        {/* User Card */}
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '0.85rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>
+            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontWeight: '600', fontSize: '0.88rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.name || 'User'}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '500' }}>
+              {roleName}
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Links */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, overflowY: 'auto' }}>
+          {navItems.map((item, idx) => (
+            <NavLink
+              key={idx}
+              to={item.path}
+              className={({ isActive }) => (isActive ? 'active-nav-item' : 'nav-item')}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                color: isActive ? '#ffffff' : '#94a3b8',
+                background: isActive ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.15))' : 'transparent',
+                borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: isActive ? '600' : '400',
+                transition: 'all 0.2s ease',
+              })}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            marginTop: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            color: '#f87171',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            width: '100%',
+          }}
+        >
+          <span>🚪</span>
+          <span>Sign Out</span>
+        </button>
       </aside>
 
-      {/* MAIN */}
-      <main className="main-content">
-        <header className="top-header">
-          <div className="header-left">
-            <h3>{currentPage}</h3>
-            <p>Welcome back, {(user.name || 'User').split(' ')[0]} 👋</p>
+      {/* Main Content Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+        <header style={{ height: '64px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', position: 'sticky', top: 0, zIndex: 10 }}>
+          <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+            Organizational Knowledge & Competency Gap Intelligence System
           </div>
-          <div className="header-actions">
-            <div className="header-search">
-              <span className="header-search-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-                  <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </span>
-              <input type="text" placeholder="Search..." />
-            </div>
-            <div className="icon-btn notification-btn">
-              {icons.bell}
-              <span className="notif-dot" />
-            </div>
-            <div className="icon-btn">
-              {icons.settings}
-            </div>
-            <div className="user-avatar" style={{ width: 38, height: 38, borderRadius: 10, cursor: 'pointer' }}>
-              {initials}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem', borderRadius: '20px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+              ● Backend: Spring Boot & SQL
+            </span>
           </div>
         </header>
 
-        <div className="page-body">
+        <main style={{ flex: 1, padding: '2rem', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

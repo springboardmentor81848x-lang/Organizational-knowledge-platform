@@ -33,7 +33,7 @@ const Login = () => {
             permissions: data.permissions || defaultPermissionsForRole(data.user?.role),
           },
         });
-        navigate(roleFamily(data.user?.role) === 'employee' ? '/app/exam' : '/app');
+        navigate('/app');
         return;
       }
 
@@ -52,7 +52,7 @@ const Login = () => {
           },
         });
         setLoading(false);
-        navigate('/app/exam');
+        navigate('/app');
       }, 1000);
       return;
     }

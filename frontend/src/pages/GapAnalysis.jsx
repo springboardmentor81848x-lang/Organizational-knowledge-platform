@@ -115,6 +115,32 @@ const GapAnalysis = () => {
     try { return JSON.parse(localStorage.getItem('enrolledCourses') || '[]'); } catch { return []; }
   });
 
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedSkillToUpdate, setSelectedSkillToUpdate] = useState('');
+  const [newSkillScore, setNewSkillScore] = useState(80);
+
+  const handleUpdateSkill = () => {
+    if (!selectedSkillToUpdate) return;
+    const currentResults = user.examResults || {};
+    const updatedScore = Number(newSkillScore);
+    const updatedLevel = updatedScore >= 80 ? 'strong' : updatedScore >= 50 ? 'moderate' : 'critical';
+    
+    const newResults = {
+      ...currentResults,
+      [selectedSkillToUpdate]: {
+        score: updatedScore,
+        gap: 100 - updatedScore,
+        level: updatedLevel
+      }
+    };
+    
+    const updatedUser = { ...user, examResults: newResults };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    saveEmployeeImprovement(buildImprovementPayload({ user: updatedUser, examResults: newResults, enrolledCourses }));
+    setShowUpdateModal(false);
+    window.location.reload();
+  };
+
   const enroll = (courseTitle) => {
     if (!enrolledCourses.includes(courseTitle)) {
       const updated = [...enrolledCourses, courseTitle];
@@ -185,6 +211,9 @@ const GapAnalysis = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button className="btn-primary" style={{ padding: '0.65rem 1.25rem', borderRadius: 8, fontSize: '0.875rem', background: 'linear-gradient(135deg, #10b981, #059669)' }} onClick={() => { setSelectedSkillToUpdate(skillList[0]?.skill || ''); setShowUpdateModal(true); }}>
+            ✏️ Update Skill & Recalculate Gaps
+          </button>
           <button className="btn-primary" style={{ padding: '0.65rem 1.25rem', borderRadius: 8, fontSize: '0.875rem' }} onClick={() => navigate('/app/exam')}>
             🔄 Retake Assessment
           </button>
@@ -194,6 +223,48 @@ const GapAnalysis = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal: Update Skill Level */}
+      {showUpdateModal && (
+        <div className="modal-overlay" onClick={() => setShowUpdateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>✏️ Update Skill Level & Recalculate Gaps</h2>
+              <button className="modal-close-btn" onClick={() => setShowUpdateModal(false)}>✕</button>
+            </div>
+            <div style={{ marginTop: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Select Skill to Update</label>
+                <select
+                  className="form-input no-icon"
+                  value={selectedSkillToUpdate}
+                  onChange={(e) => setSelectedSkillToUpdate(e.target.value)}
+                >
+                  {skillList.map(s => (
+                    <option key={s.skill} value={s.skill}>{s.skill} (Current: {s.score}%)</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label className="form-label">New Achieved Skill Score (%): {newSkillScore}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={newSkillScore}
+                  onChange={(e) => setNewSkillScore(e.target.value)}
+                  style={{ width: '100%', accentColor: '#10b981' }}
+                />
+              </div>
+
+              <button className="btn-submit" style={{ marginTop: '1.25rem' }} onClick={handleUpdateSkill}>
+                ⚡ Save & Recalculate Gaps
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="stats-row">

@@ -292,6 +292,33 @@ const Trainings = () => {
           </div>
         ))}
       </div>
+
+      {/* Completion Certificates & Milestones Banner */}
+      <div className="card" style={{ marginTop: '2rem', background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(16,185,129,0.25)' }}>
+        <div className="card-header">
+          <div className="card-title">🏆 Verified Training Certificates & Milestones</div>
+          <button className="card-action" onClick={() => alert('Certificate PDF download initiated!')}>📥 Download All Certificates</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '0.75rem' }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: 12, border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontWeight: 700, color: '#10b981' }}>🎓 Cloud & DevOps Masterclass</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Completed on Aug 20, 2026 • 100% Score</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+              <span className="tag urgent">Verified</span>
+              <button style={{ padding: '0.35rem 0.75rem', borderRadius: 6, background: '#10b981', border: 'none', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }} onClick={() => alert('Viewing Official Verified Certificate for Cloud & DevOps Masterclass')}>📜 View Certificate</button>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: 12, border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontWeight: 700, color: '#a5b4fc' }}>⚡ React & Frontend Architecture</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>In Progress • 3 of 4 Milestones Done</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+              <span className="tag hot">75% Progress</span>
+              <button style={{ padding: '0.35rem 0.75rem', borderRadius: 6, background: 'rgba(99,102,241,0.2)', border: '1px solid #6366f1', color: '#a5b4fc', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }} onClick={() => alert('Milestone 4: Server Components & Memory Optimization')}>▶ Continue Path</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -2,12 +2,21 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api
 const COURSE_API_KEY = import.meta.env.VITE_COURSE_API_KEY || 'knowledge-platform-course-api-key';
 
 const ROLE_FAMILIES = {
-  Employee: 'employee',
-  'Team Lead / Manager': 'manager',
-  'HR Specialist': 'hr',
-  'Department Head': 'manager',
-  'Learning & Development Admin/mentor': 'learning',
-  'System Administrator': 'system',
+  employee: 'employee',
+  manager: 'manager',
+  teamlead: 'manager',
+  team_lead: 'manager',
+  team_lead_manager: 'manager',
+  hr: 'hr',
+  hr_specialist: 'hr',
+  department_head: 'depthead',
+  depthead: 'depthead',
+  ld: 'learning',
+  learning: 'learning',
+  learning_development_admin_mentor: 'learning',
+  system: 'system',
+  admin: 'system',
+  system_administrator: 'system',
 };
 
 const ROLE_PERMISSIONS = {
@@ -57,6 +66,10 @@ const ROLE_PERMISSIONS = {
     'view_individual_progress',
     'recommend_interventions',
     'department_planning',
+    'approve_knowledge',
+    'set_learning_priorities',
+    'review_team_reports',
+    'identify_critical_skills',
   ],
   'Learning & Development Admin/mentor': [
     'training_catalog_management',
@@ -103,7 +116,16 @@ export const clearSession = () => {
   localStorage.removeItem('enrolledCourses');
 };
 
-export const roleFamily = (role) => ROLE_FAMILIES[role] || 'employee';
+export const roleFamily = (role) => {
+  const key = String(role || 'Employee')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return ROLE_FAMILIES[key] || 'employee';
+};
 
 export const defaultPermissionsForRole = (role) => ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.Employee;
 

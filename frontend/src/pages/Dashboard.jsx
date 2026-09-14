@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { apiFetch, getStoredUser, roleFamily } from '../services/platformApi';
 import { fetchEnrollments } from '../services/enrollments';
 
@@ -58,12 +58,22 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const user = getStoredUser();
+  const { rolePath } = useParams();
+  const activeFamily = roleFamily(rolePath || user.role || user.accountType || 'Employee');
 
   useEffect(() => {
     const loadDashboard = async () => {
       setLoading(true);
       try {
-        const res = await apiFetch(`/dashboard?role=${encodeURIComponent(user.role || user.accountType || 'Employee')}&email=${encodeURIComponent(user.email || '')}`);
+        const family = activeFamily;
+        let endpointPath = 'employee';
+        if (family === 'manager') endpointPath = 'manager';
+        else if (family === 'hr') endpointPath = 'hr';
+        else if (family === 'depthead') endpointPath = 'department-head';
+        else if (family === 'learning') endpointPath = 'ld';
+        else if (family === 'system') endpointPath = 'admin';
+
+        const res = await apiFetch(`/dashboard/${endpointPath}?email=${encodeURIComponent(user.email || '')}`);
         if (!res.ok) {
           setDashboardData(null);
           return;
@@ -79,7 +89,7 @@ const Dashboard = () => {
     };
 
     loadDashboard();
-  }, [user.email, user.role, user.accountType]);
+  }, [activeFamily, user.email]);
 
   useEffect(() => {
     const loadEnrollments = async () => {
@@ -130,7 +140,7 @@ const Dashboard = () => {
     { dept: 'Data Science', pct: 55, color: '#f59e0b' },
     { dept: 'HR & Ops', pct: 88, color: '#10b981' },
   ];
-  const roleLabel = dashboardData?.roleProfile?.displayName || user.role || user.accountType || roleFamily(user.role || user.accountType || 'Employee');
+  const roleLabel = dashboardData?.roleProfile?.displayName || user.role || user.accountType || activeFamily;
 
   if (loading) {
     return (
@@ -140,6 +150,12 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  const isEmployee = activeFamily === 'employee';
+  const isManager = activeFamily === 'manager';
+  const isHr = activeFamily === 'hr';
+  const isDeptHead = activeFamily === 'depthead';
+  const isLearning = activeFamily === 'learning';
 
   return (
     <div className="dashboard-page">
@@ -188,7 +204,7 @@ const Dashboard = () => {
                   <line x1="12" y1="8" x2="12" y2="12" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
                   <line x1="12" y1="16" x2="12.01" y2="16" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                Critical Gap Alerts
+                {isEmployee ? 'My Skill Gaps' : (isManager ? 'Employees At Risk' : (isHr ? 'Organization Skill Gaps' : (isDeptHead ? 'Department Skill Gaps' : (isLearning ? 'Session Registrations & Feedback' : 'Critical Gap Alerts'))))}
               </div>
               <Link to="/app/analytics">
                 <button className="card-action">View Full Analysis →</button>
@@ -216,7 +232,7 @@ const Dashboard = () => {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Organizational Activity
+                {isEmployee ? 'Learning Milestones & Mentoring' : (isManager ? 'Team & Mentorship Activity' : (isHr ? 'Workforce Planning Insights' : (isDeptHead ? 'Department Reports & Mentorship' : (isLearning ? 'Mentor Management Activity' : 'Organizational Activity'))))}
               </div>
               <button className="card-action">See All</button>
             </div>
@@ -261,7 +277,7 @@ const Dashboard = () => {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" stroke="#ec4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Top Recommendations
+                {isManager ? 'Team Training Adoption' : (isHr ? 'Training Analytics' : (isDeptHead ? 'Training Adoption' : (isLearning ? 'Training Management & Course Catalog' : 'Top Recommendations')))}
               </div>
               <Link to="/app/trainings">
                 <button className="card-action">Browse →</button>
@@ -287,6 +303,8 @@ const Dashboard = () => {
             ))}
           </div>
 
+          {!isEmployee && (
+            <>
           {/* Department Progress */}
           <div className="card">
             <div className="card-header">
@@ -297,7 +315,7 @@ const Dashboard = () => {
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="#10b981" strokeWidth="2"/>
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="#10b981" strokeWidth="2"/>
                 </svg>
-                Department Readiness
+                {isManager ? 'Individual Employee Progress' : (isHr ? 'Department Skill Comparison' : (isDeptHead ? 'Employee Progress Overview' : (isLearning ? 'Learning Paths & Milestones' : 'Department Readiness')))}
               </div>
             </div>
             {departmentRows.map((d, i) => (
@@ -319,7 +337,7 @@ const Dashboard = () => {
           {/* Skill Gap Heatmap */}
           <div className="card">
             <div className="card-header">
-              <div className="card-title">🔥 Skill Gap Heatmap</div>
+              <div className="card-title">{isHr ? 'Workforce Skill Analytics' : (isDeptHead ? 'Department Skill Coverage' : (isLearning ? 'Knowledge Sessions' : '🔥 Skill Gap Heatmap'))}</div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Critical gaps by department and skill</span>
             </div>
             <div style={{ overflowX: 'auto', padding: '0 0.5rem 0.75rem' }}>
@@ -360,11 +378,13 @@ const Dashboard = () => {
               </table>
             </div>
           </div>
+            </>
+          )}
 
           {/* Achievements */}
           <div className="card">
             <div className="card-header">
-              <div className="card-title">🏅 Achievements</div>
+              <div className="card-title">{isHr ? 'Training Effectiveness' : (isManager ? 'Team Skill Improvement' : (isDeptHead ? 'Skill Improvement' : (isLearning ? 'Training Effectiveness' : '🏅 Achievements')))}</div>
               <button className="card-action">View All</button>
             </div>
             <div style={{ display: 'grid', gap: '0.85rem' }}>
@@ -383,7 +403,7 @@ const Dashboard = () => {
           {/* Certifications */}
           <div className="card">
             <div className="card-header">
-              <div className="card-title">🎓 Certifications</div>
+              <div className="card-title">{isHr ? 'Learning Analytics' : (isManager ? 'Team Assessment Performance' : (isDeptHead ? 'Department Assessments' : (isLearning ? 'Learning Analytics & Reports' : '🎓 Certifications')))}</div>
               <button className="card-action">Track</button>
             </div>
             <div style={{ display: 'grid', gap: '0.85rem' }}>
