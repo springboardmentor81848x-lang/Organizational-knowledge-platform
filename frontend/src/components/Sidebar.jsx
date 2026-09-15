@@ -151,14 +151,6 @@ function Sidebar({ role }) {
             </NavLink>
 
             <NavLink
-              to="/skill-forecast"
-              className={navLinkClass}
-            >
-              <TrendingUp size={20} />
-              Skill Forecast
-            </NavLink>
-
-            <NavLink
               to="/users"
               className={navLinkClass}
             >
