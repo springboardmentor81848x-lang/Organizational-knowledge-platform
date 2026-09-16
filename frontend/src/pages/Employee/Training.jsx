@@ -1,9 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Navbar from "../../components/Navbar/Navbar";
-import { FaBookOpen, FaFilter, FaClock, FaExternalLinkAlt, FaCheckCircle, FaStar, FaRobot, FaLightbulb, FaGraduationCap } from "react-icons/fa";
-import {coursesAPI, aiAPI, learningProgressAPI, getCurrentUserId } from "../../services/apiService";
+import AIAssistant from "../../components/AIAssistant/AIAssistant";
+
+import {
+  FaBookOpen,
+  FaFilter,
+  FaClock,
+  FaExternalLinkAlt,
+  FaCheckCircle,
+  FaStar,
+  FaRobot,
+  FaLightbulb,
+  FaGraduationCap
+} from "react-icons/fa";
+
+import {
+  coursesAPI,
+  aiAPI,
+  learningProgressAPI,
+  getCurrentUserId
+} from "../../services/apiService";
+
 import "./Training.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000";
 
 const Training = () => {
   const [providerFilter, setProviderFilter] = useState("All");
@@ -13,187 +37,674 @@ const Training = () => {
   const [courses, setCourses] = useState([]);
   const [aiPlan, setAiPlan] = useState(null);
   const [loadingAi, setLoadingAi] = useState(false);
+
   const [enrolledIds, setEnrolledIds] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
 
-  useEffect(() => {
-    // Fetch courses catalog from API/Database
-    const loadCourses = async () => {
-      const res = await coursesAPI.getCourses();
-      if (res && res.success) {
-        setCourses(res.data);
+  const userId = getCurrentUserId();
+
+  // =========================================================
+  // COURSE PROVIDER NORMALIZATION
+  // =========================================================
+
+  const normalizeCourse = (course) => {
+    const title = String(course.title || "").toLowerCase();
+    const skill = String(course.skill_name || "").toLowerCase();
+
+    let provider = course.provider || "";
+
+    if (
+      title.includes("microservice") ||
+      title.includes("spring boot") ||
+      title.includes("system design") ||
+      title.includes("java")
+    ) {
+      provider = "Infosys Springboard";
+    } else if (
+      title.includes("docker") ||
+      title.includes("kubernetes") ||
+      title.includes("devops")
+    ) {
+      provider = "Coursera";
+    } else if (
+      title.includes("aws") ||
+      title.includes("cloud")
+    ) {
+      provider = "Udemy";
+    }
+
+    if (
+      !provider ||
+      provider === "Internal Training Catalog"
+    ) {
+      if (
+        skill.includes("java") ||
+        skill.includes("spring") ||
+        skill.includes("microservice") ||
+        skill.includes("system")
+      ) {
+        provider = "Infosys Springboard";
+      } else if (
+        skill.includes("docker") ||
+        skill.includes("kubernetes") ||
+        skill.includes("devops")
+      ) {
+        provider = "Coursera";
+      } else {
+        provider = "Udemy";
       }
-    };
-    loadCourses();
+    }
 
-    // Trigger AI LLM recommendation engine based on current gaps
-    const fetchAiPlan = async () => {
-      setLoadingAi(true);
-      const res = await aiAPI.getRecommendations([
-        { skill: "Microservices", level: "Critical" },
-        { skill: "Kubernetes", level: "Critical" },
-        { skill: "System Design", level: "Moderate" }
-      ], "Software Developer");
-      if (res && res.success) {
-        setAiPlan(res.data);
+    let url = course.url;
+
+    if (!url) {
+      if (provider === "Infosys Springboard") {
+        url = "https://infyspringboard.onwings.com/";
+      } else if (provider === "Coursera") {
+        url = "https://www.coursera.org/";
+      } else {
+        url = "https://www.udemy.com/";
       }
-      setLoadingAi(false);
-    };
-    fetchAiPlan();
-  }, []);
+    }
 
-  const handleEnroll = async (id) => {
-    try { await learningProgressAPI.enroll(getCurrentUserId(), id); setEnrolledIds((prev) => [...new Set([...prev, id])]); alert("Successfully enrolled in training module!"); }
-    catch (e) { alert(e?.response?.data?.error || "Unable to enroll. Please try again."); }
+    return {
+      ...course,
+      provider,
+      url,
+      level: course.level || "Intermediate",
+      rating: course.rating || 4.5
+    };
   };
 
-  // Smart Recommendation Logic (Task 6)
-  const filteredCourses = courses.filter(course => {
-    const matchesProvider = providerFilter === "All" || course.provider.toLowerCase().includes(providerFilter.toLowerCase());
-    const matchesLevel = levelFilter === "All" || course.level === levelFilter;
-    return matchesProvider && matchesLevel;
-  });
+  // =========================================================
+  // LOAD COURSES
+  // =========================================================
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoadingCourses(true);
+
+      try {
+        const response = await coursesAPI.getCourses();
+
+        if (response?.success) {
+          const list = (response.data || []).map(
+            normalizeCourse
+          );
+
+          setCourses(list);
+        }
+      } catch (error) {
+        console.error("Course loading error:", error);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    loadCourses();
+  }, []);
+
+  // =========================================================
+  // LOAD AI RECOMMENDATION USING REAL USER GAPS
+  // =========================================================
+
+  useEffect(() => {
+    const fetchAiPlan = async () => {
+      setLoadingAi(true);
+
+      try {
+        const gapResponse = await fetch(
+          `${API_URL}/api/gap-analysis/${userId}?role=Software%20Developer`
+        );
+
+        const gapResult = await gapResponse.json();
+
+        if (!gapResponse.ok || !gapResult?.success) {
+          throw new Error(
+            gapResult?.error ||
+              "Unable to load skill gaps"
+          );
+        }
+
+        const gapData = gapResult.data;
+
+        const gaps = (gapData?.gapDetails || []).filter(
+          (item) => item.level !== "Met"
+        );
+
+        const aiResponse =
+          await aiAPI.getRecommendations(
+            gaps,
+            "Software Developer",
+            userId
+          );
+
+        if (aiResponse?.success) {
+          setAiPlan(aiResponse.data);
+        }
+      } catch (error) {
+        console.error(
+          "AI recommendation error:",
+          error
+        );
+
+        setAiPlan({
+          summary:
+            "Your learning plan is based on your current skill gaps.",
+          priorityActions: [],
+          recommendedTrack:
+            "Software Developer Upskilling Path",
+          estimatedWeeks: 6
+        });
+      } finally {
+        setLoadingAi(false);
+      }
+    };
+
+    if (userId) {
+      fetchAiPlan();
+    }
+  }, [userId]);
+
+  // =========================================================
+  // ENROLL
+  // =========================================================
+
+  const handleEnroll = async (courseId) => {
+    try {
+      if (!userId) {
+        alert("User ID not found. Please login again.");
+        return;
+      }
+
+      const response =
+        await learningProgressAPI.enroll(
+          userId,
+          courseId
+        );
+
+      if (response?.success) {
+        setEnrolledIds((previous) => [
+          ...new Set([...previous, courseId])
+        ]);
+
+        alert(
+          "Successfully enrolled! Check My Learning for progress."
+        );
+      } else {
+        alert(
+          response?.error ||
+            response?.message ||
+            "Unable to enroll in this course."
+        );
+      }
+    } catch (error) {
+      console.error("Enrollment error:", error);
+
+      alert(
+        error?.response?.data?.error ||
+          error?.message ||
+          "Enrollment failed. Please try again."
+      );
+    }
+  };
+
+  // =========================================================
+  // FILTER
+  // =========================================================
+
+  let filteredCourses = courses.filter(
+    (course) => {
+      const matchesProvider =
+        providerFilter === "All" ||
+        String(course.provider)
+          .toLowerCase()
+          .includes(
+            providerFilter.toLowerCase()
+          );
+
+      const matchesLevel =
+        levelFilter === "All" ||
+        String(course.level).toLowerCase() ===
+          levelFilter.toLowerCase();
+
+      return (
+        matchesProvider &&
+        matchesLevel
+      );
+    }
+  );
+
+  // =========================================================
+  // SORT
+  // =========================================================
+
+  if (sortBy === "Rating") {
+    filteredCourses = [
+      ...filteredCourses
+    ].sort(
+      (a, b) =>
+        Number(b.rating || 0) -
+        Number(a.rating || 0)
+    );
+  }
+
+  if (sortBy === "Duration") {
+    filteredCourses = [
+      ...filteredCourses
+    ].sort(
+      (a, b) =>
+        Number(a.duration_hours || 0) -
+        Number(b.duration_hours || 0)
+    );
+  }
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="app-layout">
       <Sidebar />
+
       <div className="main-wrapper">
-        <Navbar title="Training & External Catalogs" role="Employee" />
+        <Navbar
+          title="Training & External Catalogs"
+          role="Employee"
+        />
 
         <div className="page-container">
+
+          {/* HEADER */}
+
           <div className="page-header">
             <div className="page-header-text">
-              <h2><FaBookOpen /> Recommended External Learning Catalogs</h2>
-              <p>AI-tailored course recommendations from Infosys Springboard, Coursera, Udemy, edX & LinkedIn Learning.</p>
+              <h2>
+                <FaBookOpen /> Training &
+                External Learning
+              </h2>
+
+              <p>
+                Personalized learning based on
+                your organizational skill gaps.
+              </p>
             </div>
           </div>
 
-          {/* AI LLM RECOMMENDATION INSIGHT BOX (Task 3) */}
-          <div className="card-box" style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)", color: "#ffffff", padding: "24px", borderRadius: "12px", marginBottom: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px", color: "#818cf8" }}>
-                <FaRobot /> AI / LLM Personalized Training Recommendation
-              </h3>
-              <span style={{ background: "rgba(255, 255, 255, 0.15)", padding: "4px 12px", borderRadius: "20px", fontSize: "0.8rem" }}>
-                Powered by Gemini LLM API
-              </span>
-            </div>
+          {/* AI ASSISTANT */}
+
+          <AIAssistant userId={userId} />
+
+          {/* AI RECOMMENDATION */}
+
+          <div
+            className="card-box"
+            style={{
+              padding: "22px",
+              marginBottom: "25px",
+              background:
+                "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
+              color: "white"
+            }}
+          >
+            <h3>
+              <FaRobot /> AI Learning Recommendation
+            </h3>
 
             {loadingAi ? (
-              <p style={{ marginTop: "12px", color: "#c7d2fe" }}>AI is generating personalized recommendations based on detected skill gaps...</p>
+              <p>
+                <FaRobot /> Generating
+                personalized learning
+                recommendations...
+              </p>
             ) : aiPlan ? (
-              <div style={{ marginTop: "16px" }}>
-                <p style={{ fontSize: "1rem", color: "#e0e7ff", lineHeight: "1.6" }}>{aiPlan.summary}</p>
-                <div style={{ marginTop: "12px", background: "rgba(255, 255, 255, 0.08)", padding: "16px", borderRadius: "8px" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: "#a5b4fc", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <FaLightbulb color="#f59e0b" /> Actionable Step-by-Step AI Guidance:
-                  </h4>
-                  <ul style={{ margin: 0, paddingLeft: "20px", color: "#c7d2fe" }}>
-                    {aiPlan.priorityActions?.map((action, idx) => (
-                      <li key={idx} style={{ marginBottom: "6px" }}>{action}</li>
-                    ))}
-                  </ul>
-                </div>
+              <div>
+                <p>
+                  <FaLightbulb />{" "}
+                  {aiPlan.summary ||
+                    "Personalized learning plan generated from your skill gaps."}
+                </p>
+
+                {aiPlan.recommendedTrack && (
+                  <p>
+                    <strong>
+                      Recommended Track:
+                    </strong>{" "}
+                    {aiPlan.recommendedTrack}
+                  </p>
+                )}
+
+                {aiPlan.estimatedWeeks && (
+                  <p>
+                    <strong>
+                      Estimated Duration:
+                    </strong>{" "}
+                    {aiPlan.estimatedWeeks} weeks
+                  </p>
+                )}
+
+                {aiPlan.priorityActions?.length >
+                  0 && (
+                  <div>
+                    <strong>
+                      Priority Actions:
+                    </strong>
+
+                    <ul>
+                      {aiPlan.priorityActions.map(
+                        (action, index) => (
+                          <li key={index}>
+                            {action}
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
-            ) : null}
+            ) : (
+              <p>
+                Your personalized learning
+                recommendations will appear here.
+              </p>
+            )}
           </div>
 
-          {/* Catalog Filter Controls (Task 5 & 6) */}
-          <div className="filter-bar">
-            <div className="filter-group">
-              <label><FaGraduationCap /> Learning Platform</label>
-              <select
-                className="select-control"
-                value={providerFilter}
-                onChange={(e) => setProviderFilter(e.target.value)}
-              >
-                <option value="All">All Platforms (Infosys Springboard, Coursera, Udemy)</option>
-                <option value="Infosys Springboard">Infosys Springboard</option>
-                <option value="Coursera">Coursera</option>
-                <option value="Udemy">Udemy</option>
-              </select>
-            </div>
+          {/* FILTER */}
 
-            <div className="filter-group">
-              <label><FaFilter /> Proficiency Level Filter</label>
-              <select
-                className="select-control"
-                value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value)}
-              >
-                <option value="All">All Levels (Beginner to Advanced)</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-            </div>
+          <div
+            className="card-box"
+            style={{
+              padding: "20px",
+              marginBottom: "25px"
+            }}
+          >
+            <h3>
+              <FaFilter /> Filter
+              Recommendations
+            </h3>
 
-            <div className="filter-group">
-              <label>Recommendation Priority</label>
-              <select
-                className="select-control"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="Relevance">Missing Skill Priority (Critical Gaps First)</option>
-                <option value="Rating">Highest Rated (4.8+)</option>
-                <option value="Duration">Shortest Duration</option>
-              </select>
+            <div
+              style={{
+                display: "flex",
+                gap: "20px",
+                flexWrap: "wrap",
+                marginTop: "15px"
+              }}
+            >
+              <div>
+                <label>
+                  <strong>
+                    Platform
+                  </strong>
+                </label>
+
+                <br />
+
+                <select
+                  value={providerFilter}
+                  onChange={(e) =>
+                    setProviderFilter(
+                      e.target.value
+                    )
+                  }
+                  style={{
+                    padding: "10px",
+                    marginTop: "6px"
+                  }}
+                >
+                  <option value="All">
+                    All Platforms
+                  </option>
+
+                  <option value="Infosys Springboard">
+                    Infosys Springboard
+                  </option>
+
+                  <option value="Coursera">
+                    Coursera
+                  </option>
+
+                  <option value="Udemy">
+                    Udemy
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  <strong>
+                    Proficiency Level
+                  </strong>
+                </label>
+
+                <br />
+
+                <select
+                  value={levelFilter}
+                  onChange={(e) =>
+                    setLevelFilter(
+                      e.target.value
+                    )
+                  }
+                  style={{
+                    padding: "10px",
+                    marginTop: "6px"
+                  }}
+                >
+                  <option value="All">
+                    All Levels
+                  </option>
+
+                  <option value="Beginner">
+                    Beginner
+                  </option>
+
+                  <option value="Intermediate">
+                    Intermediate
+                  </option>
+
+                  <option value="Advanced">
+                    Advanced
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  <strong>
+                    Sort By
+                  </strong>
+                </label>
+
+                <br />
+
+                <select
+                  value={sortBy}
+                  onChange={(e) =>
+                    setSortBy(e.target.value)
+                  }
+                  style={{
+                    padding: "10px",
+                    marginTop: "6px"
+                  }}
+                >
+                  <option value="Relevance">
+                    Relevance
+                  </option>
+
+                  <option value="Rating">
+                    Highest Rating
+                  </option>
+
+                  <option value="Duration">
+                    Shortest Duration
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* External Courses Grid (Task 5) */}
-          <div className="courses-grid">
-            {filteredCourses.map((course) => {
-              const isEnrolled = enrolledIds.includes(course.id);
-              return (
-                <div key={course.id} className="course-card-lg">
-                  <div className="course-card-header" style={{ borderTopColor: course.color || "#3b82f6" }}>
-                    <span className="course-icon-bubble">{course.icon || "📚"}</span>
-                    <div className="course-provider">
-                      <span style={{ fontWeight: 700, color: "#1e293b" }}>{course.provider}</span>
-                      <span className="rating"><FaStar color="#f59e0b" /> {course.rating}</span>
-                    </div>
-                  </div>
+          {/* COURSES */}
 
-                  <div className="course-card-body">
-                    <h3>{course.title}</h3>
-                    <p>{course.description}</p>
-                    
-                    <div className="course-tags">
-                      <span className={`badge-pill ${course.level.toLowerCase()}`}>
-                        {course.level}
-                      </span>
-                      <span className="duration-tag">
-                        <FaClock /> {course.duration}
-                      </span>
-                      <span className="badge-pill blue" style={{ background: "#e0f2fe", color: "#0369a1" }}>
-                        Target: {course.skill_name}
-                      </span>
-                    </div>
-                  </div>
+          <h3
+            style={{
+              marginBottom: "15px"
+            }}
+          >
+            <FaGraduationCap /> Recommended
+            Courses
+          </h3>
 
-                  <div className="course-card-footer">
-                    {isEnrolled ? (
-                      <span className="enrolled-badge">
-                        <FaCheckCircle /> Enrolled
-                      </span>
-                    ) : (
-                      <a
-                        href={course.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleEnroll(course.id)}
-                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        Enroll on {course.provider.split(" ")[0]} <FaExternalLinkAlt style={{ fontSize: "0.75rem" }} />
-                      </a>
-                    )}
-                  </div>
+          {loadingCourses ? (
+            <div
+              className="card-box"
+              style={{
+                padding: "30px",
+                textAlign: "center"
+              }}
+            >
+              Loading courses...
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px"
+              }}
+            >
+              {filteredCourses.length === 0 ? (
+                <div
+                  className="card-box"
+                  style={{
+                    padding: "30px",
+                    textAlign: "center",
+                    gridColumn: "1 / -1"
+                  }}
+                >
+                  <FaBookOpen size={30} />
+
+                  <h3>
+                    No courses found
+                  </h3>
+
+                  <p>
+                    Try another platform or
+                    proficiency level.
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+              ) : (
+                filteredCourses.map(
+                  (course) => {
+                    const enrolled =
+                      enrolledIds.includes(
+                        course.id
+                      );
+
+                    return (
+                      <div
+                        className="card-box"
+                        key={course.id}
+                        style={{
+                          padding: "22px"
+                        }}
+                      >
+                        <h3>
+                          {course.title}
+                        </h3>
+
+                        <p>
+                          <strong>
+                            Platform:
+                          </strong>{" "}
+                          {course.provider}
+                        </p>
+
+                        {course.description && (
+                          <p>
+                            {course.description}
+                          </p>
+                        )}
+
+                        <p>
+                          <strong>
+                            Level:
+                          </strong>{" "}
+                          {course.level}
+                        </p>
+
+                        <p>
+                          <FaClock />{" "}
+                          {course.duration ||
+                            `${course.duration_hours || 0} hrs`}
+                        </p>
+
+                        <p>
+                          <FaStar />{" "}
+                          {course.rating}
+                        </p>
+
+                        {course.skill_name && (
+                          <p>
+                            <strong>
+                              Skill:
+                            </strong>{" "}
+                            {course.skill_name}
+                          </p>
+                        )}
+
+                        <div
+                          style={{
+                            marginTop: "15px"
+                          }}
+                        >
+                          {enrolled ? (
+                            <button
+                              className="btn btn-success btn-sm"
+                              disabled
+                            >
+                              <FaCheckCircle />{" "}
+                              Enrolled
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() =>
+                                handleEnroll(
+                                  course.id
+                                )
+                              }
+                            >
+                              Enroll
+                            </button>
+                          )}
+
+                          {course.url && (
+                            <a
+                              href={course.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display:
+                                  "inline-block",
+                                marginLeft:
+                                  "10px"
+                              }}
+                            >
+                              Visit Platform{" "}
+                              <FaExternalLinkAlt />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                )
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
