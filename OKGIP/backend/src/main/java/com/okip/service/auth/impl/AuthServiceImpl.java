@@ -130,7 +130,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token =
-                jwtService.generateToken(employee.getOfficialEmail());
+                jwtService.generateToken(
+                        employee.getOfficialEmail(),
+                        employee.getRole().getRoleName().name());
 
         LoginResponseDTO response = new LoginResponseDTO();
 

@@ -12,7 +12,6 @@ import com.okip.repository.KnowledgeGapRepository;
 import com.okip.service.ai.AiRecommendationService;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -30,6 +29,7 @@ import com.okip.entity.master.Employee;
 import com.okip.entity.master.Training;
 import com.okip.entity.transaction.EmployeeJobRole;
 import com.okip.entity.transaction.KnowledgeGap;
+import com.okip.entity.transaction.TrainingSkill;
 
 import com.okip.enums.GapType;
 
@@ -39,6 +39,7 @@ import com.okip.repository.EmployeeJobRoleRepository;
 import com.okip.repository.EmployeeRepository;
 import com.okip.repository.KnowledgeGapRepository;
 import com.okip.repository.TrainingRepository;
+import com.okip.repository.TrainingSkillRepository;
 
 @Service
 public class AiRecommendationServiceImpl
@@ -55,6 +56,8 @@ public class AiRecommendationServiceImpl
 
     private final TrainingRepository trainingRepository;
 
+    private final TrainingSkillRepository trainingSkillRepository;
+
     private final ObjectMapper objectMapper;
 
     public AiRecommendationServiceImpl(
@@ -63,6 +66,7 @@ public class AiRecommendationServiceImpl
             EmployeeJobRoleRepository employeeJobRoleRepository,
             KnowledgeGapRepository knowledgeGapRepository,
             TrainingRepository trainingRepository,
+            TrainingSkillRepository trainingSkillRepository,
             ObjectMapper objectMapper) {
 
         this.chatModel = chatModel;
@@ -73,6 +77,8 @@ public class AiRecommendationServiceImpl
                 knowledgeGapRepository;
         this.trainingRepository =
                 trainingRepository;
+        this.trainingSkillRepository =
+                trainingSkillRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -95,20 +101,37 @@ public class AiRecommendationServiceImpl
                     "No active job role assigned.");
         }
 
-        List<KnowledgeGap> gaps =
+        List<KnowledgeGap> allGaps =
                 knowledgeGapRepository
                         .findByEmployeeJobRoleIn(
                                 assignedRoles);
 
-        if (gaps.isEmpty()) {
-
+        if (allGaps.isEmpty()) {
             throw new ResourceNotFoundException(
-                    "No knowledge gaps found. " +
-                    "Run gap analysis first.");
+                    "No knowledge-gap analysis exists for this employee. Run gap analysis first.");
         }
+
+        // AI must only reason over active gaps. CLOSED/0% records are evidence
+        // that the employee already meets the requirement and must not generate
+        // a course recommendation.
+        List<KnowledgeGap> gaps = allGaps.stream()
+                .filter(g -> g.getGapPercentage() != null && g.getGapPercentage() > 0.0)
+                .filter(g -> g.getStatus() == null || "OPEN".equals(g.getStatus().name()))
+                .toList();
 
         List<Training> trainings =
                 trainingRepository.findAll();
+
+        if (gaps.isEmpty()) {
+            AiRecommendationResponseDTO response = new AiRecommendationResponseDTO();
+            response.setEmployeeId(employee.getEmployeeId());
+            response.setEmployeeCode(employee.getEmployeeCode());
+            response.setEmployeeName(employee.getFirstName() + " " + employee.getLastName());
+            response.setPriorityGaps(new ArrayList<>());
+            response.setLearningPath(new ArrayList<>());
+            response.setRecommendedCourses(new ArrayList<>());
+            return response;
+        }
 
         String prompt =
                 buildRecommendationPrompt(
@@ -121,6 +144,7 @@ public class AiRecommendationServiceImpl
         return parseAiResponse(
                 aiJson,
                 employee,
+                gaps,
                 trainings);
     }
 
@@ -287,22 +311,59 @@ public class AiRecommendationServiceImpl
             prompt.append("\nDescription: ")
                     .append(training.getDescription());
 
+            List<TrainingSkill> mappings =
+                    trainingSkillRepository.findByTrainingWithSkill(training);
+
+            prompt.append("\nMapped Skills: ");
+            if (mappings.isEmpty()) {
+                prompt.append("NONE");
+            } else {
+                prompt.append(
+                        mappings.stream()
+                                .map(mapping -> mapping.getSkill().getSkillName())
+                                .distinct()
+                                .sorted()
+                                .collect(java.util.stream.Collectors.joining(", ")));
+            }
+
             prompt.append("\n");
         }
 
         prompt.append("""
-                
-                RULES:
+        
+        RULES:
 
-                1. Prioritize the largest knowledge gaps.
-                2. Consider missing skills before low experience.
-                3. Build the learning path from foundational
-                   knowledge to advanced knowledge.
-                4. Recommend only relevant training IDs.
-                5. Do not invent courses.
-                6. Do not invent training IDs.
-                7. Return only valid JSON.
-                """);
+        1. Prioritize only skills that have an actual knowledge gap.
+        2. Do NOT create learning recommendations for skills with
+           gapPercentage = 0 or status = CLOSED.
+        3. For every learning recommendation, use the employee's
+           CURRENT PROFICIENCY and REQUIRED PROFICIENCY from the
+           KNOWLEDGE GAPS data.
+        4. Training level must support the employee's progression
+           toward the required proficiency.
+        5. Follow this proficiency progression:
+           BEGINNER < INTERMEDIATE < ADVANCED < EXPERT.
+        6. If the employee is BEGINNER and the required proficiency
+           is INTERMEDIATE, prefer BEGINNER or INTERMEDIATE training.
+        7. Do NOT recommend ADVANCED or EXPERT training as the first
+           learning step when the employee only needs to reach
+           INTERMEDIATE.
+        8. If an appropriate INTERMEDIATE training is unavailable,
+           prefer a relevant BEGINNER foundation course rather than
+           jumping directly to ADVANCED training.
+        9. If the employee is already at the required proficiency,
+           do not recommend a course for that skill.
+        10. Match training relevance using the training name,
+            description, and level against the actual knowledge gap.
+        11. Recommend only training IDs from the AVAILABLE TRAINING list.
+        12. Never invent a training ID.
+        13. Never invent a course.
+        14. The learning path must progress from the employee's
+            current proficiency toward the required proficiency.
+        15. Recommended courses should support the learning path.
+        16. Do not recommend unrelated courses.
+        17. Return only valid JSON.
+        """);
 
         return prompt.toString();
     }
@@ -364,6 +425,7 @@ public class AiRecommendationServiceImpl
     private AiRecommendationResponseDTO parseAiResponse(
             String aiJson,
             Employee employee,
+            List<KnowledgeGap> gaps,
             List<Training> trainings) {
 
         try {
@@ -388,6 +450,11 @@ public class AiRecommendationServiceImpl
 
             validateRecommendedCourses(
                     response,
+                    trainings);
+
+            ensureGapRelevantCourses(
+                    response,
+                    gaps,
                     trainings);
 
             return response;
@@ -422,6 +489,98 @@ public class AiRecommendationServiceImpl
 
         return cleaned.trim();
     }
+    private void ensureGapRelevantCourses(
+            AiRecommendationResponseDTO response,
+            List<KnowledgeGap> gaps,
+            List<Training> trainings) {
+
+        if (response.getRecommendedCourses() == null) {
+            response.setRecommendedCourses(new ArrayList<>());
+        }
+
+        for (KnowledgeGap gap : gaps) {
+            if (gap.getGapPercentage() == null || gap.getGapPercentage() <= 0
+                    || gap.getSkill() == null
+                    || gap.getSkill().getSkillName() == null) {
+                continue;
+            }
+
+            String gapSkill = gap.getSkill().getSkillName().trim();
+
+            boolean alreadyCovered = response.getRecommendedCourses().stream()
+                    .map(RecommendedCourseDTO::getTrainingId)
+                    .filter(java.util.Objects::nonNull)
+                    .map(id -> trainings.stream()
+                            .filter(t -> id.equals(t.getTrainingId()))
+                            .findFirst().orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .anyMatch(training -> trainingSkillRepository
+                            .findByTraining(training).stream()
+                            .anyMatch(mapping -> mapping.getSkill() != null
+                                    && gapSkill.equalsIgnoreCase(
+                                            mapping.getSkill().getSkillName().trim())));
+
+            if (alreadyCovered) {
+                continue;
+            }
+
+            Training fallback = trainings.stream()
+                    .filter(training -> trainingSkillRepository
+                            .findByTraining(training).stream()
+                            .anyMatch(mapping -> mapping.getSkill() != null
+                                    && gapSkill.equalsIgnoreCase(
+                                            mapping.getSkill().getSkillName().trim())))
+                    .filter(training -> isSuitableTrainingLevel(
+                            training.getLevel(),
+                            gap.getCurrentProficiency(),
+                            gap.getRequiredProficiency()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (fallback == null) {
+                continue;
+            }
+
+            RecommendedCourseDTO course = new RecommendedCourseDTO();
+            course.setTrainingId(fallback.getTrainingId());
+            course.setTrainingName(fallback.getTrainingName());
+            course.setProvider(fallback.getProvider());
+            course.setLevel(fallback.getLevel());
+            course.setDuration(fallback.getDuration());
+            course.setCourseUrl(fallback.getCourseUrl());
+            response.getRecommendedCourses().add(course);
+        }
+    }
+
+    private boolean isSuitableTrainingLevel(
+            String trainingLevel,
+            Object currentProficiency,
+            Object requiredProficiency) {
+
+        if (trainingLevel == null) return true;
+
+        int trainingRank = proficiencyRank(trainingLevel);
+        int currentRank = proficiencyRank(String.valueOf(currentProficiency));
+        int requiredRank = proficiencyRank(String.valueOf(requiredProficiency));
+
+        if (trainingRank < 0) return true;
+        if (requiredRank < 0) return true;
+
+        // Do not jump far beyond the employee's target level.
+        return trainingRank <= requiredRank && trainingRank >= Math.max(0, currentRank);
+    }
+
+    private int proficiencyRank(String value) {
+        if (value == null) return -1;
+        return switch (value.trim().toUpperCase()) {
+            case "BEGINNER" -> 0;
+            case "INTERMEDIATE" -> 1;
+            case "ADVANCED" -> 2;
+            case "EXPERT" -> 3;
+            default -> -1;
+        };
+    }
+
     private void validateRecommendedCourses(
             AiRecommendationResponseDTO response,
             List<Training> trainings) {

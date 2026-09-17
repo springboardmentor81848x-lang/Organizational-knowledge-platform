@@ -28,4 +28,9 @@ public interface EmployeeJobRoleRepository
 
     List<EmployeeJobRole> findByJobRole(JobRole jobRole);
 
+    List<EmployeeJobRole> findByAssignedByAndActiveTrue(Employee assignedBy);
+
+    List<EmployeeJobRole> findByAssignedByAndEmployeeAndActiveTrue(
+            Employee assignedBy, Employee employee);
+
 }

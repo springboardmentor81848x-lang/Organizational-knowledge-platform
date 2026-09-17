@@ -39,7 +39,16 @@ const gapAnalysisService = {
 
     return response.data;
   },
+ 
+  runMyGapAnalysis: async (): Promise<GapAnalysisResponse> => {
 
+  const response =
+    await API.post<GapAnalysisResponse>(
+      "/gap-analysis/my/run"
+    );
+
+  return response.data;
+},
 
   getEmployeeGapAnalysis: async (
     employeeId: number
@@ -52,7 +61,8 @@ const gapAnalysisService = {
 
     return response.data;
   },
-
+   
+  
 
   runGapAnalysis: async (
     employeeId: number

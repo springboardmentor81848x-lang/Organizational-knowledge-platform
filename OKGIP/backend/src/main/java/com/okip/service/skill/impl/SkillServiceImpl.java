@@ -9,15 +9,17 @@ import org.springframework.stereotype.Service;
 
 import com.okip.dto.skill.SkillRequestDTO;
 import com.okip.dto.skill.SkillResponseDTO;
+import com.okip.entity.assessment.Assessment;
 import com.okip.entity.master.Employee;
+import com.okip.entity.master.Skill;
 import com.okip.entity.transaction.EmployeeSkill;
 import com.okip.exception.ResourceAlreadyExistsException;
 import com.okip.exception.ResourceNotFoundException;
 import com.okip.repository.EmployeeRepository;
 import com.okip.repository.EmployeeSkillRepository;
-import com.okip.service.skill.SkillService;
-import com.okip.entity.master.Skill;
 import com.okip.repository.SkillRepository;
+import com.okip.repository.assessment.AssessmentRepository;
+import com.okip.service.skill.SkillService;
 
 @Service
 public class SkillServiceImpl implements SkillService {
@@ -25,15 +27,19 @@ public class SkillServiceImpl implements SkillService {
 	private final EmployeeRepository employeeRepository;
 	private final EmployeeSkillRepository skillRepository;
 	private final SkillRepository skillRepositoryMaster;
+    private final AssessmentRepository assessmentRepository;
 
-	public SkillServiceImpl(EmployeeRepository employeeRepository, EmployeeSkillRepository skillRepository,
-			SkillRepository skillRepositoryMaster) {
+	public SkillServiceImpl(
+        EmployeeRepository employeeRepository,
+        EmployeeSkillRepository skillRepository,
+        SkillRepository skillRepositoryMaster,
+        AssessmentRepository assessmentRepository) {
 
-		this.employeeRepository = employeeRepository;
-		this.skillRepository = skillRepository;
-		this.skillRepositoryMaster = skillRepositoryMaster;
-	}
-
+    this.employeeRepository = employeeRepository;
+    this.skillRepository = skillRepository;
+    this.skillRepositoryMaster = skillRepositoryMaster;
+    this.assessmentRepository = assessmentRepository;
+}
 	@Override
 	public SkillResponseDTO addSkill(SkillRequestDTO request) {
 
@@ -58,10 +64,34 @@ public class SkillServiceImpl implements SkillService {
 	    skill.setYearsOfExperience(request.getYearsOfExperience());
 	    skill.setLastUsed(request.getLastUsed());
 
-	    skill = skillRepository.save(skill);
+skill = skillRepository.save(skill);
 
-	    return buildResponse(skill);
+// Automatically create a self-assessment for this skill
+assessmentRepository
+       .findBySkillSkillIdAndAssessmentTypeAndActiveTrue(masterSkill.getSkillId(),Assessment.AssessmentType.SELF)
+        .orElseGet(() -> {
+
+           Assessment assessment = new Assessment();
+         assessment.setSkill(masterSkill);
+
+assessment.setAssessmentType(
+        Assessment.AssessmentType.SELF
+);
+
+assessment.setAssessmentName(
+        masterSkill.getSkillName() + " Technical Self Assessment"
+);
+
+assessment.setTotalMarks(50);
+
+assessment.setActive(true);
+
+return assessmentRepository.save(assessment);
+        });
+
+return buildResponse(skill);
 	}
+
 
 	@Override
 	public List<SkillResponseDTO> getMySkills() {

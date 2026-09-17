@@ -14,7 +14,7 @@ export const decodeToken = (token: string): JwtPayload => {
   return jwtDecode<JwtPayload>(token);
 };
 
-export type AppRole = "employee" | "hr" | "manager" | "admin";
+export type AppRole = "employee" | "hr" | "manager" | "admin" | "mentor";
 
 const ROLE_LOOKUP: Record<string, AppRole> = {
   ROLE_EMPLOYEE: "employee",
@@ -25,6 +25,8 @@ const ROLE_LOOKUP: Record<string, AppRole> = {
   MANAGER: "manager",
   ROLE_ADMIN: "admin",
   ADMIN: "admin",
+  ROLE_MENTOR: "mentor",
+  MENTOR: "mentor",
 };
 
 const asRoleValues = (claim: string | string[] | undefined): string[] => {

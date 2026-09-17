@@ -1,5 +1,6 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const Integrations: React.FC = () => <WorkspacePage role="ADMIN" page="integrations" />;
+const Integrations: React.FC = () => <ComingSoonPage role="ADMIN" page="integrations" />;
 export default Integrations;
+

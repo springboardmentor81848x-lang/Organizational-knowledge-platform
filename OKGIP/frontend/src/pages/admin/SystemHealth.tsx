@@ -1,5 +1,6 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const SystemHealth: React.FC = () => <WorkspacePage role="ADMIN" page="system-health" />;
+const SystemHealth: React.FC = () => <ComingSoonPage role="ADMIN" page="system-health" />;
 export default SystemHealth;
+

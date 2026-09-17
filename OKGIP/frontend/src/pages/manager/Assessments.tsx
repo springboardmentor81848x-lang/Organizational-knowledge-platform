@@ -1,34 +1,48 @@
-import React from "react";
-import { ClipboardCheck, LockKeyhole } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ClipboardCheck, Loader2 } from "lucide-react";
 import ManagerPage from "./ManagerPage";
+import managerService from "@/services/managerService";
 
 export default function Assessments() {
-  return (
-    <ManagerPage
-      title="Assessments"
-      subtitle="View team assessment progress and evaluation results."
-      icon={ClipboardCheck}
-      active="Assessments"
-    >
-      <section className="manager-card manager-permission-card">
-        <div className="permission-icon">
-          <LockKeyhole size={22} />
-        </div>
+  const [data, setData] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
-        <h2>Assessment data is not available yet</h2>
+  useEffect(() => {
+    let active = true;
+    managerService.getManagerAssessmentAnalytics()
+      .then(value => { if (active) setData(value || {}); })
+      .catch(err => { if (active) setError(err?.response?.data?.message || err?.message || "Unable to load assessment analytics."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-        <p>
-          No assessment API is currently available in the backend for the
-          Manager workspace. Assessment data has therefore not been
-          hardcoded into this page.
-        </p>
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r:any) => [r.employeeName, r.assessmentName, r.assessmentType, r.status].some(v => String(v ?? "").toLowerCase().includes(q)));
+  }, [rows, query]);
 
-        <div className="permission-note">
-          Once assessment APIs are added to the backend, this page can be
-          connected to display employee assessment status, scores,
-          completion progress and evaluation results.
-        </div>
-      </section>
-    </ManagerPage>
-  );
+  return <ManagerPage title="Assessments" subtitle="Monitor self, peer and manager assessment progress for your team." icon={ClipboardCheck} active="Assessments">
+    <div className="manager-stat-grid">
+      {[
+        ["Attempts", data.attempts ?? 0], ["Submitted", data.submitted ?? 0],
+        ["In Progress", data.inProgress ?? 0], ["Average Score", `${Number(data.averageScore ?? 0).toFixed(1)}%`]
+      ].map(([label,value]) => <div className="manager-stat-card" key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}
+    </div>
+    <section className="manager-card manager-data-card">
+      <div className="manager-toolbar"><div><span className="manager-section-label">ASSESSMENT MONITORING</span><h2>Team Assessment Attempts</h2></div><input className="manager-input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search employee or assessment..." /></div>
+      {loading && <div className="manager-loading"><Loader2 className="spin" size={18}/>Loading assessment data...</div>}
+      {!loading && error && <div className="manager-empty-state"><AlertTriangle size={24}/><strong>Unable to load assessments</strong><p>{error}</p></div>}
+      {!loading && !error && filtered.length === 0 && <div className="manager-empty-state"><ClipboardCheck size={24}/><strong>No assessment attempts</strong><p>No assessment attempts are available for your team.</p></div>}
+      {!loading && !error && filtered.length > 0 && <div className="manager-functional-table">
+        <div className="manager-functional-head"><span>EMPLOYEE</span><span>ASSESSMENT</span><span>TYPE</span><span>STATUS</span><span>SCORE</span></div>
+        {filtered.map((r:any)=><div className="manager-functional-row" key={r.attemptId}>
+          <strong>{r.employeeName || "—"}</strong><span>{r.assessmentName || "—"}</span><span>{r.assessmentType || "—"}</span><span>{r.status || "—"}</span><strong>{r.percentage == null ? "—" : `${Number(r.percentage).toFixed(1)}%`}</strong>
+        </div>)}
+      </div>}
+    </section>
+  </ManagerPage>;
 }

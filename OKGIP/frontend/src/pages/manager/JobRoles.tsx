@@ -113,12 +113,16 @@ const JobRoles: React.FC = () => {
               <Search size={15} />
 
               <input
-                value={query}
-                onChange={(event) =>
-                  setQuery(event.target.value)
-                }
-                placeholder="Search job roles..."
-              />
+  id="manager-job-role-search"
+  name="jobRoleSearch"
+  type="search"
+  value={query}
+  onChange={(event) =>
+    setQuery(event.target.value)
+  }
+  placeholder="Search job roles..."
+  aria-label="Search job roles"
+/>
             </div>
 
             <span className="manager-count">

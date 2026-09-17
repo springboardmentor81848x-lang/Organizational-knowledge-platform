@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowRight, LucideIcon } from "lucide-react";
 import ManagerLayout, { ManagerNavKey } from "./ManagerLayout";
+import "@/styles/manager-functional.css";
 
 interface ManagerPageProps {
   title: string;

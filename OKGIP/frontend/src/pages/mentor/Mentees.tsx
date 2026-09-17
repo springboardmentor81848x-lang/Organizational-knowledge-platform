@@ -1,0 +1,4 @@
+import React from "react";
+import MentorLayout from "@/components/layout/MentorLayout";
+import mentorshipService from "@/services/mentorshipService";
+export default function Mentees(){const [count,setCount]=React.useState<number|null>(null);React.useEffect(()=>{(async()=>{try{const r=await mentorshipService.getRequests();setCount(r.length)}catch{setCount(null)}})()},[]);return <MentorLayout title="My Mentees"><div className="mb-6"><h2 className="text-2xl font-bold">My Mentees</h2><p className="text-slate-500 mt-1">Active mentees and mentorship relationships.</p></div><div className="bg-white border rounded-2xl p-6"><div className="text-sm text-slate-500">Connected mentorship requests</div><div className="text-3xl font-bold mt-2">{count===null?"—":count}</div><p className="text-sm text-slate-500 mt-2">Data is loaded from the existing mentorship backend service. Additional APIs can be added here as their backend contracts become available.</p></div></MentorLayout>}

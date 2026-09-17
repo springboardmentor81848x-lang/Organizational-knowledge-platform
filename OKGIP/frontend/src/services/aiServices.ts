@@ -25,6 +25,15 @@ const aiService = {
   },
 
   /**
+   * Generate a recommendation for a specific employee.
+   * The backend builds the prompt from persisted gaps and training data.
+   */
+  generateRecommendation: async (employeeId: number) => {
+    const response = await API.post(`/ai/recommendation/${employeeId}`);
+    return response.data;
+  },
+
+  /**
    * Employee-specific AI recommendation.
    *
    * Uses the currently authenticated employee ID.

@@ -1,12 +1,13 @@
 import React from "react";
-import { User, Users, BarChart3, Shield } from "lucide-react";
+import { User, Users, BarChart3, Shield, GraduationCap, } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 type RoleType =
   | "ROLE_EMPLOYEE"
   | "ROLE_HR"
   | "ROLE_MANAGER"
-  | "ROLE_ADMIN";
+  | "ROLE_ADMIN" 
+  | "ROLE_MENTOR";
 
 interface RoleOption {
   id: RoleType;
@@ -46,6 +47,13 @@ const roles: RoleOption[] = [
     description: "System administration",
     icon: <Shield className="w-6 h-6 text-purple-600" />,
   },
+
+  {
+  id: "ROLE_MENTOR",
+  label: "Mentor",
+  description: "Guide employees and share expertise",
+  icon: <GraduationCap className="w-6 h-6 text-blue-600" />,
+},
 ];
 
 export const RoleSelector: React.FC<RoleSelectorProps> = ({

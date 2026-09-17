@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 // AUTH
 import { Login } from "@/pages/auth/Login";
@@ -15,6 +16,7 @@ import EmployeeProficiency from "@/pages/employee/Proficiency";
 import SkillGapsPage from "@/pages/employee/SkillGapsPage";
 import LearningPaths from "@/pages/employee/LearningPaths";
 import EmployeeTraining from "@/pages/employee/Training";
+import TrainingLearn from "@/pages/employee/TrainingLearn";
 import EmployeeProgress from "@/pages/employee/Progress";
 import Achievements from "@/pages/employee/Achievements";
 import Certifications from "@/pages/employee/Certifications";
@@ -43,6 +45,25 @@ import ManagerSettings from "@/pages/manager/Settings";
 
 // ADMIN
 import AdminDashboard from "@/pages/admin/Dashboard";
+
+// MENTOR
+import MentorDashboard from "@/pages/mentor/Dashboard";
+import MentorRequests from "@/pages/mentor/Requests";
+import MentorSessions from "@/pages/mentor/Sessions";
+import MentorMentees from "@/pages/mentor/Mentees";
+import MentorKnowledgeSharing from "@/pages/mentor/KnowledgeSharing";
+import MentorExpertise from "@/pages/mentor/Expertise";
+import MentorAnalytics from "@/pages/mentor/Analytics";
+import MentorNotifications from "@/pages/mentor/Notifications";
+import MentorSettings from "@/pages/mentor/Settings";
+
+const RoleGate: React.FC<{ role: "employee" | "hr" | "manager" | "admin" | "mentor"; children: React.ReactNode }> = ({ role: requiredRole, children }) => {
+  const { role, profileLoading } = useAuth();
+  if (profileLoading && role === null) return null;
+  if (!role) return <Navigate to="/login" replace />;
+  if (role !== requiredRole) return <Navigate to={role === "mentor" ? "/mentor/dashboard" : `/${role}`} replace />;
+  return <>{children}</>;
+};
 
 const App: React.FC = () => {
   return (
@@ -118,6 +139,11 @@ const App: React.FC = () => {
       />
 
       <Route
+        path="/employee/training/:trainingId/learn"
+        element={<TrainingLearn />}
+      />
+
+      <Route
         path="/employee/experience"
         element={<Experience />}
       />
@@ -157,7 +183,7 @@ const App: React.FC = () => {
 />
 
  <Route
-  path="/admin"
+  path="/admin/*"
   element={<AdminDashboard />}
 />
   <Route
@@ -224,17 +250,39 @@ const App: React.FC = () => {
   path="/manager/settings"
   element={<ManagerSettings />}
 />
+
+{/* =====================================================
+    MENTOR
+===================================================== */}
+
+<Route path="/mentor" element={<Navigate to="/mentor/dashboard" replace />} />
+<Route path="/mentor/dashboard" element={<RoleGate role="mentor"><MentorDashboard /></RoleGate>} />
+<Route path="/mentor/mentees" element={<RoleGate role="mentor"><MentorMentees /></RoleGate>} />
+<Route path="/mentor/requests" element={<RoleGate role="mentor"><MentorRequests /></RoleGate>} />
+<Route path="/mentor/sessions" element={<RoleGate role="mentor"><MentorSessions /></RoleGate>} />
+<Route path="/mentor/knowledge-sharing" element={<RoleGate role="mentor"><MentorKnowledgeSharing /></RoleGate>} />
+<Route path="/mentor/expertise" element={<RoleGate role="mentor"><MentorExpertise /></RoleGate>} />
+<Route path="/mentor/analytics" element={<RoleGate role="mentor"><MentorAnalytics /></RoleGate>} />
+<Route path="/mentor/notifications" element={<RoleGate role="mentor"><MentorNotifications /></RoleGate>} />
+<Route path="/mentor/settings" element={<RoleGate role="mentor"><MentorSettings /></RoleGate>} />
       {/* =====================================================
           UNKNOWN ROUTE
       ===================================================== */}
 
-      <Route
-        path="*"
-        element={<Navigate to="/employee" replace />}
-      />
+      <Route path="*" element={<RoleAwareFallback />} />
 
     </Routes>
   );
+};
+
+const RoleAwareFallback: React.FC = () => {
+  const { role } = useAuth();
+  if (role === "mentor") return <Navigate to="/mentor/dashboard" replace />;
+  if (role === "admin") return <Navigate to="/admin" replace />;
+  if (role === "hr") return <Navigate to="/hr" replace />;
+  if (role === "manager") return <Navigate to="/manager" replace />;
+  if (role === "employee") return <Navigate to="/employee" replace />;
+  return <Navigate to="/login" replace />;
 };
 
 export default App;

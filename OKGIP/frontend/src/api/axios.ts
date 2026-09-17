@@ -3,6 +3,7 @@ import { getStoredToken } from "@/utils/authStorage";
 
 const API = axios.create({
   baseURL: "http://localhost:8080/api",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -47,8 +48,9 @@ API.interceptors.response.use(
   (error) => {
     console.error(
       "API ERROR:",
-      error.response?.status,
-      error.config?.url
+      error.response?.status ?? "NETWORK/TIMEOUT",
+      error.config?.url,
+      error.code === "ECONNABORTED" ? "Request timed out" : ""
     );
 
     if (error.response?.status === 401) {

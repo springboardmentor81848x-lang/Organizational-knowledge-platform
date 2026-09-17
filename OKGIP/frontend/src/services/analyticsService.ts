@@ -5,7 +5,14 @@ export interface AnalyticsSummary {
 }
 
 export interface ProficiencyResponse {
-  [key: string]: any;
+  skillName: string;
+  currentProficiency: string | null;
+  requiredProficiency: string | null;
+  currentExperience: number | null;
+requiredExperience: number | null;
+  proficiencyPercentage: number | null;
+  assessmentScore: number | null;
+  assessmentTotalMarks: number | null;
 }
 
 export interface TeamAnalytics {
@@ -15,6 +22,7 @@ export interface TeamAnalytics {
   gapPercentage: number;
   jobRoleName: string;
   readinessPercentage: number;
+  analysisStatus?: "READY" | "NOT_RUN" | "NO_COMPETENCIES" | string;
 }
 
 export interface DepartmentAnalytics {
@@ -35,10 +43,6 @@ export interface EmployeeAnalyticsSummary {
 }
 
 const analyticsService = {
-  // =====================================================
-  // EMPLOYEE APIs
-  // =====================================================
-
   getMySummary: async (): Promise<AnalyticsSummary> => {
     const response = await API.get<AnalyticsSummary>(
       "/analytics/my/summary"
@@ -55,17 +59,13 @@ const analyticsService = {
     return response.data;
   },
 
-  getMyProficiency: async (): Promise<ProficiencyResponse> => {
-    const response = await API.get<ProficiencyResponse>(
+  getMyProficiency: async (): Promise<ProficiencyResponse[]> => {
+    const response = await API.get<ProficiencyResponse[]>(
       "/analytics/my/proficiency"
     );
 
     return response.data;
   },
-
-  // =====================================================
-  // MANAGER APIs
-  // =====================================================
 
   getTeamAnalytics: async (): Promise<TeamAnalytics[]> => {
     const response = await API.get<TeamAnalytics[]>(
@@ -85,9 +85,7 @@ const analyticsService = {
       return response.data;
     },
 
-  getEmployeeSkillGaps: async (
-    employeeId: number
-  ) => {
+  getEmployeeSkillGaps: async (employeeId: number) => {
     const response = await API.get(
       `/analytics/employee/${employeeId}/skill-gaps`
     );
@@ -105,9 +103,7 @@ const analyticsService = {
     return response.data;
   },
 
-  getEmployeeSummary: async (
-    employeeId: number
-  ) => {
+  getEmployeeSummary: async (employeeId: number) => {
     const response = await API.get(
       `/analytics/employee/${employeeId}/summary`
     );
@@ -115,13 +111,8 @@ const analyticsService = {
     return response.data;
   },
 
-  // =====================================================
-  // TEAM SKILL GAP HEATMAP
-  // =====================================================
-
   getTeamSkillGapHeatmap:
     async (): Promise<SkillGapHeatmap[]> => {
-
       const response =
         await API.get<SkillGapHeatmap[]>(
           "/analytics/team/skill-heatmap"

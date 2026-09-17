@@ -1,12 +1,19 @@
 import api from "@/api/axios";
 
-const trainingService = {
-  getAvailableTrainings: async () => {
-    const response = await api.get(
-      "/employee/trainings"
-    );
+export interface Training {
+  trainingId: number;
+  trainingName: string;
+  provider: string;
+  duration: string;
+  level: string;
+  description?: string;
+  courseUrl?: string;
+}
 
-    return response.data;
+const trainingService = {
+  getAvailableTrainings: async (): Promise<Training[]> => {
+    const response = await api.get<Training[]>("/employee/trainings");
+    return Array.isArray(response.data) ? response.data : [];
   },
 };
 

@@ -3,6 +3,10 @@ import analyticsService, {
   TeamAnalytics,
 } from "@/services/analyticsService";
 
+/* ============================================================
+   MASTER JOB ROLE
+   ============================================================ */
+
 export interface MasterJobRole {
   jobRoleId?: number;
   id?: number;
@@ -11,6 +15,10 @@ export interface MasterJobRole {
   description?: string;
   [key: string]: any;
 }
+
+/* ============================================================
+   MASTER SKILL
+   ============================================================ */
 
 export interface MasterSkill {
   skillId?: number;
@@ -21,36 +29,32 @@ export interface MasterSkill {
   description?: string;
   [key: string]: any;
 }
+
+/* ============================================================
+   TEAM SKILL GAP HEATMAP
+   ============================================================ */
+
 export interface SkillGapHeatmap {
   skillName: string;
   averageGapPercentage: number;
   employeeCount: number;
 }
 
-/**
- * Safely extracts array data from different backend response shapes.
- *
- * Supports:
- * [
- *   ...
- * ]
- *
- * {
- *   data: [...]
- * }
- *
- * {
- *   items: [...]
- * }
- *
- * {
- *   content: [...]
- * }
- *
- * {
- *   results: [...]
- * }
- */
+/* ============================================================
+   RESPONSE ARRAY HELPER
+   Supports:
+   - []
+   - { data: [] }
+   - { items: [] }
+   - { content: [] }
+   - { results: [] }
+   - { skills: [] }
+   - { jobRoles: [] }
+   - { employees: [] }
+   - { team: [] }
+   - { teamMembers: [] }
+   ============================================================ */
+
 const rows = <T,>(value: any): T[] => {
   if (Array.isArray(value)) {
     return value;
@@ -60,8 +64,7 @@ const rows = <T,>(value: any): T[] => {
     return [];
   }
 
-  // Direct common response wrappers
-  for (const key of [
+  const possibleKeys = [
     "data",
     "items",
     "content",
@@ -71,44 +74,137 @@ const rows = <T,>(value: any): T[] => {
     "employees",
     "team",
     "teamMembers",
-  ]) {
+  ];
+
+  for (const key of possibleKeys) {
     if (Array.isArray(value[key])) {
       return value[key];
     }
   }
 
-  // Handle nested response:
-  // { data: { content: [...] } }
-  if (value.data && typeof value.data === "object") {
+  if (
+    value.data &&
+    typeof value.data === "object"
+  ) {
     return rows<T>(value.data);
   }
 
   return [];
 };
 
+/* ============================================================
+   MANAGER SERVICE
+   ============================================================ */
+
 const managerService = {
-  /**
-   * ============================
-   * TEAM ANALYTICS
-   * ============================
-   */
 
-  getTeamAnalytics: async (): Promise<TeamAnalytics[]> => {
-    const response = await analyticsService.getTeamAnalytics();
 
-    console.log("MANAGER TEAM ANALYTICS RESPONSE:", response);
+  /* ==========================================================
+     MANAGER DASHBOARD
+     ========================================================== */
 
-    return rows<TeamAnalytics>(response);
+  getManagerTeam: async (): Promise<TeamAnalytics[]> => {
+    const response = await API.get("/manager/team");
+    return rows<TeamAnalytics>(response.data);
   },
 
-  /**
-   * ============================
-   * EMPLOYEE ANALYTICS
-   * ============================
-   */
+  getManagerHeatmap: async (): Promise<SkillGapHeatmap[]> => {
+    const response = await API.get("/manager/team/skill-heatmap");
+    return rows<SkillGapHeatmap>(response.data);
+  },
 
-  getEmployeeSummary: async (employeeId: number) => {
-    const response = await analyticsService.getEmployeeSummary(employeeId);
+  getManagerDepartments: async () => {
+    const response = await API.get("/manager/departments");
+    return rows<any>(response.data);
+  },
+
+  getTrainingAnalytics: async () => {
+    const response = await API.get("/manager/training-analytics");
+    return response.data;
+  },
+
+  getManagerTrainingAnalytics: async () => {
+    const response = await API.get("/manager/training-analytics");
+    return response.data;
+  },
+
+  getManagerDashboard: async () => {
+    const response = await API.get("/manager/dashboard");
+    return response.data;
+  },
+
+  getManagerAssessmentAnalytics: async () => {
+    const response = await API.get("/manager/assessment-analytics");
+    return response.data;
+  },
+
+  getManagerReport: async () => {
+    const response = await API.get("/manager/reports");
+    return response.data;
+  },
+  /* ==========================================================
+     TEAM MANAGEMENT
+     ========================================================== */
+
+  getAvailableEmployees: async () => {
+    const response = await API.get(
+      "/manager/available-employees"
+    );
+
+    return rows<any>(response.data);
+  },
+
+  assignEmployeeToMyTeam: async (
+    employeeId: number,
+    jobRoleId: number,
+    assignmentType: "PRIMARY" | "SECONDARY"
+  ) => {
+    const response = await API.post(
+      "/manager/team/assign",
+      {
+        employeeId,
+        jobRoleId,
+        assignmentType,
+      }
+    );
+
+    return response.data;
+  },
+
+  getMyTeam: async (): Promise<TeamAnalytics[]> => {
+    const response = await API.get(
+      "/manager/team"
+    );
+
+    return rows<TeamAnalytics>(response.data);
+  },
+
+  /* ==========================================================
+     TEAM ANALYTICS
+     ========================================================== */
+
+  getTeamAnalytics: async (): Promise<TeamAnalytics[]> => {
+    const response = await API.get("/manager/team");
+
+    console.log(
+      "MANAGER TEAM ANALYTICS RESPONSE:",
+      response.data
+    );
+
+    return rows<TeamAnalytics>(response.data);
+  },
+
+  /* ==========================================================
+     EMPLOYEE SUMMARY
+     ========================================================== */
+
+  getEmployeeSummary: async (
+    employeeId: number
+  ) => {
+    const response =
+      await analyticsService.getEmployeeSummary(
+        employeeId
+      );
 
     console.log(
       `MANAGER EMPLOYEE ${employeeId} SUMMARY RESPONSE:`,
@@ -118,9 +214,17 @@ const managerService = {
     return response;
   },
 
-  getEmployeeSkillGaps: async (employeeId: number) => {
+  /* ==========================================================
+     EMPLOYEE SKILL GAPS
+     ========================================================== */
+
+  getEmployeeSkillGaps: async (
+    employeeId: number
+  ) => {
     const response =
-      await analyticsService.getEmployeeSkillGaps(employeeId);
+      await analyticsService.getEmployeeSkillGaps(
+        employeeId
+      );
 
     console.log(
       `MANAGER EMPLOYEE ${employeeId} SKILL GAPS RESPONSE:`,
@@ -130,9 +234,17 @@ const managerService = {
     return response;
   },
 
-  getEmployeeProficiency: async (employeeId: number) => {
+  /* ==========================================================
+     EMPLOYEE PROFICIENCY
+     ========================================================== */
+
+  getEmployeeProficiency: async (
+    employeeId: number
+  ) => {
     const response =
-      await analyticsService.getEmployeeProficiency(employeeId);
+      await analyticsService.getEmployeeProficiency(
+        employeeId
+      );
 
     console.log(
       `MANAGER EMPLOYEE ${employeeId} PROFICIENCY RESPONSE:`,
@@ -142,13 +254,13 @@ const managerService = {
     return response;
   },
 
-  /**
-   * ============================
-   * GAP ANALYSIS
-   * ============================
-   */
+  /* ==========================================================
+     GAP ANALYSIS
+     ========================================================== */
 
-  runGapAnalysis: async (employeeId: number) => {
+  runGapAnalysis: async (
+    employeeId: number
+  ) => {
     const response = await API.post(
       `/gap-analysis/run/${employeeId}`
     );
@@ -156,7 +268,9 @@ const managerService = {
     return response.data;
   },
 
-  getEmployeeGapAnalysis: async (employeeId: number) => {
+  getEmployeeGapAnalysis: async (
+    employeeId: number
+  ) => {
     const response = await API.get(
       `/gap-analysis/employee/${employeeId}`
     );
@@ -164,13 +278,23 @@ const managerService = {
     return response.data;
   },
 
-  /**
-   * ============================
-   * JOB ROLE ASSIGNMENT
-   * ============================
-   */
+  getManagerGapAnalysis: async (employeeId: number) => {
+    const response = await API.get(`/manager/employee/${employeeId}/gap-analysis`);
+    return response.data;
+  },
 
-  getJobRoleAssignments: async (employeeId: number) => {
+  runManagerGapAnalysis: async (employeeId: number) => {
+    const response = await API.post(`/manager/employee/${employeeId}/gap-analysis/run`);
+    return response.data;
+  },
+
+  /* ==========================================================
+     JOB ROLE ASSIGNMENT
+     ========================================================== */
+
+  getJobRoleAssignments: async (
+    employeeId: number
+  ) => {
     const response = await API.get(
       `/job-role-assignment/employee/${employeeId}`
     );
@@ -178,93 +302,123 @@ const managerService = {
     return response.data;
   },
 
-  /**
-   * ============================
-   * JOB ROLE MASTER
-   * ============================
-   */
+  /* ==========================================================
+     JOB ROLE MASTER
+     ========================================================== */
 
-  getJobRoles: async (): Promise<MasterJobRole[]> => {
-    const response = await API.get("/master/job-roles");
-
-    console.log("MANAGER JOB ROLES RESPONSE:", response.data);
-
-    return rows<MasterJobRole>(response.data);
-  },
-
-  /**
-   * ============================
-   * SKILL MASTER
-   * ============================
-   */
-
-  getSkills: async (): Promise<MasterSkill[]> => {
-    const response = await API.get("/master/skills");
-
-    console.log("MANAGER SKILLS RESPONSE:", response.data);
-
-    return rows<MasterSkill>(response.data);
-  },
-
-  /**
-   * ============================
-   * JOB ROLE COMPETENCIES
-   * ============================
-   */
-getJobRoleCompetencies: async (id: number) => {
-  const response = await API.get(
-    `/job-role-competencies/job-role/${id}`
-  );
-
-  console.log(
-    `MANAGER JOB ROLE ${id} COMPETENCIES RESPONSE:`,
-    response.data
-  );
-
-  return response.data;
-},
-  /**
-   * ============================
-   * AI RECOMMENDATIONS
-   * ============================
-   */
-
-  generateAiRecommendation: async (employeeId: number) => {
-    const response = await API.post(
-      `/ai/recommendation/${employeeId}`
+  getJobRoles: async (): Promise<
+    MasterJobRole[]
+  > => {
+    const response = await API.get(
+      "/master/job-roles"
     );
 
     console.log(
-      `MANAGER AI RECOMMENDATION ${employeeId}:`,
+      "MANAGER JOB ROLES RESPONSE:",
+      response.data
+    );
+
+    return rows<MasterJobRole>(
+      response.data
+    );
+  },
+
+  /* ==========================================================
+     SKILL MASTER
+     ========================================================== */
+
+  getSkills: async (): Promise<
+    MasterSkill[]
+  > => {
+    const response = await API.get(
+      "/master/skills"
+    );
+
+    console.log(
+      "MANAGER SKILLS RESPONSE:",
+      response.data
+    );
+
+    return rows<MasterSkill>(
+      response.data
+    );
+  },
+
+  /* ==========================================================
+     JOB ROLE COMPETENCIES
+     ========================================================== */
+
+  getJobRoleCompetencies: async (
+    jobRoleId: number
+  ) => {
+    const response = await API.get(
+      `/job-role-competencies/${jobRoleId}`
+    );
+
+    console.log(
+      `MANAGER JOB ROLE ${jobRoleId} COMPETENCIES RESPONSE:`,
       response.data
     );
 
     return response.data;
   },
-  /**
- * ============================
- * TEAM SKILL GAP HEATMAP
- * ============================
- */
 
-getTeamSkillGapHeatmap: async (): Promise<SkillGapHeatmap[]> => {
-  const response = await API.get(
-    "/analytics/team/skill-heatmap"
-  );
+  /* ==========================================================
+     AI RECOMMENDATION
+     ========================================================== */
 
-  console.log(
-    "MANAGER TEAM SKILL GAP HEATMAP RESPONSE:",
-    response.data
-  );
+  generateAiRecommendation: async (employeeId: number) => {
+    const response = await API.post(
+      `/ai/recommendation/${employeeId}`,
+      undefined,
+      { timeout: 60000 }
+    );
+    return response.data;
+  },
 
-  return rows<SkillGapHeatmap>(response.data);
-},
+  generateManagerRecommendation: async (employeeId: number) => {
+    const response = await API.post(
+      `/ai/recommendation/${employeeId}`,
+      undefined,
+      { timeout: 60000 }
+    );
+    return response.data;
+  },
 
-  getAiLearningPath: async (role: string) => {
+  /* ==========================================================
+     TEAM SKILL GAP HEATMAP
+     ========================================================== */
+
+  getTeamSkillGapHeatmap:
+    async (): Promise<SkillGapHeatmap[]> => {
+
+      const response = await API.get(
+        "/manager/team/skill-heatmap"
+      );
+
+      console.log(
+        "MANAGER TEAM SKILL GAP HEATMAP RESPONSE:",
+        response.data
+      );
+
+      return rows<SkillGapHeatmap>(
+        response.data
+      );
+    },
+
+  /* ==========================================================
+     AI ROLE LEARNING PATH
+     ========================================================== */
+
+  getAiLearningPath: async (
+    role: string
+  ) => {
     const response = await API.get(
       "/ai/learning-path",
       {
-        params: { role },
+        params: {
+          role,
+        },
       }
     );
 

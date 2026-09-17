@@ -1,14 +1,24 @@
 package com.okip.controller;
 
 import java.util.List;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.okip.dto.competency.JobRoleCompetencyRequestDTO;
 import com.okip.dto.competency.JobRoleCompetencyResponseDTO;
 import com.okip.service.competency.JobRoleCompetencyService;
+
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/job-role-competencies")
@@ -22,53 +32,76 @@ public class JobRoleCompetencyController {
         this.competencyService = competencyService;
     }
 
+    // =========================================================
+    // CREATE COMPETENCY
+    // =========================================================
+
     @PostMapping
-    public ResponseEntity<JobRoleCompetencyResponseDTO>
-            createCompetency(
-                    @RequestBody
-                    JobRoleCompetencyRequestDTO request) {
+    public ResponseEntity<JobRoleCompetencyResponseDTO> createCompetency(
+            @RequestBody JobRoleCompetencyRequestDTO request) {
 
         JobRoleCompetencyResponseDTO response =
                 competencyService.createCompetency(request);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.CREATED);
+                HttpStatus.CREATED
+        );
     }
 
-    @GetMapping("/job-role/{jobRoleId}")
+    // =========================================================
+    // GET COMPETENCIES BY JOB ROLE
+    // =========================================================
+    // Supports:
+    // GET /api/job-role-competencies/{jobRoleId}
+    // GET /api/job-role-competencies/job-role/{jobRoleId}
+    //
+    // The first one is used by the Manager frontend.
+    // =========================================================
+
+    @GetMapping({
+            "/{jobRoleId}",
+            "/job-role/{jobRoleId}"
+    })
     public ResponseEntity<List<JobRoleCompetencyResponseDTO>>
             getCompetenciesByJobRole(
                     @PathVariable Long jobRoleId) {
 
         return ResponseEntity.ok(
-                competencyService
-                        .getCompetenciesByJobRole(jobRoleId));
+                competencyService.getCompetenciesByJobRole(jobRoleId)
+        );
     }
+
+    // =========================================================
+    // UPDATE COMPETENCY
+    // =========================================================
 
     @PutMapping("/{competencyId}")
     public ResponseEntity<JobRoleCompetencyResponseDTO>
             updateCompetency(
                     @PathVariable Long competencyId,
-                    @RequestBody
-                    JobRoleCompetencyRequestDTO request) {
+                    @RequestBody JobRoleCompetencyRequestDTO request) {
 
         return ResponseEntity.ok(
                 competencyService.updateCompetency(
                         competencyId,
-                        request));
+                        request
+                )
+        );
     }
+
+    // =========================================================
+    // DELETE COMPETENCY
+    // =========================================================
 
     @DeleteMapping("/{competencyId}")
-    public ResponseEntity<String>
-            deleteCompetency(
-                    @PathVariable Long competencyId) {
+    public ResponseEntity<String> deleteCompetency(
+            @PathVariable Long competencyId) {
 
-        competencyService.deleteCompetency(
-                competencyId);
+        competencyService.deleteCompetency(competencyId);
 
         return ResponseEntity.ok(
-                "Competency deleted successfully.");
+                "Competency deleted successfully."
+        );
     }
-
 }

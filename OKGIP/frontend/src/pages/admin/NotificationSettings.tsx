@@ -1,5 +1,6 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const NotificationSettings: React.FC = () => <WorkspacePage role="ADMIN" page="notifications" />;
+const NotificationSettings: React.FC = () => <ComingSoonPage role="ADMIN" page="notifications" />;
 export default NotificationSettings;
+

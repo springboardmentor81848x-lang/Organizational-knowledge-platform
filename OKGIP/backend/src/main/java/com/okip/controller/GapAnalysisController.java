@@ -20,7 +20,22 @@ public class GapAnalysisController {
 
     /**
      * Run Gap Analysis
+     * 
+     * 
+     * 
      */
+
+
+    @PostMapping("/my/run")
+public ResponseEntity<GapAnalysisResponseDTO>
+        runMyGapAnalysis() {
+
+    return ResponseEntity.ok(
+            gapAnalysisService
+                    .runMyGapAnalysis());
+}
+
+
     @PostMapping("/run/{employeeId}")
     public ResponseEntity<GapAnalysisResponseDTO>
             runGapAnalysis(

@@ -1,5 +1,8 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const AuditLogs: React.FC = () => <WorkspacePage role="ADMIN" page="audit-logs" />;
+const AuditLogs: React.FC = () => (
+  <ComingSoonPage role="ADMIN" page="audit-logs" />
+);
+
 export default AuditLogs;

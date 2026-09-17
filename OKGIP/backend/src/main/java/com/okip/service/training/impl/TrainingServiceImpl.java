@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.okip.dto.training.TrainingRequestDTO;
 import com.okip.dto.training.TrainingResponseDTO;
@@ -14,6 +15,7 @@ import com.okip.repository.TrainingRepository;
 import com.okip.service.training.TrainingService;
 
 @Service
+@Transactional
 public class TrainingServiceImpl implements TrainingService {
 
     private final TrainingRepository trainingRepository;
@@ -28,9 +30,20 @@ public class TrainingServiceImpl implements TrainingService {
     public TrainingResponseDTO createTraining(
             TrainingRequestDTO request) {
 
-        if (trainingRepository
-                .existsByTrainingNameIgnoreCase(
-                        request.getTrainingName())) {
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "Training request cannot be null.");
+        }
+
+        if (request.getTrainingName() == null
+                || request.getTrainingName().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Training name is required.");
+        }
+
+        if (trainingRepository.existsByTrainingNameIgnoreCase(
+                request.getTrainingName())) {
 
             throw new ResourceAlreadyExistsException(
                     "Training already exists.");
@@ -39,7 +52,7 @@ public class TrainingServiceImpl implements TrainingService {
         Training training = new Training();
 
         training.setTrainingName(
-                request.getTrainingName());
+                request.getTrainingName().trim());
 
         training.setProvider(
                 request.getProvider());
@@ -63,6 +76,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TrainingResponseDTO getTrainingById(
             Long trainingId) {
 
@@ -76,6 +90,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TrainingResponseDTO> getAllTrainings() {
 
         return trainingRepository.findAll()
@@ -89,30 +104,40 @@ public class TrainingServiceImpl implements TrainingService {
             Long trainingId,
             TrainingRequestDTO request) {
 
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "Training request cannot be null.");
+        }
+
         Training training =
                 trainingRepository.findById(trainingId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Training not found."));
 
+        String newName = request.getTrainingName();
+
+        if (newName == null || newName.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Training name is required.");
+        }
+
         boolean nameChanged =
                 !training.getTrainingName()
-                        .equalsIgnoreCase(
-                                request.getTrainingName());
+                        .equalsIgnoreCase(newName.trim());
 
-       
-        if (nameChanged &&
-        trainingRepository
-                .existsByTrainingNameIgnoreCaseAndTrainingIdNot(
-                        request.getTrainingName(),
-                        trainingId)) {
+        if (nameChanged
+                && trainingRepository
+                        .existsByTrainingNameIgnoreCaseAndTrainingIdNot(
+                                newName.trim(),
+                                trainingId)) {
 
-    throw new ResourceAlreadyExistsException(
-            "Training already exists.");
-}
+            throw new ResourceAlreadyExistsException(
+                    "Training already exists.");
+        }
 
         training.setTrainingName(
-                request.getTrainingName());
+                newName.trim());
 
         training.setProvider(
                 request.getProvider());

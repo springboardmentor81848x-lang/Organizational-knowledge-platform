@@ -59,13 +59,39 @@ const KnowledgeGapAnalysis: React.FC = () => {
       setLoading(true);
       setError("");
 
-      const data = await managerService.getTeamAnalytics();
+      const data = await managerService.getManagerTeam();
 
       console.log("KNOWLEDGE GAP TEAM DATA:", data);
 
-      setTeam(Array.isArray(data) ? data : []);
+      const teamRows = Array.isArray(data) ? data : [];
+      setTeam(teamRows);
 
-      return data;
+      // If an employee has role competencies but no persisted gap records,
+      // generate the analysis once automatically. This prevents the manager
+      // page from showing a misleading 0% before analysis has ever run.
+      const pending = teamRows.filter(
+        (employee: any) => employee.analysisStatus === "NOT_RUN"
+      );
+
+      for (const employee of pending) {
+        try {
+          await managerService.runManagerGapAnalysis(employee.employeeId);
+        } catch (runError) {
+          console.error(
+            "AUTO GAP ANALYSIS FAILED:",
+            employee.employeeId,
+            runError
+          );
+        }
+      }
+
+      if (pending.length > 0) {
+        const refreshed = await managerService.getManagerTeam();
+        setTeam(Array.isArray(refreshed) ? refreshed : teamRows);
+        return refreshed;
+      }
+
+      return teamRows;
     } catch (err: any) {
       console.error("KNOWLEDGE GAP TEAM ERROR:", err);
 
@@ -99,7 +125,7 @@ const KnowledgeGapAnalysis: React.FC = () => {
       );
 
       const result =
-        await managerService.getEmployeeGapAnalysis(
+        await managerService.getManagerGapAnalysis(
           employeeId
         );
 
@@ -107,6 +133,16 @@ const KnowledgeGapAnalysis: React.FC = () => {
         "EMPLOYEE GAP ANALYSIS RESPONSE:",
         result
       );
+
+      if (!result?.knowledgeGaps?.length) {
+        try {
+          const regenerated = await managerService.runManagerGapAnalysis(employeeId);
+          setSelected(regenerated);
+          return;
+        } catch (regenerateError) {
+          console.error("REGENERATE GAP ANALYSIS ERROR:", regenerateError);
+        }
+      }
 
       setSelected(result);
     } catch (err: any) {
@@ -206,7 +242,7 @@ const KnowledgeGapAnalysis: React.FC = () => {
         employeeId
       );
 
-      await managerService.runGapAnalysis(
+      await managerService.runManagerGapAnalysis(
         employeeId
       );
 

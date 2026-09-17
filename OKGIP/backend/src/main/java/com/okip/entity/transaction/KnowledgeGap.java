@@ -36,8 +36,7 @@ public class KnowledgeGap {
     private ProficiencyLevel currentProficiency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "required_proficiency",
-            nullable = false)
+    @Column(name = "required_proficiency")
     private ProficiencyLevel requiredProficiency;
 
     @Column(name = "current_experience")

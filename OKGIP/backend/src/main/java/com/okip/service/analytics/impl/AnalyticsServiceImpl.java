@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.okip.dto.analytics.DepartmentAnalyticsDTO;
 import com.okip.dto.analytics.EmployeeAnalyticsDTO;
@@ -15,6 +17,7 @@ import com.okip.dto.analytics.SkillGapHeatmapDTO;
 import com.okip.dto.analytics.TeamAnalyticsDTO;
 import com.okip.entity.master.Employee;
 import com.okip.entity.transaction.EmployeeJobRole;
+import com.okip.entity.transaction.EmployeeSkill;
 import com.okip.entity.transaction.KnowledgeGap;
 import com.okip.exception.ResourceNotFoundException;
 import com.okip.repository.EmployeeJobRoleRepository;
@@ -23,6 +26,9 @@ import com.okip.repository.EmployeeSkillRepository;
 import com.okip.repository.KnowledgeGapRepository;
 import com.okip.service.analytics.AnalyticsService;
 
+import com.okip.entity.assessment.Assessment;
+import com.okip.entity.assessment.AssessmentAttempt;
+import com.okip.repository.assessment.AssessmentAttemptRepository;
 @Service
 public class AnalyticsServiceImpl
         implements AnalyticsService {
@@ -35,10 +41,13 @@ public class AnalyticsServiceImpl
 
     private final KnowledgeGapRepository knowledgeGapRepository;
 
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
+
     public AnalyticsServiceImpl(
             EmployeeRepository employeeRepository,
             EmployeeJobRoleRepository employeeJobRoleRepository,
             EmployeeSkillRepository employeeSkillRepository,
+            AssessmentAttemptRepository assessmentAttemptRepository,
             KnowledgeGapRepository knowledgeGapRepository) {
 
         this.employeeRepository = employeeRepository;
@@ -51,6 +60,9 @@ public class AnalyticsServiceImpl
 
         this.knowledgeGapRepository =
                 knowledgeGapRepository;
+
+        this.assessmentAttemptRepository =
+        assessmentAttemptRepository;
     }
 
     // =====================================================
@@ -201,64 +213,126 @@ public class AnalyticsServiceImpl
     // EMPLOYEE PROFICIENCY
     // =====================================================
 
-    @Override
-    public List<ProficiencyAnalyticsDTO>
-            getEmployeeProficiency(
-                    Long employeeId) {
+     @Override
+public List<ProficiencyAnalyticsDTO> getEmployeeProficiency(
+        Long employeeId) {
 
-        Employee employee =
-                getEmployee(employeeId);
+    Employee employee =
+            getEmployee(employeeId);
 
-        List<EmployeeJobRole> roles =
-                employeeJobRoleRepository
-                        .findByEmployeeAndActiveTrue(
-                                employee);
+    // ----------------------------------------------------
+    // IMPORTANT:
+    // Start from skills actually added by the employee
+    // in employee_skills.
+    // Do NOT start from KnowledgeGap.
+    // ----------------------------------------------------
 
-        if (roles.isEmpty()) {
+    List<EmployeeSkill> employeeSkills =
+            employeeSkillRepository.findByEmployee(employee);
 
-            throw new ResourceNotFoundException(
-                    "No active job role assigned.");
+    List<EmployeeJobRole> roles =
+            employeeJobRoleRepository
+                    .findByEmployeeAndActiveTrue(employee);
+
+    List<ProficiencyAnalyticsDTO> response =
+            new ArrayList<>();
+
+    for (EmployeeSkill employeeSkill : employeeSkills) {
+
+        if (employeeSkill.getSkill() == null) {
+            continue;
         }
 
-        List<KnowledgeGap> gaps =
-                knowledgeGapRepository
-                        .findByEmployeeJobRoleIn(
-                                roles);
+        ProficiencyAnalyticsDTO dto =
+                new ProficiencyAnalyticsDTO();
 
-        List<ProficiencyAnalyticsDTO> response =
-                new ArrayList<>();
+        // ----------------------------------------------------
+        // SKILL NAME
+        // ----------------------------------------------------
 
-        for (KnowledgeGap gap : gaps) {
+        dto.setSkillName(
+                employeeSkill.getSkill()
+                        .getSkillName());
 
-            ProficiencyAnalyticsDTO dto =
-                    new ProficiencyAnalyticsDTO();
+        // ----------------------------------------------------
+        // CURRENT EMPLOYEE PROFICIENCY
+        // Source: employee_skills
+        // ----------------------------------------------------
 
-            if (gap.getSkill() != null) {
-
-                dto.setSkillName(
-                        gap.getSkill()
-                                .getSkillName());
-            }
+        if (employeeSkill.getProficiencyLevel() != null) {
 
             dto.setCurrentProficiency(
-                    gap.getCurrentProficiency()
-                            == null
-                            ? null
-                            : gap.getCurrentProficiency()
-                                    .name());
-
-            dto.setRequiredProficiency(
-                    gap.getRequiredProficiency()
-                            == null
-                            ? null
-                            : gap.getRequiredProficiency()
-                                    .name());
-
-            response.add(dto);
+                    employeeSkill.getProficiencyLevel()
+                            .name());
         }
 
-        return response;
+        // ----------------------------------------------------
+        // REQUIRED PROFICIENCY
+        // Source: employee's active job role
+        // ----------------------------------------------------
+
+        if (!roles.isEmpty()) {
+
+            for (EmployeeJobRole role : roles) {
+
+                knowledgeGapRepository
+                        .findByEmployeeJobRoleIn(
+                                List.of(role))
+                        .stream()
+                        .filter(gap ->
+                                gap.getSkill() != null
+                                && gap.getSkill()
+                                        .getSkillId()
+                                        .equals(
+                                                employeeSkill
+                                                        .getSkill()
+                                                        .getSkillId()))
+                        .findFirst()
+                        .ifPresent(gap -> {
+
+                            if (gap.getRequiredProficiency() != null) {
+
+                                dto.setRequiredProficiency(
+                                        gap.getRequiredProficiency()
+                                                .name());
+                            }
+                        });
+
+                if (dto.getRequiredProficiency() != null) {
+                    break;
+                }
+            }
+        }
+
+        // ----------------------------------------------------
+        // LATEST SUBMITTED SELF ASSESSMENT
+        // ----------------------------------------------------
+
+        assessmentAttemptRepository
+                .findTopByEmployeeEmployeeIdAndAssessmentSkillSkillIdAndAssessmentAssessmentTypeAndStatusOrderBySubmittedAtDesc(
+                        employee.getEmployeeId(),
+                        employeeSkill.getSkill().getSkillId(),
+                        Assessment.AssessmentType.SELF,
+                        AssessmentAttempt.Status.SUBMITTED
+                )
+                .ifPresent(attempt -> {
+
+                    dto.setAssessmentScore(
+                            attempt.getScore());
+
+                    dto.setAssessmentTotalMarks(
+                            attempt.getAssessment()
+                                    .getTotalMarks());
+
+                    dto.setProficiencyPercentage(
+                            attempt.getPercentage());
+                });
+
+        response.add(dto);
     }
+
+    return response;
+}
 
     // =====================================================
     // TEAM ANALYTICS
@@ -268,8 +342,12 @@ public class AnalyticsServiceImpl
     public List<TeamAnalyticsDTO>
             getTeamAnalytics() {
 
-        List<Employee> employees =
-                employeeRepository.findAll();
+        Employee manager = getLoggedInEmployee();
+
+        List<Employee> employees = employeeJobRoleRepository
+                .findByAssignedByAndActiveTrue(manager)
+                .stream().map(EmployeeJobRole::getEmployee)
+                .filter(java.util.Objects::nonNull).distinct().toList();
 
         List<TeamAnalyticsDTO> response =
                 new ArrayList<>();
@@ -278,10 +356,6 @@ public class AnalyticsServiceImpl
 
             List<KnowledgeGap> gaps =
                     getEmployeeGaps(employee);
-
-            if (gaps.isEmpty()) {
-                continue;
-            }
 
             double totalGap = 0.0;
 
@@ -299,12 +373,8 @@ public class AnalyticsServiceImpl
                 }
             }
 
-            if (validGapCount == 0) {
-                continue;
-            }
-
             double averageGap =
-                    totalGap / validGapCount;
+                    validGapCount == 0 ? 0.0 : totalGap / validGapCount;
 
             TeamAnalyticsDTO dto =
                     new TeamAnalyticsDTO();
@@ -473,8 +543,12 @@ public class AnalyticsServiceImpl
     public List<SkillGapHeatmapDTO>
             getTeamSkillGapHeatmap() {
 
-        List<Employee> employees =
-                employeeRepository.findAll();
+        Employee manager = getLoggedInEmployee();
+
+        List<Employee> employees = employeeJobRoleRepository
+                .findByAssignedByAndActiveTrue(manager)
+                .stream().map(EmployeeJobRole::getEmployee)
+                .filter(java.util.Objects::nonNull).distinct().toList();
 
         /*
          * Map:
@@ -586,6 +660,15 @@ public class AnalyticsServiceImpl
                                 a.getAverageGapPercentage()));
 
         return response;
+    }
+
+    private Employee getLoggedInEmployee() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResourceNotFoundException("Authenticated manager not found.");
+        }
+        return employeeRepository.findByOfficialEmail(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated manager not found."));
     }
 
     // =====================================================

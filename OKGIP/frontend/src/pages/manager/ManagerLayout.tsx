@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Activity,
@@ -60,14 +60,14 @@ interface ManagerLayoutProps {
 }
 
 const getDisplayName = (email: string | null) => {
-  if (!email) return "Alex Rivera";
+  if (!email) return "Manager";
 
   const local = email
     .split("@")[0]
     ?.replace(/[._-]/g, " ")
     .trim();
 
-  if (!local) return "Alex Rivera";
+  if (!local) return "Manager";
 
   return local.replace(/\b\w/g, (char) => char.toUpperCase());
 };
@@ -77,7 +77,9 @@ const ManagerLayout: React.FC<ManagerLayoutProps> = ({
   breadcrumb,
   children,
 }) => {
-  const { email, logout } = useAuth();
+  const { email, role, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const [dark, setDark] = useState(false);
 
   const displayName = getDisplayName(email);
 
@@ -90,7 +92,7 @@ const ManagerLayout: React.FC<ManagerLayoutProps> = ({
     .toUpperCase();
 
   return (
-    <div className="manager-dashboard">
+    <div className={`manager-dashboard ${collapsed ? "sidebar-collapsed" : ""} ${dark ? "manager-dark" : ""}`}>
 
       {/* ================= SIDEBAR ================= */}
       <aside className="manager-sidebar">
@@ -162,6 +164,7 @@ const ManagerLayout: React.FC<ManagerLayoutProps> = ({
           <button
             type="button"
             className="manager-collapse"
+            onClick={() => setCollapsed((v) => !v)}
           >
             <ChevronLeft size={13} />
             <span>Collapse Sidebar</span>
@@ -201,13 +204,14 @@ const ManagerLayout: React.FC<ManagerLayoutProps> = ({
               aria-label="Notifications"
             >
               <Bell size={15} />
-              <span>3</span>
+
             </button>
 
             <button
               className="manager-top-icon"
               type="button"
-              aria-label="Theme"
+              aria-label="Toggle theme"
+              onClick={() => setDark((v) => !v)}
             >
               <Moon size={15} />
             </button>
@@ -220,7 +224,7 @@ const ManagerLayout: React.FC<ManagerLayoutProps> = ({
 
               <div>
                 <strong>{displayName}</strong>
-                <small>Manager</small>
+                <small>{role ? role.toUpperCase() : ""}</small>
               </div>
 
               <ChevronRight size={12} />

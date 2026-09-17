@@ -1,5 +1,6 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const SecurityCenter: React.FC = () => <WorkspacePage role="ADMIN" page="security" />;
+const SecurityCenter: React.FC = () => <ComingSoonPage role="ADMIN" page="security" />;
 export default SecurityCenter;
+

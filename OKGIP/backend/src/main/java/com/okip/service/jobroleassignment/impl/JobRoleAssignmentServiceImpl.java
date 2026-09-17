@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.okip.dto.jobroleassignment.AssignJobRoleRequestDTO;
 import com.okip.dto.jobroleassignment.JobRoleAssignmentResponseDTO;
@@ -40,6 +41,7 @@ public class JobRoleAssignmentServiceImpl
     }
 
     @Override
+    @Transactional
     public JobRoleAssignmentResponseDTO assignJobRole(
             AssignJobRoleRequestDTO request) {
 
@@ -55,14 +57,21 @@ public class JobRoleAssignmentServiceImpl
                         new ResourceNotFoundException(
                                 "Job Role not found."));
 
-        if (employeeJobRoleRepository
-                .findByEmployeeAndJobRoleAndActiveTrue(
-                        employee,
-                        jobRole)
-                .isPresent()) {
+        var existingAssignment = employeeJobRoleRepository
+                .findByEmployeeAndJobRoleAndActiveTrue(employee, jobRole);
 
+        if (existingAssignment.isPresent()) {
+            EmployeeJobRole existing = existingAssignment.get();
+            String type = existing.getAssignmentType() == null
+                    ? "ACTIVE"
+                    : existing.getAssignmentType().name();
+            String owner = existing.getAssignedBy() == null
+                    ? "another assignment"
+                    : existing.getAssignedBy().getEmployeeCode();
             throw new ResourceAlreadyExistsException(
-                    "Job Role already assigned.");
+                    jobRole.getJobRoleName() + " is already assigned to "
+                            + employee.getFirstName() + " " + employee.getLastName()
+                            + " as " + type + " (owner: " + owner + "). Choose a different job role.");
         }
 
         if (request.getAssignmentType() == AssignmentType.PRIMARY) {

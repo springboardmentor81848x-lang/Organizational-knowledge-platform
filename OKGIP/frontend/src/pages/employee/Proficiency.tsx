@@ -26,16 +26,26 @@ import { NavLink } from "react-router-dom";
 import analyticsService from "@/services/analyticsService";
 import gapAnalysisService from "@/services/gapAnalysisService";
 
-const levelValue: Record<string, number> = {
-  BEGINNER: 25,
-  INTERMEDIATE: 50,
-  ADVANCED: 75,
-  EXPERT: 100,
-};
+interface ProficiencyRow {
+  skillName?: string;
+  currentProficiency?: string | null;
+  requiredProficiency?: string | null;
+  proficiencyPercentage?: number | null;
+  assessmentScore?: number | null;
+  assessmentTotalMarks?: number | null;
+  skillCategory?: string;
+  employeeSkillId?: number;
+  knowledgeGapId?: number;
+  id?: number;
+}
 
 const Proficiency: React.FC = () => {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<
+    ProficiencyRow[] | null
+  >(null);
+
   const [gap, setGap] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
@@ -72,9 +82,14 @@ const Proficiency: React.FC = () => {
 
         if (gapResult.status === "fulfilled") {
           console.log(
-  "MY GAP ANALYSIS API RESPONSE =",
-  JSON.stringify(gapResult.value, null, 2)
-);
+            "MY GAP ANALYSIS API RESPONSE =",
+            JSON.stringify(
+              gapResult.value,
+              null,
+              2
+            )
+          );
+
           setGap(gapResult.value);
         } else {
           console.error(
@@ -92,7 +107,10 @@ const Proficiency: React.FC = () => {
           );
         }
       } catch (err) {
-        console.error("PROFICIENCY LOAD ERROR:", err);
+        console.error(
+          "PROFICIENCY LOAD ERROR:",
+          err
+        );
 
         setError(
           "Unable to connect to the proficiency API."
@@ -109,13 +127,11 @@ const Proficiency: React.FC = () => {
   // NORMALIZE BACKEND RESPONSE
   // ============================================================
 
-  const rows = Array.isArray(analytics)
+  const rows: ProficiencyRow[] = Array.isArray(
+    analytics
+  )
     ? analytics
-    : analytics?.skills ||
-      analytics?.proficiencies ||
-      analytics?.data ||
-      gap?.knowledgeGaps ||
-      [];
+    : gap?.knowledgeGaps || [];
 
   // ============================================================
   // PAGE
@@ -219,14 +235,14 @@ const Proficiency: React.FC = () => {
           </NavLink>
 
           {/* EXPERIENCE */}
-<NavLink
-  to="/employee/experience"
-  className="employee-nav-item"
->
-  <Briefcase size={15} />
-  <span>Experience</span>
-</NavLink>
 
+          <NavLink
+            to="/employee/experience"
+            className="employee-nav-item"
+          >
+            <Briefcase size={15} />
+            <span>Experience</span>
+          </NavLink>
 
           <NavLink
             to="/employee/progress"
@@ -386,32 +402,39 @@ const Proficiency: React.FC = () => {
               <div className="space-y-6">
 
                 {rows.map(
-                  (row: any, index: number) => {
+                  (
+                    row: ProficiencyRow,
+                    index: number
+                  ) => {
 
                     const name =
                       row.skillName ||
-                      row.name ||
-                      row.skill ||
                       `Skill ${index + 1}`;
 
                     const level =
                       row.currentProficiency ||
-                      row.proficiencyLevel ||
-                      row.proficiency ||
-                      row.level ||
                       "Not assessed";
 
+                    /*
+                     * IMPORTANT:
+                     * The percentage comes ONLY from
+                     * the backend assessment result.
+                     *
+                     * No BEGINNER/INTERMEDIATE/etc.
+                     * frontend conversion is used.
+                     */
+
                     const numeric = Number(
-                      row.proficiencyPercentage ??
-                        row.percentage ??
-                        row.score
+                      row.proficiencyPercentage
                     );
 
-                    const value = Number.isFinite(numeric)
-                      ? numeric
-                      : levelValue[
-                          String(level).toUpperCase()
-                        ] ?? 0;
+                    const value =
+                      Number.isFinite(numeric)
+                        ? Math.min(
+                            Math.max(numeric, 0),
+                            100
+                          )
+                        : 0;
 
                     return (
                       <div
@@ -455,16 +478,13 @@ const Proficiency: React.FC = () => {
                           <div
                             className="h-full rounded-full bg-purple-600 transition-all"
                             style={{
-                              width: `${Math.min(
-                                Math.max(value, 0),
-                                100
-                              )}%`,
+                              width: `${value}%`,
                             }}
                           />
 
                         </div>
 
-                        {/* PERCENTAGE */}
+                        {/* ACTUAL PERCENTAGE */}
 
                         <div className="mt-2 flex justify-between">
 
@@ -478,14 +498,35 @@ const Proficiency: React.FC = () => {
 
                         </div>
 
+                        {/* SELF ASSESSMENT SCORE */}
+
+                        {row.assessmentScore != null &&
+                          row.assessmentTotalMarks != null && (
+                            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+
+                              <span className="text-[10px] text-slate-400">
+                                Self Assessment Score
+                              </span>
+
+                              <span className="text-[10px] font-bold text-slate-600">
+                                {row.assessmentScore} /{" "}
+                                {row.assessmentTotalMarks}
+                              </span>
+
+                            </div>
+                          )}
+
                         {/* REQUIRED PROFICIENCY */}
 
                         {row.requiredProficiency && (
                           <p className="mt-2 text-[10px] text-slate-400">
+
                             Required proficiency:{" "}
+
                             <span className="font-semibold text-slate-500">
                               {row.requiredProficiency}
                             </span>
+
                           </p>
                         )}
 

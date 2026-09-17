@@ -7,6 +7,9 @@ import axios from "axios";
 
 import API from "@/api/axios";
 
+import { storeToken } from "@/utils/authStorage";
+import { getRoleFromPayload, tryDecodeToken, type AppRole } from "@/utils/jwt";
+
 import { SocialLogin } from "@/components/auth/SocialLogin";
 import { Divider } from "@/components/auth/Divider";
 import { LoginFields } from "@/components/auth/LoginFields";
@@ -27,8 +30,7 @@ const loginSchema = z.object({
     .min(1, "Password is required"),
 
   rememberMe: z
-    .boolean()
-    .default(false),
+    .boolean(),
 
   role: z.enum(
     [
@@ -36,9 +38,10 @@ const loginSchema = z.object({
       "ROLE_HR",
       "ROLE_MANAGER",
       "ROLE_ADMIN",
+      "ROLE_MENTOR",
     ],
     {
-      required_error: "Please select a role to proceed",
+      message: "Please select a role to proceed",
     }
   ),
 });
@@ -170,31 +173,42 @@ if (data.rememberMe) {
 }
 
         console.log("Authentication stored in sessionStorage.");
-      }
+      
 
       /* ---------------------------------------------------
-         NAVIGATE BASED ON SELECTED ROLE
+         NAVIGATE BASED ON BACKEND JWT ROLE
       --------------------------------------------------- */
-
-      switch (data.role) {
-        case "ROLE_ADMIN":
+      const decoded = tryDecodeToken(token);
+      const actualRole = decoded ? getRoleFromPayload(decoded) : null;
+      const selectedRole = data.role.replace(/^ROLE_/, "").toLowerCase() as AppRole;
+      if (!actualRole || actualRole !== selectedRole) {
+        setErrorMessage(`Access denied. This account is registered as ${actualRole || "unknown"}.`);
+        return;
+      }
+      switch (actualRole) {
+        case "admin":
           console.log("Navigating to Admin Dashboard");
-          navigate("/admin/dashboard");
+          navigate("/admin");
           break;
 
-        case "ROLE_HR":
+        case "hr":
           console.log("Navigating to HR Dashboard");
-          navigate("/hr/dashboard");
+          navigate("/hr");
           break;
 
-        case "ROLE_MANAGER":
+        case "manager":
           console.log("Navigating to Manager Dashboard");
           navigate("/manager/dashboard");
           break;
 
-        case "ROLE_EMPLOYEE":
+        case "employee":
           console.log("Navigating to Employee Dashboard");
-          navigate("/employee/dashboard");
+          navigate("/employee");
+          break;
+
+        case "mentor":
+          console.log("Navigating to Mentor Dashboard");
+          navigate("/mentor/dashboard");
           break;
 
         default:
@@ -203,6 +217,7 @@ if (data.rememberMe) {
           setErrorMessage(
             "Invalid role selected. Please select a valid role."
           );
+          break;
       }
     } catch (error: unknown) {
       console.error("LOGIN FAILED:", error);

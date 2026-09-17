@@ -11,14 +11,11 @@ import com.okip.dto.analytics.TeamAnalyticsDTO;
 
 public interface AnalyticsService {
 
-    EmployeeAnalyticsDTO getEmployeeAnalytics(
-            Long employeeId);
+    EmployeeAnalyticsDTO getEmployeeAnalytics(Long employeeId);
 
-    List<SkillGapAnalyticsDTO> getEmployeeSkillGaps(
-            Long employeeId);
+    List<SkillGapAnalyticsDTO> getEmployeeSkillGaps(Long employeeId);
 
-    List<ProficiencyAnalyticsDTO> getEmployeeProficiency(
-            Long employeeId);
+    List<ProficiencyAnalyticsDTO> getEmployeeProficiency(Long employeeId);
 
     List<TeamAnalyticsDTO> getTeamAnalytics();
 
@@ -26,6 +23,5 @@ public interface AnalyticsService {
 
     List<SkillGapHeatmapDTO> getTeamSkillGapHeatmap();
 
-    Long getEmployeeIdByEmail(
-            String email);
+    Long getEmployeeIdByEmail(String email);
 }

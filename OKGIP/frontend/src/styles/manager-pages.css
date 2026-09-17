@@ -2389,4 +2389,4 @@
   color: #6d28d9;
   font-size: 12px;
   line-height: 1.6;
-}
+}.manager-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;z-index:1000;padding:24px}.manager-modal{width:min(560px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:24px;box-shadow:0 24px 70px rgba(15,23,42,.22)}.manager-modal label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;margin-top:16px;color:#334155}.manager-modal select{height:42px;border:1px solid #dbe2ea;border-radius:10px;padding:0 12px;background:#fff;font:inherit;font-weight:500;color:#0f172a}.manager-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.manager-modal-actions button:disabled{opacity:.65;cursor:not-allowed}

@@ -292,8 +292,16 @@ export const AuthProvider = ({
       // -------------------------------------------------
       // LOAD PROFILE
       // -------------------------------------------------
-
-      await loadEmployeeProfile();
+      // Employee dashboards require employeeId. Mentor authentication
+      // must not fail just because the employee-profile endpoint has no
+      // profile row for the mentor account. Mentor APIs identify the
+      // authenticated user from the JWT.
+      const resolvedRole = getRoleFromPayload(decoded);
+      if (resolvedRole !== "mentor") {
+        await loadEmployeeProfile();
+      } else {
+        setProfileLoading(false);
+      }
     };
 
     initializeAuth();
@@ -421,7 +429,12 @@ export const AuthProvider = ({
     // LOAD NEW EMPLOYEE PROFILE
     // -------------------------------------------------
 
-    loadEmployeeProfile();
+    const resolvedRole = getRoleFromPayload(decoded);
+    if (resolvedRole !== "mentor") {
+      loadEmployeeProfile();
+    } else {
+      setProfileLoading(false);
+    }
 
     console.log(
       "AUTH: ✅ LOGIN SUCCESS"

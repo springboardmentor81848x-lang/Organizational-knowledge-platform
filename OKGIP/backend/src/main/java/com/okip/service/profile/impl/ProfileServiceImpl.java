@@ -22,12 +22,17 @@ public class ProfileServiceImpl implements ProfileService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeProfileRepository profileRepository;
 
-    public ProfileServiceImpl(EmployeeRepository employeeRepository,
-                              EmployeeProfileRepository profileRepository) {
+    public ProfileServiceImpl(
+            EmployeeRepository employeeRepository,
+            EmployeeProfileRepository profileRepository) {
 
         this.employeeRepository = employeeRepository;
         this.profileRepository = profileRepository;
     }
+
+    // =========================================================
+    // CREATE PROFILE
+    // =========================================================
 
     @Override
     public EmployeeProfileResponseDTO createProfile(
@@ -39,7 +44,6 @@ public class ProfileServiceImpl implements ProfileService {
                 profileRepository.findByEmployee(employee);
 
         if (optionalProfile.isPresent()) {
-
             throw new ResourceAlreadyExistsException(
                     "Profile already exists.");
         }
@@ -62,19 +66,51 @@ public class ProfileServiceImpl implements ProfileService {
         return buildResponse(employee, profile);
     }
 
+    // =========================================================
+    // GET LOGGED-IN PROFILE
+    // =========================================================
+
     @Override
     public EmployeeProfileResponseDTO getMyProfile() {
 
         Employee employee = getLoggedInEmployee();
 
-        EmployeeProfile profile =
-                profileRepository.findByEmployee(employee)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Profile not found."));
+        Optional<EmployeeProfile> optionalProfile =
+                profileRepository.findByEmployee(employee);
 
-        return buildResponse(employee, profile);
+        /*
+         * IMPORTANT:
+         *
+         * A Manager/Employee account can exist without an
+         * EmployeeProfile record.
+         *
+         * The frontend still needs the employeeId in order
+         * to continue authentication and load the dashboard.
+         *
+         * Therefore, when the profile does not exist, return
+         * the employee information with empty profile fields
+         * instead of returning HTTP 404.
+         */
+
+        if (optionalProfile.isEmpty()) {
+
+            System.out.println(
+                    "PROFILE: No profile found for employee "
+                    + employee.getEmployeeCode()
+                    + ". Returning employee information."
+            );
+
+            return buildResponse(employee, null);
+        }
+
+        return buildResponse(
+                employee,
+                optionalProfile.get());
     }
+
+    // =========================================================
+    // UPDATE PROFILE
+    // =========================================================
 
     @Override
     public EmployeeProfileResponseDTO updateProfile(
@@ -82,11 +118,17 @@ public class ProfileServiceImpl implements ProfileService {
 
         Employee employee = getLoggedInEmployee();
 
+        // PUT is idempotent for the logged-in employee. If a profile
+        // does not exist yet, create it instead of forcing the frontend
+        // to decide between POST and PUT. This also handles accounts
+        // created before employee_profiles was populated.
         EmployeeProfile profile =
                 profileRepository.findByEmployee(employee)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Profile not found."));
+                .orElseGet(() -> {
+                    EmployeeProfile created = new EmployeeProfile();
+                    created.setEmployee(employee);
+                    return created;
+                });
 
         profile.setPhoneNumber(request.getPhoneNumber());
         profile.setAddress(request.getAddress());
@@ -102,12 +144,24 @@ public class ProfileServiceImpl implements ProfileService {
         return buildResponse(employee, profile);
     }
 
+    // =========================================================
+    // GET LOGGED-IN EMPLOYEE
+    // =========================================================
+
     private Employee getLoggedInEmployee() {
 
         Authentication authentication =
                 SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null ||
+                authentication.getName() == null ||
+                authentication.getName().isBlank()) {
+
+            throw new ResourceNotFoundException(
+                    "Authenticated employee not found.");
+        }
 
         String email = authentication.getName();
 
@@ -118,6 +172,10 @@ public class ProfileServiceImpl implements ProfileService {
                                 "Employee not found."));
     }
 
+    // =========================================================
+    // BUILD RESPONSE
+    // =========================================================
+
     private EmployeeProfileResponseDTO buildResponse(
             Employee employee,
             EmployeeProfile profile) {
@@ -125,21 +183,73 @@ public class ProfileServiceImpl implements ProfileService {
         EmployeeProfileResponseDTO response =
                 new EmployeeProfileResponseDTO();
 
-        response.setEmployeeId(employee.getEmployeeId());
-        response.setEmployeeCode(employee.getEmployeeCode());
+        // -----------------------------------------------------
+        // Employee information always comes from Employee table
+        // -----------------------------------------------------
+
+        response.setEmployeeId(
+                employee.getEmployeeId());
+
+        response.setEmployeeCode(
+                employee.getEmployeeCode());
+
+        String firstName =
+                employee.getFirstName() == null
+                        ? ""
+                        : employee.getFirstName();
+
+        String lastName =
+                employee.getLastName() == null
+                        ? ""
+                        : employee.getLastName();
 
         response.setEmployeeName(
-                employee.getFirstName() + " " +
-                employee.getLastName());
+                (firstName + " " + lastName).trim());
 
-        response.setPhoneNumber(profile.getPhoneNumber());
-        response.setAddress(profile.getAddress());
-        response.setCity(profile.getCity());
-        response.setState(profile.getState());
-        response.setCountry(profile.getCountry());
-        response.setPincode(profile.getPincode());
-        response.setDateOfBirth(profile.getDateOfBirth());
-        response.setGender(profile.getGender());
+        // -----------------------------------------------------
+        // Profile information
+        //
+        // Profile may not exist yet.
+        // In that case return null values instead of failing.
+        // -----------------------------------------------------
+
+        if (profile != null) {
+
+            response.setPhoneNumber(
+                    profile.getPhoneNumber());
+
+            response.setAddress(
+                    profile.getAddress());
+
+            response.setCity(
+                    profile.getCity());
+
+            response.setState(
+                    profile.getState());
+
+            response.setCountry(
+                    profile.getCountry());
+
+            response.setPincode(
+                    profile.getPincode());
+
+            response.setDateOfBirth(
+                    profile.getDateOfBirth());
+
+            response.setGender(
+                    profile.getGender());
+
+        } else {
+
+            response.setPhoneNumber(null);
+            response.setAddress(null);
+            response.setCity(null);
+            response.setState(null);
+            response.setCountry(null);
+            response.setPincode(null);
+            response.setDateOfBirth(null);
+            response.setGender(null);
+        }
 
         return response;
     }

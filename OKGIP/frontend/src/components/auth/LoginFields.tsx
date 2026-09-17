@@ -111,7 +111,7 @@ export const LoginFields: React.FC<LoginFieldsProps> = ({
         <RememberMe
           checked={rememberMe}
           onCheckedChange={(checked) =>
-            setValue("rememberMe", checked, { validateStatus: true })
+            setValue("rememberMe", checked, { shouldValidate: true })
           }
         />
       </div>

@@ -314,27 +314,19 @@ const LearningPaths: React.FC = () => {
   // PRIORITY
   // ===================================================
 
-  const getPriority = (
-    gap: PriorityGap
-  ): string => {
+  const getPriority = (gap: PriorityGap): string => {
+  const percentage = Number(gap.gapPercentage ?? 0);
 
-    const percentage =
-      Number(
-        gap.gapPercentage ?? 0
-      );
+  if (percentage >= 70) {
+    return "HIGH";
+  }
 
-    return (
-      gap.priority ||
-      (
-        percentage >= 70
-          ? "HIGH"
-          : percentage >= 40
-          ? "MEDIUM"
-          : "LOW"
-      )
-    ).toUpperCase();
-  };
+  if (percentage >= 40) {
+    return "MEDIUM";
+  }
 
+  return "LOW";
+};
   // ===================================================
   // PRIORITY CLASS
   // ===================================================
@@ -682,9 +674,8 @@ const LearningPaths: React.FC = () => {
                               </span>
 
                               <p className="text-xs text-slate-500">
-                                {percentage}% gap
-                              </p>
-
+  {percentage.toFixed(2)}% gap
+</p>
                             </div>
 
                           </div>

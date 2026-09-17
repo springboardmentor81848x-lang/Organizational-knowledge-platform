@@ -28,7 +28,6 @@ public class EmployeeAiController {
 
         return ResponseEntity.ok(
                 employeeAiService
-                        .getEmployeeRecommendations(employeeId)
-        );
+                        .getEmployeeRecommendations(employeeId));
     }
 }

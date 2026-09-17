@@ -14,6 +14,8 @@ public class TeamAnalyticsDTO {
 
     private Double readinessPercentage;
 
+    private String analysisStatus;
+
     public TeamAnalyticsDTO() {
     }
 
@@ -56,6 +58,10 @@ public class TeamAnalyticsDTO {
     public void setGapPercentage(Double gapPercentage) {
         this.gapPercentage = gapPercentage;
     }
+
+    public String getAnalysisStatus() { return analysisStatus; }
+
+    public void setAnalysisStatus(String analysisStatus) { this.analysisStatus = analysisStatus; }
 
     public Double getReadinessPercentage() {
         return readinessPercentage;

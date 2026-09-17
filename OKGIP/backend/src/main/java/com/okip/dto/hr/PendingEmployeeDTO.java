@@ -50,5 +50,4 @@ public class PendingEmployeeDTO {
     public void setOfficialEmail(String officialEmail) {
         this.officialEmail = officialEmail;
     }
-
 }

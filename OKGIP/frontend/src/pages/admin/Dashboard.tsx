@@ -1,1328 +1,167 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Activity,
-  AlertTriangle,
-  ArrowDownRight,
-  ArrowUpRight,
-  Bell,
-  BookOpen,
-  CheckCircle2,
-  ChevronRight,
-  CircleUserRound,
-  ClipboardList,
-  Cloud,
-  Database,
-  FileBarChart,
-  FileClock,
-  FileText,
-  Gauge,
-  HardDrive,
-  KeyRound,
-  LayoutDashboard,
-  Lock,
-  LogOut,
-  Menu,
-  Moon,
-  Network,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings,
-  Shield,
-  ShieldCheck,
-  Sun,
-  UserCog,
-  Users,
-  UserRoundCog,
-  X,
-  Zap,
+  Activity, AlertTriangle, BarChart3, Bell, BookOpen, CheckCircle2, ChevronRight,
+  Database, FileClock, FileDown, FileText, Gauge, HardDrive, KeyRound, LayoutDashboard,
+  LogOut, Menu, Moon, Network, Plus, RefreshCw, Search, Settings, Shield, ShieldCheck,
+  Sun, UserCog, Users, X, Trash2, Edit3, Save, Server, LockKeyhole, Cloud, ClipboardList,
+  Building2, BriefcaseBusiness, Boxes, CircleHelp, Download, Upload, Eye
 } from "lucide-react";
-
+import API from "@/api/axios";
 import { useAuth } from "@/context/AuthContext";
 
-
-// ============================================================
-// DATA
-// ============================================================
-
-const kpis = [
-  {
-    title: "TOTAL USERS",
-    value: "2,451",
-    change: "+8.6%",
-    positive: true,
-    icon: Users,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
-    line: "M12 28 C30 26,35 18,50 21 S72 13,92 9",
-  },
-  {
-    title: "ACTIVE ROLES",
-    value: "14",
-    change: "+6.3%",
-    positive: true,
-    icon: UserRoundCog,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-    line: "M12 27 C30 25,35 20,50 22 S70 13,92 8",
-  },
-  {
-    title: "SYSTEM UPTIME",
-    value: "99.98%",
-    change: "+2.1%",
-    positive: true,
-    icon: ShieldCheck,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
-    line: "M12 27 C28 25,37 23,49 21 S70 14,92 8",
-  },
-  {
-    title: "API REQUESTS (MTD)",
-    value: "1.28M",
-    change: "+12.4%",
-    positive: true,
-    icon: Database,
-    iconBg: "bg-indigo-50",
-    iconColor: "text-indigo-600",
-    line: "M12 27 C28 25,34 17,48 21 S69 10,92 8",
-  },
-  {
-    title: "SECURITY ALERTS",
-    value: "7",
-    change: "-15.2%",
-    positive: false,
-    icon: AlertTriangle,
-    iconBg: "bg-red-50",
-    iconColor: "text-red-500",
-    line: "M12 27 C27 24,38 27,49 20 S70 23,92 8",
-  },
-  {
-    title: "CERTIFICATIONS",
-    value: "1,842",
-    change: "+9.7%",
-    positive: true,
-    icon: FileText,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-    line: "M12 27 C30 26,35 20,48 22 S70 12,92 7",
-  },
-];
-
-const roleDistribution = [
-  { name: "Employee", count: "1,804", percent: 73.6, width: "73.6%" },
-  { name: "Manager", count: "312", percent: 12.7, width: "12.7%" },
-  { name: "HR Admin", count: "145", percent: 5.9, width: "5.9%" },
-  { name: "L&D Admin", count: "98", percent: 4.0, width: "4%" },
-  { name: "System Admin", count: "92", percent: 3.8, width: "3.8%" },
-];
-
-const securityAlerts = [
-  {
-    title: "Failed Login Attempt",
-    description: "Multiple failed attempts detected",
-    time: "2 mins ago",
-    type: "danger",
-  },
-  {
-    title: "Unusual Access Pattern",
-    description: "New device login detected",
-    time: "15 mins ago",
-    type: "warning",
-  },
-  {
-    title: "Permission Change",
-    description: "Role permission updated",
-    time: "1 hour ago",
-    type: "success",
-  },
-  {
-    title: "Data Export Activity",
-    description: "Large data export initiated",
-    time: "2 hours ago",
-    type: "info",
-  },
-];
-
-const activities = [
-  {
-    time: "11:32 AM",
-    date: "May 12, 2026",
-    user: "Daniel Morgan",
-    action: "Updated system settings",
-    module: "System Settings",
-  },
-  {
-    time: "11:15 AM",
-    date: "May 12, 2026",
-    user: "Sarah Johnson",
-    action: "Created new user account",
-    module: "User Management",
-  },
-  {
-    time: "10:48 AM",
-    date: "May 12, 2026",
-    user: "Mike Thompson",
-    action: "Assigned role permissions",
-    module: "Role Management",
-  },
-  {
-    time: "10:30 AM",
-    date: "May 12, 2026",
-    user: "Lisa Wong",
-    action: "Generated system report",
-    module: "Reports",
-  },
-  {
-    time: "09:45 AM",
-    date: "May 12, 2026",
-    user: "Daniel Morgan",
-    action: "Security policy updated",
-    module: "Security",
-  },
-];
-
-
-// ============================================================
-// SMALL COMPONENTS
-// ============================================================
-
-function MiniChart({
-  path,
-  danger = false,
-}: {
-  path: string;
-  danger?: boolean;
-}) {
-  return (
-    <svg
-      viewBox="0 0 100 35"
-      className="h-9 w-20"
-      fill="none"
-      preserveAspectRatio="none"
-    >
-      <path
-        d={path}
-        stroke={danger ? "#ef4444" : "#7c3aed"}
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-
-function KPI({
-  title,
-  value,
-  change,
-  positive,
-  icon: Icon,
-  iconBg,
-  iconColor,
-  line,
-}: (typeof kpis)[number]) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}
-        >
-          <Icon className={`h-5 w-5 ${iconColor}`} />
-        </div>
-
-        <div
-          className={`flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold ${
-            positive
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-red-50 text-red-500"
-          }`}
-        >
-          {positive ? (
-            <ArrowUpRight className="h-3 w-3" />
-          ) : (
-            <ArrowDownRight className="h-3 w-3" />
-          )}
-
-          {change}
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-[10px] font-semibold tracking-wide text-slate-500">
-          {title}
-        </p>
-
-        <div className="mt-1 flex items-end justify-between">
-          <p className="text-2xl font-bold tracking-tight text-slate-900">
-            {value}
-          </p>
-
-          <MiniChart path={line} danger={!positive} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function SectionCard({
-  title,
-  subtitle,
-  children,
-  className = "",
-  action,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  className?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}
-    >
-      <div className="mb-5 flex items-start justify-between">
-        <div>
-          <h2 className="text-base font-bold text-slate-900">{title}</h2>
-
-          {subtitle && (
-            <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
-          )}
-        </div>
-
-        {action}
-      </div>
-
-      {children}
-    </div>
-  );
-}
-
-
-// ============================================================
-// SYSTEM HEALTH
-// ============================================================
-
-function SystemHealth() {
-  return (
-    <SectionCard title="System Health Overview">
-      <div className="flex items-center gap-6">
-        {/* Donut */}
-        <div className="relative flex h-36 w-36 shrink-0 items-center justify-center">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                "conic-gradient(#10b981 0deg 338deg, #f59e0b 338deg 350deg, #ef4444 350deg 353deg, #7c3aed 353deg 360deg)",
-            }}
-          />
-
-          <div className="absolute inset-[14px] rounded-full bg-white" />
-
-          <div className="relative text-center">
-            <p className="text-2xl font-bold text-slate-900">94%</p>
-            <p className="text-[10px] text-slate-500">Overall Health</p>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-3">
-          {[
-            ["Services Online", "18", "bg-emerald-500"],
-            ["Degraded Services", "1", "bg-amber-500"],
-            ["Offline Services", "0", "bg-red-500"],
-            ["Maintenance Mode", "1", "bg-purple-500"],
-          ].map(([label, value, color]) => (
-            <div
-              key={label}
-              className="flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${color}`} />
-                <span className="text-slate-600">{label}</span>
-              </div>
-
-              <span className="font-semibold text-slate-800">{value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-        <span className="text-[10px] text-slate-500">
-          Last updated: 2 mins ago
-        </span>
-
-        <button className="flex items-center gap-1 text-xs font-semibold text-purple-600">
-          View Details
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// SYSTEM PERFORMANCE
-// ============================================================
-
-function SystemPerformance() {
-  return (
-    <SectionCard
-      title="System Performance"
-      subtitle="Resource utilization over the last 6 hours"
-    >
-      <div className="relative h-52">
-        <div className="absolute inset-0 flex flex-col justify-between text-[10px] text-slate-400">
-          <span>100%</span>
-          <span>75%</span>
-          <span>50%</span>
-          <span>25%</span>
-          <span>0%</span>
-        </div>
-
-        <div className="ml-8 h-full">
-          <svg
-            viewBox="0 0 500 190"
-            className="h-full w-full"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient
-                id="performanceGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="#8b5cf6"
-                  stopOpacity="0.30"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="#8b5cf6"
-                  stopOpacity="0.03"
-                />
-              </linearGradient>
-            </defs>
-
-            {[25, 60, 95, 130, 165].map((y) => (
-              <line
-                key={y}
-                x1="0"
-                y1={y}
-                x2="500"
-                y2={y}
-                stroke="#e2e8f0"
-                strokeWidth="1"
-              />
-            ))}
-
-            <path
-              d="M0 110 L20 125 L40 115 L60 85 L80 105 L100 92 L120 72 L140 90 L160 108 L180 118 L200 90 L220 110 L240 100 L260 85 L280 125 L300 105 L320 115 L340 80 L360 98 L380 68 L400 75 L420 45 L440 58 L460 40 L480 50 L500 38 L500 190 L0 190 Z"
-              fill="url(#performanceGradient)"
-            />
-
-            <path
-              d="M0 110 L20 125 L40 115 L60 85 L80 105 L100 92 L120 72 L140 90 L160 108 L180 118 L200 90 L220 110 L240 100 L260 85 L280 125 L300 105 L320 115 L340 80 L360 98 L380 68 L400 75 L420 45 L440 58 L460 40 L480 50 L500 38"
-              fill="none"
-              stroke="#7c3aed"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-
-        <div className="absolute bottom-0 left-8 right-0 flex justify-between text-[9px] text-slate-400">
-          <span>06:00</span>
-          <span>07:00</span>
-          <span>08:00</span>
-          <span>09:00</span>
-          <span>10:00</span>
-          <span>11:00</span>
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        <div className="rounded-xl bg-purple-50 p-3 text-center">
-          <p className="text-[10px] text-slate-500">CPU Usage</p>
-          <p className="mt-1 text-lg font-bold text-purple-600">42%</p>
-        </div>
-
-        <div className="rounded-xl bg-amber-50 p-3 text-center">
-          <p className="text-[10px] text-slate-500">Memory Usage</p>
-          <p className="mt-1 text-lg font-bold text-amber-600">68%</p>
-        </div>
-
-        <div className="rounded-xl bg-emerald-50 p-3 text-center">
-          <p className="text-[10px] text-slate-500">Disk Usage</p>
-          <p className="mt-1 text-lg font-bold text-emerald-600">55%</p>
-        </div>
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// SECURITY STATUS
-// ============================================================
-
-function SecurityStatus() {
-  const items = [
-    ["Authentication", "Secure", Lock],
-    ["Access Control", "Secure", Shield],
-    ["Data Encryption", "Secure", KeyRound],
-    ["Session Management", "Secure", UserCog],
-    ["Password Policy", "Compliant", ShieldCheck],
-    ["MFA Enforcement", "Active", Zap],
-  ];
-
-  return (
-    <SectionCard title="Security Status">
-      <div className="space-y-1">
-        {items.map(([name, status, Icon]) => {
-          const IconComponent = Icon as React.ElementType;
-
-          return (
-            <div
-              key={name as string}
-              className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50">
-                  <IconComponent className="h-3.5 w-3.5 text-purple-600" />
-                </div>
-
-                <span className="text-xs font-medium text-slate-700">
-                  {name as string}
-                </span>
-              </div>
-
-              <span className="text-[10px] font-semibold text-emerald-600">
-                {status as string}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="mt-4 flex w-full items-center justify-center gap-1 text-xs font-semibold text-purple-600">
-        View Security Center
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// USER MANAGEMENT
-// ============================================================
-
-function UserManagementSummary() {
-  return (
-    <SectionCard title="User Management Summary">
-      <div className="flex items-center gap-5">
-        <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                "conic-gradient(#7c3aed 0deg 265deg, #10b981 265deg 310deg, #f59e0b 310deg 332deg, #3b82f6 332deg 346deg, #9333ea 346deg 360deg)",
-            }}
-          />
-
-          <div className="absolute inset-[16px] rounded-full bg-white" />
-
-          <div className="relative text-center">
-            <p className="text-xl font-bold text-slate-900">2,451</p>
-            <p className="text-[9px] text-slate-500">Total Users</p>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-3">
-          {[
-            ["Employees", "1,804", "73.6%", "bg-purple-600"],
-            ["Managers", "312", "12.7%", "bg-emerald-500"],
-            ["HR Admins", "145", "5.9%", "bg-amber-500"],
-            ["L&D Admins", "98", "4.0%", "bg-blue-500"],
-            ["System Admins", "92", "3.8%", "bg-purple-400"],
-          ].map(([name, count, percent, color]) => (
-            <div
-              key={name}
-              className="flex items-center justify-between text-[10px]"
-            >
-              <div className="flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${color}`} />
-                <span className="text-slate-600">{name}</span>
-              </div>
-
-              <span className="font-semibold text-slate-800">
-                {count}{" "}
-                <span className="font-normal text-slate-400">
-                  ({percent})
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <button className="flex items-center gap-1 text-xs font-semibold text-purple-600">
-          Manage Users
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// ROLE DISTRIBUTION
-// ============================================================
-
-function RoleDistribution() {
-  return (
-    <SectionCard title="Role Distribution">
-      <div className="space-y-5">
-        {roleDistribution.map((role, index) => (
-          <div key={role.name}>
-            <div className="mb-1.5 flex items-center justify-between text-[10px]">
-              <span className="text-slate-600">{role.name}</span>
-              <span className="font-semibold text-slate-800">
-                {role.count}
-              </span>
-            </div>
-
-            <div className="h-2 rounded-full bg-slate-100">
-              <div
-                className={`h-full rounded-full ${
-                  index === 0
-                    ? "bg-purple-600"
-                    : index === 1
-                    ? "bg-emerald-500"
-                    : index === 2
-                    ? "bg-amber-500"
-                    : index === 3
-                    ? "bg-blue-500"
-                    : "bg-purple-400"
-                }`}
-                style={{ width: role.width }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <button className="flex items-center gap-1 text-xs font-semibold text-purple-600">
-          Manage Roles
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// SECURITY ALERTS
-// ============================================================
-
-function RecentSecurityAlerts() {
-  return (
-    <SectionCard
-      title="Recent Security Alerts"
-      action={
-        <button className="text-[10px] font-semibold text-purple-600">
-          View All
-        </button>
-      }
-    >
-      <div className="space-y-4">
-        {securityAlerts.map((alert) => {
-          const styles = {
-            danger: "bg-red-50 text-red-500",
-            warning: "bg-amber-50 text-amber-500",
-            success: "bg-emerald-50 text-emerald-500",
-            info: "bg-blue-50 text-blue-500",
-          };
-
-          const icons = {
-            danger: AlertTriangle,
-            warning: AlertTriangle,
-            success: Users,
-            info: FileText,
-          };
-
-          const Icon = icons[alert.type as keyof typeof icons];
-
-          return (
-            <div key={alert.title} className="flex gap-3">
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                  styles[alert.type as keyof typeof styles]
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] font-semibold text-slate-800">
-                    {alert.title}
-                  </p>
-
-                  <span className="shrink-0 text-[9px] text-slate-400">
-                    {alert.time}
-                  </span>
-                </div>
-
-                <p className="mt-1 text-[9px] text-slate-500">
-                  {alert.description}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// TRAINING OVERVIEW
-// ============================================================
-
-function TrainingOverview() {
-  const stats = [
-    {
-      label: "Active Training Programs",
-      value: "42",
-      change: "+14.8%",
-      icon: BookOpen,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      label: "Training Completions (MTD)",
-      value: "1,284",
-      change: "+18.7%",
-      icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-    {
-      label: "Avg. Training Rating",
-      value: "4.6 / 5",
-      change: "+6.3%",
-      icon: Activity,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-    },
-    {
-      label: "Learning Hours (MTD)",
-      value: "5,724",
-      change: "+22.4%",
-      icon: FileClock,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-  ];
-
-  return (
-    <SectionCard title="Training & Learning Overview">
-      <div className="grid grid-cols-2 gap-3">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-
-          return (
-            <div
-              key={stat.label}
-              className="rounded-xl border border-slate-100 p-3"
-            >
-              <div
-                className={`flex h-7 w-7 items-center justify-center rounded-lg ${stat.bg}`}
-              >
-                <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
-              </div>
-
-              <p className="mt-2 text-[9px] text-slate-500">{stat.label}</p>
-
-              <p className="mt-1 text-lg font-bold text-slate-900">
-                {stat.value}
-              </p>
-
-              <p className="mt-1 text-[9px] font-semibold text-emerald-600">
-                ↑ {stat.change}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="mt-5 flex items-center gap-1 text-xs font-semibold text-purple-600">
-        View Training Analytics
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// SYSTEM ACTIVITY
-// ============================================================
-
-function SystemActivity() {
-  return (
-    <SectionCard title="System Activity (MTD)">
-      <div className="space-y-0">
-        {[
-          ["User Logins", "13,284", "+16.4%"],
-          ["Profile Updates", "2,451", "+10.2%"],
-          ["Assessments Conducted", "1,842", "+12.1%"],
-          ["Training Enrollments", "2,108", "+18.3%"],
-          ["Certificates Issued", "842", "+9.7%"],
-        ].map(([activity, count, change]) => (
-          <div
-            key={activity}
-            className="grid grid-cols-[1fr_80px_65px] items-center border-b border-slate-100 py-3 last:border-0"
-          >
-            <span className="text-[10px] text-slate-600">{activity}</span>
-
-            <span className="text-right text-[11px] font-bold text-slate-800">
-              {count}
-            </span>
-
-            <span className="text-right text-[9px] font-semibold text-emerald-600">
-              ↑ {change.replace("+", "")}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <button className="mt-4 flex items-center gap-1 text-xs font-semibold text-purple-600">
-        View Activity Logs
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// DATABASE BACKUP
-// ============================================================
-
-function DatabaseBackup() {
-  const items = [
-    ["Database Status", "Operational", "text-emerald-600", Database],
-    ["Last Backup", "Today, 02:00 AM", "text-emerald-600", RefreshCw],
-    ["Backup Status", "Successful", "text-emerald-600", ShieldCheck],
-    ["Next Backup", "Tomorrow, 02:00 AM", "text-slate-700", HardDrive],
-  ];
-
-  return (
-    <SectionCard title="Database & Backup Status">
-      <div className="space-y-2">
-        {items.map(([name, value, color, Icon]) => {
-          const IconComponent = Icon as React.ElementType;
-
-          return (
-            <div
-              key={name as string}
-              className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-3"
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50">
-                  <IconComponent className="h-3.5 w-3.5 text-purple-600" />
-                </div>
-
-                <span className="text-[10px] text-slate-600">
-                  {name as string}
-                </span>
-              </div>
-
-              <span
-                className={`text-[9px] font-semibold ${
-                  color as string
-                }`}
-              >
-                {value as string}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="mt-4 flex items-center gap-1 text-xs font-semibold text-purple-600">
-        Backup Management
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// RECENT ACTIVITIES
-// ============================================================
-
-function RecentActivities() {
-  return (
-    <SectionCard
-      title="Recent System Activities"
-      action={
-        <button className="text-[10px] font-semibold text-purple-600">
-          View All
-        </button>
-      }
-    >
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[650px]">
-          <thead>
-            <tr className="border-b border-slate-100 text-left">
-              <th className="pb-3 text-[9px] font-semibold text-slate-400">
-                TIME
-              </th>
-              <th className="pb-3 text-[9px] font-semibold text-slate-400">
-                USER
-              </th>
-              <th className="pb-3 text-[9px] font-semibold text-slate-400">
-                ACTION
-              </th>
-              <th className="pb-3 text-[9px] font-semibold text-slate-400">
-                MODULE
-              </th>
-              <th className="pb-3 text-right text-[9px] font-semibold text-slate-400">
-                STATUS
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {activities.map((activity) => (
-              <tr
-                key={`${activity.time}-${activity.user}`}
-                className="border-b border-slate-50 last:border-0"
-              >
-                <td className="py-3 text-[9px] text-slate-500">
-                  <div>{activity.time}</div>
-                  <div className="text-[8px] text-slate-400">
-                    {activity.date}
-                  </div>
-                </td>
-
-                <td className="py-3 text-[10px] font-semibold text-slate-700">
-                  {activity.user}
-                </td>
-
-                <td className="py-3 text-[10px] text-slate-600">
-                  {activity.action}
-                </td>
-
-                <td className="py-3 text-[9px] font-medium text-slate-500">
-                  {activity.module}
-                </td>
-
-                <td className="py-3 text-right">
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-semibold text-emerald-600">
-                    Success
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// QUICK ACTIONS
-// ============================================================
-
-function QuickActions() {
-  const actions = [
-    ["Add New User", Users],
-    ["Create New Role", UserRoundCog],
-    ["System Settings", Settings],
-    ["Backup Now", Database],
-    ["Clear Cache", RefreshCw],
-    ["View Audit Logs", FileClock],
-  ];
-
-  return (
-    <SectionCard title="Quick System Actions">
-      <div className="grid grid-cols-3 gap-3">
-        {actions.map(([label, Icon]) => {
-          const IconComponent = Icon as React.ElementType;
-
-          return (
-            <button
-              key={label as string}
-              className="flex min-h-[110px] flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-3 transition hover:border-purple-200 hover:bg-purple-50"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-50">
-                <IconComponent className="h-5 w-5 text-purple-600" />
-              </div>
-
-              <span className="mt-3 text-center text-[10px] font-semibold text-slate-700">
-                {label as string}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </SectionCard>
-  );
-}
-
-
-// ============================================================
-// SIDEBAR
-// ============================================================
-
-function Sidebar({
-  mobileOpen,
-  setMobileOpen,
-}: {
-  mobileOpen: boolean;
-  setMobileOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  const menu = [
-    [LayoutDashboard, "Dashboard"],
-    [Users, "User Management"],
-    [UserRoundCog, "Role Management"],
-    [ClipboardList, "Permission Matrix"],
-    [Settings, "System Settings"],
-    [Shield, "Security Center"],
-    [FileClock, "Audit Logs"],
-    [Network, "Integrations"],
-    [Gauge, "System Health"],
-    [Cloud, "Backup & Restore"],
-    [FileBarChart, "Reports & Analytics"],
-    [Bell, "Notification Settings"],
-  ];
-
-  return (
-    <>
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:static lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {/* Logo */}
-        <div className="flex h-[68px] items-center border-b border-slate-100 px-7">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 shadow-lg shadow-purple-200">
-              <span className="text-lg font-bold text-white">✧</span>
-            </div>
-
-            <span className="text-xl font-bold tracking-tight text-slate-900">
-              OKIP
-            </span>
-          </div>
-
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="ml-auto rounded-lg p-1 text-slate-400 lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <div className="space-y-1">
-            {menu.map(([Icon, label], index) => {
-              const IconComponent = Icon as React.ElementType;
-
-              return (
-                <button
-                  key={label as string}
-                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-[12px] font-medium transition ${
-                    index === 0
-                      ? "bg-purple-50 text-purple-600"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-purple-600"
-                  }`}
-                >
-                  <IconComponent className="h-[17px] w-[17px]" />
-                  <span>{label as string}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Bottom */}
-        <div className="border-t border-slate-100 p-4">
-          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-[12px] font-medium text-slate-600 hover:bg-slate-50">
-            <Settings className="h-[17px] w-[17px]" />
-            Settings
-          </button>
-
-          <button className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-[12px] font-medium text-slate-600 hover:bg-slate-50">
-            <LogOut className="h-[17px] w-[17px]" />
-            Logout
-          </button>
-
-          <button className="mt-4 flex w-full items-center gap-2 px-4 text-[10px] text-slate-400">
-            <ChevronRight className="h-3.5 w-3.5 rotate-180" />
-            Collapse Sidebar
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-
-// ============================================================
-// HEADER
-// ============================================================
-
-function Header({
-  setMobileOpen,
-}: {
-  setMobileOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  const { email, logout } = useAuth();
-
-  const [darkMode, setDarkMode] = React.useState(false);
-
-  return (
-    <header className="flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-5 lg:px-7">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="rounded-lg p-2 text-slate-500 lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-
-        <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
-          <span>Dashboard</span>
-          <span>/</span>
-          <span className="font-semibold text-slate-900">Overview</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="hidden h-10 w-[220px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 md:flex">
-          <Search className="h-4 w-4 text-slate-400" />
-
-          <input
-            className="w-full bg-transparent text-xs outline-none placeholder:text-slate-400"
-            placeholder="Search users, skills, reports..."
-          />
-        </div>
-
-        {/* Notification */}
-        <button className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-50">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
-        </button>
-
-        {/* Theme */}
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="rounded-xl p-2 text-slate-500 hover:bg-slate-50"
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </button>
-
-        {/* Profile */}
-        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100">
-            <CircleUserRound className="h-5 w-5 text-purple-600" />
-          </div>
-
-          <div className="hidden sm:block">
-            <p className="text-[11px] font-bold text-slate-800">
-              Daniel Morgan
-            </p>
-
-            <p className="text-[9px] text-slate-500">
-              System Administrator
-            </p>
-          </div>
-
-          <button
-            onClick={logout}
-            title={`Logout ${email ?? ""}`}
-            className="ml-1 rounded-lg p-1 text-slate-400 hover:bg-slate-50"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-
-// ============================================================
-// MAIN ADMIN DASHBOARD
-// ============================================================
-
-export const AdminDashboard: React.FC = () => {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-
-  return (
-    <div className="min-h-screen bg-[#f8f9fc] font-sans text-slate-900">
-      <div className="flex min-h-screen">
-        <Sidebar
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
-        />
-
-        <div className="min-w-0 flex-1">
-          <Header setMobileOpen={setMobileOpen} />
-
-          <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-            {/* ================================================== */}
-            {/* PAGE TITLE */}
-            {/* ================================================== */}
-
-            <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-purple-600">
-                    Admin Dashboard
-                  </span>
-
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-600">
-                    System Healthy
-                  </span>
-                </div>
-
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                  System Administration Dashboard
-                </h1>
-
-                <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">
-                  Monitor system health, manage users, roles, and security
-                  while ensuring optimal platform performance.
-                </p>
-              </div>
-
-              {/* Top actions */}
-              <div className="flex flex-wrap gap-2">
-                <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-semibold text-slate-700 shadow-sm hover:border-purple-200 hover:text-purple-600">
-                  <Users className="h-4 w-4" />
-                  User Management
-                </button>
-
-                <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-semibold text-slate-700 shadow-sm hover:border-purple-200 hover:text-purple-600">
-                  <UserRoundCog className="h-4 w-4" />
-                  Role Management
-                </button>
-
-                <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-semibold text-slate-700 shadow-sm hover:border-purple-200 hover:text-purple-600">
-                  <Settings className="h-4 w-4" />
-                  System Settings
-                </button>
-
-                <button className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-purple-200 hover:bg-purple-700">
-                  <FileBarChart className="h-4 w-4" />
-                  Generate System Report
-                </button>
-              </div>
-            </div>
-
-            {/* ================================================== */}
-            {/* KPI ROW */}
-            {/* ================================================== */}
-
-            <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {kpis.map((kpi) => (
-                <KPI key={kpi.title} {...kpi} />
-              ))}
-            </div>
-
-            {/* ================================================== */}
-            {/* FIRST ROW */}
-            {/* ================================================== */}
-
-            <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
-              <SystemHealth />
-
-              <SystemPerformance />
-
-              <SecurityStatus />
-            </div>
-
-            {/* ================================================== */}
-            {/* SECOND ROW */}
-            {/* ================================================== */}
-
-            <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
-              <UserManagementSummary />
-
-              <RoleDistribution />
-
-              <RecentSecurityAlerts />
-            </div>
-
-            {/* ================================================== */}
-            {/* THIRD ROW */}
-            {/* ================================================== */}
-
-            <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
-              <TrainingOverview />
-
-              <SystemActivity />
-
-              <DatabaseBackup />
-            </div>
-
-            {/* ================================================== */}
-            {/* FOURTH ROW */}
-            {/* ================================================== */}
-
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
-              <RecentActivities />
-
-              <QuickActions />
-            </div>
-
-            {/* Footer */}
-            <div className="py-6 text-center">
-              <p className="text-[10px] text-slate-400">
-                OKIP • Organizational Knowledge Gap Intelligence Platform
-              </p>
-            </div>
-          </main>
-        </div>
-      </div>
-    </div>
-  );
+const NAV = [
+  ["dashboard", "Dashboard", LayoutDashboard],
+  ["users", "User Management", Users],
+  ["roles", "Role Management", UserCog],
+  ["permissions", "Permission Matrix", KeyRound],
+  ["system-settings", "System Settings", Settings],
+  ["security", "Security Center", ShieldCheck],
+  ["audit-logs", "Audit Logs", FileClock],
+  ["integrations", "Integrations", Network],
+  ["system-health", "System Health", Gauge],
+  ["backup", "Backup & Restore", HardDrive],
+  ["reports", "Reports & Analytics", BarChart3],
+  ["notifications", "Notification Settings", Bell],
+] as const;
+
+type PageKey = typeof NAV[number][0];
+
+type AnyMap = Record<string, any>;
+
+const api = {
+  dashboard: () => API.get<AnyMap>("/admin/dashboard").then(r => r.data),
+  users: () => API.get<AnyMap[]>("/admin/users").then(r => r.data),
+  roles: () => API.get<AnyMap[]>("/admin/roles").then(r => r.data),
+  departments: () => API.get<AnyMap[]>("/admin/departments").then(r => r.data),
+  skills: () => API.get<AnyMap[]>("/admin/skills").then(r => r.data),
+  jobRoles: () => API.get<AnyMap[]>("/admin/job-roles").then(r => r.data),
+  trainings: () => API.get<AnyMap[]>("/admin/trainings").then(r => r.data),
+  gaps: () => API.get<AnyMap[]>("/admin/gaps").then(r => r.data),
+  assessments: () => API.get<AnyMap[]>("/admin/assessments").then(r => r.data),
+  mentorships: () => API.get<AnyMap[]>("/admin/mentorships").then(r => r.data),
+  health: () => API.get<AnyMap>("/admin/system/health").then(r => r.data),
+  configuration: () => API.get<AnyMap>("/admin/system/configuration").then(r => r.data),
 };
 
+function fmt(value: any) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "number") return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return String(value).replaceAll("ROLE_", "").replaceAll("_", " ");
+}
 
-// Default export
+function pct(value: any) { return `${Number(value || 0).toFixed(1)}%`; }
+
+function useAdminData<T>(loader: () => Promise<T>, enabled = true) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
+    if (!enabled) return;
+    setLoading(true); setError("");
+    try { setData(await loader()); }
+    catch (e: any) { setError(e?.response?.data?.message || e?.message || "Unable to load data from the backend."); }
+    finally { setLoading(false); }
+  }, [loader, enabled]);
+  useEffect(() => { void load(); }, [load]);
+  return { data, loading, error, reload: load };
+}
+
+function Loading() { return <div className="adm-state"><RefreshCw className="spin" size={20}/> Loading live data…</div>; }
+function ErrorBox({ message, retry }: { message: string; retry?: () => void }) { return <div className="adm-error"><AlertTriangle size={18}/><div><strong>Backend request failed</strong><div>{message}</div>{retry && <button onClick={retry}>Retry</button>}</div></div>; }
+function Empty({ text = "No records are available in the database." }) { return <div className="adm-empty"><Database size={22}/><span>{text}</span></div>; }
+
+function Table({ columns, rows }: { columns: { key: string; label: string }[]; rows: AnyMap[] }) {
+  if (!rows.length) return <Empty />;
+  return <div className="table-wrap"><table><thead><tr>{columns.map(c => <th key={c.key}>{c.label}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={r.id ?? r.employeeId ?? r.roleId ?? r.skillId ?? r.jobRoleId ?? r.trainingId ?? r.attemptId ?? i}>{columns.map(c => <td key={c.key}>{fmt(r[c.key])}</td>)}</tr>)}</tbody></table></div>;
+}
+
+function BarList({ items, valueKey = "count", labelKey = "name" }: { items: AnyMap[]; valueKey?: string; labelKey?: string }) {
+  const max = Math.max(...items.map(x => Number(x[valueKey] || 0)), 1);
+  if (!items.length) return <Empty />;
+  return <div className="bars">{items.map((x, i) => <div className="bar-row" key={`${x[labelKey]}-${i}`}><div className="bar-label"><span>{fmt(x[labelKey])}</span><b>{fmt(x[valueKey])}</b></div><div className="bar-track"><div className="bar-fill" style={{ width: `${Math.max(2, Number(x[valueKey] || 0) / max * 100)}%` }}/></div></div>)}</div>;
+}
+
+function Stat({ title, value, icon: Icon }: { title: string; value: any; icon: React.ElementType }) {
+  return <div className="stat"><div className="stat-icon"><Icon size={19}/></div><div><div className="stat-title">{title}</div><div className="stat-value">{fmt(value)}</div></div></div>;
+}
+
+function Modal({ title, children, close }: { title: string; children: React.ReactNode; close: () => void }) {
+  return <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>{title}</h3><button onClick={close}><X size={18}/></button></div>{children}</div></div>;
+}
+
+const AdminDashboard: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, email } = useAuth();
+  const key = (location.pathname.split("/")[2] || "dashboard") as PageKey;
+  const page: PageKey = NAV.some(n => n[0] === key) ? key : "dashboard";
+  const [dark, setDark] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const go = (p: PageKey) => navigate(p === "dashboard" ? "/admin" : `/admin/${p}`);
+
+  return <div className={`admin-app ${dark ? "dark" : ""}`}>
+    <style>{CSS}</style>
+    <aside className="sidebar">
+      <div className="brand"><div className="brand-icon">✦</div><strong>OKIP</strong></div>
+      <nav>{NAV.map(([id, label, Icon]) => <button key={id} className={page === id ? "nav active" : "nav"} onClick={() => go(id)}><Icon size={18}/><span>{label}</span></button>)}</nav>
+      <div className="side-bottom"><button className="nav" onClick={() => go("system-settings")}><Settings size={18}/><span>Settings</span></button><button className="nav" onClick={logout}><LogOut size={18}/><span>Logout</span></button></div>
+    </aside>
+    <main className="main">
+      <header className="header"><div className="crumb">Dashboard <ChevronRight size={13}/> <b>{NAV.find(n => n[0] === page)?.[1]}</b></div><div className="header-actions"><div className="search"><Search size={16}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users, skills, reports…"/></div><button className="icon-btn"><Bell size={18}/></button><button className="icon-btn" onClick={() => setDark(v => !v)}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button><div className="profile"><div className="avatar"><Shield size={17}/></div><div><b>System Administrator</b><small>{email || "Authenticated administrator"}</small></div></div></div></header>
+      <div className="content">{page === "dashboard" && <DashboardPage go={go}/>} {page === "users" && <UsersPage search={search}/>} {page === "roles" && <RolesPage/>} {page === "permissions" && <PermissionsPage/>} {page === "system-settings" && <ConfigPage/>} {page === "security" && <SecurityPage/>} {page === "audit-logs" && <AuditPage/>} {page === "integrations" && <IntegrationsPage/>} {page === "system-health" && <HealthPage/>} {page === "backup" && <BackupPage/>} {page === "reports" && <ReportsPage/>} {page === "notifications" && <NotificationsPage/>}</div>
+    </main>
+  </div>;
+};
+
+function PageHead({ title, description, refresh }: { title: string; description: string; refresh?: () => void }) {
+  return <div className="page-head"><div><div className="eyebrow">ADMINISTRATION</div><h1>{title}</h1><p>{description}</p></div>{refresh && <button className="primary" onClick={refresh}><RefreshCw size={16}/> Refresh</button>}</div>;
+}
+
+function DashboardPage({ go }: { go: (p: PageKey) => void }) {
+  const loader = useCallback(() => api.dashboard(), []); const q = useAdminData(loader);
+  const d = q.data || {};
+  return <>
+    <PageHead title="System Administration Dashboard" description="Live platform, access, security and operational information from the backend." refresh={q.reload}/>
+    {q.loading ? <Loading/> : q.error ? <ErrorBox message={q.error} retry={q.reload}/> : <>
+      <div className="stats-grid"><Stat title="Total Users" value={d.totalUsers} icon={Users}/><Stat title="Active Users" value={d.activeUsers} icon={CheckCircle2}/><Stat title="Pending Users" value={d.pendingUsers} icon={AlertTriangle}/><Stat title="Roles" value={d.roles?.length} icon={UserCog}/><Stat title="Skills" value={d.skills} icon={Boxes}/><Stat title="Certifications" value={d.certifications} icon={FileText}/></div>
+      <div className="grid-2"><section className="card"><CardTitle title="User Distribution by Role" action="Manage Roles" onClick={() => go("roles")}/><BarList items={d.roles || []}/></section><section className="card"><CardTitle title="Users by Department" action="View Users" onClick={() => go("users")}/><BarList items={d.departments || []}/></section></div>
+      <div className="grid-3"><section className="card"><CardTitle title="Training Status"/><BarList items={d.trainingStatuses || []}/></section><section className="card"><CardTitle title="Assessment Attempts"/><BarList items={d.assessmentTypes || []}/></section><section className="card"><CardTitle title="Organization Data"><div className="mini-stats"><span><b>{fmt(d.jobRoles)}</b> job roles</span><span><b>{fmt(d.trainings)}</b> trainings</span><span><b>{fmt(d.activeMentorships)}</b> active mentorships</span></div></CardTitle><div className="callout"><Activity size={18}/><div><b>Live database snapshot</b><p>All displayed values are calculated from current application records.</p></div></div></section></div>
+    </>}
+  </>;
+}
+function CardTitle({ title, action, onClick, children }: { title: string; action?: string; onClick?: () => void; children?: React.ReactNode }) { return <div className="card-title"><h2>{title}</h2>{action && <button onClick={onClick}>{action}<ChevronRight size={14}/></button>}{children}</div>; }
+
+function UsersPage({ search }: { search: string }) {
+  const q = useAdminData(useCallback(() => api.users(), [])); const roles = useAdminData(useCallback(() => api.roles(), [])); const depts = useAdminData(useCallback(() => api.departments(), []));
+  const [modal, setModal] = useState(false); const [selected, setSelected] = useState<AnyMap | null>(null); const [status, setStatus] = useState(""); const [role, setRole] = useState(""); const [message, setMessage] = useState("");
+  const users = useMemo(() => (q.data || []).filter(u => `${u.name} ${u.email} ${u.employeeCode} ${u.department} ${u.role}`.toLowerCase().includes(search.toLowerCase())), [q.data, search]);
+  const updateStatus = async (u: AnyMap, s: string) => { setMessage(""); try { await API.put(`/admin/users/${u.employeeId}/status`, null, { params: { status: s } }); await q.reload(); } catch (e:any) { setMessage(e?.response?.data?.message || "Status update failed."); } };
+  const updateRole = async () => { if (!selected || !role) return; try { await API.put(`/admin/users/${selected.employeeId}/role/${role}`); setModal(false); await q.reload(); } catch (e:any) { setMessage(e?.response?.data?.message || "Role update failed."); } };
+  return <><PageHead title="User Management" description="Manage real employee accounts, status and role assignments stored in the database." refresh={q.reload}/>{message && <div className="notice">{message}</div>}{q.loading ? <Loading/> : q.error ? <ErrorBox message={q.error} retry={q.reload}/> : <section className="card"><div className="toolbar"><span>{users.length} matching records</span><button className="primary" onClick={() => {setSelected(null);setModal(true)}}><Plus size={16}/> Create User</button></div><Table columns={[{key:"employeeCode",label:"Code"},{key:"name",label:"Name"},{key:"email",label:"Email"},{key:"department",label:"Department"},{key:"role",label:"Role"},{key:"status",label:"Status"},{key:"createdAt",label:"Created"}]} rows={users}/><div className="actions-row">{users.slice(0, 20).map(u => <div className="action-chip" key={u.employeeId}><span>{u.name}</span><select value={u.status || ""} onChange={e => updateStatus(u,e.target.value)}><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option><option value="REJECTED">REJECTED</option></select><button onClick={() => {setSelected(u);setRole(String(u.roleId || ""));setModal(true)}} title="Change role"><Edit3 size={14}/></button></div>)}</div></section>}{modal && selected && <Modal title={`Change role — ${selected.name}`} close={() => setModal(false)}><select className="field" value={role} onChange={e => setRole(e.target.value)}>{(roles.data || []).map(r => <option key={r.roleId} value={r.roleId}>{fmt(r.roleName)}</option>)}</select><button className="primary full" onClick={updateRole}><Save size={16}/> Save role</button></Modal>}{modal && !selected && <CreateUserModal departments={depts.data || []} roles={roles.data || []} close={() => setModal(false)} after={q.reload}/>}</>;
+}
+
+function CreateUserModal({ departments, roles, close, after }: { departments: AnyMap[]; roles: AnyMap[]; close: () => void; after: () => Promise<any> }) {
+  const [form,setForm]=useState({firstName:"",lastName:"",officialEmail:"",password:"",departmentId:"",role:""}); const [error,setError]=useState("");
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setError("");try{await API.post("/admin/users",{...form,departmentId:Number(form.departmentId)});await after();close();}catch(x:any){setError(x?.response?.data?.message||"User creation failed.")}};
+  return <Modal title="Create organization user" close={close}><form onSubmit={submit} className="form-grid">{(["firstName","lastName","officialEmail","password"] as const).map(k=><input key={k} className="field" required type={k==="password"?"password":"text"} placeholder={k} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>)}<select className="field" required value={form.departmentId} onChange={e=>setForm({...form,departmentId:e.target.value})}><option value="">Select department</option>{departments.map(d=><option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>)}</select><select className="field" required value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option value="">Select role</option>{roles.map(r=><option key={r.roleId} value={r.roleName}>{fmt(r.roleName)}</option>)}</select>{error&&<div className="form-error">{error}</div>}<button className="primary full" type="submit"><Save size={16}/> Create user</button></form></Modal>;
+}
+
+function RolesPage(){const q=useAdminData(useCallback(()=>api.roles(),[]));return <><PageHead title="Role Management" description="Live roles and the number of database users assigned to each role." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<section className="card"><Table columns={[{key:"roleName",label:"Role"},{key:"description",label:"Description"},{key:"userCount",label:"Users"},{key:"createdAt",label:"Created"}]} rows={q.data||[]}/></section>}</>}
+function PermissionsPage(){return <><PageHead title="Permission Matrix" description="Role-based access is enforced by Spring Security in the current backend."/><section className="card"><div className="permission-grid">{["ADMIN","HR","MANAGER","EMPLOYEE","MENTOR"].map(r=><div key={r} className="permission-card"><Shield size={18}/><h3>{r}</h3><p>Backend authorization role</p><span className="secure">Protected</span></div>)}</div><div className="callout"><LockKeyhole size={18}/><div><b>Access control is backend enforced</b><p>Admin endpoints require an authenticated ADMIN role; the frontend does not grant permissions by itself.</p></div></div></section></>}
+function ConfigPage(){const q=useAdminData(useCallback(()=>api.configuration(),[]));return <><PageHead title="System Settings" description="Runtime configuration read directly from Spring Boot environment properties." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<section className="card"><Table columns={[{key:"key",label:"Setting"},{key:"value",label:"Current value"}]} rows={Object.entries(q.data||{}).map(([key,value])=>({key,value}))}/></section>}</>}
+function SecurityPage(){const q=useAdminData(useCallback(()=>api.health(),[]));return <><PageHead title="Security Center" description="Current authentication and platform security indicators exposed by the backend." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<div className="grid-3"><section className="card security"><ShieldCheck size={28}/><h2>JWT Authentication</h2><p>Configured: {fmt(q.data?.jwtConfigured ?? "Not exposed")}</p><span className="secure">Backend protected</span></section><section className="card security"><LockKeyhole size={28}/><h2>Role Access</h2><p>ADMIN endpoints require ADMIN authority.</p><span className="secure">Enforced</span></section><section className="card security"><Database size={28}/><h2>Database</h2><p>{fmt(q.data?.database)}</p><span className={q.data?.databaseConnected?"secure":"danger"}>{q.data?.databaseConnected?"Connected":"Disconnected"}</span></section></div>}</>}
+function AuditPage(){const q=useAdminData(useCallback(()=>api.users(),[]));const rows=(q.data||[]).flatMap(u=>[{time:u.updatedAt||u.createdAt,user:u.name,action:"Account record changed",module:"User Management"}]).sort((a,b)=>String(b.time).localeCompare(String(a.time)));return <><PageHead title="Audit Logs" description="Account lifecycle timestamps available from persisted employee records." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<section className="card"><div className="callout"><FileClock size={18}/><div><b>Audit-log limitation</b><p>The current backend does not contain a dedicated audit_log table. This view therefore shows persisted employee create/update timestamps only; it does not invent security events.</p></div></div><Table columns={[{key:"time",label:"Time"},{key:"user",label:"User"},{key:"action",label:"Event"},{key:"module",label:"Module"}]} rows={rows}/></section>}</>}
+function IntegrationsPage(){const q=useAdminData(useCallback(()=>api.configuration(),[]));return <><PageHead title="Integrations" description="Integration configuration detected from the running backend." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<section className="card integration-grid"><Integration name="PostgreSQL" icon={Database} state={q.data?.databaseUrl?"Configured":"Not configured"}/><Integration name="Gemini / Spring AI" icon={Cloud} state={q.data?.geminiConfigured?"Configured":"Not configured"}/><Integration name="JWT" icon={KeyRound} state={q.data?.jwtConfigured?"Configured":"Not configured"}/></section>}</>}
+function Integration({name,icon:Icon,state}:{name:string;icon:React.ElementType;state:string}){return <div className="integration"><Icon size={22}/><div><b>{name}</b><small>{state}</small></div><span className={state==="Configured"?"secure":"muted"}>{state}</span></div>}
+function HealthPage(){const q=useAdminData(useCallback(()=>api.health(),[]));return <><PageHead title="System Health" description="Measured runtime and database health from the Spring Boot process." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<div className="stats-grid"><Stat title="Database" value={q.data?.databaseConnected?"Connected":"Disconnected"} icon={Database}/><Stat title="Response Time" value={`${fmt(q.data?.responseTimeMs)} ms`} icon={Activity}/><Stat title="Memory Used" value={`${fmt(q.data?.memoryUsedMb)} MB`} icon={Server}/><Stat title="Memory Usage" value={pct(q.data?.memoryUsagePercent)} icon={Gauge}/><Stat title="Processors" value={q.data?.processors} icon={Boxes}/><Stat title="Uptime" value={`${fmt(q.data?.uptimeSeconds)} s`} icon={Activity}/></div>}</>}
+function BackupPage(){const [data,setData]=useState<any>(null);const [error,setError]=useState("");const run=async()=>{try{const [u,s,j,t,g,a,m]=await Promise.all([api.users(),api.skills(),api.jobRoles(),api.trainings(),api.gaps(),api.assessments(),api.mentorships()]);setData({generatedAt:new Date().toISOString(),users:u,skills:s,jobRoles:j,trainings:t,gaps:g,assessments:a,mentorships:m});setError("")}catch(e:any){setError(e?.response?.data?.message||"Snapshot failed.")}};return <><PageHead title="Backup & Restore" description="Create a downloadable JSON snapshot of current application records." refresh={run}/><section className="card"><div className="callout"><HardDrive size={18}/><div><b>Application-data snapshot</b><p>This exports records available through the authenticated admin APIs. It is not a physical PostgreSQL backup.</p></div></div><button className="primary" onClick={run}><Download size={16}/> Generate snapshot</button>{error&&<div className="form-error">{error}</div>}{data&&<div className="backup-result"><CheckCircle2 size={20}/><span>Snapshot ready — {data.users.length} users, {data.skills.length} skills, {data.jobRoles.length} job roles, {data.trainings.length} trainings.</span><button onClick={()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`okgip-admin-snapshot-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)}}><FileDown size={16}/> Download JSON</button></div>}</section></>}
+function ReportsPage(){const [type,setType]=useState("users");const loaders:any={users:api.users,skills:api.skills,gaps:api.gaps,trainings:api.trainings,assessments:api.assessments};const q=useAdminData(useCallback(loaders[type],[type]));const rows=q.data||[];const download=()=>{const csv=rows.length?Object.keys(rows[0]).map(k=>`"${k}"`).join(",")+"\n"+rows.map(r=>Object.keys(rows[0]).map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(",")).join("\n"):"";const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`okgip-${type}-report.csv`;a.click()};return <><PageHead title="Reports & Analytics" description="Export live organization records as CSV reports." refresh={q.reload}/><section className="card"><div className="toolbar"><select className="field compact" value={type} onChange={e=>setType(e.target.value)}><option value="users">Users</option><option value="skills">Skills</option><option value="gaps">Knowledge Gaps</option><option value="trainings">Training</option><option value="assessments">Assessments</option></select><button className="primary" onClick={download} disabled={!rows.length}><FileDown size={16}/> Export CSV</button></div>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<Table columns={(rows[0]?Object.keys(rows[0]):[]).slice(0,8).map(k=>({key:k,label:k}))} rows={rows.slice(0,100)}/>}</section></>}
+function NotificationsPage(){return <><PageHead title="Notification Settings" description="Notification providers available in the current backend configuration."/><section className="card"><div className="integration-grid"><Integration name="Email / JavaMailSender" icon={Bell} state="Not configured in current backend"/><Integration name="Firebase Cloud Messaging" icon={Bell} state="Not configured in current backend"/><Integration name="Twilio SMS" icon={Bell} state="Not configured in current backend"/></div><div className="callout"><CircleHelp size={18}/><div><b>No fake notification status</b><p>The current source does not expose provider configuration for these channels, so the page reports that honestly instead of displaying invented delivery metrics.</p></div></div></section></>}
+
+const CSS = `
+*{box-sizing:border-box}.admin-app{min-height:100vh;background:#f7f8fc;color:#0f172a;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex}.admin-app.dark{background:#111827;color:#e5e7eb}.sidebar{width:252px;min-width:252px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;min-height:100vh}.dark .sidebar,.dark .header,.dark .card{background:#18202f;color:#e5e7eb;border-color:#334155}.brand{height:76px;display:flex;align-items:center;gap:12px;padding:0 28px;border-bottom:1px solid #eef2f7;font-size:22px}.brand-icon{width:40px;height:40px;border-radius:13px;background:#7c3aed;color:#fff;display:grid;place-items:center;font-size:22px}.sidebar nav{padding:18px 12px;flex:1}.nav{width:100%;height:43px;border:0;background:transparent;border-radius:11px;display:flex;align-items:center;gap:13px;padding:0 15px;color:#475569;font-size:13px;cursor:pointer;margin-bottom:5px;text-align:left}.nav:hover{background:#f5f3ff;color:#6d28d9}.nav.active{background:#f0e9ff;color:#6d28d9;font-weight:700}.side-bottom{border-top:1px solid #eef2f7;padding:14px 12px}.main{flex:1;min-width:0}.header{height:76px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 30px;gap:20px}.crumb{display:flex;align-items:center;gap:7px;color:#64748b;font-size:13px}.header-actions{display:flex;align-items:center;gap:9px}.search{width:250px;height:40px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:11px;display:flex;align-items:center;gap:8px;padding:0 11px;color:#94a3b8}.search input{border:0;outline:0;background:transparent;width:100%;font-size:12px}.icon-btn{border:0;background:transparent;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#64748b;cursor:pointer}.profile{border-left:1px solid #e2e8f0;padding-left:12px;display:flex;align-items:center;gap:9px}.avatar{width:37px;height:37px;border-radius:50%;background:#ede9fe;color:#7c3aed;display:grid;place-items:center}.profile b{display:block;font-size:11px}.profile small{display:block;color:#64748b;font-size:10px;margin-top:2px}.content{padding:28px 30px;max-width:1600px;margin:auto}.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:22px}.eyebrow{font-size:10px;font-weight:800;color:#7c3aed;letter-spacing:.08em}.page-head h1{font-size:29px;line-height:1.15;margin:6px 0 7px}.page-head p{margin:0;color:#64748b;font-size:13px}.dark .page-head p,.dark .crumb{color:#94a3b8}.primary{border:0;background:#7c3aed;color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:7px;cursor:pointer}.primary:disabled{opacity:.5;cursor:not-allowed}.full{width:100%;justify-content:center;margin-top:8px}.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:18px}.stat{background:#fff;border:1px solid #e5e7eb;border-radius:15px;padding:17px;display:flex;gap:12px;align-items:center;min-height:102px}.dark .stat{background:#18202f;border-color:#334155}.stat-icon{width:39px;height:39px;border-radius:12px;background:#f1eafe;color:#7c3aed;display:grid;place-items:center}.stat-title{font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700}.stat-value{font-size:22px;font-weight:800;margin-top:4px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(15,23,42,.03);min-width:0}.card-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:17px}.card-title h2{font-size:16px;margin:0}.card-title button{border:0;background:transparent;color:#7c3aed;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer}.bars{display:flex;flex-direction:column;gap:13px}.bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px}.bar-label span{color:#475569}.dark .bar-label span{color:#cbd5e1}.bar-track{height:8px;background:#edf0f5;border-radius:99px;overflow:hidden}.bar-fill{height:100%;background:#7c3aed;border-radius:99px}.mini-stats{display:flex;gap:8px;flex-wrap:wrap}.mini-stats span{font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e5e7eb;padding:8px 10px;border-radius:9px}.dark .mini-stats span{background:#111827;border-color:#334155}.callout{margin-top:15px;border:1px solid #e9d5ff;background:#faf5ff;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start;color:#6d28d9;font-size:12px}.callout p{margin:4px 0 0;color:#64748b;line-height:1.5}.table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:11px}.table-wrap table{width:100%;border-collapse:collapse;min-width:700px}.table-wrap th,.table-wrap td{padding:12px 13px;border-bottom:1px solid #edf0f3;text-align:left;font-size:11px;vertical-align:top}.table-wrap th{background:#f8fafc;color:#64748b;text-transform:uppercase;font-size:9px;letter-spacing:.04em}.dark .table-wrap th{background:#111827}.table-wrap tr:last-child td{border-bottom:0}.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;color:#64748b;font-size:11px}.actions-row{display:flex;flex-direction:column;gap:7px;margin-top:15px}.action-chip{display:flex;align-items:center;gap:8px;border:1px solid #edf0f3;border-radius:9px;padding:7px 9px;font-size:11px}.action-chip span{flex:1}.action-chip select,.field{border:1px solid #dbe1e8;border-radius:8px;background:#fff;padding:9px 10px;font-size:12px;outline:none}.field.compact{width:180px}.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:15px}.adm-state,.adm-empty{display:flex;justify-content:center;align-items:center;gap:9px;padding:45px;color:#64748b;font-size:12px}.adm-error{display:flex;gap:10px;padding:15px;border:1px solid #fecaca;background:#fff1f2;color:#991b1b;border-radius:12px;font-size:12px}.adm-error button{margin-top:8px;border:0;background:#991b1b;color:#fff;border-radius:7px;padding:6px 9px;font-size:11px}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);display:grid;place-items:center;z-index:50;padding:20px}.modal{background:#fff;border-radius:16px;width:min(500px,100%);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2)}.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.modal-head h3{margin:0;font-size:17px}.modal-head button{border:0;background:#f1f5f9;border-radius:8px;width:32px;height:32px;display:grid;place-items:center}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .field:nth-child(3),.form-grid .field:nth-child(4){grid-column:span 2}.form-error{grid-column:span 2;background:#fff1f2;color:#991b1b;padding:9px;border-radius:8px;font-size:11px}.security{text-align:center}.security svg{color:#7c3aed}.security h2{font-size:15px;margin:12px 0 5px}.security p{font-size:11px;color:#64748b;min-height:34px}.secure{display:inline-flex;padding:5px 8px;border-radius:99px;background:#ecfdf5;color:#047857;font-size:10px;font-weight:700}.danger{display:inline-flex;padding:5px 8px;border-radius:99px;background:#fff1f2;color:#be123c;font-size:10px;font-weight:700}.muted{display:inline-flex;padding:5px 8px;border-radius:99px;background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700}.permission-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.permission-card{border:1px solid #e5e7eb;border-radius:12px;padding:15px}.permission-card svg{color:#7c3aed}.permission-card h3{font-size:12px;margin:12px 0 4px}.permission-card p{font-size:10px;color:#64748b}.integration-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.integration{border:1px solid #e5e7eb;border-radius:12px;padding:15px;display:flex;align-items:center;gap:11px}.integration>svg{color:#7c3aed}.integration div{flex:1}.integration b{display:block;font-size:12px}.integration small{display:block;color:#64748b;font-size:10px;margin-top:3px}.backup-result{margin-top:15px;padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:10px;display:flex;gap:8px;align-items:center;font-size:11px}.backup-result span{flex:1}.backup-result button{border:0;background:#166534;color:#fff;border-radius:7px;padding:7px 9px;font-size:10px;display:flex;gap:5px;align-items:center}@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr)}.permission-grid{grid-template-columns:repeat(3,1fr)}.integration-grid{grid-template-columns:1fr 1fr}}@media(max-width:900px){.sidebar{width:70px;min-width:70px}.brand{padding:0 15px}.brand strong,.nav span{display:none}.nav{justify-content:center;padding:0}.content{padding:20px}.header{padding:0 18px}.crumb{display:none}.search{width:180px}.grid-2,.grid-3{grid-template-columns:1fr}.profile div:not(.avatar){display:none}}@media(max-width:620px){.stats-grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.form-grid .field:nth-child(3),.form-grid .field:nth-child(4),.form-error{grid-column:auto}.permission-grid,.integration-grid{grid-template-columns:1fr}.header-actions .icon-btn{display:none}}
+`;
+
 export default AdminDashboard;

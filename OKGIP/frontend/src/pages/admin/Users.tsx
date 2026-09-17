@@ -1,5 +1,6 @@
 import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
+import ComingSoonPage from "@/pages/shared/ComingSoonPage";
 
-const Users: React.FC = () => <WorkspacePage role="ADMIN" page="users" />;
+const Users: React.FC = () => <ComingSoonPage role="ADMIN" page="users" />;
 export default Users;
+

@@ -30,6 +30,8 @@ import analyticsService from "@/services/analyticsService";
 import aiService from "@/services/aiServices";
 import profileService from "@/services/profileService";
 import { getMySkills } from "@/services/skillService";
+import trainingProgressService, { TrainingProgress as EmployeeTrainingProgress } from "@/services/trainingProgressService";
+import mentorshipService, { MentorshipRequest, KnowledgeSession } from "@/services/mentorshipService";
 import { useAuth } from "@/context/AuthContext";
 
 import "@/styles/employee-dashboard.css";
@@ -142,13 +144,16 @@ const EmptyState = ({ text, action, to }: { text: string; action?: string; to?: 
 );
 
 const EmployeeDashboard: React.FC = () => {
-  const { logout, email } = useAuth();
+  const { logout, email, employeeId, profileLoading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [skills, setSkills] = useState<any[]>([]);
   const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisResponse | null>(null);
   const [proficiency, setProficiency] = useState<any>(null);
   const [learningPath, setLearningPath] = useState<any>(null);
   const [certifications, setCertifications] = useState<CertificationRow[]>([]);
+  const [trainingProgress, setTrainingProgress] = useState<EmployeeTrainingProgress[]>([]);
+  const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
+  const [mentorshipSessions, setMentorshipSessions] = useState<KnowledgeSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [sectionErrors, setSectionErrors] = useState<string[]>([]);
 
@@ -156,6 +161,11 @@ const EmployeeDashboard: React.FC = () => {
     let mounted = true;
 
     const loadDashboard = async () => {
+      if (profileLoading || employeeId === null) {
+        if (!profileLoading && employeeId === null) setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const errors: string[] = [];
 
@@ -164,13 +174,16 @@ const EmployeeDashboard: React.FC = () => {
         getMySkills(),
         gapAnalysisService.getMyGapAnalysis(),
         analyticsService.getMyProficiency(),
-        aiService.getMyLearningPath(),
+        aiService.getEmployeeRecommendations(employeeId),
         fetchCertifications(),
+        trainingProgressService.getMyProgress(),
+        mentorshipService.getRequests(),
+        mentorshipService.getSessions(),
       ]);
 
       if (!mounted) return;
 
-      const [profileResult, skillsResult, gapResult, proficiencyResult, learningResult, certificationResult] = results;
+      const [profileResult, skillsResult, gapResult, proficiencyResult, learningResult, certificationResult, trainingResult, mentorshipRequestsResult, mentorshipSessionsResult] = results;
 
       if (profileResult.status === "fulfilled") setProfile(profileResult.value);
       else errors.push("Profile");
@@ -190,13 +203,22 @@ const EmployeeDashboard: React.FC = () => {
       if (certificationResult.status === "fulfilled") setCertifications(certificationResult.value);
       else errors.push("Certifications");
 
+      if (trainingResult.status === "fulfilled") setTrainingProgress(trainingResult.value);
+      else errors.push("Training progress");
+
+      if (mentorshipRequestsResult.status === "fulfilled") setMentorshipRequests(mentorshipRequestsResult.value);
+      else errors.push("Mentorship requests");
+
+      if (mentorshipSessionsResult.status === "fulfilled") setMentorshipSessions(mentorshipSessionsResult.value);
+      else errors.push("Mentorship sessions");
+
       setSectionErrors(errors);
       setLoading(false);
     };
 
     void loadDashboard();
     return () => { mounted = false; };
-  }, []);
+  }, [employeeId, profileLoading]);
 
   const proficiencyRows = useMemo(
     () => extractRows(proficiency, ["skills", "proficiencies", "data", "items"]),
@@ -220,9 +242,20 @@ const EmployeeDashboard: React.FC = () => {
   );
 
   const learningItems = useMemo(
-    () => extractRows(learningPath, ["learningPaths", "paths", "recommendations", "steps", "data", "items"]),
+    () => extractRows(learningPath, ["learningPath", "learningPaths", "paths", "recommendations", "steps", "data", "items"]),
     [learningPath]
   );
+
+  const trainingStats = useMemo(() => {
+    const assigned = trainingProgress.length;
+    const completed = trainingProgress.filter((item) => item.status === "COMPLETED").length;
+    const inProgress = trainingProgress.filter((item) => item.status === "IN_PROGRESS").length;
+    const hours = trainingProgress.reduce((sum, item) => sum + Number(item.hoursSpent || 0), 0);
+    const averageProgress = assigned
+      ? trainingProgress.reduce((sum, item) => sum + Number(item.progressPercentage || 0), 0) / assigned
+      : 0;
+    return { assigned, completed, inProgress, hours, averageProgress };
+  }, [trainingProgress]);
 
   const displayName = profile?.employeeName || email?.split("@")[0]?.replace(/[._-]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) || "Employee";
   const initials = displayName.split(/\s+/).filter(Boolean).map((part: string) => part[0]).join("").slice(0, 2).toUpperCase();
@@ -275,7 +308,7 @@ const EmployeeDashboard: React.FC = () => {
             <StatCard title="Overall Proficiency" value={overallProficiency === null ? "—" : `${overallProficiency.toFixed(1)}%`} subtitle="From proficiency API" icon={Target} type="purple" />
             <StatCard title="Skills" value={skillCount} subtitle="From /api/skills" icon={BookOpen} type="green" />
             <StatCard title="Skill Gaps" value={gapCount === null ? "—" : gapCount} subtitle="Needs attention" icon={Activity} type="red" />
-            <StatCard title="Learning Hours" value="—" subtitle="Training API not connected" icon={GraduationCap} type="purple" />
+            <StatCard title="Learning Hours" value={`${trainingStats.hours.toFixed(1)}h`} subtitle={`${trainingStats.assigned} enrolled · ${trainingStats.completed} completed`} icon={GraduationCap} type="purple" />
             <StatCard title="Achievements" value="—" subtitle="Achievements API not connected" icon={Award} type="orange" />
           </div>
 
@@ -357,21 +390,33 @@ const EmployeeDashboard: React.FC = () => {
             </section>
 
             <section className="employee-card training-card">
-              <CardHeader title="Training Progress" subtitle="Training progress API is not connected yet" />
-              <EmptyState text="Training progress will appear here when the employee training/progress API is available." action="Open Training" to="/employee/training" />
+              <CardHeader title="Training Progress" subtitle="Live data from /api/employee/trainings/progress" />
+              {loading ? <LoadingText /> : trainingProgress.length === 0 ? (
+                <EmptyState text="You have not enrolled in any training yet." action="Browse Training" to="/employee/training" />
+              ) : (
+                <div className="dashboard-list">
+                  {trainingProgress.slice(0, 3).map((item) => (
+                    <div key={item.employeeTrainingId} className="dashboard-progress-row">
+                      <div className="dashboard-progress-heading"><strong>{item.trainingName}</strong><span>{Math.round(Number(item.progressPercentage || 0))}%</span></div>
+                      <div className="dashboard-progress-track"><div className="dashboard-progress-fill" style={{ width: `${Math.max(0, Math.min(100, Number(item.progressPercentage || 0)))}%` }} /></div>
+                      <small className="text-[10px] text-slate-500">{item.status.replaceAll("_", " ")} · {Number(item.hoursSpent || 0).toFixed(1)}h</small>
+                    </div>
+                  ))}
+                </div>
+              )}
               <CardFooter text="View All Training" to="/employee/training" />
             </section>
           </div>
 
           <div className="employee-three-column lower-grid">
-            <section className="employee-card"><CardHeader title="Recent Learning Activity" subtitle="Training progress API is not connected yet" /><EmptyState text="No live learning activity data is available yet." action="Open My Progress" to="/employee/progress" /><CardFooter text="View All Activity" to="/employee/progress" /></section>
+            <section className="employee-card"><CardHeader title="Recent Learning Activity" subtitle="Live activity from training progress" />{trainingProgress.length === 0 ? <EmptyState text="No learning activity yet. Start a training course to begin tracking." action="Browse Training" to="/employee/training" /> : <div className="dashboard-list">{[...trainingProgress].filter((item) => item.lastActivityAt).sort((a, b) => new Date(b.lastActivityAt || 0).getTime() - new Date(a.lastActivityAt || 0).getTime()).slice(0, 3).map((item) => <div key={item.employeeTrainingId} className="dashboard-progress-row"><div className="dashboard-progress-heading"><strong>{item.trainingName}</strong><span>{Math.round(Number(item.progressPercentage || 0))}%</span></div><small className="text-[10px] text-slate-500">{item.status.replaceAll("_", " ")} · {Number(item.hoursSpent || 0).toFixed(1)}h</small></div>)}</div>}<CardFooter text="View All Activity" to="/employee/progress" /></section>
             <section className="employee-card"><CardHeader title="Achievements" subtitle="Achievements API is not connected yet" /><EmptyState text="Achievements will appear here when the backend API is available." action="Open Achievements" to="/employee/achievements" /></section>
             <section className="employee-card"><CardHeader title="My Certifications" subtitle="Live data from /api/certification" />{loading ? <LoadingText /> : certifications.length === 0 ? <EmptyState text="No certification records were returned by the backend." action="Add Certification" to="/employee/certifications" /> : <div className="certification-list">{certifications.slice(0, 4).map((certificate) => <div className="certification-item" key={certificate.id || certificate.name}><div className="certificate-icon"><ShieldCheck size={15} /></div><div className="certificate-info"><strong>{certificate.name}</strong>{certificate.provider && <span>{certificate.provider}</span>}<small>{certificate.expiryDate ? `Valid until ${formatDate(certificate.expiryDate)}` : "No expiry returned"}</small></div>{certificate.status && <em>{certificate.status}</em>}</div>)}</div>}<CardFooter text="View All Certifications" to="/employee/certifications" /></section>
           </div>
 
           <div className="employee-three-column lower-grid">
             <section className="employee-card"><CardHeader title="Upcoming Tasks" subtitle="Assessment/task API is not connected yet" /><EmptyState text="Upcoming assessments and tasks will appear here when their APIs are available." action="Open Self Assessment" to="/employee/self-assessment" /></section>
-            <section className="employee-card"><CardHeader title="Mentorship & Knowledge Sharing" subtitle="Mentorship API is not connected yet" /><EmptyState text="Mentorship and knowledge-sharing items will appear here when the backend API is available." action="Open Mentorship" to="/employee/mentorship" /></section>
+            <section className="employee-card"><CardHeader title="Mentorship & Knowledge Sharing" subtitle="Live data from mentorship and knowledge-session APIs" />{mentorshipRequests.length === 0 && mentorshipSessions.length === 0 ? <EmptyState text="No mentorship activity yet. Open Mentorship to find experts when you have an open skill gap." action="Open Mentorship" to="/employee/mentorship" /> : <div className="dashboard-list">{mentorshipRequests.filter((item) => item.status === "PENDING").slice(0, 2).map((item) => <div key={`pending-${item.requestId}`} className="dashboard-progress-row"><div className="dashboard-progress-heading"><strong>{item.skillName}</strong><span>Pending</span></div><small className="text-[10px] text-slate-500">Mentor: {item.mentorName}</small></div>)}{mentorshipRequests.filter((item) => item.status === "ACCEPTED").slice(0, 2).map((item) => <div key={`request-${item.requestId}`} className="dashboard-progress-row"><div className="dashboard-progress-heading"><strong>{item.skillName}</strong><span>Accepted</span></div><small className="text-[10px] text-slate-500">{item.menteeId === employeeId ? `Mentor: ${item.mentorName}` : `Mentee: ${item.menteeName}`}</small></div>)}{mentorshipSessions.filter((item) => item.status === "SCHEDULED").slice(0, 2).map((item) => <div key={`session-${item.sessionId}`} className="dashboard-progress-row"><div className="dashboard-progress-heading"><strong>{item.title}</strong><span>{formatDate(item.scheduledAt)}</span></div><small className="text-[10px] text-slate-500">{item.skillName} · {item.durationMinutes} min</small></div>)}</div>}<CardFooter text="Open Mentorship" to="/employee/mentorship" /></section>
             <section className="employee-card"><CardHeader title="Notifications" subtitle="Notification API is not connected yet" /><EmptyState text="Notifications will appear here when the backend notification API is available." action="Open Notifications" to="/employee/notifications" /></section>
           </div>
 

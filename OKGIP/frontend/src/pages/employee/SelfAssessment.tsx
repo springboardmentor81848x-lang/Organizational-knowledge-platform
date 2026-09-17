@@ -1,33 +1,13 @@
-import React, { useEffect } from "react";
-import selfAssessmentService from "@/services/selfAssessmentService";
+import React,{useEffect,useState} from "react";
+import EmployeePage,{Card} from "@/components/layout/EmployeePage";
+import selfAssessmentService,{SelfAssessment,AssessmentResult,Answer} from "@/services/selfAssessmentService";
 
-const SelfAssessment: React.FC = () => {
-  useEffect(() => {
-    const loadAssessments = async () => {
-      try {
-        const data =
-          await selfAssessmentService.getMyAssessments();
-
-        console.log(
-          "SELF ASSESSMENT API RESPONSE =",
-          data
-        );
-      } catch (error: any) {
-        console.error(
-          "SELF ASSESSMENT API ERROR =",
-          error?.response?.data || error
-        );
-      }
-    };
-
-    void loadAssessments();
-  }, []);
-
-  return (
-    <div>
-      Self Assessment
-    </div>
-  );
-};
-
-export default SelfAssessment;
+const SelfAssessmentPage:React.FC=()=>{
+ const [items,setItems]=useState<SelfAssessment[]>([]); const [selected,setSelected]=useState<SelfAssessment|null>(null); const [attempt,setAttempt]=useState<number|null>(null); const [answers,setAnswers]=useState<Record<number,Answer>>({}); const [result,setResult]=useState<AssessmentResult|null>(null); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
+ useEffect(()=>{selfAssessmentService.getMyAssessments().then(setItems).catch(e=>setError(e?.response?.data?.message||"Unable to load assessments.")).finally(()=>setLoading(false));},[]);
+ const start=async(a:SelfAssessment)=>{try{const r=await selfAssessmentService.start(a.assessmentId);setSelected(a);setAttempt(r.attemptId);setResult(null);setAnswers({});}catch(e:any){setError(e?.response?.data?.message||"Unable to start assessment.");}};
+ const submit=async()=>{if(!attempt)return;try{const r=await selfAssessmentService.submit(attempt,Object.values(answers));setResult(r);}catch(e:any){setError(e?.response?.data?.message||"Unable to submit assessment.");}};
+ if(selected&&attempt&&!result)return <EmployeePage title={selected.skillName+" Self Assessment"} subtitle="Answer the technical questions. Your score is calculated by the backend."><Card title={selected.assessmentName} subtitle={`Total ${selected.totalMarks} marks · 15 MCQs + 3 coding questions`}><div className="space-y-5">{selected.questions.map((q,i)=><div key={q.questionId} className="rounded-xl border border-slate-200 p-4"><div className="flex justify-between gap-3"><p className="text-sm font-semibold text-slate-800">{i+1}. {q.questionText}</p><span className="text-[10px] font-bold text-purple-600">{q.difficulty} · {q.marks} marks</span></div>{q.type==="MCQ"?<div className="mt-4 space-y-2">{q.options.map(o=><label key={o.optionId} className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-xs hover:bg-slate-50"><input type="radio" name={`q-${q.questionId}`} checked={answers[q.questionId]?.selectedOptionId===o.optionId} onChange={()=>setAnswers(x=>({...x,[q.questionId]:{questionId:q.questionId,selectedOptionId:o.optionId}}))}/>{o.optionText}</label>)}</div>:<textarea className="mt-4 min-h-36 w-full rounded-lg border p-3 font-mono text-xs" placeholder="Write your solution here..." value={answers[q.questionId]?.codeAnswer||q.starterCode||""} onChange={e=>setAnswers(x=>({...x,[q.questionId]:{questionId:q.questionId,codeAnswer:e.target.value}}))}/>}</div>)}<button onClick={submit} className="rounded-lg bg-purple-600 px-5 py-2 text-xs font-semibold text-white">Submit Assessment</button></div></Card></EmployeePage>;
+ if(result)return <EmployeePage title="Assessment Result" subtitle="Your assessment result has been recorded."><Card title={result.skillName+" Assessment"}><div className="text-center py-10"><p className="text-4xl font-bold text-purple-600">{result.score}/{result.totalMarks}</p><p className="mt-2 text-sm text-slate-500">{result.percentage}%</p><button className="mt-6 rounded-lg border px-4 py-2 text-xs" onClick={()=>{setSelected(null);setAttempt(null);setResult(null);}}>Back to Assessments</button></div></Card></EmployeePage>;
+ return <EmployeePage title="Self Assessment" subtitle="Take technical assessments for the skills in your Skill Profile."><Card title="Available Assessments" subtitle="Assessments are automatically available for your selected skills.">{loading?<p className="py-10 text-center text-xs text-slate-400">Loading assessments...</p>:error?<p className="rounded-lg bg-red-50 p-4 text-xs text-red-600">{error}</p>:items.length===0?<p className="py-10 text-center text-xs text-slate-400">Add a skill in Skill Profile to get its assessment.</p>:<div className="grid gap-4 md:grid-cols-2">{items.map(a=><div key={a.assessmentId} className="rounded-xl border p-5"><h3 className="font-bold text-slate-800">{a.skillName}</h3><p className="mt-1 text-sm text-slate-600">{a.assessmentName}</p><p className="mt-3 text-[10px] text-slate-400">50 marks · 15 MCQs · 3 coding questions</p><button onClick={()=>start(a)} className="mt-5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white">Take Assessment</button></div>)}</div>}</Card></EmployeePage>};
+export default SelfAssessmentPage;

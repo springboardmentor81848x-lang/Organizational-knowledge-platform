@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -15,138 +15,160 @@ import {
   Search,
   Bell,
   Sun,
-  UserRound,
   TrendingUp,
-  TrendingDown,
   Award,
-  ShieldCheck,
-  CalendarDays,
-  FileText,
-  Download,
-  Plus,
-  CheckCircle2,
+  RefreshCw,
   AlertTriangle,
-  Clock3,
   ChevronRight,
-  MoreVertical,
+  CheckCircle2,
+  XCircle,
+  UserRound,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import "@/styles/hr-dashboard.css";
-import { hrService } from "@/services/hrService";
+import { hrService, type HRDashboardData, type PendingEmployee } from "@/services/hrService";
+import { useAuth } from "@/context/AuthContext";
 
-interface PendingEmployee {
-  employeeId: number;
-  firstName: string;
-  lastName: string;
-  officialEmail: string;
-  departmentName?: string;
-  department?: string;
-  status?: string;
-}
+const emptyDashboard: HRDashboardData = {
+  totalEmployees: 0,
+  pendingApprovals: 0,
+  employeesWithSkillGaps: 0,
+  criticalSkillGaps: 0,
+  employeesInTraining: 0,
+  trainingCompletionRate: 0,
+  averageLearningProgress: 0,
+  averageAssessmentScore: 0,
+  averageSkillImprovement: 0,
+  activeMentorships: 0,
+  totalSkills: 0,
+  totalSkillAssignments: 0,
+  departmentSummaries: [],
+  topSkillGaps: [],
+  trainingStatus: [],
+  assessmentSummary: [],
+  employeeGrowth: [],
+};
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { email, logout } = useAuth();
+
+  const [dashboard, setDashboard] = useState<HRDashboardData>(emptyDashboard);
   const [pendingEmployees, setPendingEmployees] = useState<PendingEmployee[]>([]);
-  const [isLoadingPending, setIsLoadingPending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pendingLoading, setPendingLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [processingEmployeeId, setProcessingEmployeeId] = useState<number | null>(null);
 
-  const loadPendingEmployees = useCallback(async () => {
-    setIsLoadingPending(true);
-    setPendingError(null);
-
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const data = await hrService.getPendingEmployees();
-
-      // Backend may return either a direct array or { data: [...] }.
-      const employees = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.employees)
-            ? data.employees
-            : [];
-
-      setPendingEmployees(employees);
-    } catch (error: any) {
-      console.error("Failed to load pending employees:", error);
-
-      setPendingError(
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Unable to load pending employees."
+      const data = await hrService.getDashboard();
+      setDashboard(data ?? emptyDashboard);
+    } catch (err: any) {
+      console.error("Failed to load HR dashboard:", err);
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Unable to load HR dashboard data."
       );
     } finally {
-      setIsLoadingPending(false);
+      setLoading(false);
     }
   }, []);
 
+  const loadPendingEmployees = useCallback(async () => {
+    setPendingLoading(true);
+    setPendingError(null);
+    try {
+      const data = await hrService.getPendingEmployees();
+      setPendingEmployees(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error("Failed to load pending employees:", err);
+      setPendingError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Unable to load pending employee approvals."
+      );
+    } finally {
+      setPendingLoading(false);
+    }
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([loadDashboard(), loadPendingEmployees()]);
+  }, [loadDashboard, loadPendingEmployees]);
+
   useEffect(() => {
-    loadPendingEmployees();
-  }, [loadPendingEmployees]);
+    refreshAll();
+  }, [refreshAll]);
 
-  const handleApprove = async (employeeId: number) => {
+  const handleApproval = async (employeeId: number, action: "approve" | "reject") => {
     setProcessingEmployeeId(employeeId);
     setPendingError(null);
 
     try {
-      await hrService.approveEmployee(employeeId);
+      if (action === "approve") {
+        await hrService.approveEmployee(employeeId);
+      } else {
+        await hrService.rejectEmployee(employeeId);
+      }
 
-      // Remove the approved employee from the pending list immediately.
-      setPendingEmployees((current) =>
-        current.filter((employee) => employee.employeeId !== employeeId)
-      );
-
-      // Refresh from backend so the UI always reflects the database.
-      await loadPendingEmployees();
-    } catch (error: any) {
-      console.error("Failed to approve employee:", error);
-
+      await Promise.all([loadDashboard(), loadPendingEmployees()]);
+    } catch (err: any) {
+      console.error(`Failed to ${action} employee:`, err);
       setPendingError(
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Unable to approve employee."
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          `Unable to ${action} employee.`
       );
     } finally {
       setProcessingEmployeeId(null);
     }
   };
 
-  const handleReject = async (employeeId: number) => {
-    setProcessingEmployeeId(employeeId);
-    setPendingError(null);
+  const departmentTotal = useMemo(
+    () => dashboard.departmentSummaries.reduce((sum, d) => sum + d.employeeCount, 0),
+    [dashboard.departmentSummaries]
+  );
 
-    try {
-      await hrService.rejectEmployee(employeeId);
+  const maxGap = useMemo(
+    () => Math.max(...dashboard.topSkillGaps.map((g) => g.averageGapPercentage), 1),
+    [dashboard.topSkillGaps]
+  );
 
-      // Remove the rejected employee from the pending list immediately.
-      setPendingEmployees((current) =>
-        current.filter((employee) => employee.employeeId !== employeeId)
-      );
+  const maxGrowth = useMemo(
+    () => Math.max(...dashboard.employeeGrowth.map((g) => g.count), 1),
+    [dashboard.employeeGrowth]
+  );
 
-      // Refresh from backend.
-      await loadPendingEmployees();
-    } catch (error: any) {
-      console.error("Failed to reject employee:", error);
+  const topDepartmentSlices = dashboard.departmentSummaries.slice(0, 5);
 
-      setPendingError(
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Unable to reject employee."
-      );
-    } finally {
-      setProcessingEmployeeId(null);
-    }
-  };
+  const donutGradient = useMemo(() => {
+    if (!departmentTotal) return "conic-gradient(#e8eaf0 0 100%)";
+
+    const stops = ["#7436e8", "#13b981", "#19b7a1", "#ff9d38", "#2785e8"];
+    let cursor = 0;
+
+    const parts = topDepartmentSlices.map((d, index) => {
+      const percent = (d.employeeCount / departmentTotal) * 100;
+      const start = cursor;
+      cursor += percent;
+      return `${stops[index % stops.length]} ${start}% ${cursor}%`;
+    });
+
+    return `conic-gradient(${parts.join(", ")})`;
+  }, [departmentTotal, topDepartmentSlices]);
 
   return (
     <div className="hr-dashboard">
-
-      {/* ================= SIDEBAR ================= */}
       <aside className="hr-sidebar">
-
         <div className="hr-logo">
           <div className="hr-logo-icon">
             <Brain size={24} />
@@ -155,920 +177,385 @@ const Dashboard: React.FC = () => {
         </div>
 
         <nav className="hr-nav">
-
-          <a className="hr-nav-item active">
-            <LayoutDashboard size={19} />
-            <span>Dashboard</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <Users size={19} />
-            <span>Employees</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <Building2 size={19} />
-            <span>Departments</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <BriefcaseBusiness size={19} />
-            <span>Job Roles</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <Target size={19} />
-            <span>Skills</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <BookOpen size={19} />
-            <span>Competency Framework</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <BarChart3 size={19} />
-            <span>Knowledge Gap Analysis</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <Brain size={19} />
-            <span>AI Recommendations</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <GraduationCap size={19} />
-            <span>Training Management</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <ClipboardCheck size={19} />
-            <span>Assessments</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <BarChart3 size={19} />
-            <span>Reports & Analytics</span>
-          </a>
-
+          <button type="button" className="hr-nav-item active" onClick={() => navigate("/hr")}><LayoutDashboard size={19} /><span>Dashboard</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/employees")}><Users size={19} /><span>Employees</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/departments")}><Building2 size={19} /><span>Departments</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/job-roles")}><BriefcaseBusiness size={19} /><span>Job Roles</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/workforce-skills")}><Target size={19} /><span>Workforce Skills</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/competency-framework")}><BookOpen size={19} /><span>Competency Framework</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/knowledge-gaps")}><BarChart3 size={19} /><span>Organization Skill Gaps</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/ai-recommendations")}><Brain size={19} /><span>AI Recommendations</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/training-analytics")}><GraduationCap size={19} /><span>Training Analytics</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/assessments")}><ClipboardCheck size={19} /><span>Assessments</span></button>
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/reports")}><BarChart3 size={19} /><span>Reports & Analytics</span></button>
         </nav>
 
         <div className="hr-sidebar-bottom">
-
-          <a className="hr-nav-item">
-            <Settings size={19} />
-            <span>Settings</span>
-          </a>
-
-          <a className="hr-nav-item">
-            <LogOut size={19} />
-            <span>Logout</span>
-          </a>
-
-          <div className="collapse-sidebar">
-            <span>‹</span>
-            <span>Collapse Sidebar</span>
-          </div>
-
+          <button type="button" className="hr-nav-item" onClick={() => navigate("/hr/settings")}><Settings size={19} /><span>Settings</span></button>
+          <button
+            className="hr-nav-item"
+            type="button"
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+          >
+            <LogOut size={19} /><span>Logout</span>
+          </button>
+          <div className="collapse-sidebar"><span>‹</span><span>Collapse Sidebar</span></div>
         </div>
-
       </aside>
 
-      {/* ================= MAIN AREA ================= */}
       <main className="hr-main">
-
-        {/* TOP HEADER */}
         <header className="hr-topbar">
-
           <div className="breadcrumb">
-            <span>Dashboard</span>
-            <span>/</span>
-            <strong>Overview</strong>
+            <span>Dashboard</span><span>/</span><strong>Overview</strong>
           </div>
 
           <div className="topbar-actions">
-
             <div className="search-box">
               <Search size={17} />
-              <input
-                type="text"
-                placeholder="Search insights, employees..."
-              />
+              <input type="text" placeholder="Search employees, skills..." />
             </div>
-
-            <button className="icon-button notification">
+            <button className="icon-button" type="button" onClick={refreshAll} title="Refresh dashboard">
               <Bell size={19} />
-              <span className="notification-dot">3</span>
+              {dashboard.pendingApprovals > 0 && (
+                <span className="notification-dot">{Math.min(dashboard.pendingApprovals, 99)}</span>
+              )}
             </button>
-
-            <button className="icon-button">
-              <Sun size={19} />
-            </button>
-
+            <button className="icon-button" type="button"><Sun size={19} /></button>
             <div className="hr-profile">
-
-              <div className="profile-avatar">
-                <UserRound size={20} />
-              </div>
-
+              <div className="profile-avatar"><UserRound size={20} /></div>
               <div>
-                <strong>Alex Rivera</strong>
-                <span>HR Manager</span>
+                <strong>HR Manager</strong>
+                <span>{email || "Authenticated HR user"}</span>
               </div>
-
               <span className="profile-arrow">⌄</span>
-
             </div>
-
           </div>
-
         </header>
 
-        {/* CONTENT */}
         <div className="hr-content">
-
-          {/* PAGE TITLE */}
           <div className="hr-page-header">
-
             <div>
               <div className="title-badges">
-                <span className="executive-badge">
-                  EXECUTIVE DASHBOARD
-                </span>
-
-                <span className="ai-active-badge">
-                  ✨ AI Engine Active
-                </span>
+                <span className="executive-badge">HR ORGANIZATION OVERVIEW</span>
+                <span className="ai-active-badge">Live Database Data</span>
               </div>
-
               <h1>HR Dashboard</h1>
-
-              <p>
-                Strategic overview of organizational human capital,
-                competency trends, and learning initiatives.
-              </p>
+              <p>Organization-wide workforce, skill-gap, learning and assessment intelligence.</p>
             </div>
 
             <div className="page-actions">
-
-              <button className="secondary-action">
-                <GraduationCap size={17} />
-                Assign Training
+              <button className="primary-action" type="button" onClick={refreshAll} disabled={loading || pendingLoading}>
+                <RefreshCw size={17} className={loading || pendingLoading ? "spin" : ""} />
+                Refresh Data
               </button>
-
-              <button className="secondary-action">
-                <CalendarDays size={17} />
-                Schedule Assessment
-              </button>
-
-              <button className="secondary-action">
-                <FileText size={17} />
-                Generate HR Report
-              </button>
-
-              <button className="primary-action">
-                <Download size={17} />
-                Export Dashboard
-              </button>
-
             </div>
-
           </div>
 
-          {/* ================= KPI CARDS ================= */}
+          {error && <div className="hr-error">{error}</div>}
+
           <section className="kpi-grid">
-
-            <KpiCard
-              icon={<Users />}
-              title="TOTAL EMPLOYEES"
-              value="1,284"
-              change="+4.2%"
-              type="positive"
-            />
-
-            <KpiCard
-              icon={<GraduationCap />}
-              title="EMPLOYEES IN TRAINING"
-              value="312"
-              change="+12.5%"
-              type="positive"
-            />
-
-            <KpiCard
-              icon={<ClipboardCheck />}
-              title="PENDING ASSESSMENTS"
-              value="48"
-              change="-5.4%"
-              type="negative"
-            />
-
-            <KpiCard
-              icon={<Award />}
-              title="CERTIFICATION COMPLETION"
-              value="92.4%"
-              change="+2.7%"
-              type="positive"
-            />
-
-            <KpiCard
-              icon={<Target />}
-              title="AVG COMPETENCY SCORE"
-              value="78.2"
-              change="+1.8%"
-              type="positive"
-            />
-
-            <KpiCard
-              icon={<BookOpen />}
-              title="KNOWLEDGE GAP INDEX"
-              value="14.2%"
-              change="-8.4%"
-              type="negative"
-            />
-
+            <KpiCard icon={<Users />} title="TOTAL EMPLOYEES" value={dashboard.totalEmployees} />
+            <KpiCard icon={<Target />} title="EMPLOYEES WITH SKILL GAPS" value={dashboard.employeesWithSkillGaps} />
+            <KpiCard icon={<AlertTriangle />} title="CRITICAL SKILL GAPS" value={dashboard.criticalSkillGaps} />
+            <KpiCard icon={<GraduationCap />} title="EMPLOYEES IN TRAINING" value={dashboard.employeesInTraining} />
+            <KpiCard icon={<TrendingUp />} title="TRAINING COMPLETION" value={`${dashboard.trainingCompletionRate.toFixed(1)}%`} />
+            <KpiCard icon={<Brain />} title="AVG LEARNING PROGRESS" value={`${dashboard.averageLearningProgress.toFixed(1)}%`} />
+            <KpiCard icon={<TrendingUp />} title="AVG SKILL IMPROVEMENT" value={`${dashboard.averageSkillImprovement.toFixed(1)}%`} />
           </section>
 
-          {/* ================= MAIN ROW ================= */}
           <section className="main-grid">
-
-            {/* DEPARTMENT DISTRIBUTION */}
             <div className="dashboard-card department-card">
-
               <div className="card-header">
                 <div>
-                  <h2>Employee Distribution by Department</h2>
+                  <h2>Workforce Skill Inventory by Department</h2>
+                  <p>Approved employees grouped by department.</p>
                 </div>
-
-                <MoreVertical size={19} />
               </div>
 
               <div className="department-content">
-
-                <div className="donut-chart">
+                <div className="donut-chart" style={{ background: donutGradient }}>
                   <div className="donut-inner">
-                    <strong>1,284</strong>
+                    <strong>{dashboard.totalEmployees}</strong>
                     <span>Employees</span>
                   </div>
                 </div>
 
                 <div className="department-list">
-
-                  <DepartmentItem
-                    color="purple"
-                    name="Engineering"
-                    count="512"
-                    percentage="39.9%"
-                  />
-
-                  <DepartmentItem
-                    color="green"
-                    name="IT & DevOps"
-                    count="298"
-                    percentage="23.2%"
-                  />
-
-                  <DepartmentItem
-                    color="teal"
-                    name="Sales & Marketing"
-                    count="186"
-                    percentage="14.5%"
-                  />
-
-                  <DepartmentItem
-                    color="orange"
-                    name="HR & Admin"
-                    count="156"
-                    percentage="12.1%"
-                  />
-
-                  <DepartmentItem
-                    color="blue"
-                    name="Finance"
-                    count="132"
-                    percentage="10.3%"
-                  />
-
+                  {topDepartmentSlices.length === 0 ? (
+                    <EmptyState text="No department data available." />
+                  ) : (
+                    topDepartmentSlices.map((d, index) => (
+                      <div className="department-item" key={d.departmentName}>
+                        <span className={`department-dot ${["purple", "green", "teal", "orange", "blue"][index % 5]}`} />
+                        <span className="department-name">{d.departmentName}</span>
+                        <strong>{d.employeeCount}</strong>
+                        <span>{departmentTotal ? `${((d.employeeCount / departmentTotal) * 100).toFixed(1)}%` : "0%"}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
-
               </div>
 
               <div className="department-footer">
-                <span>Total Departments <strong>12</strong></span>
-                <span>Last Updated: 10:30 AM</span>
+                <span>Departments <strong>{dashboard.departmentSummaries.length}</strong></span>
+                <span>Skill assignments <strong>{dashboard.totalSkillAssignments}</strong></span>
               </div>
-
             </div>
 
-            {/* WORKFORCE OVERVIEW */}
             <div className="dashboard-card workforce-card">
-
               <div className="card-header">
-                <h2>Workforce Overview</h2>
-              </div>
-
-              <WorkforceRow
-                icon={<Users />}
-                title="New Joiners (MTD)"
-                value="24"
-                change="+12% vs LW"
-                positive
-              />
-
-              <WorkforceRow
-                icon={<Clock3 />}
-                title="Probation Period"
-                value="42"
-                change="+6% vs LW"
-                positive
-              />
-
-              <WorkforceRow
-                icon={<Users />}
-                title="Active/Stable"
-                value="1,042"
-                change="+2% vs LW"
-                positive
-              />
-
-              <WorkforceRow
-                icon={<Award />}
-                title="High Performance"
-                value="118"
-                change="+5% vs LW"
-                positive
-              />
-
-              <WorkforceRow
-                icon={<AlertTriangle />}
-                title="Requiring Attention"
-                value="15"
-                change="-5% vs LW"
-                positive={false}
-              />
-
-            </div>
-
-            {/* AI INTELLIGENCE */}
-            <div className="dashboard-card ai-card">
-
-              <div className="ai-card-header">
-
-                <div className="ai-icon">
-                  <Brain size={22} />
-                </div>
-
                 <div>
-                  <h2>AI Workforce Intelligence</h2>
-                  <p>Real-time HR analytics & predictions.</p>
+                  <h2>Organization Overview</h2>
+                  <p>Current database-derived indicators.</p>
                 </div>
-
               </div>
-
-              <div className="ai-visual">
-                <Brain size={55} />
-                <span>Intelligence Feed Active</span>
-                <small>LAST UPDATE: 2M AGO</small>
-              </div>
-
-              <AiInsight
-                type="RECOMMENDATION"
-                title="Cloud Upskilling Required"
-                text="AI identifies a 15% skill gap in Serverless Architecture for Engineering team."
-              />
-
-              <AiInsight
-                type="TREND"
-                title="Rising Competency in Sales"
-                text="Sales team proficiency has increased by 12% following recent training."
-              />
-
-              <AiInsight
-                type="ALERT"
-                title="Certification Expiry Wave"
-                text="24 certifications are expiring within 60 days."
-              />
-
-              <button className="ai-button">
-                Open Recommendation Center
-                <ChevronRight size={17} />
-              </button>
-
+              <WorkforceRow icon={<Users />} title="Pending approvals" value={dashboard.pendingApprovals} />
+              <WorkforceRow icon={<Target />} title="Unique skills" value={dashboard.totalSkills} />
+              <WorkforceRow icon={<Award />} title="Active mentorships" value={dashboard.activeMentorships} />
+              <WorkforceRow icon={<ClipboardCheck />} title="Avg assessment score" value={`${dashboard.averageAssessmentScore.toFixed(1)}%`} />
+              <WorkforceRow icon={<AlertTriangle />} title="Employees with gaps" value={dashboard.employeesWithSkillGaps} />
             </div>
 
+            <div className="dashboard-card ai-card">
+              <div className="ai-card-header">
+                <div className="ai-icon"><Brain size={22} /></div>
+                <div>
+                  <h2>Workforce Intelligence</h2>
+                  <p>Priority signals generated from current skill-gap data.</p>
+                </div>
+              </div>
+
+              {dashboard.topSkillGaps.slice(0, 3).map((gap) => (
+                <div className="ai-insight" key={gap.skillName}>
+                  <span className="ai-insight-type">{gap.severity}</span>
+                  <div className="ai-insight-title">
+                    {gap.skillName}
+                    <ChevronRight size={15} />
+                  </div>
+                  <p>
+                    {gap.affectedEmployees} employee(s) affected with an average
+                    {` ${gap.averageGapPercentage.toFixed(1)}% `}gap.
+                  </p>
+                </div>
+              ))}
+
+              {dashboard.topSkillGaps.length === 0 && (
+                <div className="ai-insight"><p>No open skill-gap signals are available.</p></div>
+              )}
+            </div>
           </section>
 
-          {/* ================= THREE INFO CARDS ================= */}
           <section className="three-card-grid">
-
             <InfoCard
               icon={<GraduationCap />}
-              title="Training Pulse"
+              title="Training Analytics"
               rows={[
-                ["Completion Rate", "88.4%"],
-                ["Assigned (Active)", "312"],
-                ["Pending Start", "84"],
-                ["Overdue", "12"],
-                ["Upcoming", "45"],
+                ["In Training", dashboard.employeesInTraining],
+                ["Completion Rate", `${dashboard.trainingCompletionRate.toFixed(1)}%`],
+                ["Average Progress", `${dashboard.averageLearningProgress.toFixed(1)}%`],
               ]}
             />
-
             <InfoCard
               icon={<ClipboardCheck />}
-              title="Assessment Center"
+              title="Assessment Analytics"
               rows={[
-                ["Completed (MTD)", "254"],
-                ["Avg Proficiency", "72.8%"],
-                ["Awaiting Review", "18"],
-                ["Upcoming Slots", "142"],
-                ["Skill-wise Performance", "+12%"],
+                ["Average Score", `${dashboard.averageAssessmentScore.toFixed(1)}%`],
+                ...dashboard.assessmentSummary.slice(0, 2).map((a): [string, number] => [
+                  `${a.assessmentType} Submitted`,
+                  a.submittedCount,
+                ]),
               ]}
             />
-
             <InfoCard
               icon={<Award />}
-              title="Certifications"
+              title="Workforce Development"
               rows={[
-                ["Active Records", "842"],
-                ["Expiring soon", "24"],
-                ["Earned (MTD)", "56"],
-                ["Renewal Due", "12"],
-                ["Market Indexed", "98%"],
+                ["Active Mentorships", dashboard.activeMentorships],
+                ["Unique Skills", dashboard.totalSkills],
+                ["Skill Assignments", dashboard.totalSkillAssignments],
               ]}
             />
-
           </section>
 
-          {/* ================= BOTTOM GRID ================= */}
           <section className="bottom-grid">
-
-            {/* EMPLOYEE GROWTH */}
             <div className="dashboard-card chart-card">
-
               <div className="card-header">
                 <div>
-                  <h2>Employee Growth Trend</h2>
-                  <p>Workforce growth over the last 6 months.</p>
+                  <h2>Employee Growth</h2>
+                  <p>Approved employees created during the last six months.</p>
                 </div>
-
-                <span className="growth-badge">
-                  ↗ +8.5%
-                </span>
               </div>
-
-              <div className="line-chart">
-
-                <div className="chart-line">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-
-                <div className="chart-months">
-                  <span>Jan</span>
-                  <span>Feb</span>
-                  <span>Mar</span>
-                  <span>Apr</span>
-                  <span>May</span>
-                  <span>Jun</span>
-                </div>
-
+              <div className="growth-chart">
+                {dashboard.employeeGrowth.map((point) => (
+                  <div className="growth-column" key={point.month}>
+                    <span className="growth-value">{point.count}</span>
+                    <div className="growth-bar-track">
+                      <div className="growth-bar" style={{ height: `${Math.max((point.count / maxGrowth) * 100, point.count ? 8 : 2)}%` }} />
+                    </div>
+                    <span className="growth-month">{point.month}</span>
+                  </div>
+                ))}
+                {dashboard.employeeGrowth.length === 0 && <EmptyState text="No employee growth data available." />}
               </div>
-
             </div>
 
-            {/* COMPETENCY COMPARISON */}
             <div className="dashboard-card chart-card">
-
               <div className="card-header">
                 <div>
-                  <h2>Dept Competency Comparison</h2>
-                  <p>Current level vs organization target.</p>
+                  <h2>Organization Skill-Gap Priorities</h2>
+                  <p>Highest average open gap by skill.</p>
                 </div>
               </div>
-
               <div className="bar-chart">
-
-                <BarGroup name="Engineering" target="90%" current="78%" />
-                <BarGroup name="Sales" target="80%" current="68%" />
-                <BarGroup name="Marketing" target="75%" current="58%" />
-                <BarGroup name="Operations" target="82%" current="70%" />
-                <BarGroup name="HR" target="88%" current="68%" />
-                <BarGroup name="Finance" target="84%" current="75%" />
-
+                {dashboard.topSkillGaps.map((gap) => (
+                  <div className="bar-group" key={gap.skillName}>
+                    <span title={gap.skillName}>{gap.skillName}</span>
+                    <div className="bar-container">
+                      <div className="bar-current" style={{ width: `${(gap.averageGapPercentage / maxGap) * 100}%` }} />
+                    </div>
+                    <strong>{gap.averageGapPercentage.toFixed(1)}%</strong>
+                  </div>
+                ))}
+                {dashboard.topSkillGaps.length === 0 && <EmptyState text="No open skill gaps." />}
               </div>
-
             </div>
 
-            {/* EMPLOYEE SPOTLIGHT */}
-            <div className="dashboard-card spotlight-card">
-
-              <div className="spotlight-header">
-                <h2>Employee Spotlight</h2>
-                <span>TOP TALENT</span>
-              </div>
-
-              <div className="spotlight-avatar">
-                <UserRound size={45} />
-              </div>
-
-              <h3>Anya Petrova</h3>
-              <p>Senior Cloud Architect</p>
-
-              <div className="spotlight-tags">
-                <span>Lv 5</span>
-                <span>Expert</span>
-              </div>
-
-              <div className="spotlight-stats">
-
-                <div>
-                  <span>SKILL SCORE</span>
-                  <strong>94.8</strong>
-                </div>
-
-                <div>
-                  <span>GAP INDEX</span>
-                  <strong>2.4%</strong>
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* APPROVALS */}
-            <div className="dashboard-card approvals-card">
-
+            <div className="dashboard-card chart-card">
               <div className="card-header">
-                <h2>Pending HR Approvals</h2>
-                <span className="pending-count">
-                  {pendingEmployees.length} TOTAL PENDING
-                </span>
+                <div>
+                  <h2>Training Status</h2>
+                  <p>Enrollment records by status.</p>
+                </div>
+              </div>
+              <div className="status-list">
+                {dashboard.trainingStatus.map((item) => (
+                  <div className="status-row" key={item.status}>
+                    <span>{formatStatus(item.status)}</span>
+                    <strong>{item.count}</strong>
+                    <small>{item.percentage.toFixed(1)}%</small>
+                  </div>
+                ))}
+                {dashboard.trainingStatus.length === 0 && <EmptyState text="No training enrollment data." />}
+              </div>
+            </div>
+
+            <div className="dashboard-card approvals-card">
+              <div className="card-header">
+                <div>
+                  <h2>Pending HR Approvals</h2>
+                  <p>Registration requests waiting for HR action.</p>
+                </div>
+                <span className="pending-count">{pendingEmployees.length} PENDING</span>
               </div>
 
-              {pendingError && (
-                <div
-                  style={{
-                    margin: "10px 14px",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    background: "#fff1f2",
-                    color: "#be123c",
-                    fontSize: "11px",
-                    border: "1px solid #fecdd3",
-                  }}
-                >
-                  {pendingError}
-                </div>
-              )}
+              {pendingError && <div className="hr-error compact">{pendingError}</div>}
 
-              {isLoadingPending ? (
-                <div
-                  style={{
-                    padding: "24px 16px",
-                    textAlign: "center",
-                    color: "#64748b",
-                    fontSize: "12px",
-                  }}
-                >
-                  Loading pending employees...
-                </div>
+              {pendingLoading ? (
+                <div className="hr-loading">Loading pending employees...</div>
               ) : pendingEmployees.length === 0 ? (
-                <div
-                  style={{
-                    padding: "24px 16px",
-                    textAlign: "center",
-                    color: "#64748b",
-                    fontSize: "12px",
-                  }}
-                >
-                  No pending employee approvals.
-                </div>
+                <div className="hr-loading">No pending employee approvals.</div>
               ) : (
-                pendingEmployees.map((employee) => (
-                  <ApprovalRow
-                    key={employee.employeeId}
-                    refId={`EMP-${employee.employeeId}`}
-                    name={`${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim() || "Employee"}
-                    action={
-                      employee.departmentName ||
-                      employee.department ||
-                      "Employee Registration"
-                    }
-                    priority="PENDING"
-                    isProcessing={processingEmployeeId === employee.employeeId}
-                    onApprove={() => handleApprove(employee.employeeId)}
-                    onReject={() => handleReject(employee.employeeId)}
-                  />
+                pendingEmployees.slice(0, 6).map((employee) => (
+                  <div className="approval-row" key={employee.employeeId}>
+                    <span className="approval-ref">{employee.employeeCode || `EMP-${employee.employeeId}`}</span>
+                    <strong title={`${employee.firstName} ${employee.lastName}`}>
+                      {`${employee.firstName} ${employee.lastName}`.trim()}
+                    </strong>
+                    <span className="approval-action" title={employee.officialEmail}>{employee.officialEmail}</span>
+                    <span className="priority pending">PENDING</span>
+                    <div className="approval-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleApproval(employee.employeeId, "approve")}
+                        disabled={processingEmployeeId === employee.employeeId}
+                        title="Approve employee"
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApproval(employee.employeeId, "reject")}
+                        disabled={processingEmployeeId === employee.employeeId}
+                        title="Reject employee"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    </div>
+                  </div>
                 ))
               )}
 
               <div className="approval-footer">
-                Refresh Pending Employees
-                <button
-                  type="button"
-                  onClick={loadPendingEmployees}
-                  disabled={isLoadingPending}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    cursor: isLoadingPending ? "not-allowed" : "pointer",
-                    color: "inherit",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                  aria-label="Refresh pending employees"
-                >
-                  <ChevronRight size={16} />
+                {pendingEmployees.length > 6 ? `${pendingEmployees.length - 6} more pending` : "All pending requests shown"}
+                <button type="button" onClick={loadPendingEmployees} disabled={pendingLoading}>
+                  <RefreshCw size={14} />
                 </button>
               </div>
-
             </div>
-
           </section>
-
         </div>
-
       </main>
-
     </div>
   );
 };
 
+const formatStatus = (status: string) =>
+  status
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
-/* ================= COMPONENTS ================= */
-
-interface KpiProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  change: string;
-  type: "positive" | "negative";
-}
-
-const KpiCard: React.FC<KpiProps> = ({
+const KpiCard: React.FC<{ icon: React.ReactNode; title: string; value: string | number }> = ({
   icon,
   title,
   value,
-  change,
-  type,
 }) => (
   <div className="kpi-card">
-
     <div className="kpi-top">
-
-      <div className="kpi-icon">
-        {icon}
-      </div>
-
-      <span className={`kpi-change ${type}`}>
-        {type === "positive" ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-        {change}
-      </span>
-
+      <div className="kpi-icon">{icon}</div>
     </div>
-
     <span className="kpi-title">{title}</span>
-
     <strong className="kpi-value">{value}</strong>
-
   </div>
 );
 
-
-interface DepartmentProps {
-  color: string;
-  name: string;
-  count: string;
-  percentage: string;
-}
-
-const DepartmentItem: React.FC<DepartmentProps> = ({
-  color,
-  name,
-  count,
-  percentage,
-}) => (
-  <div className="department-item">
-
-    <span className={`department-dot ${color}`}></span>
-
-    <span className="department-name">{name}</span>
-
-    <strong>{count}</strong>
-
-    <span>{percentage}</span>
-
-  </div>
-);
-
-
-interface WorkforceProps {
+const WorkforceRow: React.FC<{
   icon: React.ReactNode;
   title: string;
-  value: string;
-  change: string;
-  positive: boolean;
-}
-
-const WorkforceRow: React.FC<WorkforceProps> = ({
-  icon,
-  title,
-  value,
-  change,
-  positive,
-}) => (
+  value: string | number;
+}> = ({ icon, title, value }) => (
   <div className="workforce-row">
-
-    <div className="workforce-icon">
-      {icon}
-    </div>
-
+    <div className="workforce-icon">{icon}</div>
     <span>{title}</span>
-
     <strong>{value}</strong>
-
-    <small className={positive ? "positive" : "negative"}>
-      {change}
-    </small>
-
   </div>
 );
 
-
-interface AiInsightProps {
-  type: string;
-  title: string;
-  text: string;
-}
-
-const AiInsight: React.FC<AiInsightProps> = ({
-  type,
-  title,
-  text,
-}) => (
-  <div className="ai-insight">
-
-    <span className="ai-insight-type">{type}</span>
-
-    <div className="ai-insight-title">
-      {title}
-      <ChevronRight size={15} />
-    </div>
-
-    <p>{text}</p>
-
-  </div>
-);
-
-
-interface InfoCardProps {
+const InfoCard: React.FC<{
   icon: React.ReactNode;
   title: string;
-  rows: string[][];
-}
-
-const InfoCard: React.FC<InfoCardProps> = ({
-  icon,
-  title,
-  rows,
-}) => (
+  rows: Array<[string, string | number]>;
+}> = ({ icon, title, rows }) => (
   <div className="dashboard-card info-card">
-
     <div className="info-header">
-
-      <div className="info-icon">
-        {icon}
-      </div>
-
+      <div className="info-icon">{icon}</div>
       <h2>{title}</h2>
-
     </div>
-
     {rows.map(([label, value]) => (
       <div className="info-row" key={label}>
         <span>{label}</span>
         <strong>{value}</strong>
       </div>
     ))}
-
-    <div className="audit-link">
-      FULL AUDIT VIEW
-      <ChevronRight size={15} />
-    </div>
-
   </div>
 );
 
-
-interface BarGroupProps {
-  name: string;
-  target: string;
-  current: string;
-}
-
-const BarGroup: React.FC<BarGroupProps> = ({
-  name,
-  target,
-  current,
-}) => (
-  <div className="bar-group">
-
-    <span>{name}</span>
-
-    <div className="bar-container">
-      <div
-        className="bar-target"
-        style={{ width: target }}
-      />
-
-      <div
-        className="bar-current"
-        style={{ width: current }}
-      />
-    </div>
-
-    <strong>{current}</strong>
-
-  </div>
+const EmptyState: React.FC<{ text: string }> = ({ text }) => (
+  <div className="hr-empty">{text}</div>
 );
-
-
-interface ApprovalProps {
-  refId: string;
-  name: string;
-  action: string;
-  priority: string;
-  isProcessing?: boolean;
-  onApprove: () => void;
-  onReject: () => void;
-}
-
-const ApprovalRow: React.FC<ApprovalProps> = ({
-  refId,
-  name,
-  action,
-  priority,
-  isProcessing = false,
-  onApprove,
-  onReject,
-}) => (
-  <div className="approval-row">
-
-    <span className="approval-ref">{refId}</span>
-
-    <strong>{name}</strong>
-
-    <span className="approval-action">{action}</span>
-
-    <span className={`priority ${priority.toLowerCase()}`}>
-      {priority}
-    </span>
-
-    <div className="approval-actions">
-      <button
-        type="button"
-        onClick={onApprove}
-        disabled={isProcessing}
-        title="Approve employee"
-        aria-label={`Approve ${name}`}
-        style={{
-          border: "none",
-          background: "transparent",
-          padding: 0,
-          cursor: isProcessing ? "not-allowed" : "pointer",
-          opacity: isProcessing ? 0.5 : 1,
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <CheckCircle2 size={17} />
-      </button>
-
-      <button
-        type="button"
-        onClick={onReject}
-        disabled={isProcessing}
-        title="Reject employee"
-        aria-label={`Reject ${name}`}
-        style={{
-          border: "none",
-          background: "transparent",
-          padding: 0,
-          cursor: isProcessing ? "not-allowed" : "pointer",
-          opacity: isProcessing ? 0.5 : 1,
-          fontSize: "18px",
-          lineHeight: 1,
-        }}
-      >
-        ×
-      </button>
-    </div>
-
-  </div>
-);
-
 
 export default Dashboard;

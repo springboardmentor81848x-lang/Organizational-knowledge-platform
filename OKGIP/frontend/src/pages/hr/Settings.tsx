@@ -1,5 +1,2 @@
-import React from "react";
-import WorkspacePage from "@/pages/shared/WorkspacePage.backup";
-
-const Settings: React.FC = () => <WorkspacePage role="HR" page="settings" />;
-export default Settings;
+import React from "react"; import {Settings as SettingsIcon,LogOut,RefreshCw,ShieldCheck} from "lucide-react"; import {useNavigate} from "react-router-dom"; import HrPage from "@/components/hr/HrPage"; import {useAuth} from "@/context/AuthContext";
+export default function Settings(){const nav=useNavigate();const{email,role,logout}=useAuth();return <HrPage title="Settings" subtitle="Review the authenticated HR workspace and security context." active="Settings"><div className="hr-page-grid two"><section className="hr-card"><div className="hr-section-title"><div><h3>Account</h3><span className="hr-muted">Values below come from the authenticated session.</span></div><ShieldCheck size={20}/></div><div className="hr-list"><div className="hr-list-item"><small className="hr-muted">Email</small><h3>{email||"—"}</h3></div><div className="hr-list-item"><small className="hr-muted">Role</small><h3>{role||"—"}</h3></div></div></section><section className="hr-card"><h2>Session Actions</h2><p>Use the controls below to return to live HR data or end the authenticated session.</p><div className="hr-btn-row"><button className="hr-btn" onClick={()=>nav("/hr")}><RefreshCw size={14}/>Dashboard</button><button className="hr-btn danger" onClick={()=>{logout();nav("/login")}}><LogOut size={14}/>Logout</button></div></section></div></HrPage>}

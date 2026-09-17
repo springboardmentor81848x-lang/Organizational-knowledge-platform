@@ -69,7 +69,7 @@ const AIRecommendations: React.FC = () => {
         setError("");
 
         const data =
-          await managerService.getTeamAnalytics();
+          await managerService.getManagerTeam();
 
         setEmployees(
           Array.isArray(data) ? data : []

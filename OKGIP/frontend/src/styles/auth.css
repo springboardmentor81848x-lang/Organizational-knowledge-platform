@@ -12,7 +12,7 @@
 .role-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -20,14 +20,14 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  height: 145px;
+  height: 132px;
   box-sizing: border-box;
 
   border: 1px solid #dbe2eb;
   border-radius: 14px;
   background: #fff;
 
-  padding: 28px 8px 10px;
+  padding: 26px 6px 8px;
 
   display: flex;
   flex-direction: column;
@@ -98,4 +98,20 @@
   margin-top: 5px;
   color: #ef4444;
   font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .role-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .role-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .role-card {
+    height: 125px;
+  }
 }
