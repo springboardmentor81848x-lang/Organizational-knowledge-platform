@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "backendAppName": {
+      "value": "kgp-backend-prod"
+    },
+    "frontendAppName": {
+      "value": "kgp-frontend-prod"
+    },
+    "appServicePlanName": {
+      "value": "kgp-plan-prod"
+    },
+    "skuName": {
+      "value": "B1"
+    },
+    "skuTier": {
+      "value": "Basic"
+    }
+  }
+}

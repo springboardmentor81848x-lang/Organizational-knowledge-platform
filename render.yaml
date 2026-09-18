@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: knowledge-gap-backend
+    runtime: docker
+    rootDir: backend/knowledge-gap-platform
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: DB_URL
+        value: jdbc:mysql://your-host:3306/your-database?sslMode=REQUIRED&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - key: DB_USERNAME
+        value: your-db-username
+      - key: DB_PASSWORD
+        value: your-db-password
+      - key: MAIL_USERNAME
+        value: your_email
+      - key: MAIL_PASSWORD
+        value: your_app_password
+      - key: GEMINI_API_KEY
+        value: your_gemini_api_key
+      - key: PORT
+        value: 8080
+
+  - type: web
+    name: knowledge-gap-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        value: https://your-render-backend-url.onrender.com/api
