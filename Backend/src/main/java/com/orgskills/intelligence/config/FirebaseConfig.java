@@ -41,7 +41,15 @@ public class FirebaseConfig {
             return;
         }
 
-        try (FileInputStream serviceAccount = new FileInputStream(serviceAccountPath)) {
+        java.io.File file = new java.io.File(serviceAccountPath);
+        if (!file.exists()) {
+            java.io.File alt = new java.io.File("Backend", serviceAccountPath);
+            if (alt.exists()) {
+                file = alt;
+            }
+        }
+
+        try (FileInputStream serviceAccount = new FileInputStream(file)) {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .build();

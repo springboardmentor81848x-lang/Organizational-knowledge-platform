@@ -110,8 +110,15 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   '/mentorship': ROLES_WITH_DEVELOPMENT_TRACK,
   '/achievements': ROLES_WITH_DEVELOPMENT_TRACK,
 
-  '/team': ['MANAGER', 'DEPARTMENT_HEAD', 'SYSTEM_ADMIN', 'ADMIN'],
-  '/department': ['DEPARTMENT_HEAD', 'HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
+  // Both of these pages are one component, and which API it calls is decided by the route
+  // rather than by the role — /team always calls ManagerController, /department always calls
+  // DepartmentHeadController. So each route can only admit the roles its own controller admits.
+  // These two lists used to be wider than that: a department head could reach /team and an HR
+  // account could reach /department, and every panel on the page came back refused. The
+  // navigation never offered either link, which is why it went unnoticed — it took typing the
+  // URL to find it.
+  '/team': ['MANAGER', 'SYSTEM_ADMIN', 'ADMIN'],
+  '/department': ['DEPARTMENT_HEAD', 'SYSTEM_ADMIN', 'ADMIN'],
   '/workforce': ['HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
   '/catalog': ['LND_ADMIN', 'SYSTEM_ADMIN', 'ADMIN'],
   '/reports': [

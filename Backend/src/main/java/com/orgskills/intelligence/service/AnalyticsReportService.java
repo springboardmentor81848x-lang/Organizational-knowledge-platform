@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -57,7 +59,7 @@ public class AnalyticsReportService {
         ReportDocument document = new ReportDocument(
                 "Employee Learning Report",
                 analytics.getFullName() + " · generated " + TIMESTAMP.format(Instant.now()),
-                "Employee_Learning_Report_" + employeeId);
+                safeBaseName("Employee_Learning_Report_" + employeeId));
 
         document.section("Employee Details")
                 .figure("Name", analytics.getFullName())
@@ -124,7 +126,7 @@ public class AnalyticsReportService {
         ReportDocument document = new ReportDocument(
                 "Department Training Report",
                 analytics.getDepartment() + " · generated " + TIMESTAMP.format(Instant.now()),
-                "Department_Training_Report_" + department.replaceAll("\\s+", "_"));
+                safeBaseName("Department_Training_Report_" + department));
 
         document.section("Training Summary")
                 .figure("Department", analytics.getDepartment())
@@ -193,6 +195,21 @@ public class AnalyticsReportService {
         return new RenderedReport(content, filename, format.getContentType());
     }
 
+    /**
+     * Strips from a base filename everything that has no business in one.
+     *
+     * <p>Two of the three reports name themselves after data - a department, an employee id - so
+     * the base name is not a literal the code controls. A department called "R&amp;D, Platform"
+     * put a comma into the Content-Disposition header, where a comma separates header values: the
+     * name arrived at the browser truncated, or the header was dropped, and the report saved
+     * without its extension.
+     */
+    static String safeBaseName(String baseName) {
+        String cleaned = baseName.replaceAll("[^A-Za-z0-9._-]+", "_").replaceAll("_{2,}", "_");
+        cleaned = cleaned.replaceAll("^[._-]+", "").replaceAll("[._-]+$", "");
+        return cleaned.isEmpty() ? "Report" : cleaned;
+    }
+
     /** Renders an improvement so a decline is unmistakable rather than an unlabelled negative. */
     private String signed(Integer improvement) {
         if (improvement == null) {
@@ -204,8 +221,15 @@ public class AnalyticsReportService {
     /** A finished report: its bytes, and what the browser needs to save it. */
     public record RenderedReport(byte[] content, String filename, String contentType) {
 
+        /**
+         * RFC 6266 form: the name is quoted, so spaces and punctuation cannot end the parameter
+         * early, and the UTF-8 {@code filename*} is sent alongside the plain one so a name that
+         * had to be transliterated for the ASCII parameter still reaches clients that read it.
+         */
         public String contentDisposition() {
-            return "attachment; filename=" + filename;
+            String ascii = filename.replaceAll("[^A-Za-z0-9._-]", "_");
+            return "attachment; filename=\"" + ascii + "\"; filename*=UTF-8''"
+                    + URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
         }
     }
 }

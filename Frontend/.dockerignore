@@ -1,0 +1,20 @@
+# node_modules is the big one: it is reinstalled inside the image by `npm ci`, and sending a
+# host copy would both bloat the build context and risk carrying platform-specific binaries
+# built for Windows into a Linux image.
+node_modules/
+dist/
+
+# Vite inlines env values at build time, so a stray .env in the context would be baked into the
+# bundle and shipped to every browser. Build arguments are the supported route — see Dockerfile.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.idea/
+.vscode/
+
+Dockerfile
+.dockerignore
+README.md

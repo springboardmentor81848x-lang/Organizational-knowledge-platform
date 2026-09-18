@@ -181,11 +181,56 @@ export const api = {
     if (!response.ok) {
       throw ApiError.fromResponse(response, (await parseBody(response)) as never)
     }
-    const disposition = response.headers.get('content-disposition') ?? ''
-    const match = /filename=("?)([^";]+)\1/i.exec(disposition)
-    return {
-      blob: await response.blob(),
-      filename: match?.[2]?.trim() || 'download',
-    }
+    const blob = await response.blob()
+    return { blob, filename: downloadFilename(response, path, blob) }
   },
+}
+
+/** What a file is called on disk, per content type, when its own name did not reach us. */
+const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-excel': 'xls',
+  'text/csv': 'csv',
+  'application/zip': 'zip',
+  'application/json': 'json',
+}
+
+/**
+ * The name to save a download under.
+ *
+ * Content-Disposition is read in both of its forms, RFC 5987's `filename*` first, because that is
+ * the one that survives a name from outside ASCII. Either may be missing: the header is not
+ * CORS-safelisted, so the browser hides it from this code unless the API names it in
+ * Access-Control-Expose-Headers, and it does so silently - there is no error to notice.
+ *
+ * Which is why the fallback matters more than it looks. It used to be the bare word "download",
+ * so a perfectly good PDF was saved under a name with no extension, and the operating system
+ * then refused to open it - indistinguishable, to the person who pressed the button, from the
+ * download having failed. Deriving the extension from the content type at least yields a file
+ * that opens.
+ */
+function downloadFilename(response: Response, path: string, blob: Blob): string {
+  const disposition = response.headers.get('content-disposition') ?? ''
+
+  const encoded = /filename\*\s*=\s*[\w-]+''([^;]+)/i.exec(disposition)
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      // A malformed filename* is not worth failing a download over: try the plain parameter.
+    }
+  }
+
+  const plain = /filename\s*=\s*(?:"([^"]+)"|([^;]+))/i.exec(disposition)
+  const name = (plain?.[1] ?? plain?.[2])?.trim()
+  if (name) return name
+
+  const stem = path.split('?')[0].split('/').filter(Boolean).pop() || 'download'
+  const contentType = (blob.type || response.headers.get('content-type') || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase()
+  const extension = EXTENSION_BY_CONTENT_TYPE[contentType]
+  return extension ? `${stem}.${extension}` : stem
 }

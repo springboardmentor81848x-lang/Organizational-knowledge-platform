@@ -64,7 +64,7 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=Employee_Learning_Report_1.pdf"));
+                        disposition("Employee_Learning_Report_1.pdf")));
     }
 
     @Test
@@ -77,7 +77,7 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(EXCEL_CONTENT_TYPE))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=Employee_Learning_Report_1.xlsx"));
+                        disposition("Employee_Learning_Report_1.xlsx")));
     }
 
     @Test
@@ -109,7 +109,7 @@ class ReportControllerTest {
                         .param("format", "excel"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=Department_Training_Report_Engineering.xlsx"));
+                        disposition("Department_Training_Report_Engineering.xlsx")));
 
         verify(analyticsReportService).departmentTrainingReport(3L, "Engineering", ReportFormat.EXCEL);
     }
@@ -123,7 +123,7 @@ class ReportControllerTest {
         mockMvc.perform(get("/api/reports/training-effectiveness").principal(principal(4L)))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=Skill_Gap_Report.pdf"));
+                        disposition("Skill_Gap_Report.pdf")));
     }
 
     @Test
@@ -134,6 +134,15 @@ class ReportControllerTest {
 
         mockMvc.perform(get("/api/reports/training-effectiveness").principal(principal(1L)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    /**
+     * The header the controller now sends: RFC 6266 quotes the name and repeats it in the UTF-8
+     * {@code filename*} form, so a report whose name comes from data - a department, say - cannot
+     * end the parameter early on a space or a comma.
+     */
+    private String disposition(String filename) {
+        return "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename;
     }
 
     private AnalyticsReportService.RenderedReport report(String filename, String contentType) {

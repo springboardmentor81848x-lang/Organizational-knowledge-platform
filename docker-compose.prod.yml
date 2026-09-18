@@ -1,0 +1,158 @@
+# The whole platform on one machine.
+#
+#   cp .env.prod.example .env.prod      # then edit it — it will not start with the defaults
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Four containers: Postgres holds the data, Redis caches reads, the API serves /api, and nginx
+# serves the built frontend and proxies /api to the API on the same origin.
+#
+# Only the web tier publishes a port. Postgres, Redis and the API are reachable from inside the
+# compose network and from nowhere else — a database that is only ever read by the application
+# has no reason to be listening on a public interface, and this is the difference between a
+# misconfigured password being an inconvenience and being an incident.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: org-skills-postgres-prod
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:?set DB_USERNAME in .env.prod}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.prod}
+      POSTGRES_DB: ${DB_NAME:-org_skills}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME:-org_skills}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [org-skills-net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: org-skills-redis-prod
+    # Everything Redis holds here is a cache, so under memory pressure the right behaviour is to
+    # evict and recompute from Postgres rather than to start refusing writes.
+    command: >
+      redis-server
+      --appendonly no
+      --maxmemory ${REDIS_MAXMEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [org-skills-net]
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: org-skills-api
+    environment:
+      PORT: 8081
+
+      # Hostnames, not localhost: inside the compose network each service answers to its own
+      # service name. This is the single most common thing to get wrong when moving a working
+      # local setup into containers.
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-org_skills}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+      # Hibernate still owns the schema; there is no migration tool in the project yet. Once one
+      # takes over, set this to `validate` so a stale entity cannot reshape a table holding real
+      # rows. See the deployment notes in README.md.
+      DDL_AUTO: ${DDL_AUTO:-update}
+      SHOW_SQL: "false"
+
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env.prod — at least 32 characters}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+
+      # The browser only reaches the API through the nginx proxy on the same origin, so CORS is
+      # not exercised in this topology. It is set anyway: it costs nothing and it is what makes
+      # the API safe to expose directly later without rediscovering the Content-Disposition
+      # problem documented in CorsConfig.
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN in .env.prod}
+
+      # --- Firebase social sign-in ---
+      # The key is mounted below, never built into the image.
+      FIREBASE_SERVICE_ACCOUNT_PATH: /run/secrets/firebase-service-account.json
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+
+      # --- Live AI recommendations ---
+      # Left optional rather than required, because the application already has a defined
+      # behaviour for a missing key: RecommendationService logs a warning and falls back to
+      # rule-based recommendations. Compose refusing to start would be a harder failure than the
+      # one the code is written to handle.
+      LLM_MOCK_ENABLED: ${LLM_MOCK_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gemini-3.6-flash}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/chat/completions}
+
+      # --- Outbound email ---
+      # Likewise optional: an empty MAIL_HOST is the supported "write verification codes to the
+      # log instead of sending them" mode, and ${VAR:?} treats empty and unset alike — so
+      # requiring it here would have made that documented mode impossible to select.
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@orgskills.com}
+    volumes:
+      # Read-only, and outside the build context entirely. A credential that lives in an image
+      # layer is a credential in every registry and every cache that image ever touches.
+      - ${FIREBASE_KEY_FILE:?set FIREBASE_KEY_FILE in .env.prod to the path of your service-account JSON}:/run/secrets/firebase-service-account.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # The one endpoint SecurityConfig permits without a token, precisely so an orchestrator
+      # can reach it. It reports up/down without naming components.
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Spring Boot with Hibernate schema generation takes a while on a cold database; without
+      # this the container would be restarted before it ever finished starting.
+      start_period: 90s
+    restart: unless-stopped
+    networks: [org-skills-net]
+
+  web:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty on purpose — nginx proxies /api on this same origin, so the app calls relative
+        # paths and never makes a cross-origin request.
+        VITE_API_BASE_URL: ""
+        # Vite inlines these at build time, so changing them means rebuilding the image, not
+        # restarting the container.
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+    container_name: org-skills-web
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [org-skills-net]
+
+volumes:
+  pgdata:
+
+networks:
+  org-skills-net:
+    driver: bridge
