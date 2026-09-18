@@ -26,3 +26,4 @@ Backend/organizational-knowledge-gap-platform/target/
 !.env.exampleBackend/organizational-knowledge-gap-platform/.git_backup/
 **/.metadata/
 **/.git_backup/
+*.zip
