@@ -1,14 +1,24 @@
 /target/
+/Backend/target/
+/backend/target/
+**/target/
 /.idea/
 *.iml
 /.vscode/
-backend/target/
 node_modules/
-frontend/node_modules/
+/Frontend/node_modules/
+/frontend/node_modules/
+**/node_modules/
 *.zip
 .env
 .env.*
-!.env.example
+**/.env
+**/.env.*
+# ...but the templates are documentation and must be committed. This has to come after the
+# rules above, and has to match *.example rather than just .env.example, or a file such as
+# .env.prod.example is quietly excluded and the deployment instructions ship without it.
+!*.example
+!**/*.example
 
 # The Firebase service-account key. A private credential — it must never be committed.
 # The path is configurable via FIREBASE_SERVICE_ACCOUNT_PATH; the default filename is matched

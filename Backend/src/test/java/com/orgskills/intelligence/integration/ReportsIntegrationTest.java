@@ -182,8 +182,9 @@ class ReportsIntegrationTest {
 
         byte[] pdf = result.getResponse().getContentAsByteArray();
         assertThat(result.getResponse().getContentType()).isEqualTo("application/pdf");
+        String filename = "Employee_Learning_Report_" + employee.getId() + ".pdf";
         assertThat(result.getResponse().getHeader(HttpHeaders.CONTENT_DISPOSITION))
-                .isEqualTo("attachment; filename=Employee_Learning_Report_" + employee.getId() + ".pdf");
+                .isEqualTo("attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename);
 
         String text = pdfText(pdf);
         assertThat(text).contains("Employee Learning Report", "Reports Employee", DEPARTMENT);

@@ -28,9 +28,38 @@ import styles from './ReportsPage.module.css'
  * service, so it cannot disclose more than the screen already would — and this page picks the
  * people and departments it offers from whichever directory endpoint that role can actually
  * call, rather than offering a list that would come back refused.
+ *
+ * That principle applies to the buttons as much as to the lists. A report a role cannot have is
+ * not offered and then refused; it is explained instead. The alternative is what this page used
+ * to do, which was to hand a manager a Generate PDF button for an organisation-wide report and
+ * let the 403 arrive as a failed download.
  */
 
-const ORG_WIDE_ROLES: Role[] = ['HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN']
+/**
+ * Roles that may call the HR directory, and so the roles whose roster of people to report on
+ * comes from there. It is HrController's own list. L&D is deliberately absent: an L&D admin may
+ * generate every report without being allowed to browse the people directory, and the two are
+ * separate questions that used to be answered by one list.
+ */
+const DIRECTORY_ROLES: Role[] = ['HR_SPECIALIST', 'HR_ADMIN', 'SYSTEM_ADMIN', 'ADMIN']
+
+/**
+ * Roles the analytics layer treats as organisation-wide — mirroring AnalyticsService.ORG_WIDE_ROLES
+ * — and therefore the only roles whose request for the skill gap report, or for a department
+ * other than their own, is answered rather than refused.
+ *
+ * Keeping this in step with the backend is the whole point. When it drifted, the page put a
+ * "Generate PDF" button in front of managers and department heads for the organisation-wide
+ * report; pressing it produced a 403 and a failed download, which reads as the PDF being broken
+ * rather than as the report not being theirs to run.
+ */
+const ORG_WIDE_REPORT_ROLES: Role[] = [
+  'HR_SPECIALIST',
+  'HR_ADMIN',
+  'LND_ADMIN',
+  'SYSTEM_ADMIN',
+  'ADMIN',
+]
 
 /** The only two things this page needs about a person, whichever directory they came from. */
 interface ReportSubject {
@@ -44,20 +73,22 @@ export function ReportsPage() {
   const toast = useToast()
   const [running, setRunning] = useState<string | null>(null)
 
-  const orgWide = role ? ORG_WIDE_ROLES.includes(role) : false
+  const canUseDirectory = role ? DIRECTORY_ROLES.includes(role) : false
+  const reportsOrgWide = role ? ORG_WIDE_REPORT_ROLES.includes(role) : false
   const isManager = role === 'MANAGER'
+  const isDepartmentHead = role === 'DEPARTMENT_HEAD'
 
   // The people this role may report on come from the endpoint scoped to that role. A manager
   // gets their direct reports because of who they are; HR gets the directory. The three shapes
   // are narrowed to the two fields this page needs, so the union never leaks past here.
   const people = useQuery<ReportSubject[]>({
-    queryKey: orgWide
+    queryKey: canUseDirectory
       ? queryKeys.hr.employees({})
       : isManager
         ? queryKeys.team.members('manager')
         : queryKeys.team.members('department'),
     queryFn: async ({ signal }) => {
-      const rows = orgWide
+      const rows = canUseDirectory
         ? await hrApi.employees({}, signal)
         : isManager
           ? await managerApi.team(signal)
@@ -70,14 +101,24 @@ export function ReportsPage() {
     },
   })
 
-  const roster = people.data ?? []
+  // Memoised so it is the same array between renders while the query result is unchanged:
+  // `people.data ?? []` builds a fresh empty array every render, which makes the dependency of
+  // the useMemo below a lie and re-derives the department list on every keystroke.
+  const roster = useMemo(() => people.data ?? [], [people.data])
 
   const departments = useMemo(() => {
+    // A department head may report on their own department and no other; a manager may report on
+    // no department at all, because a team is not a department. Both refusals come from
+    // requireCanViewDepartment, so offering the wider list here would only put choices on the
+    // page whose one outcome is a failed download.
+    if (isDepartmentHead) return user?.department ? [user.department] : []
+    if (!reportsOrgWide) return []
+
     const seen = new Set<string>()
     for (const person of roster) if (person.department) seen.add(person.department)
     if (user?.department) seen.add(user.department)
     return [...seen].sort()
-  }, [roster, user])
+  }, [roster, user, isDepartmentHead, reportsOrgWide])
 
   const [employeeId, setEmployeeId] = useState<string>('')
   const [department, setDepartment] = useState<string>('')
@@ -213,17 +254,24 @@ export function ReportsPage() {
         title="Skill gap & training effectiveness report"
         description="Every skill with a role requirement, how far the workforce sits from it, and where the shortfall is concentrated."
       >
-        <div className={styles.controlRow}>
+        {reportsOrgWide ? (
+          <div className={styles.controlRow}>
+            <p className={styles.note}>
+              Organisation-wide. The same rows the gap intelligence screen shows, generated fresh.
+            </p>
+            <FormatButtons
+              busyFormat={running?.startsWith('skill-gap:') ? running.split(':')[1] : null}
+              onGenerate={(format) =>
+                run(`skill-gap:${format}`, () => reportsApi.skillGap(format))
+              }
+            />
+          </div>
+        ) : (
           <p className={styles.note}>
-            Organisation-wide. The same rows the gap intelligence screen shows, generated fresh.
+            This report covers the whole organisation, which your role is not scoped to. It is
+            available to the HR, L&amp;D and administrator roles.
           </p>
-          <FormatButtons
-            busyFormat={running?.startsWith('skill-gap:') ? running.split(':')[1] : null}
-            onGenerate={(format) =>
-              run(`skill-gap:${format}`, () => reportsApi.skillGap(format))
-            }
-          />
-        </div>
+        )}
       </Card>
     </div>
   )

@@ -49,7 +49,7 @@ public class ReportGenerationService {
             CellStyle headerStyle = createHeaderStyle(workbook);
 
             Row titleRow = sheet.createRow(0);
-            titleRow.createCell(0).setCellValue("ORGANIZATIONAL SKILL GAP SUMMARY REPORT - " + data.getScopeName());
+            titleRow.createCell(0).setCellValue("ORGANIZATIONAL SKILL GAP SUMMARY REPORT - " + text(data.getScopeName()));
             Row dateRow = sheet.createRow(1);
             dateRow.createCell(0).setCellValue("Generated At: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
@@ -64,14 +64,14 @@ public class ReportGenerationService {
             int rowIdx = 4;
             for (GapHeatmapCell cellData : data.getCells()) {
                 Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(cellData.getSkillName());
-                row.createCell(1).setCellValue(cellData.getCategory());
-                row.createCell(2).setCellValue(cellData.getTotalGaps());
-                row.createCell(3).setCellValue(cellData.getLowCount());
-                row.createCell(4).setCellValue(cellData.getMediumCount());
-                row.createCell(5).setCellValue(cellData.getHighCount());
-                row.createCell(6).setCellValue(cellData.getCriticalCount());
-                row.createCell(7).setCellValue(cellData.getAvgGapScore());
+                writeText(row.createCell(0), cellData.getSkillName());
+                writeText(row.createCell(1), cellData.getCategory());
+                setIfMeasured(row.createCell(2), cellData.getTotalGaps());
+                setIfMeasured(row.createCell(3), cellData.getLowCount());
+                setIfMeasured(row.createCell(4), cellData.getMediumCount());
+                setIfMeasured(row.createCell(5), cellData.getHighCount());
+                setIfMeasured(row.createCell(6), cellData.getCriticalCount());
+                setIfMeasured(row.createCell(7), cellData.getAvgGapScore());
             }
 
             for (int i = 0; i < headers.length; i++) {
@@ -101,12 +101,12 @@ public class ReportGenerationService {
             int rowIdx = 1;
             for (TrainingEffectivenessResponse item : data) {
                 Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(item.getCourseTitle());
-                row.createCell(1).setCellValue(item.getProvider());
-                row.createCell(2).setCellValue(item.getSkillName());
-                row.createCell(3).setCellValue(item.getEnrolledCount());
-                row.createCell(4).setCellValue(item.getCompletedCount());
-                row.createCell(5).setCellValue(item.getCompletionRatePercent());
+                writeText(row.createCell(0), item.getCourseTitle());
+                writeText(row.createCell(1), item.getProvider());
+                writeText(row.createCell(2), item.getSkillName());
+                setIfMeasured(row.createCell(3), item.getEnrolledCount());
+                setIfMeasured(row.createCell(4), item.getCompletedCount());
+                setIfMeasured(row.createCell(5), item.getCompletionRatePercent());
                 // A course nobody has finished and been reassessed on has no before/after to
                 // report. The cell is left blank rather than filled with a zero, which would
                 // read as "no improvement" rather than "not measured".
@@ -142,11 +142,11 @@ public class ReportGenerationService {
             int rowIdx = 1;
             for (SkillInventoryResponse item : data) {
                 Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(item.getSkillName());
-                row.createCell(1).setCellValue(item.getCategory());
-                row.createCell(2).setCellValue(item.getHeadcount());
-                row.createCell(3).setCellValue(item.getAverageProficiency());
-                row.createCell(4).setCellValue(item.getAverageProficiencyLabel());
+                writeText(row.createCell(0), item.getSkillName());
+                writeText(row.createCell(1), item.getCategory());
+                setIfMeasured(row.createCell(2), item.getHeadcount());
+                setIfMeasured(row.createCell(3), item.getAverageProficiency());
+                writeText(row.createCell(4), item.getAverageProficiencyLabel());
             }
 
             for (int i = 0; i < headers.length; i++) {
@@ -171,8 +171,8 @@ public class ReportGenerationService {
             Font titleFont = new Font(Font.HELVETICA, 18, Font.BOLD, new Color(41, 128, 185));
             Font subFont = new Font(Font.HELVETICA, 10, Font.ITALIC, Color.GRAY);
 
-            document.add(new Paragraph("Skill Gap Summary Report - " + data.getScopeName(), titleFont));
-            document.add(new Paragraph("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " | Scope Employees: " + data.getTotalEmployees(), subFont));
+            document.add(new Paragraph("Skill Gap Summary Report - " + text(data.getScopeName()), titleFont));
+            document.add(new Paragraph("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " | Scope Employees: " + text(data.getTotalEmployees()), subFont));
             document.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(8);
@@ -186,14 +186,14 @@ public class ReportGenerationService {
             }
 
             for (GapHeatmapCell cellData : data.getCells()) {
-                table.addCell(cellData.getSkillName());
-                table.addCell(cellData.getCategory());
-                table.addCell(String.valueOf(cellData.getTotalGaps()));
-                table.addCell(String.valueOf(cellData.getLowCount()));
-                table.addCell(String.valueOf(cellData.getMediumCount()));
-                table.addCell(String.valueOf(cellData.getHighCount()));
-                table.addCell(String.valueOf(cellData.getCriticalCount()));
-                table.addCell(String.valueOf(cellData.getAvgGapScore()));
+                table.addCell(text(cellData.getSkillName()));
+                table.addCell(text(cellData.getCategory()));
+                table.addCell(text(cellData.getTotalGaps()));
+                table.addCell(text(cellData.getLowCount()));
+                table.addCell(text(cellData.getMediumCount()));
+                table.addCell(text(cellData.getHighCount()));
+                table.addCell(text(cellData.getCriticalCount()));
+                table.addCell(text(cellData.getAvgGapScore()));
             }
 
             document.add(table);
@@ -229,12 +229,13 @@ public class ReportGenerationService {
             }
 
             for (TrainingEffectivenessResponse item : data) {
-                table.addCell(item.getCourseTitle());
-                table.addCell(item.getProvider());
+                table.addCell(text(item.getCourseTitle()));
+                table.addCell(text(item.getProvider()));
                 table.addCell(item.getSkillName() != null ? item.getSkillName() : "No skill mapped");
-                table.addCell(String.valueOf(item.getEnrolledCount()));
-                table.addCell(String.valueOf(item.getCompletedCount()));
-                table.addCell(item.getCompletionRatePercent() + "%");
+                table.addCell(text(item.getEnrolledCount()));
+                table.addCell(text(item.getCompletedCount()));
+                table.addCell(item.getCompletionRatePercent() == null
+                        ? PLACEHOLDER : item.getCompletionRatePercent() + "%");
                 table.addCell(improvementText(item.getAvgSkillImprovement()));
             }
 
@@ -271,11 +272,11 @@ public class ReportGenerationService {
             }
 
             for (SkillInventoryResponse item : data) {
-                table.addCell(item.getSkillName());
+                table.addCell(text(item.getSkillName()));
                 table.addCell(item.getCategory());
-                table.addCell(String.valueOf(item.getHeadcount()));
-                table.addCell(String.valueOf(item.getAverageProficiency()));
-                table.addCell(item.getAverageProficiencyLabel());
+                table.addCell(text(item.getHeadcount()));
+                table.addCell(text(item.getAverageProficiency()));
+                table.addCell(text(item.getAverageProficiencyLabel()));
             }
 
             document.add(table);
@@ -287,10 +288,48 @@ public class ReportGenerationService {
         }
     }
 
-    /** Leaves the cell empty when the figure has not been measured, rather than writing a zero. */
-    private void setIfMeasured(Cell cell, Double value) {
+    /**
+     * What a cell shows when the underlying figure is absent.
+     *
+     * <p>A dash rather than a blank: an empty cell reads as a report that forgot the value,
+     * whereas a dash says the platform has none to give - which for an uncategorised skill, or a
+     * course with no provider recorded, is the truth.
+     */
+    private static final String PLACEHOLDER = "-";
+
+    /**
+     * Renders one value for a PDF table cell.
+     *
+     * <p>Every column these reports draw on is nullable: a skill need not carry a category, a
+     * course need not name a provider, and the aggregate counts stay null until a gap analysis
+     * has run. {@code String.valueOf(null)} does not fail loudly - it writes the four letters
+     * "null" into the document - so reports were being handed to people with "null" printed
+     * across them. Routing every cell through here is what stops that.
+     */
+    private static String text(Object value) {
+        if (value == null) {
+            return PLACEHOLDER;
+        }
+        String rendered = String.valueOf(value);
+        return rendered.isBlank() ? PLACEHOLDER : rendered;
+    }
+
+    /** Writes a nullable string; POI has no null-safe setter of its own. */
+    private void writeText(Cell cell, String value) {
+        cell.setCellValue(value == null ? PLACEHOLDER : value);
+    }
+
+    /**
+     * Leaves the cell empty when the figure has not been measured, rather than writing a zero.
+     *
+     * <p>Widened from Double to Number so the counts pass through it too. They were written with
+     * {@code setCellValue(item.getCount())}, and because POI only takes a primitive double, a
+     * count that was still null unboxed and threw - failing the whole spreadsheet download over
+     * a single unmeasured row.
+     */
+    private void setIfMeasured(Cell cell, Number value) {
         if (value != null) {
-            cell.setCellValue(value);
+            cell.setCellValue(value.doubleValue());
         }
     }
 
