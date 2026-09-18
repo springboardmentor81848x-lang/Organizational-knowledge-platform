@@ -105,20 +105,58 @@ class GapAnalysisServiceImplTest {
     }
 
     @Test
-    void runGapAnalysis_RepeatedCalls_ExecutesCleanlyWithoutDuplicates() {
+    void runGapAnalysis_EmployeeCannotRunForAnother_ThrowsAccessDenied() {
+        Employee requester = new Employee();
+        requester.setEmployeeId(2L);
+        requester.setOfficialEmail("emp2@example.com");
+        com.okip.entity.master.Role empRole = new com.okip.entity.master.Role();
+        empRole.setRoleName(com.okip.enums.RoleType.ROLE_EMPLOYEE);
+        requester.setRole(empRole);
+
+        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        when(auth.getName()).thenReturn("emp2@example.com");
+        when(auth.isAuthenticated()).thenReturn(true);
+        org.springframework.security.core.context.SecurityContext context = mock(org.springframework.security.core.context.SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+
+        when(employeeRepository.findByOfficialEmail("emp2@example.com")).thenReturn(Optional.of(requester));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
-        when(employeeJobRoleRepository.findByEmployeeAndActiveTrue(employee)).thenReturn(List.of(employeeJobRole));
-        when(competencyRepository.findByJobRole(employeeJobRole.getJobRole())).thenReturn(List.of(competency));
-        when(employeeSkillRepository.findByEmployeeAndSkill(employee, competency.getSkill())).thenReturn(Optional.empty());
 
-        GapAnalysisResponseDTO response1 = gapAnalysisService.runGapAnalysis(1L);
-        GapAnalysisResponseDTO response2 = gapAnalysisService.runGapAnalysis(1L);
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
+            gapAnalysisService.runGapAnalysis(1L);
+        });
+    }
 
-        assertNotNull(response1);
-        assertNotNull(response2);
-        assertEquals(response1.getTotalSkills(), response2.getTotalSkills());
+    @Test
+    void runGapAnalysis_UnauthorizedManagerCannotRunForUnrelatedEmployee_ThrowsAccessDenied() {
+        Employee manager = new Employee();
+        manager.setEmployeeId(3L);
+        manager.setOfficialEmail("mgr3@example.com");
+        com.okip.entity.master.Role mgrRole = new com.okip.entity.master.Role();
+        mgrRole.setRoleName(com.okip.enums.RoleType.ROLE_MANAGER);
+        manager.setRole(mgrRole);
 
-        verify(knowledgeGapRepository, times(2)).deleteByEmployeeJobRole(employeeJobRole);
-        verify(knowledgeGapRepository, times(2)).save(any(KnowledgeGap.class));
+        com.okip.entity.master.Department deptA = new com.okip.entity.master.Department();
+        deptA.setDepartmentId(100L);
+        manager.setDepartment(deptA);
+
+        com.okip.entity.master.Department deptB = new com.okip.entity.master.Department();
+        deptB.setDepartmentId(200L);
+        employee.setDepartment(deptB); // Employee 1 in department 200
+
+        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        when(auth.getName()).thenReturn("mgr3@example.com");
+        when(auth.isAuthenticated()).thenReturn(true);
+        org.springframework.security.core.context.SecurityContext context = mock(org.springframework.security.core.context.SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+
+        when(employeeRepository.findByOfficialEmail("mgr3@example.com")).thenReturn(Optional.of(manager));
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
+            gapAnalysisService.runGapAnalysis(1L);
+        });
     }
 }

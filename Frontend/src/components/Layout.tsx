@@ -1,15 +1,17 @@
 import { type ReactNode, useEffect, useState } from 'react';
-import { Bell, Brain, LogOut, Menu, UserRound, X } from 'lucide-react';
+import { Bell, Brain, HelpCircle, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { endpoints, get } from '../api';
 import { currentEmail, currentRole, logout } from '../auth';
 import { appNavigation } from '../routes/navigation';
+import { PlatformTour } from './PlatformTour';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const role = currentRole();
   const email = currentEmail();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const [unread, setUnread] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,6 +73,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <div className="topActions" style={{ position: 'relative' }}>
             <span className="rolePill">{role}</span>
+            <button className="iconBtn" onClick={() => setShowTour((v) => !v)} aria-label="Platform Guide & Tour" title="Platform Guide & Tour">
+              <HelpCircle size={19} />
+            </button>
+
             <button className="iconBtn" onClick={() => navigate('/notifications')} aria-label="Open notifications">
               <Bell size={19} />
               {unread > 0 && <i>{unread}</i>}
@@ -115,12 +121,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <UserRound size={16} /> My Profile
                 </button>
 
-                <button
-                  onClick={() => { setMenuOpen(false); navigate('/skills'); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text)' }}
-                >
-                  <Brain size={16} /> My Skills
-                </button>
+                {role === 'EMPLOYEE' && (
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/skills'); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text)' }}
+                  >
+                    <Brain size={16} /> My Skills
+                  </button>
+                )}
 
                 <button
                   onClick={() => { setMenuOpen(false); navigate('/notifications'); }}
@@ -144,6 +152,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         <div className="content">{children}</div>
       </main>
+
+      {showTour && <PlatformTour onClose={() => setShowTour(false)} />}
     </div>
   );
 }

@@ -195,6 +195,13 @@ public class KnowledgeSessionServiceImpl implements KnowledgeSessionService {
         KnowledgeSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Knowledge session not found."));
 
+        boolean isAuthorized = session.getSpeaker().getEmployeeId().equals(loggedIn.getEmployeeId()) ||
+                (loggedIn.getRole() != null && !loggedIn.getRole().getRoleName().name().equals("ROLE_EMPLOYEE"));
+
+        if (!isAuthorized) {
+            throw new BadRequestException("Unauthorized to modify attendance for this session.");
+        }
+
         SessionRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session registration not found."));
 

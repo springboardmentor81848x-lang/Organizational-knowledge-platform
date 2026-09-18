@@ -394,13 +394,12 @@ public class DataInitializer implements CommandLineRunner {
             s1.setSkill(springSkill);
             s1.setSessionDate(LocalDateTime.now().plusDays(4).withHour(15).withMinute(0));
             s1.setDurationMinutes(60);
-            s1.setMeetingLink("https://meet.google.com/okip-spring-microservices");
+            s1.setMeetingLink("https://meet.google.com/abc-defg-hij");
             s1.setLocation("Virtual (Google Meet)");
             s1.setMaxParticipants(50);
             s1.setStatus(SessionStatus.UPCOMING);
             KnowledgeSession savedS1 = knowledgeSessionRepository.save(s1);
 
-            // Register John for this session
             SessionRegistration reg1 = new SessionRegistration();
             reg1.setSession(savedS1);
             reg1.setEmployee(john);
@@ -415,7 +414,7 @@ public class DataInitializer implements CommandLineRunner {
             s2.setSkill(k8sSkill);
             s2.setSessionDate(LocalDateTime.now().plusDays(10).withHour(16).withMinute(0));
             s2.setDurationMinutes(75);
-            s2.setMeetingLink("https://meet.google.com/okip-k8s-prod");
+            s2.setMeetingLink("https://meet.google.com/xyz-uvwx-rst");
             s2.setLocation("Virtual (Google Meet)");
             s2.setMaxParticipants(40);
             s2.setStatus(SessionStatus.UPCOMING);
@@ -428,7 +427,7 @@ public class DataInitializer implements CommandLineRunner {
             s3.setSkill(skillRepository.findBySkillNameIgnoreCase("MySQL").orElse(null));
             s3.setSessionDate(LocalDateTime.now().minusDays(7).withHour(14).withMinute(0));
             s3.setDurationMinutes(60);
-            s3.setMeetingLink("https://meet.google.com/okip-sql-opt");
+            s3.setMeetingLink("https://meet.google.com/pqr-stuv-wxy");
             s3.setLocation("Virtual (Google Meet)");
             s3.setMaxParticipants(30);
             s3.setStatus(SessionStatus.COMPLETED);
@@ -548,6 +547,7 @@ public class DataInitializer implements CommandLineRunner {
             return p;
         });
         profile.setBio(bio);
+        profile.setAvailableAsMentor(true);
         employeeProfileRepository.save(profile);
     }
 

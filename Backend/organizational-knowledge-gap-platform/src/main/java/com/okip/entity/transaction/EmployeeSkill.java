@@ -36,6 +36,9 @@ public class EmployeeSkill {
     @Column(name = "years_of_experience")
     private Double yearsOfExperience;
 
+    @Column(name = "is_verified")
+    private Boolean isVerified = false;
+
     @Column(name = "last_used")
     private LocalDate lastUsed;
 
@@ -96,6 +99,14 @@ public class EmployeeSkill {
 
     public void setLastUsed(LocalDate lastUsed) {
         this.lastUsed = lastUsed;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
     }
 
     public LocalDateTime getCreatedAt() {

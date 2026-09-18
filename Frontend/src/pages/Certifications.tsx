@@ -114,7 +114,16 @@ export default function Certifications() {
         {rows.map((x: any) => (
           <Card key={x.certificationId} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <Badge tone="purple">{x.issuingOrganization}</Badge>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <Badge tone="purple">{x.issuingOrganization}</Badge>
+                {x.credentialUrl ? (
+                  <Badge tone="green">✓ Verified Proof</Badge>
+                ) : x.credentialId ? (
+                  <Badge tone="orange">Credential ID Provided</Badge>
+                ) : (
+                  <Badge tone="purple">Self-Reported</Badge>
+                )}
+              </div>
               <button
                 className="iconBtn"
                 title="Delete certification"

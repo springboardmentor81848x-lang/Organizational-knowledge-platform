@@ -164,6 +164,9 @@ public class SkillServiceImpl implements SkillService {
 	    response.setLastUsed(
 	            skill.getLastUsed());
 
+	    response.setIsVerified(
+	            skill.getIsVerified() != null ? skill.getIsVerified() : false);
+
 	    return response;
 	}
 }

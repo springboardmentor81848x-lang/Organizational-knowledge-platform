@@ -48,8 +48,24 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public String generateEmployeeSkillGapsCsv(Long employeeId) {
+        Employee loggedIn = getLoggedInEmployee();
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
+
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+        if (!loggedIn.getEmployeeId().equals(employeeId)) {
+            if (role.equals("ROLE_EMPLOYEE")) {
+                throw new org.springframework.security.access.AccessDeniedException("You are not authorized to view reports for another employee.");
+            }
+            if (role.equals("ROLE_MANAGER")) {
+                boolean sameDept = loggedIn.getDepartment() != null && employee.getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(employee.getDepartment().getDepartmentId());
+                if (!sameDept) {
+                    throw new org.springframework.security.access.AccessDeniedException("Managers can only generate reports for employees in their department.");
+                }
+            }
+        }
+
         return buildEmployeeGapsCsv(employee);
     }
 
@@ -82,12 +98,20 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public String generateTeamSkillGapsCsv() {
+        Employee loggedIn = getLoggedInEmployee();
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+
         StringBuilder sb = new StringBuilder();
         sb.append("Employee Code,Employee Name,Department,Job Role,Skill Name,Required Proficiency,Current Proficiency,Gap Type,Gap Percentage,Status\n");
 
         List<KnowledgeGap> gaps = knowledgeGapRepository.findAll();
         for (KnowledgeGap g : gaps) {
             Employee emp = g.getEmployeeJobRole().getEmployee();
+            if (role.equals("ROLE_MANAGER")) {
+                boolean sameDept = loggedIn.getDepartment() != null && emp.getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(emp.getDepartment().getDepartmentId());
+                if (!sameDept) continue;
+            }
             sb.append(escape(emp.getEmployeeCode())).append(",")
               .append(escape(emp.getFirstName() + " " + emp.getLastName())).append(",")
               .append(escape(emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "N/A")).append(",")
@@ -140,12 +164,20 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public String generateTrainingReportCsv() {
+        Employee loggedIn = getLoggedInEmployee();
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+
         StringBuilder sb = new StringBuilder();
         sb.append("Enrollment ID,Employee Code,Employee Name,Department,Training Name,Provider,Level,Progress,Status,Enrollment Date,Start Date,Completion Date\n");
 
         List<TrainingEnrollment> enrollments = trainingEnrollmentRepository.findAll();
         for (TrainingEnrollment te : enrollments) {
             Employee emp = te.getEmployee();
+            if (role.equals("ROLE_MANAGER")) {
+                boolean sameDept = loggedIn.getDepartment() != null && emp.getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(emp.getDepartment().getDepartmentId());
+                if (!sameDept) continue;
+            }
             sb.append(te.getEnrollmentId()).append(",")
               .append(escape(emp.getEmployeeCode())).append(",")
               .append(escape(emp.getFirstName() + " " + emp.getLastName())).append(",")
@@ -164,12 +196,20 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public String generateAssessmentReportCsv() {
+        Employee loggedIn = getLoggedInEmployee();
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+
         StringBuilder sb = new StringBuilder();
         sb.append("Assessment ID,Employee Code,Employee Name,Department,Evaluator Name,Skill Name,Assessment Type,Assessed Proficiency,Score,Status,Reviewer Name,Reviewed At,Date Submitted\n");
 
         List<SkillAssessment> assessments = skillAssessmentRepository.findAll();
         for (SkillAssessment a : assessments) {
             Employee emp = a.getEmployee();
+            if (role.equals("ROLE_MANAGER")) {
+                boolean sameDept = loggedIn.getDepartment() != null && emp.getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(emp.getDepartment().getDepartmentId());
+                if (!sameDept) continue;
+            }
             Employee eval = a.getEvaluator();
             Employee rev = a.getReviewer();
             sb.append(a.getAssessmentId()).append(",")

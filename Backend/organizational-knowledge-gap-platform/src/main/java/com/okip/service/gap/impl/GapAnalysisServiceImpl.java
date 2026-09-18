@@ -53,12 +53,46 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 	}
 
 	
+	private void validateGapAnalysisAccess(Employee targetEmployee) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || !auth.isAuthenticated()) {
+			return;
+		}
+		String email = auth.getName();
+		Employee requester = employeeRepository.findByOfficialEmail(email).orElse(null);
+		if (requester == null) {
+			return;
+		}
+
+		if (requester.getEmployeeId().equals(targetEmployee.getEmployeeId())) {
+			return; // Self access always allowed
+		}
+
+		String role = requester.getRole() != null ? requester.getRole().getRoleName().name() : "";
+		if (role.equals("ROLE_ADMIN") || role.equals("ROLE_HR")) {
+			return; // Admin / HR access allowed
+		}
+
+		if (role.equals("ROLE_MANAGER")) {
+			boolean sameDept = requester.getDepartment() != null && targetEmployee.getDepartment() != null &&
+					requester.getDepartment().getDepartmentId().equals(targetEmployee.getDepartment().getDepartmentId());
+			if (!sameDept) {
+				throw new org.springframework.security.access.AccessDeniedException("Managers can only run or view gap analysis for employees in their department.");
+			}
+			return;
+		}
+
+		throw new org.springframework.security.access.AccessDeniedException("You are not authorized to run or view gap analysis for another employee.");
+	}
+
 	@Override
 	@Transactional
 	public GapAnalysisResponseDTO runGapAnalysis(Long employeeId) {
 
 		Employee employee = employeeRepository.findById(employeeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
+
+		validateGapAnalysisAccess(employee);
 
 		List<EmployeeJobRole> assignedRoles = employeeJobRoleRepository.findByEmployeeAndActiveTrue(employee);
 
@@ -228,6 +262,8 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 	            .orElseThrow(() ->
 	                    new ResourceNotFoundException(
 	                            "Employee not found."));
+
+	    validateGapAnalysisAccess(employee);
 
 	    List<EmployeeJobRole> assignedRoles =
 	            employeeJobRoleRepository.findByEmployeeAndActiveTrue(employee);
