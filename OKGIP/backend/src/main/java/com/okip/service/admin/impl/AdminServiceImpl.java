@@ -48,7 +48,9 @@ import com.okip.repository.TrainingRepository;
 import com.okip.repository.assessment.AssessmentAttemptRepository;
 import com.okip.repository.assessment.AssessmentRepository;
 import com.okip.service.admin.AdminService;
-
+import com.okip.dto.notification.NotificationResponseDTO;
+import com.okip.entity.transaction.Notification;
+import com.okip.repository.NotificationRepository;
 @Service
 @Transactional(readOnly = true)
 public class AdminServiceImpl implements AdminService {
@@ -70,6 +72,7 @@ public class AdminServiceImpl implements AdminService {
     private final PasswordEncoder passwordEncoder;
     private final DataSource dataSource;
     private final Environment environment;
+    private final NotificationRepository notificationRepository;
 
     public AdminServiceImpl(EmployeeRepository employeeRepository,
             DepartmentRepository departmentRepository,
@@ -85,6 +88,7 @@ public class AdminServiceImpl implements AdminService {
             AssessmentAttemptRepository assessmentAttemptRepository,
             MentorshipRequestRepository mentorshipRequestRepository,
             CertificationRepository certificationRepository,
+            NotificationRepository notificationRepository,
             PasswordEncoder passwordEncoder,
             DataSource dataSource,
             Environment environment) {
@@ -102,6 +106,7 @@ public class AdminServiceImpl implements AdminService {
         this.assessmentAttemptRepository = assessmentAttemptRepository;
         this.mentorshipRequestRepository = mentorshipRequestRepository;
         this.certificationRepository = certificationRepository;
+        this.notificationRepository = notificationRepository;
         this.passwordEncoder = passwordEncoder;
         this.dataSource = dataSource;
         this.environment = environment;
@@ -282,6 +287,33 @@ public class AdminServiceImpl implements AdminService {
         String db=environment.getProperty("spring.datasource.url");
         m.put("applicationName",environment.getProperty("spring.application.name")); m.put("serverPort",environment.getProperty("server.port")); m.put("databaseUrl",db); m.put("databaseDriver",environment.getProperty("spring.datasource.driver-class-name")); m.put("jpaDdlAuto",environment.getProperty("spring.jpa.hibernate.ddl-auto")); m.put("jwtConfigured",environment.getProperty("jwt.secret")!=null && !environment.getProperty("jwt.secret","").isBlank()); m.put("jwtExpirationMs",environment.getProperty("jwt.expiration")); m.put("geminiConfigured",environment.getProperty("spring.ai.google.genai.api-key")!=null && !environment.getProperty("spring.ai.google.genai.api-key","").contains("${")); m.put("geminiModel",environment.getProperty("spring.ai.google.genai.chat.model")); return m;
     }
+
+    @Override
+public List<NotificationResponseDTO> getNotifications() {
+
+    return notificationRepository.findAll()
+            .stream()
+            .sorted(Comparator.comparing(
+                    Notification::getCreatedAt,
+                    Comparator.nullsLast(LocalDateTime::compareTo)
+            ).reversed())
+            .map(this::notificationDto)
+            .collect(Collectors.toList());
+}
+
+private NotificationResponseDTO notificationDto(Notification n) {
+
+    NotificationResponseDTO dto = new NotificationResponseDTO();
+
+    dto.setNotificationId(n.getNotificationId());
+    dto.setType(n.getType());
+    dto.setTitle(n.getTitle());
+    dto.setMessage(n.getMessage());
+    dto.setRead(n.isRead());
+    dto.setCreatedAt(n.getCreatedAt());
+
+    return dto;
+}
 
     @Override @Transactional public Map<String,Object> updateUserStatus(Long employeeId, AccountStatus status){ Employee e=employeeRepository.findById(employeeId).orElseThrow(()->new ResourceNotFoundException("Employee not found.")); e.setStatus(status); employeeRepository.save(e); return employeeMap(e); }
     @Override @Transactional public Map<String,Object> updateUserRole(Long employeeId, Long roleId){ Employee e=employeeRepository.findById(employeeId).orElseThrow(()->new ResourceNotFoundException("Employee not found.")); Role r=roleRepository.findById(roleId).orElseThrow(()->new ResourceNotFoundException("Role not found.")); e.setRole(r); employeeRepository.save(e); return employeeMap(e); }

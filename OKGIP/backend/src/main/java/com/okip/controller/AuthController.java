@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.okip.dto.auth.GoogleLoginRequestDTO;
 import com.okip.dto.auth.LoginRequestDTO;
 import com.okip.dto.auth.LoginResponseDTO;
 import com.okip.dto.auth.RegisterRequestDTO;
@@ -39,4 +40,24 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponseDTO> googleLogin(
+            @RequestBody GoogleLoginRequestDTO request) {
+
+        LoginResponseDTO response =
+                authService.googleLogin(request.getIdToken());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/microsoft")
+public ResponseEntity<LoginResponseDTO> microsoftLogin(
+        @RequestBody GoogleLoginRequestDTO request) {
+
+    LoginResponseDTO response =
+            authService.microsoftLogin(request.getIdToken());
+
+    return ResponseEntity.ok(response);
+}
 }

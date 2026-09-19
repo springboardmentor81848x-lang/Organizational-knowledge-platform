@@ -11,6 +11,7 @@ import com.okip.dto.admin.CreateUserRequestDTO;
 import com.okip.dto.admin.CreateUserResponseDTO;
 import com.okip.enums.AccountStatus;
 import com.okip.service.admin.AdminService;
+import com.okip.dto.notification.NotificationResponseDTO;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -42,6 +43,10 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> updateRole(@PathVariable Long employeeId, @PathVariable Long roleId) {
         return ResponseEntity.ok(adminService.updateUserRole(employeeId, roleId));
     }
+    @GetMapping("/notifications")
+public ResponseEntity<List<NotificationResponseDTO>> notifications() {
+    return ResponseEntity.ok(adminService.getNotifications());
+}
 
     @GetMapping("/roles")
     public ResponseEntity<List<Map<String, Object>>> roles() { return ResponseEntity.ok(adminService.getRoles()); }

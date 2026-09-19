@@ -8,7 +8,10 @@ import com.okip.dto.auth.RegisterResponseDTO;
 public interface AuthService {
 
     RegisterResponseDTO registerEmployee(RegisterRequestDTO request);
-    
+
     LoginResponseDTO loginEmployee(LoginRequestDTO request);
+
+    LoginResponseDTO googleLogin(String idToken);
+    LoginResponseDTO microsoftLogin(String idToken);
 
 }

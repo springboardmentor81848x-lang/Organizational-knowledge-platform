@@ -157,7 +157,146 @@ function IntegrationsPage(){const q=useAdminData(useCallback(()=>api.configurati
 function Integration({name,icon:Icon,state}:{name:string;icon:React.ElementType;state:string}){return <div className="integration"><Icon size={22}/><div><b>{name}</b><small>{state}</small></div><span className={state==="Configured"?"secure":"muted"}>{state}</span></div>}
 function HealthPage(){const q=useAdminData(useCallback(()=>api.health(),[]));return <><PageHead title="System Health" description="Measured runtime and database health from the Spring Boot process." refresh={q.reload}/>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<div className="stats-grid"><Stat title="Database" value={q.data?.databaseConnected?"Connected":"Disconnected"} icon={Database}/><Stat title="Response Time" value={`${fmt(q.data?.responseTimeMs)} ms`} icon={Activity}/><Stat title="Memory Used" value={`${fmt(q.data?.memoryUsedMb)} MB`} icon={Server}/><Stat title="Memory Usage" value={pct(q.data?.memoryUsagePercent)} icon={Gauge}/><Stat title="Processors" value={q.data?.processors} icon={Boxes}/><Stat title="Uptime" value={`${fmt(q.data?.uptimeSeconds)} s`} icon={Activity}/></div>}</>}
 function BackupPage(){const [data,setData]=useState<any>(null);const [error,setError]=useState("");const run=async()=>{try{const [u,s,j,t,g,a,m]=await Promise.all([api.users(),api.skills(),api.jobRoles(),api.trainings(),api.gaps(),api.assessments(),api.mentorships()]);setData({generatedAt:new Date().toISOString(),users:u,skills:s,jobRoles:j,trainings:t,gaps:g,assessments:a,mentorships:m});setError("")}catch(e:any){setError(e?.response?.data?.message||"Snapshot failed.")}};return <><PageHead title="Backup & Restore" description="Create a downloadable JSON snapshot of current application records." refresh={run}/><section className="card"><div className="callout"><HardDrive size={18}/><div><b>Application-data snapshot</b><p>This exports records available through the authenticated admin APIs. It is not a physical PostgreSQL backup.</p></div></div><button className="primary" onClick={run}><Download size={16}/> Generate snapshot</button>{error&&<div className="form-error">{error}</div>}{data&&<div className="backup-result"><CheckCircle2 size={20}/><span>Snapshot ready — {data.users.length} users, {data.skills.length} skills, {data.jobRoles.length} job roles, {data.trainings.length} trainings.</span><button onClick={()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`okgip-admin-snapshot-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)}}><FileDown size={16}/> Download JSON</button></div>}</section></>}
-function ReportsPage(){const [type,setType]=useState("users");const loaders:any={users:api.users,skills:api.skills,gaps:api.gaps,trainings:api.trainings,assessments:api.assessments};const q=useAdminData(useCallback(loaders[type],[type]));const rows=q.data||[];const download=()=>{const csv=rows.length?Object.keys(rows[0]).map(k=>`"${k}"`).join(",")+"\n"+rows.map(r=>Object.keys(rows[0]).map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(",")).join("\n"):"";const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`okgip-${type}-report.csv`;a.click()};return <><PageHead title="Reports & Analytics" description="Export live organization records as CSV reports." refresh={q.reload}/><section className="card"><div className="toolbar"><select className="field compact" value={type} onChange={e=>setType(e.target.value)}><option value="users">Users</option><option value="skills">Skills</option><option value="gaps">Knowledge Gaps</option><option value="trainings">Training</option><option value="assessments">Assessments</option></select><button className="primary" onClick={download} disabled={!rows.length}><FileDown size={16}/> Export CSV</button></div>{q.loading?<Loading/>:q.error?<ErrorBox message={q.error} retry={q.reload}/>:<Table columns={(rows[0]?Object.keys(rows[0]):[]).slice(0,8).map(k=>({key:k,label:k}))} rows={rows.slice(0,100)}/>}</section></>}
+function ReportsPage() {
+  const [type, setType] = useState("users");
+
+  const loaders: Record<string, () => Promise<AnyMap[]>> = {
+    users: api.users,
+    skills: api.skills,
+    gaps: api.gaps,
+    trainings: api.trainings,
+    assessments: api.assessments,
+  };
+
+  const loader = useCallback(
+    () => loaders[type](),
+    [type]
+  );
+
+  const q = useAdminData<AnyMap[]>(loader);
+
+  const rows: AnyMap[] = q.data ?? [];
+
+  const download = () => {
+    if (rows.length === 0) {
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+
+    const csv =
+      headers.map((key) => `"${key}"`).join(",") +
+      "\n" +
+      rows
+        .map((row) =>
+          headers
+            .map(
+              (key) =>
+                `"${String(
+                  row[key] ?? ""
+                ).replaceAll('"', '""')}"`
+            )
+            .join(",")
+        )
+        .join("\n");
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `okgip-${type}-report.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  const columns = rows.length
+    ? Object.keys(rows[0])
+        .slice(0, 8)
+        .map((key) => ({
+          key,
+          label: key,
+        }))
+    : [];
+
+  return (
+    <>
+      <PageHead
+        title="Reports & Analytics"
+        description="Export live organization records as CSV reports."
+        refresh={q.reload}
+      />
+
+      <section className="card">
+        <div className="toolbar">
+          <span>
+            {rows.length} records
+          </span>
+
+          <div style={{ display: "flex", gap: "10px" }}>
+            <select
+              className="field compact"
+              value={type}
+              onChange={(e) =>
+                setType(e.target.value)
+              }
+            >
+              <option value="users">
+                Users
+              </option>
+
+              <option value="skills">
+                Skills
+              </option>
+
+              <option value="gaps">
+                Knowledge Gaps
+              </option>
+
+              <option value="trainings">
+                Training
+              </option>
+
+              <option value="assessments">
+                Assessments
+              </option>
+            </select>
+
+            <button
+              className="primary"
+              onClick={download}
+              disabled={rows.length === 0}
+            >
+              <FileDown size={16} />
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        {q.loading ? (
+          <Loading />
+        ) : q.error ? (
+          <ErrorBox
+            message={q.error}
+            retry={q.reload}
+          />
+        ) : (
+          <Table
+            columns={columns}
+            rows={rows.slice(0, 100)}
+          />
+        )}
+      </section>
+    </>
+  );
+}
 function NotificationsPage(){return <><PageHead title="Notification Settings" description="Notification providers available in the current backend configuration."/><section className="card"><div className="integration-grid"><Integration name="Email / JavaMailSender" icon={Bell} state="Not configured in current backend"/><Integration name="Firebase Cloud Messaging" icon={Bell} state="Not configured in current backend"/><Integration name="Twilio SMS" icon={Bell} state="Not configured in current backend"/></div><div className="callout"><CircleHelp size={18}/><div><b>No fake notification status</b><p>The current source does not expose provider configuration for these channels, so the page reports that honestly instead of displaying invented delivery metrics.</p></div></div></section></>}
 
 const CSS = `

@@ -1,8 +1,4 @@
-import api from "./api";
-
-// ============================================================
-// TYPES
-// ============================================================
+import api from "@/api/axios";
 
 export interface MentorRecommendation {
   employeeId: number;
@@ -26,7 +22,7 @@ export interface MentorshipRequest {
   skillId: number;
   skillName: string;
   message?: string;
-  status: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED" | string;
   createdAt?: string;
 }
 
@@ -36,7 +32,7 @@ export interface KnowledgeSession {
   title: string;
   scheduledAt: string;
   durationMinutes: number;
-  status: string;
+  status: "SCHEDULED" | "COMPLETED" | "CANCELLED" | string;
   notes?: string;
   mentorId: number;
   mentorName: string;
@@ -44,143 +40,116 @@ export interface KnowledgeSession {
   menteeName: string;
   skillId: number;
   skillName: string;
+  myFeedbackSubmitted?: boolean;
+  averageRating?: number | null;
+  feedbackCount?: number;
 }
 
-// ============================================================
-// MENTOR RECOMMENDATIONS
-// ============================================================
-
-const getRecommendations = async (): Promise<MentorRecommendation[]> => {
-  const response = await api.get<MentorRecommendation[]>(
-    "/mentorship/recommendations"
-  );
-
-  return response.data;
-};
-
-// ============================================================
-// MENTORSHIP REQUESTS
-// ============================================================
-
-const getRequests = async (): Promise<MentorshipRequest[]> => {
-  const response = await api.get<MentorshipRequest[]>(
-    "/mentorship/requests"
-  );
-
-  return response.data;
-};
-
-const createRequest = async (
-  mentorId: number,
-  skillId: number,
-  message?: string
-): Promise<MentorshipRequest> => {
-  const response = await api.post<MentorshipRequest>(
-    "/mentorship/requests",
-    {
-      mentorId,
-      skillId,
-      message,
-    }
-  );
-
-  return response.data;
-};
-
-const acceptRequest = async (
-  requestId: number
-): Promise<MentorshipRequest> => {
-  const response = await api.post<MentorshipRequest>(
-    `/mentorship/requests/${requestId}/accept`
-  );
-
-  return response.data;
-};
-
-const rejectRequest = async (
-  requestId: number
-): Promise<MentorshipRequest> => {
-  const response = await api.post<MentorshipRequest>(
-    `/mentorship/requests/${requestId}/reject`
-  );
-
-  return response.data;
-};
-
-// ============================================================
-// KNOWLEDGE SESSIONS
-// ============================================================
-
-const getSessions = async (): Promise<KnowledgeSession[]> => {
-  const response = await api.get<KnowledgeSession[]>(
-    "/mentorship/sessions"
-  );
-
-  return response.data;
-};
-
-const createSession = async (
-  requestId: number,
-  title: string,
-  scheduledAt: string,
-  durationMinutes: number,
-  notes?: string
-): Promise<KnowledgeSession> => {
-  const response = await api.post<KnowledgeSession>(
-    `/mentorship/requests/${requestId}/sessions`,
-    {
-      title,
-      scheduledAt,
-      durationMinutes,
-      notes,
-    }
-  );
-
-  return response.data;
-};
-
-const completeSession = async (
-  sessionId: number
-): Promise<KnowledgeSession> => {
-  const response = await api.post<KnowledgeSession>(
-    `/mentorship/sessions/${sessionId}/complete`
-  );
-
-  return response.data;
-};
-
-// ============================================================
-// SESSION FEEDBACK
-// ============================================================
-
-const submitFeedback = async (
-  sessionId: number,
-  rating: number,
-  comments?: string
-): Promise<void> => {
-  await api.post(
-    `/mentorship/sessions/${sessionId}/feedback`,
-    {
-      rating,
-      comments,
-    }
-  );
-};
-
-// ============================================================
-// SERVICE
-// ============================================================
+export interface KnowledgeResource {
+  resourceId: number;
+  sessionId: number;
+  title: string;
+  description?: string;
+  resourceType: string;
+  fileName?: string;
+  contentType?: string;
+  fileSize?: number;
+  url?: string;
+  authorId?: number;
+  authorName?: string;
+  createdAt?: string;
+}
 
 const mentorshipService = {
-  getRecommendations,
-  getRequests,
-  createRequest,
-  acceptRequest,
-  rejectRequest,
-  getSessions,
-  createSession,
-  completeSession,
-  submitFeedback,
+  async getRecommendations(): Promise<MentorRecommendation[]> {
+    return (await api.get<MentorRecommendation[]>("/mentorship/recommendations")).data;
+  },
+
+  async getRequests(): Promise<MentorshipRequest[]> {
+    return (await api.get<MentorshipRequest[]>("/mentorship/requests")).data;
+  },
+
+  async createRequest(mentorId: number, skillId: number, message?: string) {
+    return (await api.post<MentorshipRequest>("/mentorship/requests", { mentorId, skillId, message })).data;
+  },
+
+  async acceptRequest(requestId: number) {
+    return (await api.post<MentorshipRequest>(`/mentorship/requests/${requestId}/accept`)).data;
+  },
+
+  async rejectRequest(requestId: number) {
+    return (await api.post<MentorshipRequest>(`/mentorship/requests/${requestId}/reject`)).data;
+  },
+
+  async getSessions(): Promise<KnowledgeSession[]> {
+    return (await api.get<KnowledgeSession[]>("/mentorship/sessions")).data;
+  },
+
+  async getMentees(): Promise<MentorshipRequest[]> {
+  const response = await api.get<MentorshipRequest[]>("/mentorship/mentees");
+  return response.data;
+},
+
+async getMentorRequests(): Promise<MentorshipRequest[]> {
+  const response = await api.get<MentorshipRequest[]>("/mentorship/mentor-requests");
+  return response.data;
+},
+
+  async createSession(
+    requestId: number,
+    title: string,
+    scheduledAt: string,
+    durationMinutes: number,
+    notes?: string,
+  ) {
+    return (await api.post<KnowledgeSession>(`/mentorship/requests/${requestId}/sessions`, {
+      title, scheduledAt, durationMinutes, notes,
+    })).data;
+  },
+
+  async completeSession(sessionId: number) {
+    return (await api.post<KnowledgeSession>(`/mentorship/sessions/${sessionId}/complete`)).data;
+  },
+
+  async cancelSession(sessionId: number) {
+    return (await api.post<KnowledgeSession>(`/mentorship/sessions/${sessionId}/cancel`)).data;
+  },
+
+  async submitFeedback(sessionId: number, rating: number, comments?: string) {
+    await api.post(`/mentorship/sessions/${sessionId}/feedback`, { rating, comments });
+  },
+
+  async getResources(sessionId: number): Promise<KnowledgeResource[]> {
+    return (await api.get<KnowledgeResource[]>(`/mentorship/sessions/${sessionId}/resources`)).data;
+  },
+
+  async uploadResource(
+    sessionId: number,
+    file: File,
+    title?: string,
+    description?: string,
+  ): Promise<KnowledgeResource> {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (title?.trim()) formData.append("title", title.trim());
+    if (description?.trim()) formData.append("description", description.trim());
+
+    return (await api.post<KnowledgeResource>(
+      `/mentorship/sessions/${sessionId}/resources`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    )).data;
+  },
+
+  async downloadResource(resourceId: number): Promise<Blob> {
+    return (await api.get(`/mentorship/sessions/resources/${resourceId}/download`, {
+      responseType: "blob",
+    })).data;
+  },
+
+  async deleteResource(resourceId: number): Promise<void> {
+    await api.delete(`/mentorship/sessions/resources/${resourceId}`);
+  },
 };
 
 export default mentorshipService;

@@ -15,6 +15,7 @@ import com.okip.exception.ResourceNotFoundException;
 import com.okip.repository.CertificationRepository;
 import com.okip.repository.EmployeeRepository;
 import com.okip.service.certification.CertificationService;
+import com.okip.service.notification.NotificationService;
 
 @Service
 public class CertificationServiceImpl
@@ -22,13 +23,16 @@ public class CertificationServiceImpl
 
     private final EmployeeRepository employeeRepository;
     private final CertificationRepository certificationRepository;
+    private final NotificationService notificationService;
 
     public CertificationServiceImpl(
             EmployeeRepository employeeRepository,
-            CertificationRepository certificationRepository) {
+            CertificationRepository certificationRepository,
+            NotificationService notificationService) {
 
         this.employeeRepository = employeeRepository;
         this.certificationRepository = certificationRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class CertificationServiceImpl
         certification =
                 certificationRepository.save(
                         certification);
-
+        notificationService.notifyEmployee(employee.getEmployeeId(), "CERTIFICATE_ADDED", "Certification Added", certification.getCertificateName() + " was added to your profile.", "/employee/certifications");
         return buildResponse(certification);
     }
 

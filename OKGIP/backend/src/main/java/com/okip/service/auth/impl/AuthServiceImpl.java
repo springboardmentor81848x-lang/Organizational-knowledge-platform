@@ -23,6 +23,9 @@ import com.okip.repository.EmployeeRepository;
 import com.okip.repository.RoleRepository;
 import com.okip.security.jwt.JwtService;
 import com.okip.service.auth.AuthService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -141,5 +144,109 @@ public class AuthServiceImpl implements AuthService {
 
         return response;
     }
+
+    @Override
+public LoginResponseDTO googleLogin(String idToken) {
+
+    if (idToken == null || idToken.trim().isEmpty()) {
+        throw new AuthenticationFailedException(
+                "Google authentication token is missing.");
+    }
+
+    try {
+
+        FirebaseToken decodedToken =
+                FirebaseAuth.getInstance().verifyIdToken(idToken);
+
+        String email = decodedToken.getEmail();
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new AuthenticationFailedException(
+                    "Google account email could not be verified.");
+        }
+
+        Employee employee = employeeRepository
+                .findByOfficialEmail(email)
+                .orElseThrow(() ->
+                        new AuthenticationFailedException(
+                                "No OKGIP account is registered with this Google email. Please register first."));
+
+        if (employee.getStatus() != AccountStatus.APPROVED) {
+
+            throw new AuthenticationFailedException(
+                    "Your OKGIP account is awaiting HR approval.");
+        }
+
+        String token =
+                jwtService.generateToken(
+                        employee.getOfficialEmail(),
+                        employee.getRole().getRoleName().name());
+
+        LoginResponseDTO response =
+                new LoginResponseDTO();
+
+        response.setToken(token);
+        response.setMessage("Google Login Successful.");
+
+        return response;
+
+    } catch (FirebaseAuthException ex) {
+
+        throw new AuthenticationFailedException(
+                "Invalid or expired Google authentication token.");
+    }
+}
+
+@Override
+public LoginResponseDTO microsoftLogin(String idToken) {
+
+    if (idToken == null || idToken.trim().isEmpty()) {
+        throw new AuthenticationFailedException(
+                "Microsoft authentication token is missing.");
+    }
+
+    try {
+
+        FirebaseToken decodedToken =
+                FirebaseAuth.getInstance().verifyIdToken(idToken);
+
+        String email = decodedToken.getEmail();
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new AuthenticationFailedException(
+                    "Microsoft account email could not be verified.");
+        }
+
+        Employee employee = employeeRepository
+                .findByOfficialEmail(email)
+                .orElseThrow(() ->
+                        new AuthenticationFailedException(
+                                "No OKGIP account is registered with this Microsoft email. Please register first."));
+
+        if (employee.getStatus() != AccountStatus.APPROVED) {
+
+            throw new AuthenticationFailedException(
+                    "Your OKGIP account is awaiting HR approval.");
+        }
+
+        String token =
+                jwtService.generateToken(
+                        employee.getOfficialEmail(),
+                        employee.getRole().getRoleName().name());
+
+        LoginResponseDTO response =
+                new LoginResponseDTO();
+
+        response.setToken(token);
+        response.setMessage("Microsoft Login Successful.");
+
+        return response;
+
+    } catch (FirebaseAuthException ex) {
+
+        throw new AuthenticationFailedException(
+                "Invalid or expired Microsoft authentication token.");
+    }
+}
 
 }

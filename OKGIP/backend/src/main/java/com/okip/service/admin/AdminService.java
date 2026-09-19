@@ -6,6 +6,7 @@ import java.util.Map;
 import com.okip.dto.admin.CreateUserRequestDTO;
 import com.okip.dto.admin.CreateUserResponseDTO;
 import com.okip.enums.AccountStatus;
+import com.okip.dto.notification.NotificationResponseDTO;
 
 public interface AdminService {
     CreateUserResponseDTO createUser(CreateUserRequestDTO request);
@@ -19,6 +20,7 @@ public interface AdminService {
     List<Map<String, Object>> getGaps();
     List<Map<String, Object>> getAssessments();
     List<Map<String, Object>> getMentorships();
+    List<NotificationResponseDTO> getNotifications();
     Map<String, Object> getSystemHealth();
     Map<String, Object> getSystemConfiguration();
     Map<String, Object> updateUserStatus(Long employeeId, AccountStatus status);

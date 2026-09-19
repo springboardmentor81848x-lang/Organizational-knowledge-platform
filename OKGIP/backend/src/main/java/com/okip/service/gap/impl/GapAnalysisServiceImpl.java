@@ -26,6 +26,7 @@ import com.okip.repository.EmployeeSkillRepository;
 import com.okip.repository.JobRoleCompetencyRepository;
 import com.okip.repository.KnowledgeGapRepository;
 import com.okip.service.gap.GapAnalysisService;
+import com.okip.service.notification.NotificationService;
 
 @Service
 public class GapAnalysisServiceImpl implements GapAnalysisService {
@@ -39,19 +40,22 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
     private final JobRoleCompetencyRepository competencyRepository;
 
     private final KnowledgeGapRepository knowledgeGapRepository;
+    private final NotificationService notificationService;
 
     public GapAnalysisServiceImpl(
             EmployeeRepository employeeRepository,
             EmployeeJobRoleRepository employeeJobRoleRepository,
             EmployeeSkillRepository employeeSkillRepository,
             JobRoleCompetencyRepository competencyRepository,
-            KnowledgeGapRepository knowledgeGapRepository) {
+            KnowledgeGapRepository knowledgeGapRepository,
+            NotificationService notificationService) {
 
         this.employeeRepository = employeeRepository;
         this.employeeJobRoleRepository = employeeJobRoleRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.competencyRepository = competencyRepository;
         this.knowledgeGapRepository = knowledgeGapRepository;
+        this.notificationService = notificationService;
     }
 
     // =========================================================
@@ -60,43 +64,110 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
 
     @Override
     @Transactional
-    public synchronized GapAnalysisResponseDTO runGapAnalysis(Long employeeId) {
+    public synchronized GapAnalysisResponseDTO runGapAnalysis(
+            Long employeeId) {
 
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
+        Employee employee =
+                employeeRepository.findById(employeeId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Employee not found."));
 
         List<EmployeeJobRole> assignedRoles =
-                employeeJobRoleRepository.findByEmployeeAndActiveTrue(employee);
+                employeeJobRoleRepository
+                        .findByEmployeeAndActiveTrue(employee);
 
         if (assignedRoles.isEmpty()) {
-            throw new ResourceNotFoundException("No active job role assigned.");
+
+            throw new ResourceNotFoundException(
+                    "No active job role assigned.");
         }
 
-        List<EmployeeSkill> employeeSkills = employeeSkillRepository.findByEmployee(employee);
-        List<KnowledgeGap> allKnowledgeGaps = new ArrayList<>();
+        List<KnowledgeGap> allKnowledgeGaps =
+                new ArrayList<>();
 
-        // The comparison MUST start from the skills required by the job role.
-        // Starting from employee_skills misses skills the employee has never added.
+        /*
+         * Get all skills currently present in
+         * the employee's Skill Profile.
+         */
+        List<EmployeeSkill> employeeSkills =
+                employeeSkillRepository.findByEmployee(employee);
+
+        /*
+         * Process each active job role.
+         */
         for (EmployeeJobRole employeeJobRole : assignedRoles) {
-            knowledgeGapRepository.deleteByEmployeeJobRole(employeeJobRole);
 
-            List<JobRoleCompetency> competencies =
-                    competencyRepository.findByJobRole(employeeJobRole.getJobRole());
+            /*
+             * Remove the previous generated gap records
+             * for this employee/job role.
+             *
+             * This entire method is transactional and
+             * synchronized, so two requests cannot regenerate
+             * the same employee's gaps at the same time.
+             */
+            knowledgeGapRepository
+                    .deleteByEmployeeJobRole(employeeJobRole);
 
-            for (JobRoleCompetency competency : competencies) {
-                if (competency == null || competency.getSkill() == null) {
-                    continue;
+            /*
+             * Process every skill in Skill Profile.
+             */
+            for (EmployeeSkill employeeSkill : employeeSkills) {
+
+                /*
+                 * Check whether this skill is required
+                 * by the current job role.
+                 */
+                JobRoleCompetency competency =
+                        competencyRepository
+                                .findByJobRoleAndSkill(
+                                        employeeJobRole.getJobRole(),
+                                        employeeSkill.getSkill())
+                                .orElse(null);
+
+                KnowledgeGap gap;
+
+                /*
+                 * REQUIRED SKILL
+                 */
+                if (competency != null) {
+
+                    gap = buildKnowledgeGap(
+                            employee,
+                            employeeJobRole,
+                            competency);
                 }
 
-                KnowledgeGap gap = buildKnowledgeGap(
-                        employee, employeeJobRole, competency, employeeSkills);
+                /*
+                 * NON-REQUIRED SKILL
+                 *
+                 * Still show it in Skill Gap because
+                 * it exists in Skill Profile.
+                 *
+                 * Gap = 0
+                 * COMPLETE
+                 * CLOSED
+                 */
+                else {
+
+                    gap = buildNonRequiredSkillGap(
+                            employee,
+                            employeeJobRole,
+                            employeeSkill);
+                }
 
                 knowledgeGapRepository.save(gap);
+
                 allKnowledgeGaps.add(gap);
             }
         }
 
-        return buildGapAnalysisResponse(employee, assignedRoles, allKnowledgeGaps);
+        notificationService.notifyEmployee(employee.getEmployeeId(), "SKILL_GAP_UPDATED", "Skill Gap Analysis Updated", "Your skill-gap analysis has been updated.", "/employee/skill-gaps");
+
+        return buildGapAnalysisResponse(
+                employee,
+                assignedRoles,
+                allKnowledgeGaps);
     }
 
     // =========================================================
@@ -106,8 +177,7 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
     private KnowledgeGap buildKnowledgeGap(
             Employee employee,
             EmployeeJobRole employeeJobRole,
-            JobRoleCompetency competency,
-            List<EmployeeSkill> employeeSkills) {
+            JobRoleCompetency competency) {
 
         KnowledgeGap gap = new KnowledgeGap();
 
@@ -154,11 +224,12 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
         /*
          * Find employee skill.
          */
-        EmployeeSkill employeeSkill = employeeSkills.stream()
-                .filter(es -> es.getSkill() != null
-                        && es.getSkill().getSkillId().equals(competency.getSkill().getSkillId()))
-                .findFirst()
-                .orElse(null);
+        EmployeeSkill employeeSkill =
+                employeeSkillRepository
+                        .findByEmployeeAndSkill(
+                                employee,
+                                competency.getSkill())
+                        .orElse(null);
 
         /*
          * Required skill is missing.
@@ -275,76 +346,157 @@ public class GapAnalysisServiceImpl implements GapAnalysisService {
     // CALCULATE GAP
     // =========================================================
 
-    private void calculateGap(KnowledgeGap gap) {
-        double proficiencyGap = calculateProficiencyGap(gap);
-        double experienceGap = calculateExperienceGap(gap);
+    private void calculateGap(
+            KnowledgeGap gap) {
 
-        boolean hasExperienceRequirement = gap.getRequiredExperience() != null
-                && gap.getRequiredExperience() > 0.0;
+        double score = 0.0;
 
-        double score = hasExperienceRequirement
-                ? (proficiencyGap * 0.70) + (experienceGap * 0.30)
-                : proficiencyGap;
+        GapType gapType =
+                GapType.COMPLETE;
 
-        score = Math.max(0.0, Math.min(100.0, score));
+        /*
+         * Proficiency gap.
+         */
+        score += calculateProficiencyGap(gap);
 
-        if (score <= 0.0001) {
-            gap.setGapType(GapType.COMPLETE);
-            gap.setStatus(GapStatus.CLOSED);
-            gap.setGapScore(0.0);
-            gap.setGapPercentage(0.0);
-            return;
+        /*
+         * Experience gap.
+         */
+        score += calculateExperienceGap(gap);
+
+        /*
+         * Proficiency is below requirement.
+         */
+        if (gap.getCurrentProficiency()
+                != gap.getRequiredProficiency()) {
+
+            gapType =
+                    GapType.LOW_PROFICIENCY;
         }
 
-        boolean proficiencyBelow = getProficiencyValue(gap.getCurrentProficiency())
-                < getProficiencyValue(gap.getRequiredProficiency());
-        boolean experienceBelow = hasExperienceRequirement
-                && (gap.getCurrentExperience() == null
-                    || gap.getCurrentExperience() < gap.getRequiredExperience());
+        /*
+         * Experience is below requirement.
+         */
+        double currentExperience =
+                gap.getCurrentExperience() == null
+                        ? 0.0
+                        : gap.getCurrentExperience();
 
-        if (proficiencyBelow && experienceBelow) {
-            gap.setGapType(GapType.LOW_PROFICIENCY);
-        } else if (proficiencyBelow) {
-            gap.setGapType(GapType.LOW_PROFICIENCY);
-        } else {
-            gap.setGapType(GapType.LOW_EXPERIENCE);
+        double requiredExperience =
+                gap.getRequiredExperience() == null
+                        ? 0.0
+                        : gap.getRequiredExperience();
+
+        if (currentExperience < requiredExperience) {
+
+            gapType =
+                    GapType.LOW_EXPERIENCE;
         }
 
-        gap.setStatus(GapStatus.OPEN);
-        gap.setGapScore(score);
-        gap.setGapPercentage(score);
+        /*
+         * No gap.
+         */
+        if (score <= 0.0) {
+
+            score = 0.0;
+
+            gapType =
+                    GapType.COMPLETE;
+
+            gap.setStatus(
+                    GapStatus.CLOSED);
+        }
+
+        /*
+         * Actual gap exists.
+         */
+        else {
+
+            gap.setStatus(
+                    GapStatus.OPEN);
+        }
+
+        gap.setGapType(
+                gapType);
+
+        gap.setGapScore(
+                score);
+
+        gap.setGapPercentage(
+                score);
     }
 
     // =========================================================
-    // CALCULATE PROFICIENCY GAP (0-100)
+    // CALCULATE PROFICIENCY GAP
     // =========================================================
 
-    private double calculateProficiencyGap(KnowledgeGap gap) {
-        int required = getProficiencyValue(gap.getRequiredProficiency());
-        int current = getProficiencyValue(gap.getCurrentProficiency());
+    private double calculateProficiencyGap(
+            KnowledgeGap gap) {
 
-        if (required <= 0 || current >= required) {
+        int required =
+                getProficiencyValue(
+                        gap.getRequiredProficiency());
+
+        int current =
+                getProficiencyValue(
+                        gap.getCurrentProficiency());
+
+        /*
+         * Already meets requirement.
+         */
+        if (current >= required) {
+
             return 0.0;
         }
 
-        return Math.min(100.0, ((required - current) * 100.0) / required);
+        double difference =
+                required - current;
+
+        /*
+         * Maximum proficiency contribution = 40.
+         */
+        return (difference / 3.0) * 40.0;
     }
 
     // =========================================================
-    // CALCULATE EXPERIENCE GAP (0-100)
+    // CALCULATE EXPERIENCE GAP
     // =========================================================
 
-    private double calculateExperienceGap(KnowledgeGap gap) {
-        double required = gap.getRequiredExperience() == null
-                ? 0.0 : gap.getRequiredExperience();
-        double current = gap.getCurrentExperience() == null
-                ? 0.0 : gap.getCurrentExperience();
+    private double calculateExperienceGap(
+            KnowledgeGap gap) {
 
-        if (required <= 0.0 || current >= required) {
+        /*
+         * No experience requirement.
+         */
+        if (gap.getRequiredExperience() == null
+                || gap.getRequiredExperience() <= 0) {
+
             return 0.0;
         }
 
-        return Math.min(100.0, ((required - current) * 100.0) / required);
+        double currentExperience =
+                gap.getCurrentExperience() == null
+                        ? 0.0
+                        : gap.getCurrentExperience();
+
+        /*
+         * Already meets requirement.
+         */
+        if (currentExperience
+                >= gap.getRequiredExperience()) {
+
+            return 0.0;
+        }
+
+        double difference =
+                gap.getRequiredExperience()
+                        - currentExperience;
+
+        /*
+         * Maximum experience contribution = 20.
+         */
+        return (difference
+                / gap.getRequiredExperience()) * 20.0;
     }
 
     // =========================================================

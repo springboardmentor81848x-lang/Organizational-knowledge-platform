@@ -365,7 +365,7 @@ const Dashboard: React.FC = () => {
                 ["Average Score", `${dashboard.averageAssessmentScore.toFixed(1)}%`],
                 ...dashboard.assessmentSummary.slice(0, 2).map((a): [string, number] => [
                   `${a.assessmentType} Submitted`,
-                  a.submittedCount,
+                  a.attempts,
                 ]),
               ]}
             />

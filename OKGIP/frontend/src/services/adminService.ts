@@ -30,6 +30,14 @@ export interface CreateUserResponse {
   employeeCode?: string;
   message?: string;
 }
+export interface AdminNotification {
+  notificationId: number;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
 
 /**
  * Creates an immediately-approved organization account.
@@ -44,9 +52,13 @@ export const createUser = async (
 
   return response.data;
 };
+export const getAdminNotifications = async (): Promise<AdminNotification[]> => {
+  const response = await API.get<AdminNotification[]>("/admin/notifications");
+  return response.data;
+};
 
 const adminService = {
   createUser,
+  getAdminNotifications,
 };
-
 export default adminService;

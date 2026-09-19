@@ -6,6 +6,7 @@ import mentorshipService, {
   KnowledgeSession,
   MentorRecommendation,
   MentorshipRequest,
+  KnowledgeResource,
 } from "@/services/mentorshipService";
 
 const formatDate = (value?: string) => {
@@ -29,6 +30,11 @@ const Mentorship: React.FC = () => {
   const [recommendations, setRecommendations] = useState<MentorRecommendation[]>([]);
   const [requests, setRequests] = useState<MentorshipRequest[]>([]);
   const [sessions, setSessions] = useState<KnowledgeSession[]>([]);
+  const [resources, setResources] = useState<Record<number, KnowledgeResource[]>>({});
+  const [uploadFor, setUploadFor] = useState<KnowledgeSession | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadDescription, setUploadDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState<string>("");
@@ -54,6 +60,8 @@ const Mentorship: React.FC = () => {
       setRecommendations(recommended);
       setRequests(myRequests);
       setSessions(mySessions);
+      const resourceEntries = await Promise.all(mySessions.map(async (session) => [session.sessionId, await mentorshipService.getResources(session.sessionId)] as const));
+      setResources(Object.fromEntries(resourceEntries));
     } catch (error: any) {
       setMessage(error?.response?.data?.message || "Unable to load mentorship data from the backend.");
     } finally {
@@ -146,6 +154,41 @@ const Mentorship: React.FC = () => {
     }
   };
 
+  const uploadMaterial = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!uploadFor || !uploadFile) return;
+    setBusyId(uploadFor.sessionId);
+    try {
+      const saved = await mentorshipService.uploadResource(uploadFor.sessionId, uploadFile, uploadTitle, uploadDescription);
+      setResources((old) => ({ ...old, [uploadFor.sessionId]: [saved, ...(old[uploadFor.sessionId] || [])] }));
+      setUploadFor(null);
+      setUploadFile(null);
+      setUploadTitle("");
+      setUploadDescription("");
+      setMessage("Learning material shared successfully.");
+    } catch (error: any) {
+      setMessage(error?.response?.data?.message || "Unable to share the learning material.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const downloadMaterial = async (resource: KnowledgeResource) => {
+    try {
+      const blob = await mentorshipService.downloadResource(resource.resourceId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = resource.fileName || resource.title || "knowledge-resource";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      setMessage(error?.response?.data?.message || "Unable to download the material.");
+    }
+  };
+
   const submitFeedback = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!feedbackFor) return;
@@ -184,11 +227,11 @@ const Mentorship: React.FC = () => {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Card title="Recommended Mentors" subtitle="Experts are matched to your currently open skill gaps.">
+            <Card title="Recommended Mentors" subtitle="Experts are matched to your skill needs, proficiency and experience.">
               {recommendations.length === 0 ? (
                 <EmptyState
                   title="No mentor recommendations right now"
-                  text="You currently have no open skill gaps requiring mentor support. Recommendations will appear when a new gap is detected."
+                  text="No suitable active mentor is currently available for your skills. Add or update skills, or try again later."
                 />
               ) : (
                 <div className="space-y-3">
@@ -266,14 +309,33 @@ const Mentorship: React.FC = () => {
                             <span className="inline-flex items-center gap-1"><Clock3 size={13} />{session.durationMinutes} min</span>
                             <span>{session.skillName}</span>
                           </div>
+                          {resources[session.sessionId]?.length ? (
+                            <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                              <p className="mb-2 text-[11px] font-semibold text-slate-700">Learning Materials</p>
+                              <div className="space-y-2">
+                                {resources[session.sessionId].map((resource) => (
+                                  <div key={resource.resourceId} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                    <div className="min-w-0"><p className="truncate text-[11px] font-semibold text-slate-700">{resource.title}</p><p className="text-[10px] text-slate-400">{resource.fileName} · {resource.authorName || "Participant"}</p></div>
+                                    <button type="button" onClick={() => downloadMaterial(resource)} className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold text-slate-700">Download</button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="mt-3 text-[11px] text-slate-400">No learning materials shared yet.</p>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          <button type="button" onClick={() => setUploadFor(session)} className="rounded-lg border border-purple-200 px-3 py-2 text-[10px] font-semibold text-purple-700">Share Material</button>
                           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusClass(session.status)}`}>{session.status.replaceAll("_", " ")}</span>
                           {session.status === "SCHEDULED" && (
-                            <button type="button" onClick={() => completeSession(session.sessionId)} disabled={busyId === session.sessionId} className="rounded-lg border px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">Mark Complete</button>
+                            <>
+                              <button type="button" onClick={() => completeSession(session.sessionId)} disabled={busyId === session.sessionId} className="rounded-lg border px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">Mark Complete</button>
+                              <button type="button" onClick={async () => { setBusyId(session.sessionId); try { await mentorshipService.cancelSession(session.sessionId); setMessage("Session cancelled successfully."); await load(); } catch (error: any) { setMessage(error?.response?.data?.message || "Unable to cancel the session."); } finally { setBusyId(null); } }} disabled={busyId === session.sessionId} className="rounded-lg border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">Cancel</button>
+                            </>
                           )}
                           {session.status === "COMPLETED" && (
-                            <button type="button" onClick={() => setFeedbackFor(session)} className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-[10px] font-semibold text-white"><Star size={12} />Feedback</button>
+                            session.myFeedbackSubmitted ? <span className="text-[10px] font-semibold text-emerald-700">Feedback submitted</span> : <button type="button" onClick={() => setFeedbackFor(session)} className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-[10px] font-semibold text-white"><Star size={12} />Feedback</button>
                           )}
                         </div>
                       </div>
@@ -300,6 +362,18 @@ const Mentorship: React.FC = () => {
             <Field label="Duration (minutes)"><input type="number" min={15} max={240} value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-purple-400" required /></Field>
             <Field label="Notes"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full min-h-24 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-purple-400" /></Field>
             <button disabled={busyId === sessionFor.requestId} className="w-full rounded-lg bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{busyId === sessionFor.requestId ? "Scheduling..." : "Schedule Session"}</button>
+          </form>
+        </Modal>
+      )}
+
+      {uploadFor && (
+        <Modal title="Share Learning Material" onClose={() => setUploadFor(null)}>
+          <form onSubmit={uploadMaterial} className="space-y-4">
+            <Field label="File"><input required type="file" accept=".pdf,.doc,.docx,.txt,.md" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></Field>
+            <p className="-mt-2 text-[10px] text-slate-400">PDF, DOC, DOCX, TXT or MD · maximum 10 MB</p>
+            <Field label="Title"><input value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} placeholder="e.g. Session Notes" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
+            <Field label="Description"><textarea value={uploadDescription} onChange={(e) => setUploadDescription(e.target.value)} placeholder="Briefly describe this material" className="w-full min-h-20 rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
+            <button disabled={busyId === uploadFor.sessionId || !uploadFile} className="w-full rounded-lg bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{busyId === uploadFor.sessionId ? "Uploading..." : "Share Material"}</button>
           </form>
         </Modal>
       )}
