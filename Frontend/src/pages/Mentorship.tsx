@@ -100,30 +100,6 @@ export default function Mentorship() {
     }
   }
 
-  function openScheduleModal(conn: any) {
-    setActiveConn(conn);
-    setSessionDate('');
-    setSessionNotes(`1-on-1 Mentorship session on ${conn.topic || 'Skill Development'}`);
-    setMeetingLink('https://meet.google.com/okip-mentorship-1on1');
-    setScheduleModalOpen(true);
-  }
-
-  async function submitScheduleSession(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    setSuccess('');
-    try {
-      // Create a 1-on-1 meeting entry / notification
-      setSuccess(`1-on-1 session scheduled with ${activeConn?.mentorName || activeConn?.menteeName} for ${new Date(sessionDate).toLocaleString()}!`);
-      setScheduleModalOpen(false);
-    } catch (e: any) {
-      setError(getApiErrorMessage(e, 'Scheduling failed.'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (loading) return <Loading />;
 
   return (
@@ -321,17 +297,17 @@ export default function Mentorship() {
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Badge tone="green">ACTIVE</Badge>
-                  <Button
-                    variant="secondary"
-                    onClick={() => openScheduleModal(x)}
-                    style={{ padding: '4px 8px', fontSize: '0.78rem' }}
-                  >
-                    Schedule 1-on-1
-                  </Button>
+                  <Badge tone="green">ACTIVE MENTORSHIP</Badge>
                 </div>
               </div>
             ))}
+            {active.length > 0 && (
+              <div style={{ background: '#f5f4fb', border: '1px solid #e2ddf7', borderRadius: 10, padding: 12, marginTop: 12 }}>
+                <small className="muted">
+                  💡 <b>1-on-1 Coordination Notice:</b> Mentorship pairings coordinate 1-on-1 sessions directly via official email or messaging. To host group workshops or team learning events, use <b>Knowledge Sessions</b>.
+                </small>
+              </div>
+            )}
             {!active.length && <Empty text="No active mentorship connections currently." />}
           </div>
         </Card>
@@ -384,66 +360,6 @@ export default function Mentorship() {
               </Button>
               <Button type="submit" disabled={busy}>
                 {busy ? 'Sending…' : 'Send Request'}
-              </Button>
-            </div>
-          </form>
-        )}
-      </Modal>
-
-      {/* Schedule 1-on-1 Session Modal */}
-      <Modal open={scheduleModalOpen} title="Schedule 1-on-1 Mentorship Session" onClose={() => setScheduleModalOpen(false)}>
-        {activeConn && (
-          <form onSubmit={submitScheduleSession}>
-            <div style={{ background: '#f5f4fb', padding: 14, borderRadius: 12, marginBottom: 16 }}>
-              <p style={{ margin: '0 0 4px' }}>
-                <b>Pairing:</b> {activeConn.mentorName} & {activeConn.menteeName}
-              </p>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>
-                Topic: {activeConn.topic || 'Skill Development'}
-              </p>
-            </div>
-
-            <Field
-              label="Session Date & Time *"
-              type="datetime-local"
-              value={sessionDate}
-              onChange={(e) => setSessionDate(e.target.value)}
-              required
-            />
-
-            <Field
-              label="Virtual Meeting Link / Google Meet *"
-              type="url"
-              value={meetingLink}
-              onChange={(e) => setMeetingLink(e.target.value)}
-              required
-            />
-
-            <div className="field">
-              <span>1-on-1 Agenda & Notes</span>
-              <textarea
-                rows={3}
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                placeholder="Outline questions, code review topics, or goal discussion for this session..."
-                style={{
-                  width: '100%',
-                  borderRadius: 12,
-                  border: '1px solid var(--border)',
-                  background: '#f5f5f8',
-                  padding: '10px 14px',
-                  font: 'inherit',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 18 }}>
-              <Button type="button" variant="secondary" onClick={() => setScheduleModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={busy || !sessionDate}>
-                {busy ? 'Scheduling…' : 'Confirm 1-on-1 Session'}
               </Button>
             </div>
           </form>

@@ -21,6 +21,8 @@ public class SkillResponseDTO {
 
     private Double yearsOfExperience;
 
+    private Boolean isVerified;
+
     private LocalDate lastUsed;
 
     public SkillResponseDTO() {
@@ -88,5 +90,13 @@ public class SkillResponseDTO {
 
     public void setLastUsed(LocalDate lastUsed) {
         this.lastUsed = lastUsed;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
     }
 }

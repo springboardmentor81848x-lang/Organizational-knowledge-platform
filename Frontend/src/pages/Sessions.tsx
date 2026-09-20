@@ -203,15 +203,15 @@ export default function Sessions() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-                  {x.meetingLink && isRegistered && (
+                  {x.meetingLink && (isRegistered || isHostOrAdmin) && (
                     <a
-                      className="btn secondary"
+                      className="btn primary"
                       href={x.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ flex: 1, textAlign: 'center', padding: '8px 10px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                      style={{ flex: 1, textAlign: 'center', padding: '8px 10px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#1a73e8', color: '#ffffff', textDecoration: 'none', borderRadius: '6px', fontWeight: 500 }}
                     >
-                      Join Meeting <ExternalLink size={12} />
+                      Join Google Meet <ExternalLink size={12} />
                     </a>
                   )}
 
@@ -221,7 +221,7 @@ export default function Sessions() {
                     onClick={() => (isRegistered ? handleCancelRegistration(x.sessionId) : handleRegister(x.sessionId, x.title))}
                     style={{ flex: 1, padding: '8px 10px', fontSize: '0.82rem' }}
                   >
-                    {isRegistered ? 'Cancel RSVP' : 'Register / RSVP'}
+                    {isRegistered ? 'Registered (Cancel)' : 'Register / RSVP'}
                   </Button>
 
                   {isHostOrAdmin && (

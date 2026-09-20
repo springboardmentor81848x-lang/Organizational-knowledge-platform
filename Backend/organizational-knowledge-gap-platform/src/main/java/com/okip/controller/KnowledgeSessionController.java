@@ -27,6 +27,7 @@ public class KnowledgeSessionController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','HR','ADMIN')")
     public ResponseEntity<KnowledgeSessionResponseDTO> createSession(
             @Valid @RequestBody KnowledgeSessionRequestDTO request) {
         return new ResponseEntity<>(sessionService.createSession(request), HttpStatus.CREATED);
@@ -76,6 +77,7 @@ public class KnowledgeSessionController {
     }
 
     @PutMapping("/{sessionId}/registrations/{registrationId}/attendance")
+    @PreAuthorize("hasAnyRole('MANAGER','HR','ADMIN')")
     public ResponseEntity<SessionRegistrationDTO> updateAttendance(
             @PathVariable Long sessionId,
             @PathVariable Long registrationId,

@@ -141,6 +141,24 @@ export default function Profile() {
                 value={data.pincode || ''}
                 onChange={(e) => setData({ ...data, pincode: e.target.value })}
               />
+
+              <SelectField
+                label="Career Target Role (Aspirational Goal)"
+                value={data.careerTargetRole || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setData({ ...data, careerTargetRole: val });
+                  localStorage.setItem('okip_career_target_role', val);
+                }}
+              >
+                <option value="">Select Target Career Goal</option>
+                <option value="Cloud Architect">Cloud Architect</option>
+                <option value="AI / ML Engineer">AI / ML Engineer</option>
+                <option value="Lead Fullstack Engineer">Lead Fullstack Engineer</option>
+                <option value="DevOps & Platform Specialist">DevOps & Platform Specialist</option>
+                <option value="Enterprise Solutions Architect">Enterprise Solutions Architect</option>
+                <option value="Data Engineer">Data Engineer</option>
+              </SelectField>
             </div>
 
             <div style={{ marginTop: 14 }}>

@@ -1,5 +1,6 @@
 package com.okip.dto.assessment;
 
+import java.util.Map;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,11 +13,12 @@ public class SkillAssessmentRequestDTO {
     @NotBlank(message = "Assessment type is required (SELF, PEER, MANAGER)")
     private String assessmentType;
 
-    @NotBlank(message = "Assessed proficiency is required (BEGINNER, INTERMEDIATE, ADVANCED, EXPERT)")
-    private String assessedProficiency;
+    private String assessedProficiency; // calculated authoritatively by backend for SELF
 
-    private Integer score; // optional, e.g. 1-100 or 1-5
+    private Integer score; // calculated authoritatively by backend for SELF
     private String comments;
+
+    private Map<String, Integer> quizAnswers; // Map of questionId -> selectedOptionIndex (0-3)
 
     public SkillAssessmentRequestDTO() {}
 
@@ -37,4 +39,7 @@ public class SkillAssessmentRequestDTO {
 
     public String getComments() { return comments; }
     public void setComments(String comments) { this.comments = comments; }
+
+    public Map<String, Integer> getQuizAnswers() { return quizAnswers; }
+    public void setQuizAnswers(Map<String, Integer> quizAnswers) { this.quizAnswers = quizAnswers; }
 }

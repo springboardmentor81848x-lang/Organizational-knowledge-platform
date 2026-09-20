@@ -84,18 +84,7 @@ export default function Login() {
             competency intelligence.
           </p>
 
-          <div className="scoreCards">
-            <div className="scoreCard">
-              <span className="scoreTag">ORGANIZATION READINESS</span>
-              <strong>82% <em>↑ 5%</em></strong>
-            </div>
-            <div className="scoreCard secondary">
-              <span className="scoreTag">KNOWLEDGE GAP SCORE</span>
-              <strong>18% <em>↓ 4%</em></strong>
-            </div>
-          </div>
-
-          <div className="featureGrid">
+          <div className="featureGrid" style={{ marginTop: 24 }}>
             <div className="featureTile">
               <span className="tileIcon">◌</span>
               <strong>Knowledge Gap Detection</strong>
@@ -124,32 +113,7 @@ export default function Login() {
       <div className="authForm">
         <div className="authCard">
           <h2>Welcome Back</h2>
-          <p className="muted">Sign in to your enterprise intelligence dashboard.</p>
-
-          <div className="socialRow" style={{ position: 'relative' }}>
-            <button
-              type="button"
-              className="socialButton"
-              disabled
-              title="Single Sign-On (Enterprise OAuth Config Required)"
-              style={{ opacity: 0.65, cursor: 'not-allowed' }}
-            >
-              <span className="socialGlyph google">G</span>
-              Google <small style={{ fontSize: '0.65rem', marginLeft: 4, color: '#666' }}>(SSO Config Req.)</small>
-            </button>
-            <button
-              type="button"
-              className="socialButton"
-              disabled
-              title="Single Sign-On (Enterprise OAuth Config Required)"
-              style={{ opacity: 0.65, cursor: 'not-allowed' }}
-            >
-              <span className="socialGlyph microsoft">◫</span>
-              Microsoft <small style={{ fontSize: '0.65rem', marginLeft: 4, color: '#666' }}>(SSO Config Req.)</small>
-            </button>
-          </div>
-
-          <div className="divider"><span>OR CONTINUE WITH EMAIL</span></div>
+          <p className="muted" style={{ marginBottom: 24 }}>Sign in to your enterprise intelligence dashboard.</p>
 
           <form onSubmit={submit} noValidate>
             <label className="field">

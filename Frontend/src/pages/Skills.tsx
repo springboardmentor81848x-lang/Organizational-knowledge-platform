@@ -211,6 +211,20 @@ export default function Skills({ admin = false }: { admin?: boolean }) {
         </form>
       </Card>
 
+      {!admin && (
+        <Card className="mb-4" style={{ backgroundColor: 'var(--bg-secondary, #f8f9fa)', borderColor: '#cbd5e1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Brain size={24} style={{ color: '#2563eb' }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Skill Verification & Credibility Framework</h4>
+              <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                Manually added skills start as <b>Self-Declared</b>. Take a 25-question Skill Assessment quiz or attach an Industry Certification to earn <b>Verified Status</b> and boost your competency rating.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <div className="sectionHead">
           <div>
@@ -226,6 +240,7 @@ export default function Skills({ admin = false }: { admin?: boolean }) {
                 <th>Skill Name</th>
                 <th>Category</th>
                 <th>Proficiency</th>
+                {!admin && <th>Verification</th>}
                 <th>Experience</th>
                 <th>Action</th>
               </tr>
@@ -254,6 +269,21 @@ export default function Skills({ admin = false }: { admin?: boolean }) {
                       {x.proficiencyLevel || 'Standard'}
                     </Badge>
                   </td>
+                  {!admin && (
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <Badge tone={x.isVerified ? 'green' : 'purple'}>
+                          {x.isVerified ? '✓ Verified' : 'Self-Declared'}
+                        </Badge>
+                        {!x.isVerified && (
+                          <div style={{ fontSize: '0.75rem', display: 'flex', gap: '8px' }}>
+                            <a href="/assessments" style={{ color: '#2563eb', fontWeight: 500, textDecoration: 'none' }}>Verify via Quiz ↗</a>
+                            <a href="/certifications" style={{ color: '#2563eb', fontWeight: 500, textDecoration: 'none' }}>Add Cert ↗</a>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  )}
                   <td>{x.yearsOfExperience != null ? `${x.yearsOfExperience} yrs` : '—'}</td>
                   <td>
                     <button

@@ -84,6 +84,7 @@ public class MentorshipServiceImpl implements MentorshipService {
                     return true;
                 })
                 .map(this::buildMentorProfile)
+                .filter(MentorProfileDTO::isAvailableForMentorship)
                 .filter(p -> {
                     if (skillId != null) {
                         return p.getExpertSkills().stream().anyMatch(s -> s.getSkillId().equals(skillId));
@@ -112,6 +113,7 @@ public class MentorshipServiceImpl implements MentorshipService {
         return allEmployees.stream()
                 .filter(e -> !e.getEmployeeId().equals(loggedIn.getEmployeeId()))
                 .map(this::buildMentorProfile)
+                .filter(MentorProfileDTO::isAvailableForMentorship)
                 .filter(profile -> profile.getExpertSkills().stream().anyMatch(s -> gapSkillIds.contains(s.getSkillId())))
                 .collect(Collectors.toList());
     }
@@ -157,7 +159,7 @@ public class MentorshipServiceImpl implements MentorshipService {
         List<MentorshipRequest> activeMentorships = mentorshipRepository.findActiveMentorshipsForEmployee(emp);
         long activeCount = activeMentorships.stream().filter(m -> m.getMentor().getEmployeeId().equals(emp.getEmployeeId())).count();
         profile.setActiveMenteesCount((int) activeCount);
-        boolean isOptedIn = empProfile == null || Boolean.TRUE.equals(empProfile.getAvailableAsMentor());
+        boolean isOptedIn = empProfile != null && Boolean.TRUE.equals(empProfile.getAvailableAsMentor());
         profile.setAvailableForMentorship(activeCount < 5 && isOptedIn);
 
         return profile;
@@ -173,6 +175,11 @@ public class MentorshipServiceImpl implements MentorshipService {
 
         Employee mentor = employeeRepository.findById(request.getMentorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Mentor not found."));
+
+        MentorProfileDTO mentorProfile = buildMentorProfile(mentor);
+        if (!mentorProfile.isAvailableForMentorship()) {
+            throw new BadRequestException("The selected mentor is currently unavailable or not opted in for mentorship.");
+        }
 
         if (mentorshipRepository.existsByMenteeAndMentorAndStatus(mentee, mentor, MentorshipStatus.PENDING)) {
             throw new ResourceAlreadyExistsException("You already have a pending mentorship request with this mentor.");
@@ -241,10 +248,9 @@ public class MentorshipServiceImpl implements MentorshipService {
         }
 
         boolean isMentor = request.getMentor().getEmployeeId().equals(loggedIn.getEmployeeId());
-        boolean isMentee = request.getMentee().getEmployeeId().equals(loggedIn.getEmployeeId());
 
-        if (!isMentor && !isMentee) {
-            throw new BadRequestException("You are not authorized to update this mentorship request.");
+        if (!isMentor) {
+            throw new BadRequestException("Only the designated mentor can respond to or update this mentorship request.");
         }
 
         request.setStatus(targetStatus);

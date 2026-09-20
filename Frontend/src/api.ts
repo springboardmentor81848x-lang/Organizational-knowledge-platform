@@ -51,6 +51,7 @@ export const endpoints = {
   ai: '/api/ai',
   analytics: '/api/analytics',
   assessments: '/api/assessments',
+  peerTargets: '/api/assessments/peer-targets',
   enrollments: '/api/training-enrollments',
   mentorship: '/api/mentorships',
   sessions: '/api/knowledge-sessions',

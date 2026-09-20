@@ -19,6 +19,7 @@ import {
   Activity,
   AlertTriangle,
   BookOpen,
+  Brain,
   CheckCircle2,
   GraduationCap,
   RefreshCw,
@@ -44,10 +45,18 @@ export default function Dashboard() {
 
     const fetchDashboard = async () => {
       try {
-        if (role === 'ADMIN' || role === 'HR') {
+        if (role === 'ADMIN') {
+          const [empList, skillsMaster, roleList, trainList] = await Promise.all([
+            get(`${endpoints.hr}/employees`).catch(() => []),
+            get(endpoints.skillMaster).catch(() => []),
+            get(endpoints.jobRoles).catch(() => []),
+            get(endpoints.trainings).catch(() => []),
+          ]);
+          setData({ empList, skillsMaster, roleList, trainList });
+        } else if (role === 'HR') {
           const [summary, depts] = await Promise.all([
-            get(`${endpoints.analytics}/hr/workforce-summary`),
-            get(`${endpoints.analytics}/departments`),
+            get(`${endpoints.analytics}/hr/workforce-summary`).catch(() => ({})),
+            get(`${endpoints.analytics}/departments`).catch(() => []),
           ]);
           setData(summary);
           setSecondaryData(depts || []);
@@ -85,8 +94,10 @@ export default function Dashboard() {
         <EmployeeDash data={data} gaps={secondaryData} />
       ) : role === 'MANAGER' ? (
         <ManagerDash heatmap={data} highRiskGaps={secondaryData} />
+      ) : role === 'HR' ? (
+        <HrDash data={data} depts={secondaryData} />
       ) : (
-        <OrgDash data={data} depts={secondaryData} role={role} />
+        <AdminDash adminData={data} />
       )}
     </>
   );
@@ -306,7 +317,7 @@ function ManagerDash({ heatmap, highRiskGaps }: { heatmap: any; highRiskGaps: an
   const navigate = useNavigate();
   const rows = heatmap?.employeeRows || [];
   const skills = heatmap?.competencySkills || heatmap?.skillHeaders || [];
-  const teamReadiness = Math.round(heatmap?.teamAverageReadiness || 78);
+  const teamReadiness = heatmap?.teamAverageReadiness != null ? `${Math.round(heatmap.teamAverageReadiness)}%` : 'N/A';
 
   return (
     <>
@@ -326,7 +337,7 @@ function ManagerDash({ heatmap, highRiskGaps }: { heatmap: any; highRiskGaps: an
 
       <div className="statsGrid">
         <Stat label="Team Members" value={rows.length || '—'} icon={<Users size={20} />} />
-        <Stat label="Team Avg Readiness" value={`${teamReadiness}%`} icon={<Target size={20} />} />
+        <Stat label="Team Avg Readiness" value={teamReadiness} icon={<Target size={20} />} />
         <Stat label="High-Risk Skill Gaps" value={highRiskGaps.length} icon={<AlertTriangle size={20} />} />
         <Stat label="Competency Coverage" value={`${skills.length} Skills`} icon={<Activity size={20} />} />
       </div>
@@ -448,38 +459,35 @@ function ManagerDash({ heatmap, highRiskGaps }: { heatmap: any; highRiskGaps: an
   );
 }
 
-function OrgDash({ data, depts, role }: { data: any; depts: any[]; role: string }) {
+function HrDash({ data, depts }: { data: any; depts: any[] }) {
   const navigate = useNavigate();
   const deptList = data?.departmentSummaries || depts || [];
-  const orgReadiness = data?.overallOrgReadiness != null ? Math.round(data.overallOrgReadiness) : 78;
+  const orgReadiness = data?.overallOrgReadiness != null ? `${Math.round(data.overallOrgReadiness)}%` : 'N/A';
 
-  const profData = Object.entries(data?.proficiencyDistribution || {
-    EXPERT: 12,
-    ADVANCED: 28,
-    INTERMEDIATE: 45,
-    BEGINNER: 18,
-  }).map(([name, value]) => ({ name, value }));
+  const profData = data?.proficiencyDistribution
+    ? Object.entries(data.proficiencyDistribution).map(([name, value]) => ({ name, value }))
+    : [];
 
   return (
     <>
       <div className="heroRow">
         <div>
-          <p className="eyebrow">{role === 'ADMIN' ? 'System Administrator' : 'HR Executive'} Workspace</p>
+          <p className="eyebrow">HR Executive Workspace</p>
           <h2>Enterprise Workforce Intelligence</h2>
           <p className="muted">
-            Department readiness benchmarks, competency distribution, training adoption, and organizational health.
+            Department readiness benchmarks, workforce skill distribution, registration governance, and organizational learning.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Button variant="secondary" onClick={() => navigate('/reports')}>Export Analytics</Button>
-          <Button onClick={() => navigate('/employees')}>Manage Registrations</Button>
+          <Button variant="secondary" onClick={() => navigate('/reports')}>Export Workforce Reports</Button>
+          <Button onClick={() => navigate('/employees')}>Employee Management</Button>
         </div>
       </div>
 
       <div className="statsGrid">
         <Stat label="Total Employees" value={data?.totalEmployees ?? '—'} icon={<Users size={20} />} />
-        <Stat label="Departments" value={data?.totalDepartments ?? '4'} icon={<Target size={20} />} />
-        <Stat label="Org Readiness" value={`${orgReadiness}%`} icon={<CheckCircle2 size={20} />} />
+        <Stat label="Departments" value={data?.totalDepartments ?? '—'} icon={<Target size={20} />} />
+        <Stat label="Org Readiness" value={orgReadiness} icon={<CheckCircle2 size={20} />} />
         <Stat label="Trainings Completed" value={data?.totalTrainingsCompleted ?? '—'} icon={<BookOpen size={20} />} />
       </div>
 
@@ -515,17 +523,133 @@ function OrgDash({ data, depts, role }: { data: any; depts: any[]; role: string 
               <p className="muted">Spread across all verified skill competencies.</p>
             </div>
           </div>
-          <div className="chart">
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={profData} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {profData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          {profData.length ? (
+            <div className="chart">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={profData} dataKey="value" nameKey="name" outerRadius={90} label>
+                    {profData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <Empty text="No proficiency distribution data available." />
+          )}
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function AdminDash({ adminData }: { adminData: any }) {
+  const navigate = useNavigate();
+  const empList = adminData?.empList || [];
+  const skillsMaster = adminData?.skillsMaster || [];
+  const roleList = adminData?.roleList || [];
+  const trainList = adminData?.trainList || [];
+
+  const roleCounts: Record<string, number> = {
+    EMPLOYEE: 0,
+    MANAGER: 0,
+    HR: 0,
+    ADMIN: 0,
+  };
+
+  empList.forEach((e: any) => {
+    const r = (e.roleName || 'EMPLOYEE').replace('ROLE_', '');
+    if (roleCounts[r] !== undefined) {
+      roleCounts[r]++;
+    } else {
+      roleCounts.EMPLOYEE++;
+    }
+  });
+
+  const roleChartData = Object.entries(roleCounts).map(([name, value]) => ({ name, value }));
+
+  return (
+    <>
+      <div className="heroRow">
+        <div>
+          <p className="eyebrow">System Administrator Workspace</p>
+          <h2>System Governance & Master Data Console</h2>
+          <p className="muted">
+            Global skill taxonomy, system role distribution, job role competencies, and platform governance controls.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button variant="secondary" onClick={() => navigate('/skills-admin')}>Master Skill Taxonomy</Button>
+          <Button onClick={() => navigate('/employees')}>User & Access Management</Button>
+        </div>
+      </div>
+
+      <div className="statsGrid">
+        <Stat label="Platform Users" value={empList.length || '—'} icon={<Users size={20} />} />
+        <Stat label="Master Taxonomy Skills" value={skillsMaster.length || '—'} icon={<Brain size={20} />} />
+        <Stat label="Configured Job Roles" value={roleList.length || '—'} icon={<ShieldCheck size={20} />} />
+        <Stat label="Catalog Courses" value={trainList.length || '—'} icon={<BookOpen size={20} />} />
+      </div>
+
+      <div className="grid2">
+        <Card>
+          <div className="sectionHead">
+            <div>
+              <h3>System Role Distribution</h3>
+              <p className="muted">User account distribution across authentication security roles.</p>
+            </div>
+          </div>
+          {empList.length ? (
+            <div className="chart">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={roleChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eeeaf4" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#5847d6" radius={[6, 6, 0, 0]} name="Users" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <Empty text="No user accounts registered." />
+          )}
+        </Card>
+
+        <Card>
+          <div className="sectionHead">
+            <div>
+              <h3>System Governance Shortcuts</h3>
+              <p className="muted">Administrative management modules.</p>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+            <button className="reportCard" onClick={() => navigate('/skills-admin')} style={{ cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <b>Skill Master Taxonomy</b>
+                <p>{skillsMaster.length} competencies cataloged</p>
+              </div>
+            </button>
+            <button className="reportCard" onClick={() => navigate('/competencies')} style={{ cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <b>Competency Framework</b>
+                <p>{roleList.length} job roles configured</p>
+              </div>
+            </button>
+            <button className="reportCard" onClick={() => navigate('/training-admin')} style={{ cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <b>Training Administration</b>
+                <p>{trainList.length} catalog courses</p>
+              </div>
+            </button>
+            <button className="reportCard" onClick={() => navigate('/employees')} style={{ cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <b>User Management</b>
+                <p>{empList.length} system accounts</p>
+              </div>
+            </button>
           </div>
         </Card>
       </div>

@@ -48,22 +48,22 @@ export function AppRoutes() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/skills" element={<Skills />} />
-                <Route path="/knowledge-gaps" element={<Gaps />} />
-                <Route path="/gaps" element={<Gaps />} />
-                <Route path="/learning" element={<Learning />} />
-                <Route path="/ai" element={<AI />} />
-                <Route path="/assessments" element={<Assessments />} />
-                <Route path="/certifications" element={<Certifications />} />
-                <Route path="/mentorship" element={<Mentorship />} />
-                <Route path="/knowledge-sessions" element={<Sessions />} />
-                <Route path="/sessions" element={<Sessions />} />
-                <Route path="/knowledge-resources" element={<KnowledgeResources />} />
-                <Route path="/resources" element={<KnowledgeResources />} />
+                <Route path="/skills" element={<RoleRoute roles={['EMPLOYEE']}><Skills /></RoleRoute>} />
+                <Route path="/knowledge-gaps" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER', 'HR']}><Gaps /></RoleRoute>} />
+                <Route path="/gaps" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER', 'HR']}><Gaps /></RoleRoute>} />
+                <Route path="/learning" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER']}><Learning /></RoleRoute>} />
+                <Route path="/ai" element={<RoleRoute roles={['EMPLOYEE']}><AI /></RoleRoute>} />
+                <Route path="/assessments" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER']}><Assessments /></RoleRoute>} />
+                <Route path="/certifications" element={<RoleRoute roles={['EMPLOYEE']}><Certifications /></RoleRoute>} />
+                <Route path="/mentorship" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER']}><Mentorship /></RoleRoute>} />
+                <Route path="/knowledge-sessions" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER', 'HR']}><Sessions /></RoleRoute>} />
+                <Route path="/sessions" element={<RoleRoute roles={['EMPLOYEE', 'MANAGER', 'HR']}><Sessions /></RoleRoute>} />
+                <Route path="/knowledge-resources" element={<RoleRoute roles={['EMPLOYEE', 'HR']}><KnowledgeResources /></RoleRoute>} />
+                <Route path="/resources" element={<RoleRoute roles={['EMPLOYEE', 'HR']}><KnowledgeResources /></RoleRoute>} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/reports" element={<RoleRoute roles={['ADMIN', 'HR', 'MANAGER']}><Reports /></RoleRoute>} />
                 <Route path="/employees" element={<RoleRoute roles={['ADMIN', 'HR', 'MANAGER']}><Employees /></RoleRoute>} />
-                <Route path="/competencies" element={<RoleRoute roles={['ADMIN', 'HR', 'MANAGER']}><Competencies /></RoleRoute>} />
+                <Route path="/competencies" element={<RoleRoute roles={['ADMIN', 'HR']}><Competencies /></RoleRoute>} />
                 <Route path="/training" element={<Training />} />
                 <Route path="/training-admin" element={<RoleRoute roles={['ADMIN', 'HR', 'MANAGER']}><Training admin /></RoleRoute>} />
                 <Route path="/skills-admin" element={<RoleRoute roles={['ADMIN']}><Skills admin /></RoleRoute>} />

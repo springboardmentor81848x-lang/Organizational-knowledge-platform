@@ -73,6 +73,15 @@ export default function AI() {
       {error && <ErrorBox message={error} />}
       {success && <div className="successBox">{success}</div>}
 
+      {localStorage.getItem('okip_career_target_role') && (
+        <div style={{ background: '#f5f4fb', border: '1px solid #dcd5f7', padding: '12px 16px', borderRadius: 12, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Sparkles size={18} style={{ color: '#5847d6', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.88rem', color: '#3b2ca8' }}>
+            Aspirational Career Target: <b>{localStorage.getItem('okip_career_target_role')}</b> — Roadmap aligns assigned job role benchmarks with your career growth direction.
+          </span>
+        </div>
+      )}
+
       <div className="grid2">
         <Card>
           <div className="sectionHead">

@@ -9,12 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.okip.dto.assessment.AssessmentReviewRequestDTO;
+import com.okip.dto.assessment.PeerTargetDTO;
 import com.okip.dto.assessment.SkillAssessmentRequestDTO;
 import com.okip.dto.assessment.SkillAssessmentResponseDTO;
 import com.okip.entity.master.Employee;
 import com.okip.entity.master.Skill;
 import com.okip.entity.transaction.EmployeeSkill;
 import com.okip.entity.transaction.SkillAssessment;
+import com.okip.enums.AccountStatus;
 import com.okip.enums.AssessmentStatus;
 import com.okip.enums.AssessmentType;
 import com.okip.enums.NotificationType;
@@ -29,6 +31,10 @@ import com.okip.service.assessment.SkillAssessmentService;
 import com.okip.service.gap.GapAnalysisService;
 import com.okip.service.notification.NotificationService;
 
+import com.okip.dto.assessment.QuizDTO;
+import com.okip.service.quiz.QuizBankService;
+import com.okip.service.quiz.QuizBankService.QuizEvaluationResult;
+
 @Service
 public class SkillAssessmentServiceImpl implements SkillAssessmentService {
 
@@ -38,6 +44,7 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final GapAnalysisService gapAnalysisService;
     private final NotificationService notificationService;
+    private final QuizBankService quizBankService;
 
     public SkillAssessmentServiceImpl(
             SkillAssessmentRepository assessmentRepository,
@@ -45,28 +52,21 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
             SkillRepository skillRepository,
             EmployeeSkillRepository employeeSkillRepository,
             GapAnalysisService gapAnalysisService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            QuizBankService quizBankService) {
         this.assessmentRepository = assessmentRepository;
         this.employeeRepository = employeeRepository;
         this.skillRepository = skillRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.gapAnalysisService = gapAnalysisService;
         this.notificationService = notificationService;
+        this.quizBankService = quizBankService;
     }
 
     @Override
     @Transactional
     public SkillAssessmentResponseDTO submitAssessment(SkillAssessmentRequestDTO request) {
         Employee evaluator = getLoggedInEmployee();
-        Employee employee;
-
-        if (request.getEmployeeId() != null && !request.getEmployeeId().equals(evaluator.getEmployeeId())) {
-            employee = employeeRepository.findById(request.getEmployeeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Target employee not found."));
-        } else {
-            employee = evaluator;
-        }
-
         Skill skill = skillRepository.findById(request.getSkillId())
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found."));
 
@@ -74,14 +74,59 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
         try {
             aType = AssessmentType.valueOf(request.getAssessmentType().toUpperCase());
         } catch (Exception e) {
-            aType = employee.getEmployeeId().equals(evaluator.getEmployeeId()) ? AssessmentType.SELF : AssessmentType.PEER;
+            aType = (request.getEmployeeId() == null || request.getEmployeeId().equals(evaluator.getEmployeeId()))
+                    ? AssessmentType.SELF : AssessmentType.PEER;
+        }
+
+        Employee employee;
+        if (aType == AssessmentType.SELF) {
+            employee = evaluator; // For SELF assessment, always force target employee to be the logged-in evaluator
+        } else {
+            if (request.getEmployeeId() != null && !request.getEmployeeId().equals(evaluator.getEmployeeId())) {
+                employee = employeeRepository.findById(request.getEmployeeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Target employee not found."));
+            } else {
+                if (aType == AssessmentType.PEER) {
+                    throw new BadRequestException("Peer assessment requires selecting a valid target peer employee.");
+                }
+                employee = evaluator;
+            }
+        }
+
+        String evaluatorRole = evaluator.getRole() != null ? evaluator.getRole().getRoleName().name() : "";
+
+        if (aType == AssessmentType.MANAGER) {
+            if (evaluatorRole.equals("ROLE_EMPLOYEE")) {
+                throw new org.springframework.security.access.AccessDeniedException("Employees are not authorized to submit manager assessments.");
+            }
+            if (evaluatorRole.equals("ROLE_MANAGER")) {
+                boolean sameDept = evaluator.getDepartment() != null && employee.getDepartment() != null &&
+                        evaluator.getDepartment().getDepartmentId().equals(employee.getDepartment().getDepartmentId());
+                if (!sameDept && !evaluator.getEmployeeId().equals(employee.getEmployeeId())) {
+                    throw new org.springframework.security.access.AccessDeniedException("Managers can only submit assessments for employees in their department.");
+                }
+            }
         }
 
         ProficiencyLevel pLevel;
-        try {
-            pLevel = ProficiencyLevel.valueOf(request.getAssessedProficiency().toUpperCase());
-        } catch (Exception e) {
-            throw new BadRequestException("Invalid proficiency level: " + request.getAssessedProficiency());
+        int calculatedScore;
+
+        if (aType == AssessmentType.SELF) {
+            String catStr = skill.getSkillCategory() != null ? skill.getSkillCategory().name() : null;
+            QuizEvaluationResult evalResult = quizBankService.evaluateAnswers(
+                    evaluator.getEmployeeId(), skill.getSkillId(), skill.getSkillName(), catStr, request.getQuizAnswers());
+            calculatedScore = evalResult.getScore();
+            pLevel = ProficiencyLevel.valueOf(evalResult.getProficiency());
+        } else {
+            if (request.getScore() == null) {
+                throw new BadRequestException("Assessment score is required.");
+            }
+            calculatedScore = request.getScore();
+            try {
+                pLevel = ProficiencyLevel.valueOf(request.getAssessedProficiency().toUpperCase());
+            } catch (Exception e) {
+                throw new BadRequestException("Invalid proficiency level: " + request.getAssessedProficiency());
+            }
         }
 
         SkillAssessment assessment = new SkillAssessment();
@@ -90,14 +135,12 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
         assessment.setSkill(skill);
         assessment.setAssessmentType(aType);
         assessment.setAssessedProficiency(pLevel);
-        assessment.setScore(request.getScore() != null ? request.getScore() : 80);
-        assessment.setComments(request.getComments());
+        assessment.setScore(calculatedScore);
+        assessment.setComments(request.getComments() != null ? request.getComments() : "Assessment submitted.");
 
-        // If a Manager submits an assessment for their report, it can be immediately APPROVED or PENDING_REVIEW
-        boolean isManager = evaluator.getRole() != null &&
-                (evaluator.getRole().getRoleName().name().equals("ROLE_MANAGER") || evaluator.getRole().getRoleName().name().equals("ROLE_ADMIN"));
+        boolean isAuthorizedManagerOrAdmin = evaluatorRole.equals("ROLE_MANAGER") || evaluatorRole.equals("ROLE_ADMIN");
 
-        if (aType == AssessmentType.MANAGER && isManager) {
+        if (aType == AssessmentType.MANAGER && isAuthorizedManagerOrAdmin) {
             assessment.setStatus(AssessmentStatus.APPROVED);
             assessment.setReviewer(evaluator);
             assessment.setReviewedAt(LocalDateTime.now());
@@ -108,11 +151,9 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
 
         SkillAssessment saved = assessmentRepository.save(assessment);
 
-        // If approved directly, update skills and recalculate gaps immediately
         if (saved.getStatus() == AssessmentStatus.APPROVED) {
             applyApprovedAssessment(saved, pLevel);
         } else {
-            // Notify employee or evaluator that assessment is pending review
             notificationService.createNotification(
                     employee,
                     "New Skill Assessment Submitted",
@@ -141,6 +182,24 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
 
     @Override
     public List<SkillAssessmentResponseDTO> getEmployeeAssessments(Long employeeId) {
+        Employee loggedIn = getLoggedInEmployee();
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+
+        if (!loggedIn.getEmployeeId().equals(employeeId)) {
+            if (role.equals("ROLE_EMPLOYEE")) {
+                throw new org.springframework.security.access.AccessDeniedException("You are not authorized to view assessments for this employee.");
+            }
+            if (role.equals("ROLE_MANAGER")) {
+                Employee targetEmp = employeeRepository.findById(employeeId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
+                boolean sameDept = loggedIn.getDepartment() != null && targetEmp.getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(targetEmp.getDepartment().getDepartmentId());
+                if (!sameDept) {
+                    throw new org.springframework.security.access.AccessDeniedException("Managers can only view assessments for employees in their department.");
+                }
+            }
+        }
+
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
         return assessmentRepository.findByEmployeeOrderByCreatedAtDesc(employee)
@@ -149,8 +208,28 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
 
     @Override
     public SkillAssessmentResponseDTO getAssessmentById(Long assessmentId) {
+        Employee loggedIn = getLoggedInEmployee();
         SkillAssessment a = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assessment not found."));
+
+        boolean isSelf = a.getEmployee().getEmployeeId().equals(loggedIn.getEmployeeId());
+        boolean isEvaluator = a.getEvaluator().getEmployeeId().equals(loggedIn.getEmployeeId());
+
+        String role = loggedIn.getRole() != null ? loggedIn.getRole().getRoleName().name() : "";
+
+        if (!isSelf && !isEvaluator) {
+            if (role.equals("ROLE_EMPLOYEE")) {
+                throw new org.springframework.security.access.AccessDeniedException("You are not authorized to view this assessment.");
+            }
+            if (role.equals("ROLE_MANAGER")) {
+                boolean sameDept = loggedIn.getDepartment() != null && a.getEmployee().getDepartment() != null &&
+                        loggedIn.getDepartment().getDepartmentId().equals(a.getEmployee().getDepartment().getDepartmentId());
+                if (!sameDept) {
+                    throw new org.springframework.security.access.AccessDeniedException("Managers can only view assessments for employees in their department.");
+                }
+            }
+        }
+
         return convertToDTO(a);
     }
 
@@ -160,6 +239,10 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
         Employee reviewer = getLoggedInEmployee();
         SkillAssessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assessment not found."));
+
+        if (assessment.getEmployee().getEmployeeId().equals(reviewer.getEmployeeId())) {
+            throw new org.springframework.security.access.AccessDeniedException("You cannot review or approve your own assessment.");
+        }
 
         AssessmentStatus targetStatus;
         try {
@@ -222,6 +305,7 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
                 });
 
         employeeSkill.setProficiencyLevel(finalProficiency);
+        employeeSkill.setIsVerified(true);
         employeeSkillRepository.save(employeeSkill);
 
         // Automated recalculation of knowledge gaps!
@@ -230,6 +314,19 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
         } catch (Exception e) {
             // Log or ignore if employee has no job role assigned yet
         }
+    }
+
+    @Override
+    public List<PeerTargetDTO> getPeerTargets() {
+        Employee loggedIn = getLoggedInEmployee();
+        return employeeRepository.findByStatus(AccountStatus.APPROVED)
+                .stream()
+                .filter(e -> !e.getEmployeeId().equals(loggedIn.getEmployeeId()))
+                .map(e -> new PeerTargetDTO(
+                        e.getEmployeeId(),
+                        e.getFirstName() + " " + e.getLastName(),
+                        e.getEmployeeCode()))
+                .collect(Collectors.toList());
     }
 
     private Employee getLoggedInEmployee() {
@@ -268,5 +365,14 @@ public class SkillAssessmentServiceImpl implements SkillAssessmentService {
         dto.setCreatedAt(a.getCreatedAt());
 
         return dto;
+    }
+
+    @Override
+    public QuizDTO getQuizQuestions(Long skillId) {
+        Employee loggedIn = getLoggedInEmployee();
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new ResourceNotFoundException("Skill not found."));
+        String catStr = skill.getSkillCategory() != null ? skill.getSkillCategory().name() : null;
+        return quizBankService.generateQuizForSkill(loggedIn.getEmployeeId(), skill.getSkillId(), skill.getSkillName(), catStr);
     }
 }

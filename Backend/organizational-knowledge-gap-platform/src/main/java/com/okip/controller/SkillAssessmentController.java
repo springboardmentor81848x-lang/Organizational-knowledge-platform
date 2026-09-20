@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.okip.dto.assessment.AssessmentReviewRequestDTO;
+import com.okip.dto.assessment.PeerTargetDTO;
 import com.okip.dto.assessment.SkillAssessmentRequestDTO;
 import com.okip.dto.assessment.SkillAssessmentResponseDTO;
 import com.okip.service.assessment.SkillAssessmentService;
@@ -61,5 +62,20 @@ public class SkillAssessmentController {
             @PathVariable Long assessmentId,
             @Valid @RequestBody AssessmentReviewRequestDTO reviewRequest) {
         return ResponseEntity.ok(assessmentService.reviewAssessment(assessmentId, reviewRequest));
+    }
+
+    /**
+     * Returns the list of approved employees eligible as Peer 360 / Manager Assessment
+     * targets for the currently logged-in assessor. The assessor themselves are excluded.
+     * Accessible to all authenticated roles (EMPLOYEE, MANAGER, HR, ADMIN).
+     */
+    @GetMapping("/peer-targets")
+    public ResponseEntity<List<PeerTargetDTO>> getPeerTargets() {
+        return ResponseEntity.ok(assessmentService.getPeerTargets());
+    }
+
+    @GetMapping("/quiz")
+    public ResponseEntity<com.okip.dto.assessment.QuizDTO> getQuizQuestions(@RequestParam Long skillId) {
+        return ResponseEntity.ok(assessmentService.getQuizQuestions(skillId));
     }
 }

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Plus, RefreshCw, UserCheck, Users } from 'lucide-react';
 import { get, post, put, del, endpoints, getApiErrorMessage } from '../api';
+import { currentRole } from '../auth';
 import { Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, SelectField, Stat } from '../components/ui';
 
 export default function Employees() {
+  const role = currentRole();
+  const isAdmin = role === 'ADMIN';
+  const isHr = role === 'HR';
+  const isManager = role === 'MANAGER';
   const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'create'>('directory');
   const [employees, setEmployees] = useState<any[]>([]);
   const [pending, setPending] = useState<any[]>([]);
@@ -167,7 +172,13 @@ export default function Employees() {
     try {
       await post(`${endpoints.gaps}/run/${employeeId}`);
       const gapRes = await get(`${endpoints.gaps}/employee/${employeeId}`);
-      setEmpGapsData({ name, gaps: gapRes || [] });
+      setEmpGapsData({
+        name,
+        jobRoleName: gapRes?.jobRoleName,
+        readinessPercentage: gapRes?.readinessPercentage,
+        overallGapPercentage: gapRes?.overallGapPercentage,
+        gaps: gapRes?.knowledgeGaps || [],
+      });
       setGapModalOpen(true);
       setSuccess(`Knowledge gap analysis calculated for ${name}!`);
       load();
@@ -190,11 +201,13 @@ export default function Employees() {
             Manage organization employees, assign target primary/secondary job roles, trigger gap analysis, and review pending registrations.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Button variant="secondary" onClick={() => setActiveTab('create')}>
-            <Plus size={16} style={{ marginRight: 6 }} /> Add Employee
-          </Button>
-        </div>
+        {(isAdmin || isHr) && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button variant="secondary" onClick={() => setActiveTab('create')}>
+              <Plus size={16} style={{ marginRight: 6 }} /> Add Employee
+            </Button>
+          </div>
+        )}
       </div>
 
       {error && <ErrorBox message={error} />}
@@ -202,7 +215,9 @@ export default function Employees() {
 
       <div className="statsGrid">
         <Stat label="Total Employees" value={employees.length} icon={<Users size={20} />} />
-        <Stat label="Pending Registrations" value={pending.length} icon={<AlertTriangle size={20} />} />
+        {(isAdmin || isHr) && (
+          <Stat label="Pending Registrations" value={pending.length} icon={<AlertTriangle size={20} />} />
+        )}
         <Stat
           label="Active Job Roles Assigned"
           value={employees.filter((e) => e.jobRoleName && e.jobRoleName !== 'No active job role assigned').length}
@@ -215,20 +230,24 @@ export default function Employees() {
           className={`btn ${activeTab === 'directory' ? 'primary' : 'secondary'}`}
           onClick={() => setActiveTab('directory')}
         >
-          Employee Directory ({employees.length})
+          {isManager ? 'Team Employee Roster' : 'Employee Directory'} ({employees.length})
         </button>
-        <button
-          className={`btn ${activeTab === 'pending' ? 'primary' : 'secondary'}`}
-          onClick={() => setActiveTab('pending')}
-        >
-          Pending Registrations ({pending.length})
-        </button>
-        <button
-          className={`btn ${activeTab === 'create' ? 'primary' : 'secondary'}`}
-          onClick={() => setActiveTab('create')}
-        >
-          Create New User
-        </button>
+        {(isAdmin || isHr) && (
+          <button
+            className={`btn ${activeTab === 'pending' ? 'primary' : 'secondary'}`}
+            onClick={() => setActiveTab('pending')}
+          >
+            Pending Registrations ({pending.length})
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            className={`btn ${activeTab === 'create' ? 'primary' : 'secondary'}`}
+            onClick={() => setActiveTab('create')}
+          >
+            Create New User
+          </button>
+        )}
       </div>
 
       {activeTab === 'directory' && (
@@ -489,9 +508,21 @@ export default function Employees() {
       {/* Gap Analysis Drilldown Modal */}
       <Modal open={gapModalOpen} title={`Competency Gap Breakdown: ${empGapsData?.name || 'Employee'}`} onClose={() => setGapModalOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {empGapsData?.jobRoleName && (
+            <div style={{ background: '#f5f4fb', padding: '10px 14px', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <small className="muted">Target Job Role</small>
+                <div style={{ fontWeight: 600 }}>{empGapsData.jobRoleName}</div>
+              </div>
+              <Badge tone={empGapsData.readinessPercentage >= 75 ? 'green' : empGapsData.readinessPercentage >= 50 ? 'orange' : 'red'}>
+                {Math.round(empGapsData.readinessPercentage || 0)}% Readiness
+              </Badge>
+            </div>
+          )}
+
           {(empGapsData?.gaps || []).map((g: any) => (
             <div
-              key={g.gapId || g.skillName}
+              key={g.knowledgeGapId || g.skillName}
               style={{
                 padding: 14,
                 borderRadius: 12,
@@ -501,19 +532,19 @@ export default function Employees() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <b>{g.skillName}</b>
-                <Badge tone={g.gapPercentage > 50 ? 'red' : g.gapPercentage > 0 ? 'orange' : 'green'}>
-                  {g.gapPercentage > 0 ? `${g.gapPercentage}% Gap` : '100% Ready'}
+                <Badge tone={g.status === 'CLOSED' ? 'green' : g.gapPercentage >= 70 ? 'red' : 'orange'}>
+                  {g.status === 'CLOSED' ? '✓ Met' : `${Math.round(g.gapPercentage || 0)}% Gap`}
                 </Badge>
               </div>
               <p className="muted" style={{ margin: '2px 0 8px', fontSize: '0.83rem' }}>
-                Required: <b>{g.requiredLevel}</b> | Current: <b>{g.currentLevel}</b>
+                Required: <b>{g.requiredProficiency || 'BEGINNER'}</b> | Current: <b>{g.currentProficiency || 'None'}</b>
               </p>
               <div style={{ width: '100%', height: 6, background: '#eeeaf4', borderRadius: 3, overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
-                    width: `${Math.max(0, 100 - (g.gapPercentage || 0))}%`,
-                    background: g.gapPercentage > 50 ? '#e03151' : g.gapPercentage > 0 ? '#e08a31' : '#078b67',
+                    width: `${Math.min(100, Math.max(0, 100 - (g.gapPercentage || 0)))}%`,
+                    background: g.status === 'CLOSED' ? '#078b67' : g.gapPercentage >= 70 ? '#e03151' : '#e08a31',
                     borderRadius: 3,
                   }}
                 />
@@ -522,7 +553,7 @@ export default function Employees() {
           ))}
 
           {!empGapsData?.gaps?.length && (
-            <Empty text="No knowledge gap records found. Ensure this employee has an active job role and mapped competencies." />
+            <Empty text="No open knowledge gaps. Employee meets all required competencies for their assigned job role!" />
           )}
         </div>
       </Modal>
