@@ -1,5 +1,7 @@
 package com.okip.security.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +17,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.okip.security.filter.JwtAuthenticationFilter;
 
@@ -33,25 +39,91 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
+    // =========================================================
+    // CORS CONFIGURATION
+    // =========================================================
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                List.of(
+                        "https://okgip-frontend-nxes.onrender.com"
+                ));
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                ));
+
+        configuration.setAllowedHeaders(
+                List.of(
+                        "Authorization",
+                        "Content-Type",
+                        "Accept"
+                ));
+
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
+    // =========================================================
+    // SECURITY FILTER CHAIN
+    // =========================================================
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
 
         http
 
+            // ==================== CSRF ====================
+
             .csrf(csrf -> csrf.disable())
 
+            // ==================== CORS ====================
+
             .cors(Customizer.withDefaults())
+
+            // ==================== SESSION ====================
 
             .sessionManagement(session ->
                     session.sessionCreationPolicy(
                             SessionCreationPolicy.STATELESS))
 
+            // ==================== AUTHENTICATION ====================
+
             .authenticationProvider(authenticationProvider())
+
+            // ==================== AUTHORIZATION ====================
 
             .authorizeHttpRequests(auth -> auth
 
-                // ==================== PUBLIC ====================
+                // =================================================
+                // CORS PREFLIGHT
+                // =================================================
+
+                .requestMatchers(
+                        HttpMethod.OPTIONS,
+                        "/**")
+                .permitAll()
+
+                // =================================================
+                // PUBLIC
+                // =================================================
 
                 .requestMatchers(
                         "/api/auth/**",
@@ -61,20 +133,23 @@ public class SecurityConfig {
                         "/api-docs/**")
                 .permitAll()
 
-
-                // ==================== ADMIN ====================
+                // =================================================
+                // ADMIN
+                // =================================================
 
                 .requestMatchers("/api/admin/**")
                 .hasRole("ADMIN")
 
-
-                // ==================== HR ====================
+                // =================================================
+                // HR
+                // =================================================
 
                 .requestMatchers("/api/hr/**")
                 .hasRole("HR")
 
-
-                // ==================== EMPLOYEE PROFILE ====================
+                // =================================================
+                // EMPLOYEE PROFILE
+                // =================================================
 
                 .requestMatchers("/api/profile/**")
                 .authenticated()
@@ -91,11 +166,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/certification/**")
                 .authenticated()
 
-
-                // ==================== MASTER SKILLS ====================
+                // =================================================
+                // MASTER SKILLS
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/master/skills/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -104,25 +180,26 @@ public class SecurityConfig {
                         "EMPLOYEE")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/master/skills/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.PUT,
+                        HttpMethod.PUT,
                         "/api/master/skills/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.DELETE,
+                        HttpMethod.DELETE,
                         "/api/master/skills/**")
                 .hasRole("ADMIN")
 
-
-                // ==================== MASTER JOB ROLES ====================
+                // =================================================
+                // MASTER JOB ROLES
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/master/job-roles/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -131,25 +208,26 @@ public class SecurityConfig {
                         "EMPLOYEE")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/master/job-roles/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.PUT,
+                        HttpMethod.PUT,
                         "/api/master/job-roles/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.DELETE,
+                        HttpMethod.DELETE,
                         "/api/master/job-roles/**")
                 .hasRole("ADMIN")
 
-
-                // ==================== JOB ROLE ASSIGNMENT ====================
+                // =================================================
+                // JOB ROLE ASSIGNMENT
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/job-role-assignment/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -157,7 +235,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.PUT,
+                        HttpMethod.PUT,
                         "/api/job-role-assignment/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -165,7 +243,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.DELETE,
+                        HttpMethod.DELETE,
                         "/api/job-role-assignment/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -173,7 +251,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/job-role-assignment/my")
                 .hasAnyRole(
                         "ADMIN",
@@ -182,18 +260,19 @@ public class SecurityConfig {
                         "EMPLOYEE")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/job-role-assignment/employee/**")
                 .hasAnyRole(
                         "ADMIN",
                         "HR",
                         "MANAGER")
 
-
-                // ==================== JOB ROLE COMPETENCIES ====================
+                // =================================================
+                // JOB ROLE COMPETENCIES
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/job-role-competencies/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -202,25 +281,26 @@ public class SecurityConfig {
                         "EMPLOYEE")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/job-role-competencies/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.PUT,
+                        HttpMethod.PUT,
                         "/api/job-role-competencies/**")
                 .hasRole("ADMIN")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.DELETE,
+                        HttpMethod.DELETE,
                         "/api/job-role-competencies/**")
                 .hasRole("ADMIN")
 
-
-                // ==================== GAP ANALYSIS ====================
+                // =================================================
+                // GAP ANALYSIS
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/gap-analysis/run/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -229,7 +309,7 @@ public class SecurityConfig {
                         "EMPLOYEE")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/gap-analysis/employee/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -237,7 +317,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/gap-analysis/my")
                 .hasAnyRole(
                         "ADMIN",
@@ -245,27 +325,29 @@ public class SecurityConfig {
                         "MANAGER",
                         "EMPLOYEE")
 
-
-                // ==================== MANAGER WORKSPACE ====================
+                // =================================================
+                // MANAGER WORKSPACE
+                // =================================================
 
                 .requestMatchers("/api/manager/**")
                 .hasRole("MANAGER")
 
-
-                // ==================== ANALYTICS ====================
+                // =================================================
+                // ANALYTICS
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/team/**")
                 .hasRole("MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/team")
                 .hasRole("MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/employee/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -273,7 +355,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/team/skill-heatmap")
                 .hasAnyRole(
                         "ADMIN",
@@ -281,7 +363,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/departments")
                 .hasAnyRole(
                         "ADMIN",
@@ -289,7 +371,7 @@ public class SecurityConfig {
                         "MANAGER")
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/analytics/my/**")
                 .hasAnyRole(
                         "ADMIN",
@@ -297,120 +379,103 @@ public class SecurityConfig {
                         "MANAGER",
                         "EMPLOYEE")
 
-
-                // =========================================================
+                // =================================================
                 // MENTOR PROFILE
-                // =========================================================
-                //
-                // Mentor is an additional capability.
-                // An employee does NOT need ROLE_MENTOR.
-                //
+                // =================================================
 
                 .requestMatchers("/api/mentor/**")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // =========================================================
+                // =================================================
                 // MENTORSHIP
-                // =========================================================
+                // =================================================
 
-                // View recommended mentors
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/mentorship/recommendations")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // View mentorship requests
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/mentorship/requests")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // Employee sends a mentorship request
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/requests")
                 .hasRole("EMPLOYEE")
 
-
-                // Mentor accepts a mentorship request
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/requests/*/accept")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // Mentor rejects a mentorship request
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/requests/*/reject")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // View knowledge-sharing sessions
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.GET,
+                        HttpMethod.GET,
                         "/api/mentorship/sessions")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // Schedule a knowledge-sharing session
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/requests/*/sessions")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // Complete a session
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/sessions/*/complete")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // Submit session feedback
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/mentorship/sessions/*/feedback")
                 .hasAnyRole(
                         "EMPLOYEE",
                         "MENTOR")
 
-
-                // ==================== AI RECOMMENDATION ====================
+                // =================================================
+                // AI RECOMMENDATION
+                // =================================================
 
                 .requestMatchers(
-                        org.springframework.http.HttpMethod.POST,
+                        HttpMethod.POST,
                         "/api/ai/recommendation/**")
                 .hasAnyRole(
                         "ADMIN",
                         "HR",
                         "MANAGER")
 
-
-                // ==================== FALLBACK ====================
+                // =================================================
+                // FALLBACK
+                // =================================================
 
                 .anyRequest()
                 .authenticated()
             )
+
+            // =================================================
+            // JWT FILTER
+            // =================================================
 
             .addFilterBefore(
                     jwtAuthenticationFilter,
@@ -419,6 +484,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // =========================================================
+    // AUTHENTICATION PROVIDER
+    // =========================================================
 
     @Bean
     AuthenticationProvider authenticationProvider() {
@@ -431,6 +499,9 @@ public class SecurityConfig {
         return provider;
     }
 
+    // =========================================================
+    // PASSWORD ENCODER
+    // =========================================================
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -438,6 +509,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // =========================================================
+    // AUTHENTICATION MANAGER
+    // =========================================================
 
     @Bean
     AuthenticationManager authenticationManager(
