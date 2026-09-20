@@ -16,4 +16,4 @@ COPY --from=build /app/target/organizational-knowledge-gap-platform-0.0.1-SNAPSH
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-XX:ReservedCodeCacheSize=32m", "-jar", "app.jar"]
