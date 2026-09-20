@@ -1,0 +1,2 @@
+package com.okip.controller; import java.util.List; import org.springframework.http.ResponseEntity; import org.springframework.web.bind.annotation.*; import com.okip.dto.achievement.AchievementDTO; import com.okip.service.achievement.AchievementService;
+@RestController @RequestMapping("/api/achievements") public class AchievementController{private final AchievementService s;public AchievementController(AchievementService s){this.s=s;}@GetMapping public ResponseEntity<List<AchievementDTO>> get(){return ResponseEntity.ok(s.getMine());}}
