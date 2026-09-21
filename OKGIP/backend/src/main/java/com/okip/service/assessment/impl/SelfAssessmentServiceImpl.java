@@ -2,8 +2,10 @@ package com.okip.service.assessment.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
@@ -26,14 +28,18 @@ import com.okip.entity.assessment.AssessmentQuestion;
 import com.okip.entity.master.Employee;
 import com.okip.entity.master.Skill;
 
+import com.okip.entity.transaction.EmployeeJobRole;
 import com.okip.entity.transaction.EmployeeSkill;
+import com.okip.entity.transaction.JobRoleCompetency;
 
 import com.okip.enums.ProficiencyLevel;
 
 import com.okip.exception.ResourceNotFoundException;
 
+import com.okip.repository.EmployeeJobRoleRepository;
 import com.okip.repository.EmployeeRepository;
 import com.okip.repository.EmployeeSkillRepository;
+import com.okip.repository.JobRoleCompetencyRepository;
 
 import com.okip.repository.assessment.AssessmentAnswerRepository;
 import com.okip.repository.assessment.AssessmentAttemptRepository;
@@ -67,6 +73,10 @@ public class SelfAssessmentServiceImpl
 
     private final EmployeeSkillRepository employeeSkills;
 
+    private final EmployeeJobRoleRepository employeeJobRoles;
+
+    private final JobRoleCompetencyRepository jobRoleCompetencies;
+
     private final GapAnalysisService gapAnalysisService;
 
 
@@ -82,6 +92,8 @@ public class SelfAssessmentServiceImpl
             AssessmentAnswerRepository answers,
             EmployeeRepository employees,
             EmployeeSkillRepository employeeSkills,
+            EmployeeJobRoleRepository employeeJobRoles,
+            JobRoleCompetencyRepository jobRoleCompetencies,
             GapAnalysisService gapAnalysisService) {
 
         this.assessments = assessments;
@@ -91,6 +103,8 @@ public class SelfAssessmentServiceImpl
         this.answers = answers;
         this.employees = employees;
         this.employeeSkills = employeeSkills;
+        this.employeeJobRoles = employeeJobRoles;
+        this.jobRoleCompetencies = jobRoleCompetencies;
         this.gapAnalysisService = gapAnalysisService;
     }
 
@@ -111,17 +125,15 @@ public class SelfAssessmentServiceImpl
                 || authentication.getName().isBlank()) {
 
             throw new ResourceNotFoundException(
-                    "Authenticated employee not found."
-            );
+                    "Authenticated employee not found.");
         }
 
         return employees
-                .findByOfficialEmail(authentication.getName())
+                .findByOfficialEmail(
+                        authentication.getName())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Employee not found."
-                        )
-                );
+                                "Employee not found."));
     }
 
 
@@ -149,11 +161,152 @@ public class SelfAssessmentServiceImpl
 
 
     // ============================================================
-    // GET MY ASSESSMENTS
-    //
-    // Only skills present in the employee's Skill Profile
-    // are considered.
+    // GET REQUIRED SKILLS FROM ACTIVE JOB ROLES
     // ============================================================
+    /*
+     * Employee
+     *     ↓
+     * Active EmployeeJobRole
+     *     ↓
+     * JobRole
+     *     ↓
+     * JobRoleCompetency
+     *     ↓
+     * Required Skill
+     *
+     * This is now the SOURCE OF TRUTH for assessments.
+     */
+
+    private List<Skill> getRequiredSkillsForEmployee(
+            Employee employee) {
+
+        List<EmployeeJobRole> activeRoles =
+                employeeJobRoles
+                        .findByEmployeeAndActiveTrue(
+                                employee);
+
+        if (activeRoles == null
+                || activeRoles.isEmpty()) {
+
+            return new ArrayList<>();
+        }
+
+        /*
+         * LinkedHashMap/Set is not required here because
+         * we only need unique Skill IDs.
+         */
+        Set<Long> skillIds =
+                new HashSet<>();
+
+        List<Skill> requiredSkills =
+                new ArrayList<>();
+
+        for (EmployeeJobRole employeeJobRole
+                : activeRoles) {
+
+            if (employeeJobRole.getJobRole() == null) {
+                continue;
+            }
+
+            List<JobRoleCompetency> competencies =
+                    jobRoleCompetencies
+                            .findByJobRole(
+                                    employeeJobRole.getJobRole());
+
+            for (JobRoleCompetency competency
+                    : competencies) {
+
+                if (competency == null
+                        || competency.getSkill() == null) {
+                    continue;
+                }
+
+                Skill skill =
+                        competency.getSkill();
+
+                if (skill.getSkillId() == null) {
+                    continue;
+                }
+
+                /*
+                 * Prevent duplicate skills when two roles
+                 * require the same skill.
+                 */
+                if (skillIds.add(
+                        skill.getSkillId())) {
+
+                    requiredSkills.add(skill);
+                }
+            }
+        }
+
+        return requiredSkills;
+    }
+
+
+    // ============================================================
+    // ENSURE REQUIRED SKILL EXISTS IN EMPLOYEE PROFILE
+    // ============================================================
+
+    private void ensureEmployeeSkill(
+            Employee employee,
+            Skill skill) {
+
+        if (skill == null) {
+            return;
+        }
+
+        boolean exists =
+                employeeSkills
+                        .findByEmployeeAndSkill(
+                                employee,
+                                skill)
+                        .isPresent();
+
+        if (!exists) {
+
+            EmployeeSkill employeeSkill =
+                    new EmployeeSkill();
+
+            employeeSkill.setEmployee(employee);
+            employeeSkill.setSkill(skill);
+
+            /*
+             * Newly required skill starts at BEGINNER.
+             *
+             * Assessment result will update this
+             * proficiency later.
+             */
+            employeeSkill.setProficiencyLevel(
+                    ProficiencyLevel.BEGINNER);
+
+            employeeSkill.setYearsOfExperience(0.0);
+
+            employeeSkills.save(employeeSkill);
+        }
+    }
+
+
+    // ============================================================
+    // GET MY ASSESSMENTS
+    // ============================================================
+    /*
+     * OLD FLOW:
+     *
+     * EmployeeSkill
+     *      ↓
+     * Assessment
+     *
+     * NEW FLOW:
+     *
+     * Active Job Role
+     *      ↓
+     * Job Role Competency
+     *      ↓
+     * Required Skill
+     *      ↓
+     * Assessment
+     */
 
     @Override
     public List<SelfAssessmentDTO> getMyAssessments() {
@@ -164,33 +317,52 @@ public class SelfAssessmentServiceImpl
         List<SelfAssessmentDTO> result =
                 new ArrayList<>();
 
-        // Get only this employee's skills
+        // --------------------------------------------------------
+        // Get skills required by employee's active job roles
+        // --------------------------------------------------------
 
-        List<EmployeeSkill> mySkills =
-                employeeSkills.findByEmployee(employee);
+        List<Skill> requiredSkills =
+                getRequiredSkillsForEmployee(
+                        employee);
 
-        for (EmployeeSkill employeeSkill : mySkills) {
+        // --------------------------------------------------------
+        // No job role assigned
+        // --------------------------------------------------------
 
-            Skill skill =
-                    employeeSkill.getSkill();
+        if (requiredSkills.isEmpty()) {
+
+            return result;
+        }
+
+        // --------------------------------------------------------
+        // Create/find assessment for each required skill
+        // --------------------------------------------------------
+
+        for (Skill skill : requiredSkills) {
 
             if (skill == null) {
                 continue;
             }
 
+            /*
+             * Make sure this required skill is also present
+             * in Employee Skill Profile.
+             *
+             * This also supports older job-role assignments
+             * created before the new initialization logic.
+             */
+            ensureEmployeeSkill(
+                    employee,
+                    skill);
+
             Long skillId =
                     skill.getSkillId();
-
-            // ----------------------------------------------------
-            // Find SELF assessment for this skill
-            // ----------------------------------------------------
 
             Assessment assessment =
                     assessments
                             .findBySkillSkillIdAndAssessmentTypeAndActiveTrue(
                                     skillId,
-                                    Assessment.AssessmentType.SELF
-                            )
+                                    Assessment.AssessmentType.SELF)
                             .orElseGet(() -> {
 
                                 Assessment newAssessment =
@@ -199,30 +371,22 @@ public class SelfAssessmentServiceImpl
                                 newAssessment.setSkill(skill);
 
                                 newAssessment.setAssessmentType(
-                                        Assessment.AssessmentType.SELF
-                                );
+                                        Assessment.AssessmentType.SELF);
 
                                 newAssessment.setAssessmentName(
                                         skill.getSkillName()
-                                                + " Technical Self Assessment"
-                                );
+                                                + " Technical Self Assessment");
 
                                 newAssessment.setTotalMarks(50);
 
                                 newAssessment.setActive(true);
 
                                 return assessments.save(
-                                        newAssessment
-                                );
+                                        newAssessment);
                             });
 
-            // ----------------------------------------------------
-            // Add assessment to response
-            // ----------------------------------------------------
-
             result.add(
-                    toDto(assessment)
-            );
+                    toDto(assessment));
         }
 
         return result;
@@ -235,16 +399,15 @@ public class SelfAssessmentServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    public SelfAssessmentDTO getAssessment(Long id) {
+    public SelfAssessmentDTO getAssessment(
+            Long id) {
 
         Assessment assessment =
                 assessments
                         .findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Assessment not found."
-                                )
-                        );
+                                        "Assessment not found."));
 
         return toDto(assessment);
     }
@@ -255,7 +418,8 @@ public class SelfAssessmentServiceImpl
     // ============================================================
 
     @Override
-    public AssessmentResultDTO start(Long id) {
+    public AssessmentResultDTO start(
+            Long id) {
 
         Employee employee =
                 getLoggedInEmployee();
@@ -265,36 +429,49 @@ public class SelfAssessmentServiceImpl
                         .findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Assessment not found."
-                                )
-                        );
+                                        "Assessment not found."));
 
         // --------------------------------------------------------
-        // Security:
-        // Assessment must belong to one of employee's skills
+        // Validate assessment skill
         // --------------------------------------------------------
 
-        boolean ownsSkill =
-                employeeSkills
-                        .findByEmployee(employee)
-                        .stream()
-                        .anyMatch(employeeSkill ->
-                                employeeSkill
-                                        .getSkill()
-                                        .getSkillId()
-                                        .equals(
-                                                assessment
-                                                        .getSkill()
-                                                        .getSkillId()
-                                        )
-                        );
+        Skill assessmentSkill =
+                assessment.getSkill();
 
-        if (!ownsSkill) {
+        if (assessmentSkill == null) {
 
             throw new ResourceNotFoundException(
-                    "This assessment is not assigned to one of your skills."
-            );
+                    "Assessment skill not found.");
         }
+
+        // --------------------------------------------------------
+        // SECURITY:
+        // Assessment skill MUST belong to one of the employee's
+        // active Job Role competencies.
+        // --------------------------------------------------------
+
+        boolean requiredByJobRole =
+                getRequiredSkillsForEmployee(employee)
+                        .stream()
+                        .anyMatch(skill ->
+                                skill.getSkillId()
+                                        .equals(
+                                                assessmentSkill
+                                                        .getSkillId()));
+
+        if (!requiredByJobRole) {
+
+            throw new ResourceNotFoundException(
+                    "This assessment is not required for your assigned job role.");
+        }
+
+        // --------------------------------------------------------
+        // Make sure EmployeeSkill exists
+        // --------------------------------------------------------
+
+        ensureEmployeeSkill(
+                employee,
+                assessmentSkill);
 
         // --------------------------------------------------------
         // Create attempt
@@ -308,20 +485,19 @@ public class SelfAssessmentServiceImpl
         attempt.setAssessment(assessment);
 
         attempt.setStartedAt(
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
 
         attempt.setStatus(
-                AssessmentAttempt.Status.IN_PROGRESS
-        );
+                AssessmentAttempt.Status.IN_PROGRESS);
 
         AssessmentAttempt savedAttempt =
                 attempts.save(attempt);
 
-        // Recalculate the employee's knowledge gaps immediately after
-        // the assessment updates EmployeeSkill.proficiencyLevel.
-        gapAnalysisService.runGapAnalysis(
-                employee.getEmployeeId());
+        /*
+         * Do not change proficiency here.
+         *
+         * Proficiency changes only after submission.
+         */
 
         return result(savedAttempt);
     }
@@ -343,13 +519,10 @@ public class SelfAssessmentServiceImpl
                 attempts
                         .findByAttemptIdAndEmployeeEmployeeId(
                                 attemptId,
-                                employee.getEmployeeId()
-                        )
+                                employee.getEmployeeId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Assessment attempt not found."
-                                )
-                        );
+                                        "Assessment attempt not found."));
 
         // --------------------------------------------------------
         // Already submitted
@@ -370,8 +543,7 @@ public class SelfAssessmentServiceImpl
                         .findByAssessmentAssessmentIdOrderByQuestionOrderAsc(
                                 attempt
                                         .getAssessment()
-                                        .getAssessmentId()
-                        );
+                                        .getAssessmentId());
 
         Map<Long, AssessmentQuestion> questionMap =
                 assessmentQuestions
@@ -379,9 +551,7 @@ public class SelfAssessmentServiceImpl
                         .collect(
                                 Collectors.toMap(
                                         AssessmentQuestion::getQuestionId,
-                                        question -> question
-                                )
-                        );
+                                        question -> question));
 
         int score = 0;
 
@@ -394,16 +564,13 @@ public class SelfAssessmentServiceImpl
 
             for (
                     AssessmentAnswerRequestDTO submittedAnswer
-                    : request.answers
-            ) {
+                    : request.answers) {
 
                 AssessmentQuestion question =
                         questionMap.get(
-                                submittedAnswer.questionId
-                        );
+                                submittedAnswer.questionId);
 
                 // Invalid question ID
-
                 if (question == null) {
                     continue;
                 }
@@ -416,8 +583,7 @@ public class SelfAssessmentServiceImpl
                 answer.setQuestion(question);
 
                 answer.setCodeAnswer(
-                        submittedAnswer.codeAnswer
-                );
+                        submittedAnswer.codeAnswer);
 
                 int marks = 0;
 
@@ -431,15 +597,15 @@ public class SelfAssessmentServiceImpl
 
                         &&
 
-                        submittedAnswer.selectedOptionId != null
+                        submittedAnswer.selectedOptionId
+                                != null
                 ) {
 
                     AssessmentOption option =
                             options
                                     .findById(
                                             submittedAnswer
-                                                    .selectedOptionId
-                                    )
+                                                    .selectedOptionId)
                                     .orElse(null);
 
                     if (
@@ -447,17 +613,14 @@ public class SelfAssessmentServiceImpl
 
                             &&
 
-                            option
-                                    .getQuestion()
+                            option.getQuestion()
                                     .getQuestionId()
                                     .equals(
-                                            question.getQuestionId()
-                                    )
+                                            question.getQuestionId())
                     ) {
 
                         answer.setSelectedOption(
-                                option
-                        );
+                                option);
 
                         if (option.isCorrect()) {
 
@@ -470,7 +633,7 @@ public class SelfAssessmentServiceImpl
                 /*
                  * Coding questions:
                  *
-                 * The code answer is stored.
+                 * Code answer is stored.
                  * Coding evaluation is not implemented yet.
                  */
 
@@ -508,64 +671,102 @@ public class SelfAssessmentServiceImpl
                     Math.round(
                             (
                                     score
-                                    * 100.0
-                                    /
-                                    totalMarks
+                                            * 100.0
+                                            /
+                                            totalMarks
                             )
-                            * 100.0
+                                    * 100.0
                     )
-                    / 100.0;
+                            / 100.0;
         }
 
         attempt.setPercentage(
-                percentage
-        );
+                percentage);
 
         // --------------------------------------------------------
         // UPDATE EMPLOYEE SKILL PROFICIENCY
-        // FROM ASSESSMENT SCORE
         // --------------------------------------------------------
 
         ProficiencyLevel assessedProficiency =
-                determineProficiency(percentage);
+                determineProficiency(
+                        percentage);
 
         employeeSkills
                 .findByEmployeeAndSkill(
                         employee,
                         attempt
                                 .getAssessment()
-                                .getSkill()
-                )
-                .ifPresent(employeeSkill -> {
+                                .getSkill())
+                .ifPresentOrElse(
 
-                    employeeSkill.setProficiencyLevel(
-                            assessedProficiency
-                    );
+                        employeeSkill -> {
 
-                    employeeSkills.save(employeeSkill);
-                });
+                            employeeSkill
+                                    .setProficiencyLevel(
+                                            assessedProficiency);
+
+                            employeeSkills.save(
+                                    employeeSkill);
+                        },
+
+                        () -> {
+
+                            /*
+                             * Safety fallback:
+                             * create EmployeeSkill if it somehow
+                             * does not exist.
+                             */
+
+                            EmployeeSkill employeeSkill =
+                                    new EmployeeSkill();
+
+                            employeeSkill.setEmployee(
+                                    employee);
+
+                            employeeSkill.setSkill(
+                                    attempt
+                                            .getAssessment()
+                                            .getSkill());
+
+                            employeeSkill
+                                    .setProficiencyLevel(
+                                            assessedProficiency);
+
+                            employeeSkill
+                                    .setYearsOfExperience(
+                                            0.0);
+
+                            employeeSkills.save(
+                                    employeeSkill);
+                        }
+                );
 
         // --------------------------------------------------------
         // Mark submitted
         // --------------------------------------------------------
 
         attempt.setStatus(
-                AssessmentAttempt.Status.SUBMITTED
-        );
+                AssessmentAttempt.Status.SUBMITTED);
 
         attempt.setSubmittedAt(
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
+
+        AssessmentResultDTO response;
 
         AssessmentAttempt savedAttempt =
                 attempts.save(attempt);
 
-        // Recalculate the employee's knowledge gaps immediately after
-        // the assessment updates EmployeeSkill.proficiencyLevel.
+        // --------------------------------------------------------
+        // Recalculate knowledge gaps
+        // --------------------------------------------------------
+
         gapAnalysisService.runGapAnalysis(
                 employee.getEmployeeId());
 
-        return result(savedAttempt);
+        response =
+                result(savedAttempt);
+
+        return response;
     }
 
 
@@ -600,20 +801,18 @@ public class SelfAssessmentServiceImpl
                 assessment
                         .getTotalMarks();
 
-        // ----------------------------------------------------
+        // --------------------------------------------------------
         // Load questions
-        // ----------------------------------------------------
+        // --------------------------------------------------------
 
         List<AssessmentQuestion> assessmentQuestions =
                 questions
                         .findByAssessmentAssessmentIdOrderByQuestionOrderAsc(
-                                assessment.getAssessmentId()
-                        );
+                                assessment.getAssessmentId());
 
         for (
                 AssessmentQuestion question
-                : assessmentQuestions
-        ) {
+                : assessmentQuestions) {
 
             SelfAssessmentQuestionDTO questionDTO =
                     new SelfAssessmentQuestionDTO();
@@ -650,13 +849,11 @@ public class SelfAssessmentServiceImpl
             List<AssessmentOption> questionOptions =
                     options
                             .findByQuestionQuestionIdOrderByOptionOrderAsc(
-                                    question.getQuestionId()
-                            );
+                                    question.getQuestionId());
 
             for (
                     AssessmentOption option
-                    : questionOptions
-            ) {
+                    : questionOptions) {
 
                 SelfAssessmentQuestionDTO.OptionDTO optionDTO =
                         new SelfAssessmentQuestionDTO.OptionDTO();
@@ -671,13 +868,11 @@ public class SelfAssessmentServiceImpl
                         option.getOptionOrder();
 
                 questionDTO.options.add(
-                        optionDTO
-                );
+                        optionDTO);
             }
 
             dto.questions.add(
-                    questionDTO
-            );
+                    questionDTO);
         }
 
         return dto;

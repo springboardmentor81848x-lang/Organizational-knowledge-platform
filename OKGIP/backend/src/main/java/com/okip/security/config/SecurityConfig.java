@@ -227,12 +227,17 @@ public class SecurityConfig {
                 // =================================================
 
                 .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/job-role-assignment/**")
-                .hasAnyRole(
-                        "ADMIN",
-                        "HR",
-                        "MANAGER")
+        HttpMethod.POST,
+        "/api/job-role-assignment/my-role")
+                .hasRole("EMPLOYEE")
+
+                .requestMatchers(
+        HttpMethod.POST,
+        "/api/job-role-assignment")
+                   .hasAnyRole(
+        "ADMIN",
+        "HR",
+        "MANAGER")
 
                 .requestMatchers(
                         HttpMethod.PUT,

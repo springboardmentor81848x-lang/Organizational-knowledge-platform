@@ -34,6 +34,18 @@ public class JobRoleAssignmentController {
                 HttpStatus.CREATED);
     }
 
+    @PostMapping("/my-role")
+public ResponseEntity<JobRoleAssignmentResponseDTO> assignMyRole(
+        @RequestBody AssignJobRoleRequestDTO request) {
+
+    JobRoleAssignmentResponseDTO response =
+            jobRoleAssignmentService.assignMyRole(request);
+
+    return new ResponseEntity<>(
+            response,
+            HttpStatus.CREATED);
+}
+
     @GetMapping("/my")
     public ResponseEntity<List<JobRoleAssignmentResponseDTO>>
             getMyAssignedRoles() {

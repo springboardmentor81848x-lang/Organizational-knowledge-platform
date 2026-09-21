@@ -19,6 +19,9 @@ public interface JobRoleAssignmentService {
             Long employeeJobRoleId,
             AssignJobRoleRequestDTO request);
 
+    JobRoleAssignmentResponseDTO assignMyRole(
+        AssignJobRoleRequestDTO request);
+
     void deleteAssignment(
             Long employeeJobRoleId);
 
