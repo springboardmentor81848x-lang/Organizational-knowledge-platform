@@ -2,10 +2,9 @@ package com.okip.service.assessment.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
@@ -52,33 +51,24 @@ import com.okip.service.gap.GapAnalysisService;
 
 @Service
 @Transactional
-public class SelfAssessmentServiceImpl
-        implements SelfAssessmentService {
+public class SelfAssessmentServiceImpl implements SelfAssessmentService {
 
     // ============================================================
     // REPOSITORIES
     // ============================================================
 
     private final AssessmentRepository assessments;
-
     private final AssessmentQuestionRepository questions;
-
     private final AssessmentOptionRepository options;
-
     private final AssessmentAttemptRepository attempts;
-
     private final AssessmentAnswerRepository answers;
 
     private final EmployeeRepository employees;
-
     private final EmployeeSkillRepository employeeSkills;
-
     private final EmployeeJobRoleRepository employeeJobRoles;
-
     private final JobRoleCompetencyRepository jobRoleCompetencies;
 
     private final GapAnalysisService gapAnalysisService;
-
 
     // ============================================================
     // CONSTRUCTOR
@@ -108,7 +98,6 @@ public class SelfAssessmentServiceImpl
         this.gapAnalysisService = gapAnalysisService;
     }
 
-
     // ============================================================
     // GET LOGGED-IN EMPLOYEE
     // ============================================================
@@ -129,13 +118,11 @@ public class SelfAssessmentServiceImpl
         }
 
         return employees
-                .findByOfficialEmail(
-                        authentication.getName())
+                .findByOfficialEmail(authentication.getName())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Employee not found."));
     }
-
 
     // ============================================================
     // DETERMINE PROFICIENCY FROM ASSESSMENT PERCENTAGE
@@ -159,9 +146,8 @@ public class SelfAssessmentServiceImpl
         return ProficiencyLevel.BEGINNER;
     }
 
-
     // ============================================================
-    // GET REQUIRED SKILLS FROM ACTIVE JOB ROLES
+    // GET SKILLS FROM ACTIVE JOB ROLES
     // ============================================================
     /*
      * Employee
@@ -172,39 +158,28 @@ public class SelfAssessmentServiceImpl
      *     ↓
      * JobRoleCompetency
      *     ↓
-     * Required Skill
+     * Required Skills
      *
-     * This is now the SOURCE OF TRUTH for assessments.
+     * These skills are added to the assessment list.
      */
 
-    private List<Skill> getRequiredSkillsForEmployee(
+    private List<Skill> getRequiredSkillsFromJobRoles(
             Employee employee) {
+
+        Map<Long, Skill> skills = new LinkedHashMap<>();
 
         List<EmployeeJobRole> activeRoles =
                 employeeJobRoles
-                        .findByEmployeeAndActiveTrue(
-                                employee);
+                        .findByEmployeeAndActiveTrue(employee);
 
-        if (activeRoles == null
-                || activeRoles.isEmpty()) {
-
+        if (activeRoles == null || activeRoles.isEmpty()) {
             return new ArrayList<>();
         }
 
-        /*
-         * LinkedHashMap/Set is not required here because
-         * we only need unique Skill IDs.
-         */
-        Set<Long> skillIds =
-                new HashSet<>();
+        for (EmployeeJobRole employeeJobRole : activeRoles) {
 
-        List<Skill> requiredSkills =
-                new ArrayList<>();
-
-        for (EmployeeJobRole employeeJobRole
-                : activeRoles) {
-
-            if (employeeJobRole.getJobRole() == null) {
+            if (employeeJobRole == null
+                    || employeeJobRole.getJobRole() == null) {
                 continue;
             }
 
@@ -213,39 +188,151 @@ public class SelfAssessmentServiceImpl
                             .findByJobRole(
                                     employeeJobRole.getJobRole());
 
-            for (JobRoleCompetency competency
-                    : competencies) {
+            if (competencies == null) {
+                continue;
+            }
+
+            for (JobRoleCompetency competency : competencies) {
 
                 if (competency == null
                         || competency.getSkill() == null) {
                     continue;
                 }
 
-                Skill skill =
-                        competency.getSkill();
+                Skill skill = competency.getSkill();
 
                 if (skill.getSkillId() == null) {
                     continue;
                 }
 
-                /*
-                 * Prevent duplicate skills when two roles
-                 * require the same skill.
-                 */
-                if (skillIds.add(
-                        skill.getSkillId())) {
-
-                    requiredSkills.add(skill);
-                }
+                skills.putIfAbsent(
+                        skill.getSkillId(),
+                        skill);
             }
         }
 
-        return requiredSkills;
+        return new ArrayList<>(skills.values());
     }
 
+    // ============================================================
+    // GET SKILLS ALREADY PRESENT IN EMPLOYEE PROFILE
+    // ============================================================
+    /*
+     * Employee
+     *     ↓
+     * EmployeeSkill
+     *     ↓
+     * Skill
+     *
+     * These skills can produce assessments even when the
+     * employee has NO job role.
+     */
+
+    private List<Skill> getEmployeeProfileSkills(
+            Employee employee) {
+
+        Map<Long, Skill> skills = new LinkedHashMap<>();
+
+        List<EmployeeSkill> employeeSkillList =
+                employeeSkills.findByEmployee(employee);
+
+        if (employeeSkillList == null) {
+            return new ArrayList<>();
+        }
+
+        for (EmployeeSkill employeeSkill : employeeSkillList) {
+
+            if (employeeSkill == null
+                    || employeeSkill.getSkill() == null) {
+                continue;
+            }
+
+            Skill skill = employeeSkill.getSkill();
+
+            if (skill.getSkillId() == null) {
+                continue;
+            }
+
+            skills.putIfAbsent(
+                    skill.getSkillId(),
+                    skill);
+        }
+
+        return new ArrayList<>(skills.values());
+    }
 
     // ============================================================
-    // ENSURE REQUIRED SKILL EXISTS IN EMPLOYEE PROFILE
+    // GET ALL ASSESSMENT SKILLS
+    // ============================================================
+    /*
+     * FINAL FLOW:
+     *
+     * Job Role Skills
+     *        +
+     * Employee Profile Skills
+     *        ↓
+     * Remove duplicate Skill IDs
+     *        ↓
+     * Assessment Skills
+     *
+     * Therefore:
+     *
+     * 1. Employee WITH Job Role can take assessments.
+     * 2. Employee WITHOUT Job Role can still take assessments.
+     * 3. Employee-added skills are supported.
+     * 4. Job-role skills are supported.
+     * 5. Duplicate skills appear only once.
+     */
+
+    private List<Skill> getAssessmentSkillsForEmployee(
+            Employee employee) {
+
+        Map<Long, Skill> uniqueSkills =
+                new LinkedHashMap<>();
+
+        // --------------------------------------------------------
+        // 1. Skills coming from active job roles
+        // --------------------------------------------------------
+
+        List<Skill> jobRoleSkills =
+                getRequiredSkillsFromJobRoles(employee);
+
+        for (Skill skill : jobRoleSkills) {
+
+            if (skill == null
+                    || skill.getSkillId() == null) {
+                continue;
+            }
+
+            uniqueSkills.putIfAbsent(
+                    skill.getSkillId(),
+                    skill);
+        }
+
+        // --------------------------------------------------------
+        // 2. Skills already present in employee profile
+        // --------------------------------------------------------
+
+        List<Skill> profileSkills =
+                getEmployeeProfileSkills(employee);
+
+        for (Skill skill : profileSkills) {
+
+            if (skill == null
+                    || skill.getSkillId() == null) {
+                continue;
+            }
+
+            uniqueSkills.putIfAbsent(
+                    skill.getSkillId(),
+                    skill);
+        }
+
+        return new ArrayList<>(uniqueSkills.values());
+    }
+
+    // ============================================================
+    // ENSURE EMPLOYEE SKILL EXISTS
     // ============================================================
 
     private void ensureEmployeeSkill(
@@ -271,12 +358,6 @@ public class SelfAssessmentServiceImpl
             employeeSkill.setEmployee(employee);
             employeeSkill.setSkill(skill);
 
-            /*
-             * Newly required skill starts at BEGINNER.
-             *
-             * Assessment result will update this
-             * proficiency later.
-             */
             employeeSkill.setProficiencyLevel(
                     ProficiencyLevel.BEGINNER);
 
@@ -286,27 +367,9 @@ public class SelfAssessmentServiceImpl
         }
     }
 
-
     // ============================================================
     // GET MY ASSESSMENTS
     // ============================================================
-    /*
-     * OLD FLOW:
-     *
-     * EmployeeSkill
-     *      ↓
-     * Assessment
-     *
-     * NEW FLOW:
-     *
-     * Active Job Role
-     *      ↓
-     * Job Role Competency
-     *      ↓
-     * Required Skill
-     *      ↓
-     * Assessment
-     */
 
     @Override
     public List<SelfAssessmentDTO> getMyAssessments() {
@@ -318,39 +381,38 @@ public class SelfAssessmentServiceImpl
                 new ArrayList<>();
 
         // --------------------------------------------------------
-        // Get skills required by employee's active job roles
+        // Get BOTH:
+        // 1. Job role skills
+        // 2. Employee profile skills
         // --------------------------------------------------------
 
-        List<Skill> requiredSkills =
-                getRequiredSkillsForEmployee(
-                        employee);
+        List<Skill> assessmentSkills =
+                getAssessmentSkillsForEmployee(employee);
 
         // --------------------------------------------------------
-        // No job role assigned
+        // IMPORTANT:
+        // Do NOT return empty simply because there is no job role.
+        //
+        // Employee profile skills are enough to create assessments.
         // --------------------------------------------------------
 
-        if (requiredSkills.isEmpty()) {
-
+        if (assessmentSkills.isEmpty()) {
             return result;
         }
 
         // --------------------------------------------------------
-        // Create/find assessment for each required skill
+        // Create/find assessment for every unique skill
         // --------------------------------------------------------
 
-        for (Skill skill : requiredSkills) {
+        for (Skill skill : assessmentSkills) {
 
-            if (skill == null) {
+            if (skill == null
+                    || skill.getSkillId() == null) {
                 continue;
             }
 
-            /*
-             * Make sure this required skill is also present
-             * in Employee Skill Profile.
-             *
-             * This also supports older job-role assignments
-             * created before the new initialization logic.
-             */
+            // Required job-role skill may not yet exist
+            // in EmployeeSkill. Add it if necessary.
             ensureEmployeeSkill(
                     employee,
                     skill);
@@ -392,7 +454,6 @@ public class SelfAssessmentServiceImpl
         return result;
     }
 
-
     // ============================================================
     // GET SINGLE ASSESSMENT
     // ============================================================
@@ -411,7 +472,6 @@ public class SelfAssessmentServiceImpl
 
         return toDto(assessment);
     }
-
 
     // ============================================================
     // START ASSESSMENT
@@ -438,20 +498,34 @@ public class SelfAssessmentServiceImpl
         Skill assessmentSkill =
                 assessment.getSkill();
 
-        if (assessmentSkill == null) {
+        if (assessmentSkill == null
+                || assessmentSkill.getSkillId() == null) {
 
             throw new ResourceNotFoundException(
                     "Assessment skill not found.");
         }
 
         // --------------------------------------------------------
-        // SECURITY:
-        // Assessment skill MUST belong to one of the employee's
-        // active Job Role competencies.
+        // IMPORTANT:
+        //
+        // Assessment is valid when the skill is either:
+        //
+        // 1. Required by an active job role
+        // OR
+        // 2. Already present in employee's Skill Profile
+        //
+        // Therefore a Job Role is NOT mandatory.
         // --------------------------------------------------------
 
+        boolean belongsToEmployeeProfile =
+                employeeSkills
+                        .findByEmployeeAndSkill(
+                                employee,
+                                assessmentSkill)
+                        .isPresent();
+
         boolean requiredByJobRole =
-                getRequiredSkillsForEmployee(employee)
+                getRequiredSkillsFromJobRoles(employee)
                         .stream()
                         .anyMatch(skill ->
                                 skill.getSkillId()
@@ -459,10 +533,11 @@ public class SelfAssessmentServiceImpl
                                                 assessmentSkill
                                                         .getSkillId()));
 
-        if (!requiredByJobRole) {
+        if (!belongsToEmployeeProfile
+                && !requiredByJobRole) {
 
             throw new ResourceNotFoundException(
-                    "This assessment is not required for your assigned job role.");
+                    "This assessment skill is not available in your Skill Profile or assigned Job Role.");
         }
 
         // --------------------------------------------------------
@@ -493,15 +568,13 @@ public class SelfAssessmentServiceImpl
         AssessmentAttempt savedAttempt =
                 attempts.save(attempt);
 
-        /*
-         * Do not change proficiency here.
-         *
-         * Proficiency changes only after submission.
-         */
+        // --------------------------------------------------------
+        // Do not change proficiency during start.
+        // Proficiency changes only after submission.
+        // --------------------------------------------------------
 
         return result(savedAttempt);
     }
-
 
     // ============================================================
     // SUBMIT ASSESSMENT
@@ -566,6 +639,11 @@ public class SelfAssessmentServiceImpl
                     AssessmentAnswerRequestDTO submittedAnswer
                     : request.answers) {
 
+                if (submittedAnswer == null
+                        || submittedAnswer.questionId == null) {
+                    continue;
+                }
+
                 AssessmentQuestion question =
                         questionMap.get(
                                 submittedAnswer.questionId);
@@ -595,7 +673,7 @@ public class SelfAssessmentServiceImpl
                         question.getQuestionType()
                                 == AssessmentQuestion.QuestionType.MCQ
 
-                        &&
+                                &&
 
                         submittedAnswer.selectedOptionId
                                 != null
@@ -611,7 +689,7 @@ public class SelfAssessmentServiceImpl
                     if (
                             option != null
 
-                            &&
+                                    &&
 
                             option.getQuestion()
                                     .getQuestionId()
@@ -662,18 +740,15 @@ public class SelfAssessmentServiceImpl
                         .getAssessment()
                         .getTotalMarks();
 
-        if (
-                totalMarks != null
-                && totalMarks > 0
-        ) {
+        if (totalMarks != null
+                && totalMarks > 0) {
 
             percentage =
                     Math.round(
                             (
-                                    score
-                                            * 100.0
+                                    score * 100.0
                                             /
-                                            totalMarks
+                                    totalMarks
                             )
                                     * 100.0
                     )
@@ -711,12 +786,6 @@ public class SelfAssessmentServiceImpl
 
                         () -> {
 
-                            /*
-                             * Safety fallback:
-                             * create EmployeeSkill if it somehow
-                             * does not exist.
-                             */
-
                             EmployeeSkill employeeSkill =
                                     new EmployeeSkill();
 
@@ -751,24 +820,36 @@ public class SelfAssessmentServiceImpl
         attempt.setSubmittedAt(
                 LocalDateTime.now());
 
-        AssessmentResultDTO response;
-
         AssessmentAttempt savedAttempt =
                 attempts.save(attempt);
 
         // --------------------------------------------------------
         // Recalculate knowledge gaps
+        //
+        // Only run this when the employee has an active job role.
+        //
+        // Without a job role there may be no required proficiency
+        // against which a gap can be calculated.
         // --------------------------------------------------------
 
-        gapAnalysisService.runGapAnalysis(
-                employee.getEmployeeId());
+        List<EmployeeJobRole> activeRoles =
+                employeeJobRoles
+                        .findByEmployeeAndActiveTrue(
+                                employee);
 
-        response =
-                result(savedAttempt);
+        if (activeRoles != null
+                && !activeRoles.isEmpty()) {
 
-        return response;
+            gapAnalysisService.runGapAnalysis(
+                    employee.getEmployeeId());
+        }
+
+        // --------------------------------------------------------
+        // Return result
+        // --------------------------------------------------------
+
+        return result(savedAttempt);
     }
-
 
     // ============================================================
     // CONVERT ASSESSMENT TO DTO
@@ -877,7 +958,6 @@ public class SelfAssessmentServiceImpl
 
         return dto;
     }
-
 
     // ============================================================
     // CONVERT ATTEMPT TO RESULT DTO
