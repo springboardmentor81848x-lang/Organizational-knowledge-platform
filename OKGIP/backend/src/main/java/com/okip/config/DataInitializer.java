@@ -6,7 +6,9 @@ import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
+import com.okip.entity.transaction.JobRoleCompetency;
+import com.okip.enums.ProficiencyLevel;
+import com.okip.repository.JobRoleCompetencyRepository;
 import com.okip.entity.assessment.Assessment;
 import com.okip.entity.assessment.AssessmentOption;
 import com.okip.entity.assessment.AssessmentQuestion;
@@ -52,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
 	private final AssessmentRepository assessmentRepository;
 	private final AssessmentQuestionRepository assessmentQuestionRepository;
 	private final AssessmentOptionRepository assessmentOptionRepository;
+	private final JobRoleCompetencyRepository jobRoleCompetencyRepository;
 
 	public DataInitializer(
 	        RoleRepository roleRepository,
@@ -66,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
 	        AssessmentRepository assessmentRepository,
 	        AssessmentQuestionRepository assessmentQuestionRepository,
 	        AssessmentOptionRepository assessmentOptionRepository,
+	        JobRoleCompetencyRepository jobRoleCompetencyRepository,
 	        PasswordEncoder passwordEncoder) {
 
 	    this.roleRepository = roleRepository;
@@ -80,28 +84,8 @@ public class DataInitializer implements CommandLineRunner {
 	    this.assessmentRepository = assessmentRepository;
 	    this.assessmentQuestionRepository = assessmentQuestionRepository;
 	    this.assessmentOptionRepository = assessmentOptionRepository;
+		this.jobRoleCompetencyRepository = jobRoleCompetencyRepository;
 	    this.passwordEncoder = passwordEncoder;
-	}
-	@Override
-	public void run(String... args) throws Exception {
-
-	    initializeRoles();
-
-	    initializeDepartments();
-
-	    initializeSkills();
-
-	    initializeDefaultUsers();
-
-	    initializeJobRoles();
-
-	    initializeTrainings();
-
-	    initializeTrainingSkills();
-
-	    initializeTrainingContent();
-		initializeSelfAssessments();
-		initializePeerAssessments();
 	}
 	private void initializeRoles() {
 
@@ -180,6 +164,401 @@ public class DataInitializer implements CommandLineRunner {
 		createUser("MGR001", "Default", "Manager", "manager@okip.com", "Password@123", RoleType.ROLE_MANAGER, "IT");
 	}
 
+	private void initializeJobRoleCompetencies() {
+
+    /*
+     * ============================================================
+     * JOB ROLE COMPETENCY MATRIX
+     * ============================================================
+     *
+     * This matrix uses the skills already available in the project.
+     *
+     * Proficiency:
+     * BEGINNER      = basic knowledge
+     * INTERMEDIATE  = working knowledge
+     * ADVANCED      = strong professional capability
+     * EXPERT        = highly advanced capability
+     *
+     * IMPORTANT:
+     * No job-role IDs are hardcoded.
+     * Roles are resolved by their names.
+     * Existing competency records are UPDATED.
+     * Missing competency records are CREATED.
+     */
+
+    // ------------------------------------------------------------
+    // 1. JAVA DEVELOPER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Java Developer",
+            "Java",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Java Developer",
+            "Spring Boot",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Java Developer",
+            "REST API",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Java Developer",
+            "MySQL",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Java Developer",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Java Developer",
+            "Maven",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 2. BACKEND DEVELOPER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Backend Developer",
+            "Java",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Backend Developer",
+            "Spring Boot",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Backend Developer",
+            "REST API",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Backend Developer",
+            "Microservices",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Backend Developer",
+            "MySQL",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Backend Developer",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 3. FULL STACK DEVELOPER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Full Stack Developer",
+            "Java",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Full Stack Developer",
+            "Spring Boot",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Full Stack Developer",
+            "REST API",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Full Stack Developer",
+            "MySQL",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Full Stack Developer",
+            "PostgreSQL",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Full Stack Developer",
+            "Git",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Full Stack Developer",
+            "Docker",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 4. FRONTEND DEVELOPER
+    // ------------------------------------------------------------
+
+    /*
+     * Current project skill catalog does not contain
+     * JavaScript / React / HTML / CSS.
+     *
+     * Therefore the current available skills are used as
+     * supporting competencies until the frontend-specific
+     * skill catalog is expanded.
+     */
+
+    addCompetency(
+            "Frontend Developer",
+            "REST API",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "Frontend Developer",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Frontend Developer",
+            "MySQL",
+            ProficiencyLevel.BEGINNER,
+            0.5);
+
+
+    // ------------------------------------------------------------
+    // 5. DEVOPS ENGINEER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "DevOps Engineer",
+            "Docker",
+            ProficiencyLevel.EXPERT,
+            2.0);
+
+    addCompetency(
+            "DevOps Engineer",
+            "Kubernetes",
+            ProficiencyLevel.EXPERT,
+            2.0);
+
+    addCompetency(
+            "DevOps Engineer",
+            "AWS",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "DevOps Engineer",
+            "Git",
+            ProficiencyLevel.EXPERT,
+            2.0);
+
+    addCompetency(
+            "DevOps Engineer",
+            "Maven",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 6. DATA ENGINEER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Data Engineer",
+            "MySQL",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Data Engineer",
+            "PostgreSQL",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Data Engineer",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Data Engineer",
+            "AWS",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 7. QA ENGINEER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "QA Engineer",
+            "Java",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "QA Engineer",
+            "REST API",
+            ProficiencyLevel.ADVANCED,
+            1.5);
+
+    addCompetency(
+            "QA Engineer",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "QA Engineer",
+            "MySQL",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+
+    // ------------------------------------------------------------
+    // 8. ENGINEERING MANAGER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Engineering Manager",
+            "Java",
+            ProficiencyLevel.ADVANCED,
+            3.0);
+
+    addCompetency(
+            "Engineering Manager",
+            "Git",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+    addCompetency(
+            "Engineering Manager",
+            "Docker",
+            ProficiencyLevel.INTERMEDIATE,
+            1.5);
+
+    addCompetency(
+            "Engineering Manager",
+            "AWS",
+            ProficiencyLevel.INTERMEDIATE,
+            1.5);
+
+    addCompetency(
+            "Engineering Manager",
+            "Microservices",
+            ProficiencyLevel.ADVANCED,
+            2.0);
+
+
+    // ------------------------------------------------------------
+    // 9. HR EXECUTIVE
+    // ------------------------------------------------------------
+
+    /*
+     * HR-specific skills are not currently present in the
+     * project's skill master table.
+     *
+     * These existing technical skills are therefore used only
+     * as system-level supporting competencies.
+     */
+
+    addCompetency(
+            "HR Executive",
+            "Git",
+            ProficiencyLevel.BEGINNER,
+            0.5);
+
+    addCompetency(
+            "HR Executive",
+            "MySQL",
+            ProficiencyLevel.BEGINNER,
+            0.5);
+
+
+    // ------------------------------------------------------------
+    // 10. PROJECT MANAGER
+    // ------------------------------------------------------------
+
+    addCompetency(
+            "Project Manager",
+            "Git",
+            ProficiencyLevel.INTERMEDIATE,
+            1.0);
+
+    addCompetency(
+            "Project Manager",
+            "Maven",
+            ProficiencyLevel.BEGINNER,
+            0.5);
+
+    addCompetency(
+            "Project Manager",
+            "AWS",
+            ProficiencyLevel.BEGINNER,
+            0.5);
+}
+
+	private void addCompetency(
+	        String jobRoleName,
+	        String skillName,
+	        ProficiencyLevel requiredProficiency,
+	        Double minimumExperience) {
+
+	    JobRole jobRole = jobRoleRepository
+	            .findByJobRoleNameIgnoreCase(jobRoleName)
+	            .orElse(null);
+
+	    if (jobRole == null) {
+	        return;
+	    }
+
+	    Skill skill = skillRepository
+	            .findBySkillNameIgnoreCase(skillName)
+	            .orElse(null);
+
+	    if (skill == null) {
+	        return;
+	    }
+
+	    JobRoleCompetency competency =
+	            jobRoleCompetencyRepository
+	                    .findByJobRoleAndSkill(jobRole, skill)
+	                    .orElseGet(JobRoleCompetency::new);
+
+	    competency.setJobRole(jobRole);
+	    competency.setSkill(skill);
+	    competency.setRequiredProficiency(requiredProficiency);
+	    competency.setMinimumExperience(minimumExperience);
+	    competency.setMandatory(true);
+
+	    jobRoleCompetencyRepository.save(competency);
+	}
+
 	private void initializeJobRoles() {
 
 	    createJobRole(
@@ -222,6 +601,30 @@ public class DataInitializer implements CommandLineRunner {
 	            "Project Manager",
 	            "Project Planning and Delivery");
 	}
+
+	@Override
+public void run(String... args) throws Exception {
+
+    initializeRoles();
+
+    initializeDepartments();
+
+    initializeSkills();
+
+    initializeDefaultUsers();
+
+    initializeJobRoles();
+
+    initializeJobRoleCompetencies();
+
+    initializeTrainings();
+
+    initializeTrainingSkills();
+
+    initializeTrainingContent();
+    initializeSelfAssessments();
+    initializePeerAssessments();
+}
 	private void initializeTrainings() {
 
 	    createTraining(
