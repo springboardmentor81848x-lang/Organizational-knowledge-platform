@@ -6,9 +6,7 @@ import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import com.okip.entity.transaction.JobRoleCompetency;
-import com.okip.enums.ProficiencyLevel;
-import com.okip.repository.JobRoleCompetencyRepository;
+import org.springframework.transaction.annotation.Transactional;
 import com.okip.entity.assessment.Assessment;
 import com.okip.entity.assessment.AssessmentOption;
 import com.okip.entity.assessment.AssessmentQuestion;
@@ -20,12 +18,15 @@ import com.okip.entity.master.Skill;
 import com.okip.entity.master.Training;
 import com.okip.entity.master.TrainingModule;
 import com.okip.entity.master.TrainingResource;
+import com.okip.entity.transaction.JobRoleCompetency;
 import com.okip.entity.transaction.TrainingSkill;
 import com.okip.enums.AccountStatus;
+import com.okip.enums.ProficiencyLevel;
 import com.okip.enums.RoleType;
 import com.okip.enums.SkillCategory;
 import com.okip.repository.DepartmentRepository;
 import com.okip.repository.EmployeeRepository;
+import com.okip.repository.JobRoleCompetencyRepository;
 import com.okip.repository.JobRoleRepository;
 import com.okip.repository.RoleRepository;
 import com.okip.repository.SkillRepository;
@@ -617,13 +618,12 @@ public void run(String... args) throws Exception {
 
     initializeJobRoleCompetencies();
 
-    initializeTrainings();
+    //initializeTrainings();
 
-    initializeTrainingSkills();
+    //initializeTrainingSkills();
 
-    initializeTrainingContent();
-    initializeSelfAssessments();
-    initializePeerAssessments();
+    //initializeTrainingContent();
+    
 }
 	private void initializeTrainings() {
 
@@ -1603,4 +1603,65 @@ private void createAwsPeerAssessment() {
 
 	    trainingSkillRepository.save(trainingSkill);
 	}
+	
+	@Transactional
+public void ensureSelfAssessmentForSkill(String skillName) {
+
+    switch (skillName.trim().toLowerCase()) {
+
+        case "java":
+            createJavaAssessment();
+            break;
+
+        case "spring boot":
+            createSpringBootAssessment();
+            break;
+
+        case "spring security":
+            createSpringSecurityAssessment();
+            break;
+
+        case "rest api":
+            createRestApiAssessment();
+            break;
+
+        case "microservices":
+            createMicroservicesAssessment();
+            break;
+
+        case "mysql":
+            createMySqlAssessment();
+            break;
+
+        case "postgresql":
+            createPostgreSqlAssessment();
+            break;
+
+        case "git":
+            createGitAssessment();
+            break;
+
+        case "maven":
+            createMavenAssessment();
+            break;
+
+        case "docker":
+            createDockerAssessment();
+            break;
+
+        case "kubernetes":
+            createKubernetesAssessment();
+            break;
+
+        case "aws":
+            createAwsAssessment();
+            break;
+
+        default:
+            throw new RuntimeException(
+                "No self-assessment question bank found for skill: "
+                + skillName
+            );
+    }
+}
 }
